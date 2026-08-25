@@ -1,3 +1,6 @@
+using Application.Diagnostics.Abstraction;
+using Application.Diagnostics.UseCases;
+using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +19,16 @@ public static class DependencyInjection
 
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString));
+
+        // Repositorios
+        services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
+
+        // Casos de Uso
+        services.AddScoped<GetAllDiagnosticsUseCase>();
+        services.AddScoped<GetDiagnosticByIdUseCase>();
+        services.AddScoped<CreateDiagnosticUseCase>();
+        services.AddScoped<UpdateDiagnosticUseCase>();
+        services.AddScoped<DeleteDiagnosticUseCase>();
 
         return services;
     }
