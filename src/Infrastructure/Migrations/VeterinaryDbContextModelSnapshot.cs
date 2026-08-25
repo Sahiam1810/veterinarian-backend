@@ -93,43 +93,6 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ROLES", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "11111111-1111-1111-1111-111111111111",
-                            CreatedAt = new DateTime(2026, 8, 13, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Administrador del sistema",
-                            Name = "Administrador"
-                        },
-                        new
-                        {
-                            Id = "44444444-4444-4444-4444-444444444444",
-                            CreatedAt = new DateTime(2026, 8, 13, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Consulta su agenda, atiende citas y registra la historia clínica de la mascota",
-                            Name = "Veterinario"
-                        },
-                        new
-                        {
-                            Id = "55555555-5555-5555-5555-555555555555",
-                            CreatedAt = new DateTime(2026, 8, 13, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Registra dueños y mascotas, agenda, reprograma y cancela citas",
-                            Name = "Recepcionista"
-                        },
-                        new
-                        {
-                            Id = "66666666-6666-6666-6666-666666666666",
-                            CreatedAt = new DateTime(2026, 8, 13, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Apoya el registro y la preparación de la atención",
-                            Name = "Auxiliar"
-                        },
-                        new
-                        {
-                            Id = "77777777-7777-7777-7777-777777777777",
-                            CreatedAt = new DateTime(2026, 8, 13, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Portal para ver sus mascotas y sus citas",
-                            Name = "Cliente"
-                        });
                 });
 
             modelBuilder.Entity("veterinarian_backend.Domain.Races.Entities.RaceEntity", b =>
