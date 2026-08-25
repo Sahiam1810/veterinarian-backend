@@ -33,13 +33,40 @@ public class SpeciesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<SpeciesResponseDto>> Create([FromBody] CreateSpeciesDto dto, CancellationToken ct)
     {
-        // Conviertes el DTO de entrada a la Entidad de Dominio
         var newSpecies = dto.ToEntity();
 
         await _repository.AddAsync(newSpecies, ct);
 
         var response = newSpecies.ToDto();
-        
         return CreatedAtAction(nameof(GetById), new { id = newSpecies.Id }, response);
+    }
+
+    // 3. ACTUALIZAR ESPECIE: PUT /api/species/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<SpeciesResponseDto>> Update(Guid id, [FromBody] UpdateSpeciesDto dto, CancellationToken ct)
+    {
+        var species = await _repository.GetByIdAsync(id, ct);
+
+        if (species is null)
+            return NotFound(new { message = "Especie no encontrada." });
+
+        species.Name = dto.Name;
+        await _repository.UpdateAsync(species, ct);
+
+        var response = species.ToDto();
+        return Ok(response);
+    }
+
+    // 4. ELIMINAR ESPECIE: DELETE /api/species/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        var species = await _repository.GetByIdAsync(id, ct);
+
+        if (species is null)
+            return NotFound(new { message = "Especie no encontrada." });
+
+        await _repository.DeleteAsync(species, ct);
+        return NoContent();
     }
 }

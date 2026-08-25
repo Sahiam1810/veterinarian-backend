@@ -33,7 +33,6 @@ public class RacesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<RaceResponseDto>> Create([FromBody] CreateRaceDto dto, CancellationToken ct)
     {
-        // Conviertes el DTO de entrada a la Entidad de Dominio
         var newRace = new RaceEntity
         {
             Id = Guid.NewGuid(),
@@ -43,7 +42,35 @@ public class RacesController : ControllerBase
         await _repository.AddAsync(newRace, ct);
 
         var response = new RaceResponseDto(newRace.Id, newRace.Name);
-        
         return CreatedAtAction(nameof(GetById), new { id = newRace.Id }, response);
+    }
+
+    // 3. ACTUALIZAR RAZA: PUT /api/races/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<RaceResponseDto>> Update(Guid id, [FromBody] UpdateRaceDto dto, CancellationToken ct)
+    {
+        var race = await _repository.GetByIdAsync(id, ct);
+
+        if (race is null)
+            return NotFound(new { message = "Raza no encontrada." });
+
+        race.Name = dto.Name;
+        await _repository.UpdateAsync(race, ct);
+
+        var response = new RaceResponseDto(race.Id, race.Name);
+        return Ok(response);
+    }
+
+    // 4. ELIMINAR RAZA: DELETE /api/races/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        var race = await _repository.GetByIdAsync(id, ct);
+
+        if (race is null)
+            return NotFound(new { message = "Raza no encontrada." });
+
+        await _repository.DeleteAsync(race, ct);
+        return NoContent();
     }
 }
