@@ -42,4 +42,32 @@ public class SpeciesController : ControllerBase
         
         return CreatedAtAction(nameof(GetById), new { id = newSpecies.Id }, response);
     }
+
+    // 3. ACTUALIZAR ESPECIE: PUT /api/species/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<SpeciesResponseDto>> Update(Guid id, [FromBody] UpdateSpeciesDto dto, CancellationToken ct)
+    {
+        var species = await _repository.GetByIdAsync(id, ct);
+
+        if (species is null)
+            return NotFound(new { message = "Especie no encontrada." });
+
+        species.Name = dto.Name;
+        await _repository.UpdateAsync(species, ct);
+
+        return Ok(species.ToDto());
+    }
+
+    // 4. ELIMINAR ESPECIE: DELETE /api/species/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        var species = await _repository.GetByIdAsync(id, ct);
+
+        if (species is null)
+            return NotFound(new { message = "Especie no encontrada." });
+
+        await _repository.DeleteAsync(species, ct);
+        return NoContent();
+    }
 }
