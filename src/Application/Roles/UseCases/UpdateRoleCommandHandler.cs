@@ -2,7 +2,7 @@ using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using MediatR;
 
-namespace HelpDesk.Application.Roles.UseCase;
+namespace Application.Roles.UseCase;
 
 public sealed class UpdateRoleCommandHandler
     : IRequestHandler<UpdateRoleCommand, bool>

@@ -1,6 +1,6 @@
-using RoleEntity = HelpDesk.Domain.Roles.Entities.Roles;
+using RoleEntity = Domain.Roles.Entities.Roles;
 
-namespace HelpDesk.Application.Roles.Abstraction;
+namespace Application.Roles.Abstraction;
 
 public interface IRolesRepository
 {

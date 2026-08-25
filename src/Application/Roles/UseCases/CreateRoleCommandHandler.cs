@@ -1,9 +1,9 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using MediatR;
-using RoleEntity = HelpDesk.Domain.Roles.Entities.Roles;
+using RoleEntity = Domain.Roles.Entities.Roles;
 
-namespace HelpDesk.Application.Roles.UseCase;
+namespace Application.Roles.UseCase;
 
 public sealed class CreateRoleCommandHandler
     : IRequestHandler<CreateRoleCommand, Guid>

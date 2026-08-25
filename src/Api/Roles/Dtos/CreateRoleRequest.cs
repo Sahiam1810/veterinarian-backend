@@ -1,4 +1,4 @@
-namespace HelpDesk.Api.Roles.Dtos;
+namespace Api.Roles.Dtos;
 
 public sealed record CreateRoleRequest(
     string Name,

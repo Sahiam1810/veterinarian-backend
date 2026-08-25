@@ -1,4 +1,4 @@
-namespace HelpDesk.Domain.Roles.ValueObjects;
+namespace Domain.Roles.ValueObjects;
 
 public sealed record RoleName
 {

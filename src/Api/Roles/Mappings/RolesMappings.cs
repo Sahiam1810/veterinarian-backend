@@ -1,8 +1,8 @@
-using HelpDesk.Api.Roles.Dtos;
-using HelpDesk.Application.Roles.UseCase;
-using RoleEntity = HelpDesk.Domain.Roles.Entities.Roles;
+using Api.Roles.Dtos;
+using Application.Roles.UseCase;
+using RoleEntity = Domain.Roles.Entities.Roles;
 
-namespace HelpDesk.Api.Roles.Mappings;
+namespace Api.Roles.Mappings;
 
 public static class RolesMappings
 {

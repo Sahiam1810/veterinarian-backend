@@ -1,7 +1,7 @@
 using FluentValidation;
-using HelpDesk.Domain.Roles.ValueObjects;
+using Domain.Roles.ValueObjects;
 
-namespace HelpDesk.Application.Roles.UseCase;
+namespace Application.Roles.UseCase;
 
 public sealed class CreateRoleCommandValidator
     : AbstractValidator<CreateRoleCommand>

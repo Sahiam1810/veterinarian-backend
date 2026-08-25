@@ -1,7 +1,7 @@
 using Application.Common.Abstractions;
 using MediatR;
 
-namespace HelpDesk.Application.Roles.UseCase;
+namespace Application.Roles.UseCase;
 
 public sealed class DeleteRoleCommandHandler
     : IRequestHandler<DeleteRoleCommand, bool>

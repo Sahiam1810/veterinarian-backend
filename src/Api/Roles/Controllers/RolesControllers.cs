@@ -1,14 +1,15 @@
-using Api.Common.Controllers;
-using HelpDesk.Api.Roles.Dtos;
-using HelpDesk.Api.Roles.Mappings;
-using HelpDesk.Application.Roles.UseCase;
+using Api.Roles.Dtos;
+using Api.Roles.Mappings;
+using Application.Roles.UseCase;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HelpDesk.Api.Roles.Controllers;
+namespace Api.Roles.Controllers;
 
-public sealed class RolesController(ISender sender) : BaseApiController
+[ApiController]
+[Route("api/[controller]")]
+public sealed class RolesController(ISender sender) : ControllerBase
 {
     [HttpPost]
     [EndpointSummary("Crea un nuevo rol de usuario")]

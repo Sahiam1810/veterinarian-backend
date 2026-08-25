@@ -1,8 +1,8 @@
 using Application.Common.Abstractions;
 using MediatR;
-using RoleEntity = HelpDesk.Domain.Roles.Entities.Roles;
+using RoleEntity = Domain.Roles.Entities.Roles;
 
-namespace HelpDesk.Application.Roles.UseCase;
+namespace Application.Roles.UseCase;
 
 public sealed class GetAllRolesQueryHandler
     : IRequestHandler<

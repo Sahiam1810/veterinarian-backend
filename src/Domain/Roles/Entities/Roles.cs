@@ -1,8 +1,8 @@
 using Domain.Common;
-using HelpDesk.Domain.Roles.ValueObjects;
-using UserEntity = HelpDesk.Domain.Users.Entities.Users;
+using Domain.Roles.ValueObjects;
+// using UserEntity = Domain.Users.Entities.Users; // TODO: habilitar cuando exista la entidad Users
 
-namespace HelpDesk.Domain.Roles.Entities;
+namespace Domain.Roles.Entities;
 
 public sealed class Roles : BaseEntity<Guid>
 {
@@ -21,7 +21,8 @@ public sealed class Roles : BaseEntity<Guid>
 
     public string? Description { get; private set; }
 
-    public ICollection<UserEntity> Users { get; } = new List<UserEntity>();
+    // TODO: habilitar cuando exista la entidad Users
+    // public ICollection<UserEntity> Users { get; } = new List<UserEntity>();
 
     public void Update(string name, string? description)
     {

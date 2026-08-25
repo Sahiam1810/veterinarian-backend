@@ -1,10 +1,10 @@
-using HelpDesk.Application.Roles.Abstraction;
-using HelpDesk.Domain.Roles.ValueObjects;
+using Application.Roles.Abstraction;
+using Domain.Roles.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using RoleEntity = HelpDesk.Domain.Roles.Entities.Roles;
+using RoleEntity = Domain.Roles.Entities.Roles;
 
-namespace HelpDesk.Infrastructure.Roles.Repository;
+namespace Infrastructure.Roles.Repository;
 
 public sealed class RolesRepository : IRolesRepository
 {

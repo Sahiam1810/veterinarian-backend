@@ -1,10 +1,10 @@
-using HelpDesk.Domain.Common.Security;
-using HelpDesk.Domain.Roles.ValueObjects;
+using Domain.Common.Security;
+using Domain.Roles.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using RoleEntity = HelpDesk.Domain.Roles.Entities.Roles;
+using RoleEntity = Domain.Roles.Entities.Roles;
 
-namespace HelpDesk.Infrastructure.Roles.Configuration;
+namespace Infrastructure.Roles.Configuration;
 
 public sealed class RolesConfiguration
     : IEntityTypeConfiguration<RoleEntity>
@@ -50,27 +50,27 @@ public sealed class RolesConfiguration
         builder.HasIndex(role => role.Name)
             .IsUnique();
 
-        // El seed pasa el Id como string para que coincida con la conversión
-        // aplicada en la propiedad (EF no aplica el HasConversion al seed data).
+        // HasData espera los valores en el tipo CLR de la propiedad (Guid, RoleName),
+        // no en el tipo ya convertido; EF aplica el HasConversion al generar la migración.
         var seededAt = new DateTime(2026, 8, 13, 0, 0, 0, DateTimeKind.Utc);
         builder.HasData(
             new
             {
-                Id = SystemRoles.AdminId.ToString(),
+                Id = SystemRoles.AdminId,
                 Name = RoleName.Create(SystemRoles.Admin),
                 Description = "System administrator",
                 CreatedAt = seededAt
             },
             new
             {
-                Id = SystemRoles.AgentId.ToString(),
+                Id = SystemRoles.AgentId,
                 Name = RoleName.Create(SystemRoles.Agent),
                 Description = "Help desk support agent",
                 CreatedAt = seededAt
             },
             new
             {
-                Id = SystemRoles.ClientId.ToString(),
+                Id = SystemRoles.ClientId,
                 Name = RoleName.Create(SystemRoles.Client),
                 Description = "Help desk client",
                 CreatedAt = seededAt
