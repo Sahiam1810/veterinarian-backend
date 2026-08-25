@@ -1,3 +1,6 @@
+using Application.Diagnostics.Abstraction;
+using Application.Diagnostics.UseCases;
+using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Mapster;
 using MapsterMapper;
@@ -23,6 +26,16 @@ public static class DependencyInjection
 
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString));
+
+
+        services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
+
+        // Casos de Uso
+        services.AddScoped<GetAllDiagnosticsUseCase>();
+        services.AddScoped<GetDiagnosticByIdUseCase>();
+        services.AddScoped<CreateDiagnosticUseCase>();
+        services.AddScoped<UpdateDiagnosticUseCase>();
+        services.AddScoped<DeleteDiagnosticUseCase>();
 
         var mapsterConfig = TypeAdapterConfig.GlobalSettings;
         mapsterConfig.Scan(typeof(DependencyInjection).Assembly);
