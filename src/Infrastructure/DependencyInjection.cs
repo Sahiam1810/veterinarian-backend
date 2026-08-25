@@ -4,11 +4,14 @@ using Application.Diagnostics.UseCases;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
+using Application.Users.Abstraction;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Races.Repositories;
 using Infrastructure.Roles.Repository;
+using Infrastructure.Security;
 using Infrastructure.Species.Repositories;
+using Infrastructure.Users.Repository;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +36,9 @@ public static class DependencyInjection
         services.AddScoped<IRaceRepository, RaceRepository>();
         services.AddScoped<ISpeciesRepository, SpeciesRepository>();
         services.AddScoped<IRolesRepository, RolesRepository>();
+        services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
         services.AddScoped<GetAllDiagnosticsUseCase>();
         services.AddScoped<GetDiagnosticByIdUseCase>();

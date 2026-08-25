@@ -2,6 +2,7 @@ using Application.Common.Abstractions;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
+using Application.Users.Abstraction;
 using Infrastructure.Persistence;
 
 namespace Infrastructure.UnitOfWork;
@@ -14,12 +15,14 @@ public sealed class UnitOfWork : IUnitOfWork
         VeterinaryDbContext context,
         IRolesRepository rolesRepository,
         ISpeciesRepository speciesRepository,
-        IRaceRepository racesRepository)
+        IRaceRepository racesRepository,
+        IUsersRepository usersRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
         SpeciesRepository = speciesRepository;
         RacesRepository = racesRepository;
+        UsersRepository = usersRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -27,6 +30,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public ISpeciesRepository SpeciesRepository { get; }
 
     public IRaceRepository RacesRepository { get; }
+
+    public IUsersRepository UsersRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
