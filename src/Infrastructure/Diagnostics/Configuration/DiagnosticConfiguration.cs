@@ -41,6 +41,7 @@ public class DiagnosticConfiguration : IEntityTypeConfiguration<Diagnostic>
 
         builder.Property(x => x.IsActive)
             .HasColumnName("IS_ACTIVE")
+            .HasConversion<int>()
             .HasDefaultValue(true)
             .IsRequired();
 
