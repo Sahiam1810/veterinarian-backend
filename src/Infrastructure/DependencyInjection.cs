@@ -1,3 +1,8 @@
+
+using Application.Common.Abstractions;
+using HelpDesk.Application.Roles.Abstraction;
+using HelpDesk.Infrastructure.Roles.Repository;
+using HelpDesk.Infrastructure.UnitOfWork;
 using Application.Diagnostics.Abstraction;
 using Application.Diagnostics.UseCases;
 using Infrastructure.Diagnostics.Repositories;
@@ -26,6 +31,13 @@ public static class DependencyInjection
 
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString));
+
+
+        // Repositorios
+        services.AddScoped<IRolesRepository, RolesRepository>();
+
+        // UnitOfWork
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
         services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
