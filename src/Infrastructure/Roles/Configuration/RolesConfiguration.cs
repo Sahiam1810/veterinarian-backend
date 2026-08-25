@@ -58,21 +58,35 @@ public sealed class RolesConfiguration
             {
                 Id = SystemRoles.AdminId,
                 Name = RoleName.Create(SystemRoles.Admin),
-                Description = "System administrator",
+                Description = "Administrador del sistema",
                 CreatedAt = seededAt
             },
             new
             {
-                Id = SystemRoles.AgentId,
-                Name = RoleName.Create(SystemRoles.Agent),
-                Description = "Help desk support agent",
+                Id = SystemRoles.VeterinarianId,
+                Name = RoleName.Create(SystemRoles.Veterinarian),
+                Description = "Consulta su agenda, atiende citas y registra la historia clínica de la mascota",
+                CreatedAt = seededAt
+            },
+            new
+            {
+                Id = SystemRoles.ReceptionistId,
+                Name = RoleName.Create(SystemRoles.Receptionist),
+                Description = "Registra dueños y mascotas, agenda, reprograma y cancela citas",
+                CreatedAt = seededAt
+            },
+            new
+            {
+                Id = SystemRoles.AssistantId,
+                Name = RoleName.Create(SystemRoles.Assistant),
+                Description = "Apoya el registro y la preparación de la atención",
                 CreatedAt = seededAt
             },
             new
             {
                 Id = SystemRoles.ClientId,
                 Name = RoleName.Create(SystemRoles.Client),
-                Description = "Help desk client",
+                Description = "Portal para ver sus mascotas y sus citas",
                 CreatedAt = seededAt
             });
     }
