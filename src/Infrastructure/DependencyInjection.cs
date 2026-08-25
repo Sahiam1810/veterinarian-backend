@@ -1,4 +1,6 @@
 using Infrastructure.Persistence;
+using Mapster;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,11 @@ public static class DependencyInjection
 
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString));
+
+        var mapsterConfig = TypeAdapterConfig.GlobalSettings;
+        mapsterConfig.Scan(typeof(DependencyInjection).Assembly);
+        services.AddSingleton(mapsterConfig);
+        services.AddScoped<IMapper, ServiceMapper>();
 
         return services;
     }
