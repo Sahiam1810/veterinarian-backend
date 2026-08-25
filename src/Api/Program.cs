@@ -30,7 +30,12 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfig
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddApplication();
+
+builder.Services.AddValidatorsFromAssemblyContaining<ApplicationAssemblyMarker>();
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblyContaining<ApplicationAssemblyMarker>());shed changes
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services

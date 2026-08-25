@@ -1,3 +1,7 @@
+using Application.Common.Abstractions;
+using HelpDesk.Application.Roles.Abstraction;
+using HelpDesk.Infrastructure.Roles.Repository;
+using HelpDesk.Infrastructure.UnitOfWork;
 using Infrastructure.Persistence;
 using Mapster;
 using MapsterMapper;
@@ -18,6 +22,12 @@ public static class DependencyInjection
 
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString));
+
+        // Repositorios
+        services.AddScoped<IRolesRepository, RolesRepository>();
+
+        // UnitOfWork
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         var mapsterConfig = TypeAdapterConfig.GlobalSettings;
         mapsterConfig.Scan(typeof(DependencyInjection).Assembly);
