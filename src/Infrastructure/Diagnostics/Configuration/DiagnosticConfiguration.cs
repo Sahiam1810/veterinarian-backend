@@ -14,7 +14,12 @@ public class DiagnosticConfiguration : IEntityTypeConfiguration<Diagnostic>
 
         builder.Property(x => x.Id)
             .HasColumnName("ID")
-            .ValueGeneratedNever();
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.ToString(),
+                str => Guid.Parse(str))
+            .ValueGeneratedNever()
+            .IsRequired();
 
         builder.Property(x => x.Code)
             .HasColumnName("CODE")
@@ -42,7 +47,7 @@ public class DiagnosticConfiguration : IEntityTypeConfiguration<Diagnostic>
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .IsRequired();
-            
+
         builder.Property(x => x.UpdatedAt)
             .HasColumnName("UPDATED_AT")
             .IsRequired(false);
