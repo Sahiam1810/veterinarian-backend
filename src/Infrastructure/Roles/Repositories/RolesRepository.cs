@@ -23,6 +23,18 @@ public sealed class RolesRepository : IRolesRepository
                 role => role.Id == id,
                 cancellationToken);
 
+    public Task<RoleEntity?> GetByNameAsync(
+        string name,
+        CancellationToken cancellationToken = default)
+    {
+        var roleName = RoleName.Create(name);
+
+        return _context.Set<RoleEntity>()
+            .FirstOrDefaultAsync(
+                role => role.Name == roleName,
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<RoleEntity>> GetAllAsync(
         CancellationToken cancellationToken = default)
         => await _context.Set<RoleEntity>()
