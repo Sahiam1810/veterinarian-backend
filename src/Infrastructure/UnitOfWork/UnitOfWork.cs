@@ -5,6 +5,13 @@ using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
+using Application.TypeServices.Abstraction;
+
+using Application.Services.Abstraction;
+
+using Application.Specialties.Abstraction;
+using Application.ClientsPets.Abstraction;
+
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -24,13 +31,17 @@ public sealed class UnitOfWork : IUnitOfWork
         IRaceRepository racesRepository,
         IUsersRepository usersRepository,
         IStatusAppointmentRepository statusAppointmentsRepository,
+        ITypeServiceRepository typeServicesRepository,
+        IServiceRepository servicesRepository,
         IPetRepository petsRepository,
         IUserAccountsRepository userAccountsRepository,
         IUserCredentialsRepository userCredentialsRepository,
 
         IClientRepository clientsRepository,
 
-        IUserTokensRepository userTokensRepository)
+        IUserTokensRepository userTokensRepository,
+        ISpecialtyRepository specialtiesRepository,
+        IClientPetRepository clientPetsRepository)
 
     {
         _context = context;
@@ -40,12 +51,16 @@ public sealed class UnitOfWork : IUnitOfWork
         PetsRepository = petsRepository;
         UsersRepository = usersRepository;
         StatusAppointmentsRepository = statusAppointmentsRepository;
+        TypeServicesRepository = typeServicesRepository;
+        ServicesRepository = servicesRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
 
         ClientsRepository = clientsRepository;
 
         UserTokensRepository = userTokensRepository;
+        SpecialtiesRepository = specialtiesRepository;
+        ClientPetsRepository = clientPetsRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -61,10 +76,18 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUserTokensRepository UserTokensRepository { get; }
 
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
+    public ITypeServiceRepository TypeServicesRepository { get; }
+
+    public IServiceRepository ServicesRepository { get; }
+
+    public ISpecialtyRepository SpecialtiesRepository { get; }
+    public IClientPetRepository ClientPetsRepository { get; }
+
 
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
+
 
     public async Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> action,
@@ -74,3 +97,6 @@ public sealed class UnitOfWork : IUnitOfWork
         await SaveChangesAsync(cancellationToken);
     }
 }
+
+}
+

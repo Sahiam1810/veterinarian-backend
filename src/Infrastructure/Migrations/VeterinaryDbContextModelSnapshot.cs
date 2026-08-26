@@ -22,6 +22,64 @@ namespace Infrastructure.Migrations
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Domain.AiModels.Entities.AiModel", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("AI_MODEL_ID");
+
+                    b.Property<int>("ContextWindow")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CONTEXT_WINDOW");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<decimal>("InputTokenPrice")
+                        .HasColumnType("NUMBER(18,6)")
+                        .HasColumnName("INPUT_TOKEN_PRICE");
+
+                    b.Property<int>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(1)
+                        .HasColumnName("IS_ACTIVE");
+
+                    b.Property<int>("MaxTokens")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("MAX_TOKENS");
+
+                    b.Property<string>("ModelKey")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(150)")
+                        .HasColumnName("MODEL_KEY");
+
+                    b.Property<string>("NameModel")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(150)")
+                        .HasColumnName("NAME_MODEL");
+
+                    b.Property<decimal>("OutputTokenPrice")
+                        .HasColumnType("NUMBER(18,6)")
+                        .HasColumnName("OUTPUT_TOKEN_PRICE");
+
+                    b.Property<string>("ProviderModelAiId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("PROVIDER_MODEL_AI_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderModelAiId");
+
+                    b.ToTable("AI_MODELS", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Clients.Entities.ClientEntity", b =>
                 {
                     b.Property<string>("Id")
@@ -65,6 +123,46 @@ namespace Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("CLIENTS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.ClientsPets.Entities.ClientPetEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CLIENT_PET_ID");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CLIENT_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("IsPrimaryOwner")
+                        .IsRequired()
+                        .HasMaxLength(1)
+                        .HasColumnType("CHAR(1)")
+                        .HasColumnName("IS_PRIMARY_OWNER");
+
+                    b.Property<string>("PetId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("PET_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PetId");
+
+                    b.HasIndex("ClientId", "PetId")
+                        .IsUnique();
+
+                    b.ToTable("CLIENTS_PETS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Diagnostics.Entities.Diagnostic", b =>
@@ -171,6 +269,45 @@ namespace Infrastructure.Migrations
                     b.ToTable("PETS", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.ProviderModelsAi.Entities.ProviderModelAi", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("PROVIDER_MODEL_AI_ID");
+
+                    b.Property<string>("BusinessName")
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("BUSINESS_NAME");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<int>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(1)
+                        .HasColumnName("IS_ACTIVE");
+
+                    b.Property<string>("NameProviderAi")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("VARCHAR2(150)")
+                        .HasColumnName("NAME_PROVIDER_AI");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.Property<string>("Website")
+                        .HasColumnType("VARCHAR2(500)")
+                        .HasColumnName("WEBSITE");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PROVIDER_MODELS_AI", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Races.Entities.RaceEntity", b =>
                 {
                     b.Property<string>("Id")
@@ -223,6 +360,87 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ROLES", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Services.Entities.Service", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("SERVICE_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<decimal>("DurationMinutes")
+                        .HasColumnType("NUMBER")
+                        .HasColumnName("DURATION_MINUTES");
+
+                    b.Property<string>("IsActive")
+                        .IsRequired()
+                        .HasColumnType("CHAR(1)")
+                        .HasColumnName("IS_ACTIVE");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("NAME");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("NUMBER")
+                        .HasColumnName("PRICE");
+
+                    b.Property<string>("TypeServiceId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("TYPE_SERVICE_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATE_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("TypeServiceId");
+
+                    b.ToTable("SERVICES", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Specialties.Entities.SpecialtyEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("SPECIALTY_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(30)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("NAME");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("SPECIALTIES", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Species.Entities.SpeciesEntity", b =>
@@ -282,6 +500,39 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("STATUS_APPOINTMENTS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.TypeServices.Entities.TypeService", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("TYPE_SERVICE_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("NAME");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("TYPE_SERVICES", (string)null);
                 });
 
             modelBuilder.Entity("Domain.UserAccounts.Entities.UserAccounts", b =>
@@ -465,6 +716,15 @@ namespace Infrastructure.Migrations
                     b.ToTable("USERS", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.AiModels.Entities.AiModel", b =>
+                {
+                    b.HasOne("Domain.ProviderModelsAi.Entities.ProviderModelAi", null)
+                        .WithMany()
+                        .HasForeignKey("ProviderModelAiId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Clients.Entities.ClientEntity", b =>
                 {
                     b.HasOne("Domain.Users.Entities.Users", "User")
@@ -474,6 +734,25 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.ClientsPets.Entities.ClientPetEntity", b =>
+                {
+                    b.HasOne("Domain.Clients.Entities.ClientEntity", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Pets.Entities.PetEntity", "Pet")
+                        .WithMany()
+                        .HasForeignKey("PetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Pet");
                 });
 
             modelBuilder.Entity("Domain.Pets.Entities.PetEntity", b =>
@@ -493,6 +772,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Race");
 
                     b.Navigation("Species");
+                });
+
+            modelBuilder.Entity("Domain.Services.Entities.Service", b =>
+                {
+                    b.HasOne("Domain.TypeServices.Entities.TypeService", "TypeService")
+                        .WithMany()
+                        .HasForeignKey("TypeServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TypeService");
                 });
 
             modelBuilder.Entity("Domain.UserAccounts.Entities.UserAccounts", b =>
