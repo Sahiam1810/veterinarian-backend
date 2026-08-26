@@ -17,7 +17,7 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -267,31 +267,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("SpeciesId");
 
                     b.ToTable("PETS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Priorities.Entities.PriorityEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("PRIORITY_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("VARCHAR2(50)")
-                        .HasColumnName("NAME_PRIORITY");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PRIORITY", (string)null);
                 });
 
             modelBuilder.Entity("Domain.ProviderModelsAi.Entities.ProviderModelAi", b =>
