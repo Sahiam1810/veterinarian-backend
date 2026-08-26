@@ -11,6 +11,7 @@ using Application.Services.Abstraction;
 
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
+using Application.Veterinarians.Abstraction;
 
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
@@ -41,7 +42,8 @@ public sealed class UnitOfWork : IUnitOfWork
 
         IUserTokensRepository userTokensRepository,
         ISpecialtyRepository specialtiesRepository,
-        IClientPetRepository clientPetsRepository)
+        IClientPetRepository clientPetsRepository,
+        IVeterinarianRepository veterinariansRepository)
 
     {
         _context = context;
@@ -61,6 +63,7 @@ public sealed class UnitOfWork : IUnitOfWork
         UserTokensRepository = userTokensRepository;
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
+        VeterinariansRepository = veterinariansRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -82,6 +85,7 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public ISpecialtyRepository SpecialtiesRepository { get; }
     public IClientPetRepository ClientPetsRepository { get; }
+    public IVeterinarianRepository VeterinariansRepository { get; }
 
 
 
