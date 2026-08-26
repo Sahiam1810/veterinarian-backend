@@ -11,6 +11,8 @@ using Application.UserTokens.Abstraction;
 
 using Application.StatusAppointments.Abstraction;
 using Application.TypeServices.Abstraction;
+using Application.Specialties.Abstraction;
+using Application.ClientsPets.Abstraction;
 
 
 namespace Application.Common.Abstractions;
@@ -30,6 +32,10 @@ public interface IUnitOfWork
     IStatusAppointmentRepository StatusAppointmentsRepository { get; }
 
     ITypeServiceRepository TypeServicesRepository { get; }
+
+    ISpecialtyRepository SpecialtiesRepository { get; }
+
+    IClientPetRepository ClientPetsRepository { get; }
 
     IUserAccountsRepository UserAccountsRepository { get; }
 
