@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826152935_AddSpecialtiesAndClientsPets")]
+    partial class AddSpecialtiesAndClientsPets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,64 +24,6 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Domain.AiModels.Entities.AiModel", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("AI_MODEL_ID");
-
-                    b.Property<int>("ContextWindow")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("CONTEXT_WINDOW");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<decimal>("InputTokenPrice")
-                        .HasColumnType("NUMBER(18,6)")
-                        .HasColumnName("INPUT_TOKEN_PRICE");
-
-                    b.Property<int>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValue(1)
-                        .HasColumnName("IS_ACTIVE");
-
-                    b.Property<int>("MaxTokens")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("MAX_TOKENS");
-
-                    b.Property<string>("ModelKey")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(150)")
-                        .HasColumnName("MODEL_KEY");
-
-                    b.Property<string>("NameModel")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(150)")
-                        .HasColumnName("NAME_MODEL");
-
-                    b.Property<decimal>("OutputTokenPrice")
-                        .HasColumnType("NUMBER(18,6)")
-                        .HasColumnName("OUTPUT_TOKEN_PRICE");
-
-                    b.Property<string>("ProviderModelAiId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("PROVIDER_MODEL_AI_ID");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProviderModelAiId");
-
-                    b.ToTable("AI_MODELS", (string)null);
-                });
 
             modelBuilder.Entity("Domain.Clients.Entities.ClientEntity", b =>
                 {
@@ -267,45 +212,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("SpeciesId");
 
                     b.ToTable("PETS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.ProviderModelsAi.Entities.ProviderModelAi", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("PROVIDER_MODEL_AI_ID");
-
-                    b.Property<string>("BusinessName")
-                        .HasColumnType("VARCHAR2(200)")
-                        .HasColumnName("BUSINESS_NAME");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<int>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(10)")
-                        .HasDefaultValue(1)
-                        .HasColumnName("IS_ACTIVE");
-
-                    b.Property<string>("NameProviderAi")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("VARCHAR2(150)")
-                        .HasColumnName("NAME_PROVIDER_AI");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.Property<string>("Website")
-                        .HasColumnType("VARCHAR2(500)")
-                        .HasColumnName("WEBSITE");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PROVIDER_MODELS_AI", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Races.Entities.RaceEntity", b =>
@@ -666,15 +572,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("USERS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.AiModels.Entities.AiModel", b =>
-                {
-                    b.HasOne("Domain.ProviderModelsAi.Entities.ProviderModelAi", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderModelAiId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Clients.Entities.ClientEntity", b =>
