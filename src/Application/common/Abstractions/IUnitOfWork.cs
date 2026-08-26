@@ -16,6 +16,7 @@ using Application.Services.Abstraction;
 
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
+using Application.SenderTypes.Abstraction;
 
 
 
@@ -43,6 +44,8 @@ public interface IUnitOfWork
     ISpecialtyRepository SpecialtiesRepository { get; }
 
     IClientPetRepository ClientPetsRepository { get; }
+
+    ISenderTypeRepository SenderTypesRepository { get; }
 
 
     IUserAccountsRepository UserAccountsRepository { get; }
