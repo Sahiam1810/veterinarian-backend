@@ -12,6 +12,8 @@ using UserEntity = Domain.Users.Entities.Users;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 using Domain.TypeServices.Entities;
+using Domain.Specialties.Entities;
+using Domain.ClientsPets.Entities;
 
 namespace Infrastructure.Persistence;
 
@@ -43,6 +45,10 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<StatusAppointment> StatusAppointments => Set<StatusAppointment>();
 
     public DbSet<TypeService> TypeServices => Set<TypeService>();
+
+    public DbSet<SpecialtyEntity> Specialties => Set<SpecialtyEntity>();
+
+    public DbSet<ClientPetEntity> ClientPets => Set<ClientPetEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
