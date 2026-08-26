@@ -1,18 +1,24 @@
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
 using Application.Diagnostics.UseCases;
+using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
+using Application.UserAccounts.Abstraction;
+using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
+using Infrastructure.Pets.Repositories;
 using Infrastructure.Races.Repositories;
 using Infrastructure.Roles.Repository;
 using Infrastructure.Security;
 using Infrastructure.Species.Repositories;
 using Infrastructure.StatusAppointments.Repositories;
+using Infrastructure.UserAccounts.Repository;
+using Infrastructure.UserCredentials.Repositories;
 using Infrastructure.Users.Repository;
 using Mapster;
 using MapsterMapper;
@@ -35,11 +41,14 @@ public static class DependencyInjection
             options.UseOracle(connectionString));
 
         services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
+        services.AddScoped<IPetRepository, PetRepository>();
         services.AddScoped<IRaceRepository, RaceRepository>();
         services.AddScoped<ISpeciesRepository, SpeciesRepository>();
         services.AddScoped<IRolesRepository, RolesRepository>();
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IStatusAppointmentRepository, StatusAppointmentRepository>();
+        services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
+        services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 

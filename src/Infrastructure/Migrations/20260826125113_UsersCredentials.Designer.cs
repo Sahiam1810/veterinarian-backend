@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826125113_UsersCredentials")]
+    partial class UsersCredentials
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,65 +68,6 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("DIAGNOSTICS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Pets.Entities.PetEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("PET_ID");
-
-                    b.Property<int>("Age")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("AGE");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("NVARCHAR2(1)")
-                        .HasColumnName("GENDER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("NVARCHAR2(50)")
-                        .HasColumnName("NAME");
-
-                    b.Property<string>("Observations")
-                        .HasMaxLength(500)
-                        .HasColumnType("NVARCHAR2(500)")
-                        .HasColumnName("OBSERVATIONS");
-
-                    b.Property<string>("RaceId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("RACE_ID");
-
-                    b.Property<string>("SpeciesId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("SPECIES_ID");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.Property<decimal>("Weight")
-                        .HasColumnType("NUMBER(6,3)")
-                        .HasColumnName("WEIGHT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RaceId");
-
-                    b.HasIndex("SpeciesId");
-
-                    b.ToTable("PETS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Roles.Entities.Roles", b =>
@@ -324,25 +268,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SPECIES", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Pets.Entities.PetEntity", b =>
-                {
-                    b.HasOne("veterinarian_backend.Domain.Races.Entities.RaceEntity", "Race")
-                        .WithMany()
-                        .HasForeignKey("RaceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("veterinarian_backend.Domain.Species.Entities.SpeciesEntity", "Species")
-                        .WithMany()
-                        .HasForeignKey("SpeciesId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Race");
-
-                    b.Navigation("Species");
                 });
 
             modelBuilder.Entity("Domain.UserAccounts.Entities.UserAccounts", b =>
