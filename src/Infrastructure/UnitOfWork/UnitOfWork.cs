@@ -2,6 +2,7 @@ using Application.Common.Abstractions;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
+using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Persistence;
 
@@ -16,13 +17,15 @@ public sealed class UnitOfWork : IUnitOfWork
         IRolesRepository rolesRepository,
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
-        IUsersRepository usersRepository)
+        IUsersRepository usersRepository,
+        IUserAccountsRepository userAccountsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
         SpeciesRepository = speciesRepository;
         RacesRepository = racesRepository;
         UsersRepository = usersRepository;
+        UserAccountsRepository = userAccountsRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -32,6 +35,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IRaceRepository RacesRepository { get; }
 
     public IUsersRepository UsersRepository { get; }
+
+    public IUserAccountsRepository UserAccountsRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
