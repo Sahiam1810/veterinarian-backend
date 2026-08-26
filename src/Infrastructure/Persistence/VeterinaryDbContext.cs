@@ -17,6 +17,7 @@ using Domain.Services.Entities;
 
 using Domain.Specialties.Entities;
 using Domain.ClientsPets.Entities;
+using Domain.SenderTypes.Entities;
 
 
 namespace Infrastructure.Persistence;
@@ -56,6 +57,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<SpecialtyEntity> Specialties => Set<SpecialtyEntity>();
 
     public DbSet<ClientPetEntity> ClientPets => Set<ClientPetEntity>();
+
+    public DbSet<SenderTypeEntity> SenderTypes => Set<SenderTypeEntity>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
