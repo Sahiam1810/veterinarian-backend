@@ -37,6 +37,18 @@ public sealed class UserAccountsRepository : IUserAccountsRepository
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+    public Task<UserAccountEntity?> GetByMailAsync(
+        string mail,
+        CancellationToken cancellationToken = default)
+    {
+        var accountMail = AccountMail.Create(mail);
+
+        return _context.Set<UserAccountEntity>()
+            .FirstOrDefaultAsync(
+                account => account.Mail == accountMail,
+                cancellationToken);
+    }
+
     public Task<bool> ExistsByUsernameAsync(
         string username,
         CancellationToken cancellationToken = default,

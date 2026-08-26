@@ -16,7 +16,10 @@ using Application.Services.Abstraction;
 
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
+
 using Application.Veterinarians.Abstraction;
+
+using Application.SenderTypes.Abstraction;
 
 
 
@@ -45,7 +48,11 @@ public interface IUnitOfWork
 
     IClientPetRepository ClientPetsRepository { get; }
 
+
     IVeterinarianRepository VeterinariansRepository { get; }
+
+    ISenderTypeRepository SenderTypesRepository { get; }
+
 
 
     IUserAccountsRepository UserAccountsRepository { get; }
@@ -56,7 +63,9 @@ public interface IUnitOfWork
 
     IUserTokensRepository UserTokensRepository { get; }
 
-
-
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default);
 }

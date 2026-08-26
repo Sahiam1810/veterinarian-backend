@@ -11,6 +11,10 @@ public interface IRolesRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<RoleEntity?> GetByNameAsync(
+        string name,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByNameAsync(
         string name,
         CancellationToken cancellationToken,

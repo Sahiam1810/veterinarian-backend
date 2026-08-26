@@ -13,7 +13,11 @@ using Application.Services.Abstraction;
 
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
+
 using Application.Veterinarians.Abstraction;
+
+using Application.SenderTypes.Abstraction;
+
 
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
@@ -27,12 +31,16 @@ using Application.UserTokens.Abstraction;
 using Infrastructure.AiModels.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
+using Application.Security.Abstractions;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
 using Infrastructure.Races.Repositories;
 using Infrastructure.Roles.Repository;
 using Infrastructure.Security;
+using Infrastructure.Security.Authentication;
+using Infrastructure.Security.Options;
+using Infrastructure.Security.Tokens;
 using Infrastructure.Species.Repositories;
 using Infrastructure.StatusAppointments.Repositories;
 using Infrastructure.TypeServices.Repositories;
@@ -41,7 +49,11 @@ using Infrastructure.Services.Repositories;
 
 using Infrastructure.Specialties.Repositories;
 using Infrastructure.ClientsPets.Repositories;
+
 using Infrastructure.Veterinarians.Repositories;
+
+using Infrastructure.SenderTypes.Repositories;
+
 
 using Infrastructure.UserAccounts.Repository;
 using Infrastructure.UserCredentials.Repositories;
@@ -52,6 +64,7 @@ using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure;
 
@@ -80,7 +93,11 @@ public static class DependencyInjection
 
         services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
         services.AddScoped<IClientPetRepository, ClientPetRepository>();
+
         services.AddScoped<IVeterinarianRepository, VeterinarianRepository>();
+
+        services.AddScoped<ISenderTypeRepository, SenderTypeRepository>();
+
 
         services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
         services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
@@ -93,6 +110,16 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<JwtTokenIssuer>();
+        services.AddSingleton<RefreshTokenProtector>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+        services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateOnStart();
 
         services.AddScoped<GetAllDiagnosticsUseCase>();
         services.AddScoped<GetDiagnosticByIdUseCase>();
