@@ -19,11 +19,10 @@ public sealed class UnitOfWork : IUnitOfWork
         IRolesRepository rolesRepository,
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
-        IPetRepository petsRepository)
+        IPetRepository petsRepository,
         IUsersRepository usersRepository,
         IUserAccountsRepository userAccountsRepository,
         IUserCredentialsRepository userCredentialsRepository)
-
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -33,7 +32,6 @@ public sealed class UnitOfWork : IUnitOfWork
         UsersRepository = usersRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
-
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -43,7 +41,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUsersRepository UsersRepository { get; }
     public IUserAccountsRepository UserAccountsRepository { get; }
     public IUserCredentialsRepository UserCredentialsRepository { get; }
-
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
