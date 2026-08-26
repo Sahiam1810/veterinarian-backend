@@ -28,7 +28,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IUserAccountsRepository userAccountsRepository,
         IUserCredentialsRepository userCredentialsRepository,
 
-        IClientRepository clientsRepository)
+        IClientRepository clientsRepository,
 
         IUserTokensRepository userTokensRepository)
 
