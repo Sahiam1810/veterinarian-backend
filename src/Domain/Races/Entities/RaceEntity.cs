@@ -1,9 +1,25 @@
-namespace veterinarian_backend.Domain.Races.Entities;
+using Domain.Common;
+using Domain.Races.ValueObjects;
 
-public class RaceEntity
+namespace Domain.Races.Entities;
+
+public sealed class RaceEntity : BaseEntity<Guid>
 {
-    public required Guid Id { get; set; }
-    public required string Name { get; set; }
+    private RaceEntity()
+    {
+    }
+
+    public RaceEntity(string name)
+    {
+        Id = Guid.NewGuid();
+        Name = RaceName.Create(name);
+    }
+
+    public RaceName Name { get; private set; } = null!;
+
+    public void Update(string name)
+    {
+        Name = RaceName.Create(name);
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
-
-

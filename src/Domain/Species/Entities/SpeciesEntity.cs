@@ -1,8 +1,25 @@
-namespace veterinarian_backend.Domain.Species.Entities;
+using Domain.Common;
+using Domain.Species.ValueObjects;
 
-public class SpeciesEntity
+namespace Domain.Species.Entities;
+
+public sealed class SpeciesEntity : BaseEntity<Guid>
 {
-    public required Guid Id { get; set; }
+    private SpeciesEntity()
+    {
+    }
 
-    public required string Name { get; set; }
+    public SpeciesEntity(string name)
+    {
+        Id = Guid.NewGuid();
+        Name = SpeciesName.Create(name);
+    }
+
+    public SpeciesName Name { get; private set; } = null!;
+
+    public void Update(string name)
+    {
+        Name = SpeciesName.Create(name);
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

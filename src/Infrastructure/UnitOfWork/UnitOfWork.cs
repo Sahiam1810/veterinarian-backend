@@ -1,3 +1,4 @@
+using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
@@ -22,7 +23,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IPetRepository petsRepository,
         IUsersRepository usersRepository,
         IUserAccountsRepository userAccountsRepository,
-        IUserCredentialsRepository userCredentialsRepository)
+        IUserCredentialsRepository userCredentialsRepository,
+        IClientRepository clientsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -32,6 +34,7 @@ public sealed class UnitOfWork : IUnitOfWork
         UsersRepository = usersRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
+        ClientsRepository = clientsRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -41,6 +44,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUsersRepository UsersRepository { get; }
     public IUserAccountsRepository UserAccountsRepository { get; }
     public IUserCredentialsRepository UserCredentialsRepository { get; }
+    public IClientRepository ClientsRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);

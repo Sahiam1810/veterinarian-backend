@@ -1,7 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Species.Entities;
 using MediatR;
-using veterinarian_backend.Domain.Species.Entities;
 
 namespace Application.Species.UseCases;
 
@@ -24,11 +24,7 @@ public sealed class CreateSpeciesCommandHandler : IRequestHandler<CreateSpeciesC
             throw new ConflictException("Ya existe una especie con ese nombre.");
         }
 
-        var species = new SpeciesEntity 
-        { 
-            Id = Guid.NewGuid(), 
-            Name = request.Name 
-        };
+        var species = new SpeciesEntity(request.Name);
 
         await _uow.SpeciesRepository.AddAsync(species, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

@@ -1,7 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Races.Entities;
 using MediatR;
-using veterinarian_backend.Domain.Races.Entities;
 
 namespace Application.Races.UseCases;
 

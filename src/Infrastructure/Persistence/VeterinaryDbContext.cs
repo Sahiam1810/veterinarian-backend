@@ -1,5 +1,8 @@
+using Domain.Clients.Entities;
 using Domain.Diagnostics.Entities;
 using Domain.Pets.Entities;
+using Domain.Races.Entities;
+using Domain.Species.Entities;
 using Microsoft.EntityFrameworkCore;
 using RoleEntity = Domain.Roles.Entities.Roles;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
@@ -13,6 +16,10 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 {
     public DbSet<RoleEntity> Roles => Set<RoleEntity>();
 
+    public DbSet<RaceEntity> Races => Set<RaceEntity>();
+
+    public DbSet<SpeciesEntity> Species => Set<SpeciesEntity>();
+
     public DbSet<PetEntity> Pets => Set<PetEntity>();
 
     public DbSet<UserEntity> Users => Set<UserEntity>();
@@ -21,6 +28,7 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<UserCredentialsEntity> UserCredentials => Set<UserCredentialsEntity>();
 
+    public DbSet<ClientEntity> Clients => Set<ClientEntity>();
 
     public DbSet<Diagnostic> Diagnostics => Set<Diagnostic>();
 
