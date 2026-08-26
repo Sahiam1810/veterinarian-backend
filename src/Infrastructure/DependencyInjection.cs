@@ -1,6 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
 using Application.Diagnostics.UseCases;
+using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
@@ -9,6 +10,7 @@ using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
+using Infrastructure.Pets.Repositories;
 using Infrastructure.Races.Repositories;
 using Infrastructure.Roles.Repository;
 using Infrastructure.Security;
@@ -37,6 +39,7 @@ public static class DependencyInjection
             options.UseOracle(connectionString));
 
         services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
+        services.AddScoped<IPetRepository, PetRepository>();
         services.AddScoped<IRaceRepository, RaceRepository>();
         services.AddScoped<ISpeciesRepository, SpeciesRepository>();
         services.AddScoped<IRolesRepository, RolesRepository>();

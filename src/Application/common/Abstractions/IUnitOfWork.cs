@@ -1,3 +1,4 @@
+using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
@@ -15,11 +16,15 @@ public interface IUnitOfWork
 
     IRaceRepository RacesRepository { get; }
 
+
+    IPetRepository PetsRepository { get; }
+
     IUsersRepository UsersRepository { get; }
 
     IUserAccountsRepository UserAccountsRepository { get; }
 
     IUserCredentialsRepository UserCredentialsRepository { get; }
+
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
