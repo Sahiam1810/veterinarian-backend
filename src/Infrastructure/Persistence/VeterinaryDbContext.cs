@@ -1,4 +1,5 @@
 using Domain.Diagnostics.Entities;
+using Domain.StatusAppointments.Entities;
 using Domain.Pets.Entities;
 using Microsoft.EntityFrameworkCore;
 using RoleEntity = Domain.Roles.Entities.Roles;
@@ -23,6 +24,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
 
     public DbSet<Diagnostic> Diagnostics => Set<Diagnostic>();
+
+    public DbSet<StatusAppointment> StatusAppointments => Set<StatusAppointment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

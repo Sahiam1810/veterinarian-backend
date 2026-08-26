@@ -21,10 +21,11 @@ public interface IUnitOfWork
 
     IUsersRepository UsersRepository { get; }
 
+    IStatusAppointmentRepository StatusAppointmentsRepository { get; }
+
     IUserAccountsRepository UserAccountsRepository { get; }
 
     IUserCredentialsRepository UserCredentialsRepository { get; }
-
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
