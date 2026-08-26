@@ -48,7 +48,7 @@ public sealed class UnitOfWork : IUnitOfWork
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
 
-        IVeterinarianRepository veterinariansRepository)
+        IVeterinarianRepository veterinariansRepository,
 
         ISenderTypeRepository senderTypesRepository)
 
