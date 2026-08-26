@@ -15,6 +15,7 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
+using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 using Application.ConversationStatuses.Abstraction;
@@ -52,6 +53,7 @@ using Infrastructure.Specialties.Repositories;
 using Infrastructure.ClientsPets.Repositories;
 
 using Infrastructure.Veterinarians.Repositories;
+using Infrastructure.Priorities.Repositories;
 
 using Infrastructure.SenderTypes.Repositories;
 using Infrastructure.ConversationStatuses.Repositories;
@@ -97,6 +99,8 @@ public static class DependencyInjection
         services.AddScoped<IClientPetRepository, ClientPetRepository>();
 
         services.AddScoped<IVeterinarianRepository, VeterinarianRepository>();
+
+        services.AddScoped<IPriorityRepository, PriorityRepository>();
 
         services.AddScoped<ISenderTypeRepository, SenderTypeRepository>();
         services.AddScoped<IConversationStatusRepository, ConversationStatusRepository>();
