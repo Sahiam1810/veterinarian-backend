@@ -13,9 +13,9 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
+using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
-using Application.Priorities.Abstraction;
 
 
 using Application.UserAccounts.Abstraction;
@@ -51,8 +51,9 @@ public sealed class UnitOfWork : IUnitOfWork
 
         IVeterinarianRepository veterinariansRepository,
 
-        ISenderTypeRepository senderTypesRepository,
-        IPriorityRepository prioritiesRepository)
+        IPriorityRepository prioritiesRepository,
+
+        ISenderTypeRepository senderTypesRepository)
 
 
     {
@@ -76,8 +77,9 @@ public sealed class UnitOfWork : IUnitOfWork
 
         VeterinariansRepository = veterinariansRepository;
 
-        SenderTypesRepository = senderTypesRepository;
         PrioritiesRepository = prioritiesRepository;
+
+        SenderTypesRepository = senderTypesRepository;
 
     }
 
@@ -103,9 +105,9 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public IVeterinarianRepository VeterinariansRepository { get; }
 
-    public ISenderTypeRepository SenderTypesRepository { get; }
-
     public IPriorityRepository PrioritiesRepository { get; }
+
+    public ISenderTypeRepository SenderTypesRepository { get; }
 
 
 

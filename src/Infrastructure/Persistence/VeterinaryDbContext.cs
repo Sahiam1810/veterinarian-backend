@@ -19,9 +19,9 @@ using Domain.Specialties.Entities;
 using Domain.ClientsPets.Entities;
 
 using Domain.Veterinarians.Entities;
+using Domain.Priorities.Entities;
 
 using Domain.SenderTypes.Entities;
-using Domain.Priorities.Entities;
 
 
 
@@ -66,9 +66,9 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<Veterinarian> Veterinarians => Set<Veterinarian>();
 
-    public DbSet<SenderTypeEntity> SenderTypes => Set<SenderTypeEntity>();
-
     public DbSet<PriorityEntity> Priorities => Set<PriorityEntity>();
+
+    public DbSet<SenderTypeEntity> SenderTypes => Set<SenderTypeEntity>();
 
 
 
