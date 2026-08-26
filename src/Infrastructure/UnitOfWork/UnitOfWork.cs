@@ -4,6 +4,7 @@ using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
+using Application.TypeServices.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -23,6 +24,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IRaceRepository racesRepository,
         IUsersRepository usersRepository,
         IStatusAppointmentRepository statusAppointmentsRepository,
+        ITypeServiceRepository typeServicesRepository,
         IPetRepository petsRepository,
         IUserAccountsRepository userAccountsRepository,
         IUserCredentialsRepository userCredentialsRepository,
@@ -35,6 +37,7 @@ public sealed class UnitOfWork : IUnitOfWork
         PetsRepository = petsRepository;
         UsersRepository = usersRepository;
         StatusAppointmentsRepository = statusAppointmentsRepository;
+        TypeServicesRepository = typeServicesRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
         UserTokensRepository = userTokensRepository;
@@ -50,6 +53,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUserTokensRepository UserTokensRepository { get; }
 
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
+    public ITypeServiceRepository TypeServicesRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
