@@ -20,6 +20,7 @@ using Application.ClientsPets.Abstraction;
 using Application.Veterinarians.Abstraction;
 
 using Application.SenderTypes.Abstraction;
+using Application.Priorities.Abstraction;
 
 
 
@@ -52,6 +53,8 @@ public interface IUnitOfWork
     IVeterinarianRepository VeterinariansRepository { get; }
 
     ISenderTypeRepository SenderTypesRepository { get; }
+
+    IPriorityRepository PrioritiesRepository { get; }
 
 
 
