@@ -11,8 +11,12 @@ using Application.Services.Abstraction;
 
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
+
+using Application.Veterinarians.Abstraction;
+
 using Application.SenderTypes.Abstraction;
 using Application.ConversationStatuses.Abstraction;
+
 
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
@@ -44,8 +48,12 @@ public sealed class UnitOfWork : IUnitOfWork
         IUserTokensRepository userTokensRepository,
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
+
+        IVeterinarianRepository veterinariansRepository,
+
         ISenderTypeRepository senderTypesRepository,
         IConversationStatusRepository conversationStatusesRepository)
+
 
     {
         _context = context;
@@ -65,6 +73,9 @@ public sealed class UnitOfWork : IUnitOfWork
         UserTokensRepository = userTokensRepository;
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
+
+        VeterinariansRepository = veterinariansRepository;
+
         SenderTypesRepository = senderTypesRepository;
         ConversationStatusesRepository = conversationStatusesRepository;
     }
@@ -88,6 +99,9 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public ISpecialtyRepository SpecialtiesRepository { get; }
     public IClientPetRepository ClientPetsRepository { get; }
+
+    public IVeterinarianRepository VeterinariansRepository { get; }
+
     public ISenderTypeRepository SenderTypesRepository { get; }
 
     public IConversationStatusRepository ConversationStatusesRepository { get; }
@@ -106,6 +120,3 @@ public sealed class UnitOfWork : IUnitOfWork
         await SaveChangesAsync(cancellationToken);
     }
 }
-
-
-
