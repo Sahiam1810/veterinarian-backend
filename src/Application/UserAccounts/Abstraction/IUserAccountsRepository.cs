@@ -15,6 +15,10 @@ public interface IUserAccountsRepository
         Guid userId,
         CancellationToken cancellationToken);
 
+    Task<UserAccountEntity?> GetByMailAsync(
+        string mail,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByUsernameAsync(
         string username,
         CancellationToken cancellationToken,
