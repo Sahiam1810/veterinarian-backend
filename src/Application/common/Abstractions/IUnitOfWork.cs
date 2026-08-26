@@ -5,6 +5,7 @@ using Application.Species.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+using Application.StatusAppointments.Abstraction;
 
 namespace Application.Common.Abstractions;
 

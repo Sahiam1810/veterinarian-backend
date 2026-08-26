@@ -21,9 +21,8 @@ public sealed class UnitOfWork : IUnitOfWork
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
         IUsersRepository usersRepository,
-        IStatusAppointmentRepository statusAppointmentsRepository)
+        IStatusAppointmentRepository statusAppointmentsRepository,
         IPetRepository petsRepository,
-        IUsersRepository usersRepository,
         IUserAccountsRepository userAccountsRepository,
         IUserCredentialsRepository userCredentialsRepository)
     {
