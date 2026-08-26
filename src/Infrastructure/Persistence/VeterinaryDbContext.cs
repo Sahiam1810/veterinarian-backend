@@ -1,5 +1,6 @@
 using Domain.Clients.Entities;
 using Domain.Diagnostics.Entities;
+using Domain.StatusAppointments.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
@@ -8,6 +9,7 @@ using RoleEntity = Domain.Roles.Entities.Roles;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
+using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Infrastructure.Persistence;
 
@@ -28,9 +30,15 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<UserCredentialsEntity> UserCredentials => Set<UserCredentialsEntity>();
 
+
     public DbSet<ClientEntity> Clients => Set<ClientEntity>();
 
+    public DbSet<UserTokenEntity> UserTokens => Set<UserTokenEntity>();
+
+
     public DbSet<Diagnostic> Diagnostics => Set<Diagnostic>();
+
+    public DbSet<StatusAppointment> StatusAppointments => Set<StatusAppointment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

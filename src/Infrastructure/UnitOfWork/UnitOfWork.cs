@@ -4,9 +4,11 @@ using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
+using Application.StatusAppointments.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+using Application.UserTokens.Abstraction;
 using Infrastructure.Persistence;
 
 namespace Infrastructure.UnitOfWork;
@@ -20,11 +22,16 @@ public sealed class UnitOfWork : IUnitOfWork
         IRolesRepository rolesRepository,
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
-        IPetRepository petsRepository,
         IUsersRepository usersRepository,
+        IStatusAppointmentRepository statusAppointmentsRepository,
+        IPetRepository petsRepository,
         IUserAccountsRepository userAccountsRepository,
         IUserCredentialsRepository userCredentialsRepository,
+
         IClientRepository clientsRepository)
+
+        IUserTokensRepository userTokensRepository)
+
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -32,9 +39,13 @@ public sealed class UnitOfWork : IUnitOfWork
         RacesRepository = racesRepository;
         PetsRepository = petsRepository;
         UsersRepository = usersRepository;
+        StatusAppointmentsRepository = statusAppointmentsRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
+
         ClientsRepository = clientsRepository;
+
+        UserTokensRepository = userTokensRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -44,7 +55,13 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUsersRepository UsersRepository { get; }
     public IUserAccountsRepository UserAccountsRepository { get; }
     public IUserCredentialsRepository UserCredentialsRepository { get; }
+
     public IClientRepository ClientsRepository { get; }
+
+    public IUserTokensRepository UserTokensRepository { get; }
+
+    public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
+
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);

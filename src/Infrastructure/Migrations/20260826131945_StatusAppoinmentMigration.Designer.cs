@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826131945_StatusAppoinmentMigration")]
+    partial class StatusAppoinmentMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -271,51 +274,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("USER_CREDENTIALS", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.UserTokens.Entities.UserTokens", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("TOKEN_ID");
-
-                    b.Property<string>("AccountId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("ACCOUNT_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("EXPIRES_AT");
-
-                    b.Property<string>("TokenType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("TOKEN_TYPE");
-
-                    b.Property<string>("TokenValue")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("VARCHAR2(500)")
-                        .HasColumnName("TOKEN_VALUE");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("TokenValue")
-                        .IsUnique();
-
-                    b.ToTable("USER_TOKENS", (string)null);
-                });
-
             modelBuilder.Entity("Domain.Users.Entities.Users", b =>
                 {
                     b.Property<string>("Id")
@@ -433,15 +391,6 @@ namespace Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Domain.UserCredentials.Entities.UserCredentials", b =>
-                {
-                    b.HasOne("Domain.UserAccounts.Entities.UserAccounts", null)
-                        .WithMany()
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.UserTokens.Entities.UserTokens", b =>
                 {
                     b.HasOne("Domain.UserAccounts.Entities.UserAccounts", null)
                         .WithMany()
