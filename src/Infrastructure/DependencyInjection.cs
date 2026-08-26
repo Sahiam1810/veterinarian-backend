@@ -13,7 +13,11 @@ using Application.Services.Abstraction;
 
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
+
+using Application.Veterinarians.Abstraction;
+
 using Application.SenderTypes.Abstraction;
+
 
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
@@ -45,7 +49,11 @@ using Infrastructure.Services.Repositories;
 
 using Infrastructure.Specialties.Repositories;
 using Infrastructure.ClientsPets.Repositories;
+
+using Infrastructure.Veterinarians.Repositories;
+
 using Infrastructure.SenderTypes.Repositories;
+
 
 using Infrastructure.UserAccounts.Repository;
 using Infrastructure.UserCredentials.Repositories;
@@ -85,7 +93,11 @@ public static class DependencyInjection
 
         services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
         services.AddScoped<IClientPetRepository, ClientPetRepository>();
+
+        services.AddScoped<IVeterinarianRepository, VeterinarianRepository>();
+
         services.AddScoped<ISenderTypeRepository, SenderTypeRepository>();
+
 
         services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
         services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
