@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826122355_UsersAndUsersAccountsMigrations")]
+    partial class UsersAndUsersAccountsMigrations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,42 +146,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("USER_ACCOUNTS", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.UserCredentials.Entities.UserCredentials", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("CREDENTIAL_ID");
-
-                    b.Property<string>("AccountId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("ACCOUNT_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<DateTime>("LastChanged")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("LAST_CHANGED");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(255)")
-                        .HasColumnName("PASSWORD_HASH");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId")
-                        .IsUnique();
-
-                    b.ToTable("USER_CREDENTIALS", (string)null);
-                });
-
             modelBuilder.Entity("Domain.Users.Entities.Users", b =>
                 {
                     b.Property<string>("Id")
@@ -272,15 +239,6 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Users.Entities.Users", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.UserCredentials.Entities.UserCredentials", b =>
-                {
-                    b.HasOne("Domain.UserAccounts.Entities.UserAccounts", null)
-                        .WithMany()
-                        .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
