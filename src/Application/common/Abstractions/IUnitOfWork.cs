@@ -21,6 +21,7 @@ using Application.Veterinarians.Abstraction;
 using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
+using Application.ConversationStatuses.Abstraction;
 
 
 
@@ -55,6 +56,8 @@ public interface IUnitOfWork
     IPriorityRepository PrioritiesRepository { get; }
 
     ISenderTypeRepository SenderTypesRepository { get; }
+
+    IConversationStatusRepository ConversationStatusesRepository { get; }
 
 
 

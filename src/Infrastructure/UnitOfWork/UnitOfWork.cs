@@ -16,6 +16,7 @@ using Application.Veterinarians.Abstraction;
 using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
+using Application.ConversationStatuses.Abstraction;
 
 
 using Application.UserAccounts.Abstraction;
@@ -51,9 +52,14 @@ public sealed class UnitOfWork : IUnitOfWork
 
         IVeterinarianRepository veterinariansRepository,
 
+
+        ISenderTypeRepository senderTypesRepository,
+        IConversationStatusRepository conversationStatusesRepository)
+
         IPriorityRepository prioritiesRepository,
 
         ISenderTypeRepository senderTypesRepository)
+
 
 
     {
@@ -80,7 +86,7 @@ public sealed class UnitOfWork : IUnitOfWork
         PrioritiesRepository = prioritiesRepository;
 
         SenderTypesRepository = senderTypesRepository;
-
+        ConversationStatusesRepository = conversationStatusesRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -109,6 +115,8 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public ISenderTypeRepository SenderTypesRepository { get; }
 
+    public IConversationStatusRepository ConversationStatusesRepository { get; }
+
 
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -123,6 +131,3 @@ public sealed class UnitOfWork : IUnitOfWork
         await SaveChangesAsync(cancellationToken);
     }
 }
-
-
-

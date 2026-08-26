@@ -22,6 +22,7 @@ using Domain.Veterinarians.Entities;
 using Domain.Priorities.Entities;
 
 using Domain.SenderTypes.Entities;
+using Domain.ConversationStatuses.Entities;
 
 
 
@@ -69,6 +70,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<PriorityEntity> Priorities => Set<PriorityEntity>();
 
     public DbSet<SenderTypeEntity> SenderTypes => Set<SenderTypeEntity>();
+
+    public DbSet<ConversationStatusEntity> ConversationStatuses => Set<ConversationStatusEntity>();
 
 
 
