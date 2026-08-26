@@ -9,6 +9,7 @@ using Application.StatusAppointments.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+using Application.UserTokens.Abstraction;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
@@ -20,6 +21,7 @@ using Infrastructure.StatusAppointments.Repositories;
 using Infrastructure.UserAccounts.Repository;
 using Infrastructure.UserCredentials.Repositories;
 using Infrastructure.Users.Repository;
+using Infrastructure.UserTokens.Repositories;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IStatusAppointmentRepository, StatusAppointmentRepository>();
         services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
         services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
+        services.AddScoped<IUserTokensRepository, UserTokensRepository>();
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 

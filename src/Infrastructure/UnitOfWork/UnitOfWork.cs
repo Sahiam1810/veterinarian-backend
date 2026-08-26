@@ -7,6 +7,7 @@ using Application.StatusAppointments.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+using Application.UserTokens.Abstraction;
 using Infrastructure.Persistence;
 
 namespace Infrastructure.UnitOfWork;
@@ -24,7 +25,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IStatusAppointmentRepository statusAppointmentsRepository,
         IPetRepository petsRepository,
         IUserAccountsRepository userAccountsRepository,
-        IUserCredentialsRepository userCredentialsRepository)
+        IUserCredentialsRepository userCredentialsRepository,
+        IUserTokensRepository userTokensRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -35,6 +37,7 @@ public sealed class UnitOfWork : IUnitOfWork
         StatusAppointmentsRepository = statusAppointmentsRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
+        UserTokensRepository = userTokensRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -44,6 +47,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUsersRepository UsersRepository { get; }
     public IUserAccountsRepository UserAccountsRepository { get; }
     public IUserCredentialsRepository UserCredentialsRepository { get; }
+    public IUserTokensRepository UserTokensRepository { get; }
 
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
 
