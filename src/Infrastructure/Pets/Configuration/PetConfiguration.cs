@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Domain.Pets.Entities;
 using Domain.Pets.ValueObjects;
-using veterinarian_backend.Domain.Races.Entities;
-using veterinarian_backend.Domain.Species.Entities;
+using Domain.Races.Entities;
+using Domain.Species.Entities;
 
 namespace Infrastructure.Pets.Configuration;
 

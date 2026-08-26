@@ -1,6 +1,7 @@
+using Domain.Races.Entities;
+using Domain.Races.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using veterinarian_backend.Domain.Races.Entities;
 
 namespace Infrastructure.Races.Configuration;
 
@@ -22,7 +23,18 @@ public sealed class RacesConfiguration : IEntityTypeConfiguration<RaceEntity>
 
         builder.Property(race => race.Name)
             .HasColumnName("NAME")
-            .HasMaxLength(20) 
+            .HasMaxLength(RaceName.MaxLength)
+            .HasConversion(
+                name => name.Value,
+                str => RaceName.Create(str))
             .IsRequired();
+
+        builder.Property(race => race.CreatedAt)
+            .HasColumnName("CREATED_AT")
+            .IsRequired();
+
+        builder.Property(race => race.UpdatedAt)
+            .HasColumnName("UPDATED_AT")
+            .IsRequired(false);
     }
 }

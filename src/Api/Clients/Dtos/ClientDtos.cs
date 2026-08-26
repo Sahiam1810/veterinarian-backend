@@ -1,0 +1,41 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace Api.Clients.Dtos;
+
+public record CreateClientDto(
+    [Required(ErrorMessage = "El ID de usuario es obligatorio.")]
+    Guid UserId,
+
+    [Required(ErrorMessage = "El número de identificación es obligatorio.")]
+    [MaxLength(20, ErrorMessage = "El número de identificación no puede superar los 20 caracteres.")]
+    string IdentificationNumber,
+
+    [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
+    string? Address,
+
+    DateTime? RegistrationDate = null
+);
+
+public record UpdateClientDto(
+    [Required(ErrorMessage = "El ID de usuario es obligatorio.")]
+    Guid UserId,
+
+    [Required(ErrorMessage = "El número de identificación es obligatorio.")]
+    [MaxLength(20, ErrorMessage = "El número de identificación no puede superar los 20 caracteres.")]
+    string IdentificationNumber,
+
+    [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
+    string? Address,
+
+    DateTime? RegistrationDate = null
+);
+
+public record ClientResponseDto(
+    Guid Id,
+    Guid UserId,
+    string IdentificationNumber,
+    string? Address,
+    DateTime RegistrationDate,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt
+);

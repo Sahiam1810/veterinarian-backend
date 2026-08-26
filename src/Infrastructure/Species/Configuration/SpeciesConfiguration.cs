@@ -1,6 +1,7 @@
+using Domain.Species.Entities;
+using Domain.Species.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using veterinarian_backend.Domain.Species.Entities;
 
 namespace Infrastructure.Species.Configuration;
 
@@ -22,7 +23,18 @@ public sealed class SpeciesConfiguration : IEntityTypeConfiguration<SpeciesEntit
 
         builder.Property(species => species.Name)
             .HasColumnName("NAME")
-            .HasMaxLength(20)
+            .HasMaxLength(SpeciesName.MaxLength)
+            .HasConversion(
+                name => name.Value,
+                str => SpeciesName.Create(str))
             .IsRequired();
+
+        builder.Property(species => species.CreatedAt)
+            .HasColumnName("CREATED_AT")
+            .IsRequired();
+
+        builder.Property(species => species.UpdatedAt)
+            .HasColumnName("UPDATED_AT")
+            .IsRequired(false);
     }
 }

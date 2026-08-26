@@ -1,7 +1,7 @@
 using Domain.Common;
 using Domain.Pets.ValueObjects;
-using veterinarian_backend.Domain.Species.Entities;
-using veterinarian_backend.Domain.Races.Entities;
+using Domain.Species.Entities;
+using Domain.Races.Entities;
 
 namespace Domain.Pets.Entities;
 

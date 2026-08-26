@@ -1,7 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Species.Entities;
 using MediatR;
-using veterinarian_backend.Domain.Species.Entities;
 
 namespace Application.Species.UseCases;
 
@@ -31,7 +31,7 @@ public sealed class UpdateSpeciesCommandHandler : IRequestHandler<UpdateSpeciesC
             throw new ConflictException("Ya existe otra especie con ese nombre.");
         }
 
-        species.Name = request.Name;
+        species.Update(request.Name);
         
         await _uow.SpeciesRepository.UpdateAsync(species, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

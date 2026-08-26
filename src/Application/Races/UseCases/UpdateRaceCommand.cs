@@ -1,7 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Races.Entities;
 using MediatR;
-using veterinarian_backend.Domain.Races.Entities;
 
 namespace Application.Races.UseCases;
 
@@ -31,7 +31,7 @@ public sealed class UpdateRaceCommandHandler : IRequestHandler<UpdateRaceCommand
             throw new ConflictException("Ya existe otra raza con ese nombre.");
         }
 
-        race.Name = request.Name;
+        race.Update(request.Name);
         
         await _uow.RacesRepository.UpdateAsync(race, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

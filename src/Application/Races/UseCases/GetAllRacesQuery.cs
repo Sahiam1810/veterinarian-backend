@@ -1,6 +1,6 @@
 using Application.Common.Abstractions;
+using Domain.Races.Entities;
 using MediatR;
-using veterinarian_backend.Domain.Races.Entities;
 
 namespace Application.Races.UseCases;
 

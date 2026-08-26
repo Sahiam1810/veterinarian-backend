@@ -1,7 +1,7 @@
 using Application.Races.Abstraction;
+using Domain.Races.Entities;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using veterinarian_backend.Domain.Races.Entities;
 
 namespace Infrastructure.Races.Repositories;
 
@@ -27,7 +27,7 @@ public sealed class RaceRepository : IRaceRepository
 
     public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken, Guid? excludedId = null)
     {
-        var query = _context.Set<RaceEntity>().Where(r => r.Name == name);
+        var query = _context.Set<RaceEntity>().Where(r => r.Name.Value == name);
         if (excludedId.HasValue)
         {
             query = query.Where(r => r.Id != excludedId.Value);

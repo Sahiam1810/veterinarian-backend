@@ -1,11 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
-using Application.Races.Abstraction;
 using Api.Races.Dtos;
-using veterinarian_backend.Domain.Races.Entities;
+using Api.Races.Mappings;
+using Application.Races.Abstraction;
+using Domain.Races.Entities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
+namespace Api.Races.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] // La ruta será: /api/races
+[Route("api/[controller]")]
 public class RacesController : ControllerBase
 {
     private readonly IRaceRepository _repository;
@@ -15,40 +18,54 @@ public class RacesController : ControllerBase
         _repository = repository;
     }
 
-    // 1. OBTENER POR ID: GET /api/races/{id}
+    // 1. OBTENER TODAS: GET /api/races
+    [HttpGet]
+    [EndpointSummary("Obtiene todas las razas")]
+    [EndpointDescription("Retorna una lista con todas las razas registradas en el sistema.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<RaceResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<RaceResponseDto>>> GetAll(CancellationToken ct)
+    {
+        var races = await _repository.GetAllAsync(ct);
+        return Ok(races.Select(r => r.ToDto()).ToList());
+    }
+
+    // 2. OBTENER POR ID: GET /api/races/{id}
     [HttpGet("{id:guid}")]
+    [EndpointSummary("Obtiene una raza por su ID")]
+    [EndpointDescription("Retorna los datos de una raza específica.")]
+    [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RaceResponseDto>> GetById(Guid id, CancellationToken ct)
     {
         var race = await _repository.GetByIdAsync(id, ct);
         
         if (race is null)
-            return NotFound(new { message = "Raza no encontrada." }); // 404
+            return NotFound(new { message = "Raza no encontrada." });
 
-        // Mapeas la entidad al DTO de salida
-        var response = new RaceResponseDto(race.Id, race.Name);
-        return Ok(response); // 200 OK
+        return Ok(race.ToDto());
     }
 
-    // 2. CREAR RAZA: POST /api/races
+    // 3. CREAR RAZA: POST /api/races
     [HttpPost]
+    [EndpointSummary("Crea una nueva raza")]
+    [EndpointDescription("Registra una nueva raza en el sistema.")]
+    [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RaceResponseDto>> Create([FromBody] CreateRaceDto dto, CancellationToken ct)
     {
-        // Conviertes el DTO de entrada a la Entidad de Dominio
-        var newRace = new RaceEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = dto.Name
-        };
+        var newRace = new RaceEntity(dto.Name);
 
         await _repository.AddAsync(newRace, ct);
 
-        var response = new RaceResponseDto(newRace.Id, newRace.Name);
-        
-        return CreatedAtAction(nameof(GetById), new { id = newRace.Id }, response);
+        return CreatedAtAction(nameof(GetById), new { id = newRace.Id }, newRace.ToDto());
     }
 
-    // 3. ACTUALIZAR RAZA: PUT /api/races/{id}
+    // 4. ACTUALIZAR RAZA: PUT /api/races/{id}
     [HttpPut("{id:guid}")]
+    [EndpointSummary("Actualiza una raza existente")]
+    [EndpointDescription("Modifica los datos de una raza existente mediante su ID.")]
+    [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RaceResponseDto>> Update(Guid id, [FromBody] UpdateRaceDto dto, CancellationToken ct)
     {
         var race = await _repository.GetByIdAsync(id, ct);
@@ -56,14 +73,18 @@ public class RacesController : ControllerBase
         if (race is null)
             return NotFound(new { message = "Raza no encontrada." });
 
-        race.Name = dto.Name;
+        race.Update(dto.Name);
         await _repository.UpdateAsync(race, ct);
 
-        return Ok(new RaceResponseDto(race.Id, race.Name));
+        return Ok(race.ToDto());
     }
 
-    // 4. ELIMINAR RAZA: DELETE /api/races/{id}
+    // 5. ELIMINAR RAZA: DELETE /api/races/{id}
     [HttpDelete("{id:guid}")]
+    [EndpointSummary("Elimina una raza")]
+    [EndpointDescription("Elimina permanentemente una raza del sistema por su ID.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var race = await _repository.GetByIdAsync(id, ct);

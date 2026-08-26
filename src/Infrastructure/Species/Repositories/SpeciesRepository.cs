@@ -1,7 +1,7 @@
 using Application.Species.Abstraction;
+using Domain.Species.Entities;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using veterinarian_backend.Domain.Species.Entities;
 
 namespace Infrastructure.Species.Repositories;
 
@@ -27,7 +27,7 @@ public sealed class SpeciesRepository : ISpeciesRepository
 
     public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken, Guid? excludedId = null)
     {
-        var query = _context.Set<SpeciesEntity>().Where(s => s.Name == name);
+        var query = _context.Set<SpeciesEntity>().Where(s => s.Name.Value == name);
         if (excludedId.HasValue)
         {
             query = query.Where(s => s.Id != excludedId.Value);

@@ -1,3 +1,4 @@
+using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
 using Application.Diagnostics.UseCases;
@@ -9,7 +10,11 @@ using Application.StatusAppointments.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+
+using Infrastructure.Clients.Repositories;
+
 using Application.UserTokens.Abstraction;
+
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
@@ -51,7 +56,11 @@ public static class DependencyInjection
         services.AddScoped<IStatusAppointmentRepository, StatusAppointmentRepository>();
         services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
         services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
+
+        services.AddScoped<IClientRepository, ClientRepository>();
+
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
+
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 

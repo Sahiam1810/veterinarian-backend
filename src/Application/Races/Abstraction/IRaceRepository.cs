@@ -1,4 +1,4 @@
-using veterinarian_backend.Domain.Races.Entities;
+using Domain.Races.Entities;
 
 namespace Application.Races.Abstraction;
 
