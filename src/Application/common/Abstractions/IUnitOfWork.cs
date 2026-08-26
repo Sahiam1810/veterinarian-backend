@@ -5,7 +5,11 @@ using Application.Species.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+
 using Application.UserTokens.Abstraction;
+
+using Application.StatusAppointments.Abstraction;
+
 
 namespace Application.Common.Abstractions;
 
@@ -22,11 +26,16 @@ public interface IUnitOfWork
 
     IUsersRepository UsersRepository { get; }
 
+    IStatusAppointmentRepository StatusAppointmentsRepository { get; }
+
     IUserAccountsRepository UserAccountsRepository { get; }
 
     IUserCredentialsRepository UserCredentialsRepository { get; }
 
+
     IUserTokensRepository UserTokensRepository { get; }
+
+
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
