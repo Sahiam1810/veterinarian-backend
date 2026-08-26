@@ -6,6 +6,7 @@ using Application.Species.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+using Application.UserTokens.Abstraction;
 using Infrastructure.Persistence;
 
 namespace Infrastructure.UnitOfWork;
@@ -22,7 +23,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IPetRepository petsRepository,
         IUsersRepository usersRepository,
         IUserAccountsRepository userAccountsRepository,
-        IUserCredentialsRepository userCredentialsRepository)
+        IUserCredentialsRepository userCredentialsRepository,
+        IUserTokensRepository userTokensRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -32,6 +34,7 @@ public sealed class UnitOfWork : IUnitOfWork
         UsersRepository = usersRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
+        UserTokensRepository = userTokensRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -41,6 +44,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUsersRepository UsersRepository { get; }
     public IUserAccountsRepository UserAccountsRepository { get; }
     public IUserCredentialsRepository UserCredentialsRepository { get; }
+    public IUserTokensRepository UserTokensRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);

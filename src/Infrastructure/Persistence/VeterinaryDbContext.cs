@@ -5,6 +5,7 @@ using RoleEntity = Domain.Roles.Entities.Roles;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
+using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Infrastructure.Persistence;
 
@@ -21,6 +22,7 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<UserCredentialsEntity> UserCredentials => Set<UserCredentialsEntity>();
 
+    public DbSet<UserTokenEntity> UserTokens => Set<UserTokenEntity>();
 
     public DbSet<Diagnostic> Diagnostics => Set<Diagnostic>();
 

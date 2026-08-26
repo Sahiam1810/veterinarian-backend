@@ -5,6 +5,7 @@ using Application.Species.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
+using Application.UserTokens.Abstraction;
 
 namespace Application.Common.Abstractions;
 
@@ -25,6 +26,7 @@ public interface IUnitOfWork
 
     IUserCredentialsRepository UserCredentialsRepository { get; }
 
+    IUserTokensRepository UserTokensRepository { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
