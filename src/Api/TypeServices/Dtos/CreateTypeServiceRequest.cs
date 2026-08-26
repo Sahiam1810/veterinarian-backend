@@ -1,3 +1,5 @@
 namespace Api.TypeServices.Dtos;
 
-public sealed record CreateTypeServiceRequest;
+public sealed record CreateTypeServiceRequest(
+    string Name,
+    string? Description);

@@ -7,6 +7,7 @@ using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
+using Application.TypeServices.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -23,6 +24,7 @@ using Infrastructure.Roles.Repository;
 using Infrastructure.Security;
 using Infrastructure.Species.Repositories;
 using Infrastructure.StatusAppointments.Repositories;
+using Infrastructure.TypeServices.Repositories;
 using Infrastructure.UserAccounts.Repository;
 using Infrastructure.UserCredentials.Repositories;
 using Infrastructure.Users.Repository;
@@ -54,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IRolesRepository, RolesRepository>();
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IStatusAppointmentRepository, StatusAppointmentRepository>();
+        services.AddScoped<ITypeServiceRepository, TypeServiceRepository>();
         services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
         services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
 
