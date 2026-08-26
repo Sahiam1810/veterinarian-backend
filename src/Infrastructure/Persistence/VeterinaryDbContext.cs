@@ -18,6 +18,7 @@ using Domain.Services.Entities;
 using Domain.Specialties.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.SenderTypes.Entities;
+using Domain.ConversationStatuses.Entities;
 
 
 namespace Infrastructure.Persistence;
@@ -59,6 +60,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<ClientPetEntity> ClientPets => Set<ClientPetEntity>();
 
     public DbSet<SenderTypeEntity> SenderTypes => Set<SenderTypeEntity>();
+
+    public DbSet<ConversationStatusEntity> ConversationStatuses => Set<ConversationStatusEntity>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
