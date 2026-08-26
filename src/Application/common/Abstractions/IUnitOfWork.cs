@@ -17,6 +17,7 @@ using Application.Services.Abstraction;
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 using Application.SenderTypes.Abstraction;
+using Application.AiRunStatuses.Abstraction;
 
 
 
@@ -46,6 +47,8 @@ public interface IUnitOfWork
     IClientPetRepository ClientPetsRepository { get; }
 
     ISenderTypeRepository SenderTypesRepository { get; }
+
+    IAiRunStatusRepository AiRunStatusesRepository { get; }
 
 
     IUserAccountsRepository UserAccountsRepository { get; }
