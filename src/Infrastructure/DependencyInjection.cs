@@ -16,7 +16,11 @@ using Application.Users.Abstraction;
 
 using Infrastructure.Clients.Repositories;
 
+using Application.AiModels.Abstraction;
+using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
+using Infrastructure.AiModels.Repository;
+using Infrastructure.ProviderModelsAi.Repository;
 
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
@@ -69,6 +73,8 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
 
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
+        services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
+        services.AddScoped<IAiModelRepository, AiModelRepository>();
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
