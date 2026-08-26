@@ -54,11 +54,9 @@ public sealed class UnitOfWork : IUnitOfWork
 
 
         ISenderTypeRepository senderTypesRepository,
-        IConversationStatusRepository conversationStatusesRepository)
+        IConversationStatusRepository conversationStatusesRepository,
 
-        IPriorityRepository prioritiesRepository,
-
-        ISenderTypeRepository senderTypesRepository)
+        IPriorityRepository prioritiesRepository)
 
 
 
