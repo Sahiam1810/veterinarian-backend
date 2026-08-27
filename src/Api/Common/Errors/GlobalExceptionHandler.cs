@@ -63,6 +63,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
             BadRequestException badRequest => (StatusCodes.Status400BadRequest, badRequest.Message),
             ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message),
+            NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message),
             ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message),
             DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation"),
