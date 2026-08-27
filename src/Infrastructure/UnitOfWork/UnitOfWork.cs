@@ -20,6 +20,7 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+using Application.MessageTypes.Abstraction;
 
 
 
@@ -61,6 +62,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IVeterinarianRepository veterinariansRepository,
 
         IConversationStatusRepository conversationStatusesRepository,
+        IMessageTypeRepository messageTypesRepository,
 
         IPriorityRepository prioritiesRepository)
 
@@ -93,6 +95,7 @@ public sealed class UnitOfWork : IUnitOfWork
         AiRunStatusesRepository = aiRunStatusesRepository;
 
         ConversationStatusesRepository = conversationStatusesRepository;
+        MessageTypesRepository = messageTypesRepository;
 
     }
 
@@ -124,6 +127,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAiRunStatusRepository AiRunStatusesRepository { get; }
 
     public IConversationStatusRepository ConversationStatusesRepository { get; }
+
+    public IMessageTypeRepository MessageTypesRepository { get; }
 
 
 

@@ -22,6 +22,7 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+using Application.MessageTypes.Abstraction;
 
 
 
@@ -64,6 +65,7 @@ using Infrastructure.SenderTypes.Repositories;
 using Infrastructure.AiRunStatuses.Repositories;
 
 using Infrastructure.ConversationStatuses.Repositories;
+using Infrastructure.MessageTypes.Repositories;
 
 
 
@@ -115,6 +117,7 @@ public static class DependencyInjection
         services.AddScoped<IAiRunStatusRepository, AiRunStatusRepository>();
 
         services.AddScoped<IConversationStatusRepository, ConversationStatusRepository>();
+        services.AddScoped<IMessageTypeRepository, MessageTypeRepository>();
 
         services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
         services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
