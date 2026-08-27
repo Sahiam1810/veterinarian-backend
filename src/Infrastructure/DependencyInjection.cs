@@ -32,10 +32,14 @@ using Application.Users.Abstraction;
 
 using Infrastructure.Clients.Repositories;
 
+using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
+using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
+using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
+using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
@@ -127,6 +131,8 @@ public static class DependencyInjection
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
         services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
         services.AddScoped<IAiModelRepository, AiModelRepository>();
+        services.AddScoped<IChatUserProfileRepository, ChatUserProfileRepository>();
+        services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
