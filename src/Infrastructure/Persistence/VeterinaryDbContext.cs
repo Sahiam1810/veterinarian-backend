@@ -29,8 +29,7 @@ using Domain.AiRunStatuses.Entities;
 using Domain.ConversationStatuses.Entities;
 using Domain.EscalationStatuses.Entities;
 using Domain.Availabilities.Entities;
-
-
+using Domain.Appointments.Entities;
 
 
 namespace Infrastructure.Persistence;
@@ -86,6 +85,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<EscalationStatusEntity> EscalationStatuses => Set<EscalationStatusEntity>();
 
     public DbSet<Availability> Availabilities => Set<Availability>();
+
+    public DbSet<Appointment> Appointments => Set<Appointment>();
 
 
 

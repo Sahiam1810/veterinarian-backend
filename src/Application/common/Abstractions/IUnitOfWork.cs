@@ -1,5 +1,5 @@
-using Application.AccountStatements.Abstraction;
 using Application.Availabilities.Abstraction;
+using Application.Appointments.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
@@ -23,6 +23,8 @@ using Application.Veterinarians.Abstraction;
 using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
+
+using Application.AccountStatements.Abstraction;
 
 using Application.AiRunStatuses.Abstraction;
 
@@ -70,6 +72,8 @@ public interface IUnitOfWork
     IConversationStatusRepository ConversationStatusesRepository { get; }
 
     IEscalationStatusRepository EscalationStatusesRepository { get; }
+
+    IAppointmentRepository AppointmentsRepository { get; }
 
 
 
