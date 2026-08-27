@@ -1,7 +1,9 @@
 using Api.AccountStatements.Dtos;
 using Api.AccountStatements.Mappings;
+using Api.Common.Security;
 using Application.AccountStatements.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +14,7 @@ namespace Api.AccountStatements.Controllers;
 public sealed class AccountStatementsController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
     [EndpointSummary("Registra un nuevo estado de cuenta")]
     [EndpointDescription("Genera un estado de cuenta asociado a una cuenta de usuario, con su fecha de emisión y estado inicial.")]
     [ProducesResponseType(typeof(CreateAccountStatementResponse), StatusCodes.Status201Created)]
@@ -31,6 +34,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene un estado de cuenta por su ID")]
     [EndpointDescription("Retorna la información de un estado de cuenta específico por su identificador GUID.")]
     [ProducesResponseType(typeof(AccountStatementResponse), StatusCodes.Status200OK)]
@@ -49,6 +53,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-account/{accountId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene los estados de cuenta de una cuenta")]
     [EndpointDescription("Retorna todos los estados de cuenta asociados a una cuenta de usuario, ordenados por fecha de emisión descendente.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AccountStatementResponse>), StatusCodes.Status200OK)]
@@ -64,6 +69,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/status")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
     [EndpointSummary("Actualiza el estado de un estado de cuenta")]
     [EndpointDescription("Cambia el estado (por ejemplo, de pendiente a pagado) de un estado de cuenta existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -84,6 +90,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
     [EndpointSummary("Elimina un estado de cuenta")]
     [EndpointDescription("Elimina de forma permanente un estado de cuenta existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

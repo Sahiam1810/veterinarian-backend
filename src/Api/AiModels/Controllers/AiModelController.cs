@@ -1,14 +1,17 @@
 using Api.AiModels.Dtos;
 using Api.AiModels.Mappings;
+using Api.Common.Security;
 using Application.AiModels.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.AiModels.Controllers;
 
 [ApiController]
 [Route("api/ai/models")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class AiModelController(ISender sender) : ControllerBase
 {
     [HttpPost]

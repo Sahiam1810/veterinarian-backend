@@ -1,14 +1,17 @@
 using Api.AgentHumans.Dtos;
 using Api.AgentHumans.Mappings;
+using Api.Common.Security;
 using Application.AgentHumans.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.AgentHumans.Controllers;
 
 [ApiController]
 [Route("api/chat/agent-humans")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class AgentHumanController(ISender sender) : ControllerBase
 {
     [HttpPost]

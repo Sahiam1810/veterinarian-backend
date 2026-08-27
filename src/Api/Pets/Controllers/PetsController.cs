@@ -1,7 +1,10 @@
+using System.Security.Claims;
+using Api.Common.Security;
 using Api.Pets.Dtos;
 using Api.Pets.Mappings;
 using Application.Pets.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,8 +21,29 @@ public class PetsController : ControllerBase
         _mediator = mediator;
     }
 
+    // GET /api/pets/mine
+    [HttpGet("mine")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [EndpointSummary("Obtiene las mascotas del cliente autenticado")]
+    [EndpointDescription("Retorna las mascotas asociadas al cliente correspondiente al usuario autenticado actual (portal de dueño).")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<PetResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<PetResponseDto>>> GetMine(CancellationToken ct)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var pets = await _mediator.Send(new GetMyPetsQuery(userAccountId), ct);
+        return Ok(pets.Select(p => p.ToDto()).ToList());
+    }
+
     // GET /api/pets
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene todas las mascotas")]
     [EndpointDescription("Retorna una lista de todas las mascotas registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<PetResponseDto>), StatusCodes.Status200OK)]
@@ -31,6 +55,7 @@ public class PetsController : ControllerBase
 
     // GET /api/pets/{id}
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene una mascota por su ID")]
     [EndpointDescription("Retorna los detalles de una mascota específica buscando por su identificador único.")]
     [ProducesResponseType(typeof(PetResponseDto), StatusCodes.Status200OK)]
@@ -43,6 +68,7 @@ public class PetsController : ControllerBase
 
     // POST /api/pets
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
     [EndpointSummary("Registra una nueva mascota")]
     [EndpointDescription("Crea un nuevo registro de mascota asociándolo a una especie y raza existentes.")]
     [ProducesResponseType(typeof(PetResponseDto), StatusCodes.Status201Created)]
@@ -65,6 +91,7 @@ public class PetsController : ControllerBase
 
     // PUT /api/pets/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
     [EndpointSummary("Actualiza los datos de una mascota")]
     [EndpointDescription("Modifica los datos de una mascota existente identificada por su ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -87,6 +114,7 @@ public class PetsController : ControllerBase
 
     // DELETE /api/pets/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Elimina una mascota")]
     [EndpointDescription("Elimina permanentemente el registro de una mascota del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

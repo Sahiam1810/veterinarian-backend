@@ -1,13 +1,16 @@
+using Api.Common.Security;
 using Api.EscalationStatuses.Dtos;
 using Api.EscalationStatuses.Mappings;
 using Application.EscalationStatuses.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.EscalationStatuses.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class EscalationStatusesController(ISender sender) : ControllerBase
 {
     [HttpGet]

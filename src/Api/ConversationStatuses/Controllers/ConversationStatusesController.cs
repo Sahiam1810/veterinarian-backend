@@ -1,13 +1,16 @@
+using Api.Common.Security;
 using Api.ConversationStatuses.Dtos;
 using Api.ConversationStatuses.Mappings;
 using Application.ConversationStatuses.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.ConversationStatuses.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ConversationStatusesController(ISender sender) : ControllerBase
 {
     [HttpGet]

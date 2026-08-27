@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.UserCredentials.Dtos;
 using Api.UserCredentials.Mappings;
 using Application.UserCredentials.UseCase;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +11,7 @@ namespace Api.UserCredentials.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class UserCredentialsController(ISender sender) : ControllerBase
 {
     [HttpPost]

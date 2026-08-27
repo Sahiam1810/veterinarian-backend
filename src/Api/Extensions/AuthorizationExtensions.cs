@@ -40,6 +40,26 @@ public static class AuthorizationExtensions
                     "Veterinario",
                     "Recepcionista",
                     "Auxiliar"));
+
+            // Políticas combinadas: acciones que corresponden a más de un rol.
+            options.AddPolicy(
+                AuthorizationPolicies.AdminOrReceptionist,
+                policy => policy.RequireRole("Administrador", "Recepcionista"));
+            options.AddPolicy(
+                AuthorizationPolicies.AdminOrVeterinarian,
+                policy => policy.RequireRole("Administrador", "Veterinario"));
+            options.AddPolicy(
+                AuthorizationPolicies.ClinicalStaffOnly,
+                policy => policy.RequireRole(
+                    "Administrador",
+                    "Veterinario",
+                    "Recepcionista"));
+            options.AddPolicy(
+                AuthorizationPolicies.FrontDeskStaffOnly,
+                policy => policy.RequireRole(
+                    "Administrador",
+                    "Recepcionista",
+                    "Auxiliar"));
         });
 
         return services;

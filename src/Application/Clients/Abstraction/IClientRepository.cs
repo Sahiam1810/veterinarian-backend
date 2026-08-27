@@ -15,6 +15,10 @@ public interface IClientRepository
         string identificationNumber,
         CancellationToken cancellationToken);
 
+    Task<ClientEntity?> GetByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByIdentificationNumberAsync(
         string identificationNumber,
         CancellationToken cancellationToken,

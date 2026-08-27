@@ -1,6 +1,8 @@
+using Api.Common.Security;
 using Api.Diagnostics.Dtos;
 using Api.Diagnostics.Mappings;
 using Application.Diagnostics.UseCases;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Diagnostics.Controllers;
@@ -30,6 +32,7 @@ public class DiagnosticsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DiagnosticDto>))]
     public async Task<IActionResult> GetAll([FromQuery] bool onlyActive = true, CancellationToken cancellationToken = default)
     {
@@ -38,6 +41,7 @@ public class DiagnosticsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DiagnosticDto))]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken = default)
@@ -50,6 +54,7 @@ public class DiagnosticsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(DiagnosticDto))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateDiagnosticDto dto, CancellationToken cancellationToken = default)
@@ -67,6 +72,7 @@ public class DiagnosticsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -87,6 +93,7 @@ public class DiagnosticsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken = default)

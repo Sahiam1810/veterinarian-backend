@@ -35,6 +35,13 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.IdentificationNumber.Value == identificationNumber, cancellationToken);
     }
 
+    public async Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return await _context.Set<ClientEntity>()
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
+    }
+
     public async Task<bool> ExistsByIdentificationNumberAsync(string identificationNumber, CancellationToken cancellationToken, Guid? excludedId = null)
     {
         var query = _context.Set<ClientEntity>().Where(c => c.IdentificationNumber.Value == identificationNumber);
