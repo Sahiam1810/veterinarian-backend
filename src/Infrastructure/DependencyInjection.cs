@@ -35,11 +35,13 @@ using Application.EscalationStatuses.Abstraction;
 
 
 
+using Application.Notifications.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
 using Infrastructure.AccountStatements.Repositories;
+using Infrastructure.Notifications.Repositories;
 using Infrastructure.Availabilities.Repositories;
 using Infrastructure.Appointments.Repositories;
 using Infrastructure.AppointmentStatusHistories.Repositories;
@@ -156,6 +158,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
         services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
         services.AddScoped<IAiModelRepository, AiModelRepository>();
         services.AddScoped<IChatUserProfileRepository, ChatUserProfileRepository>();
