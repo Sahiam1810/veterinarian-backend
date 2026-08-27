@@ -162,6 +162,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
         services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<JwtRsaKeyMaterial>();
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();

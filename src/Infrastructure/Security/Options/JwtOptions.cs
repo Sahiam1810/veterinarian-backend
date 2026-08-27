@@ -7,7 +7,11 @@ public sealed class JwtOptions
 
     public string Audience { get; init; } = string.Empty;
 
-    public string SigningKey { get; init; } = string.Empty;
+    public string PrivateKeyPemBase64 { get; init; } = string.Empty;
+
+    public string PublicKeyPemBase64 { get; init; } = string.Empty;
+
+    public string KeyId { get; init; } = string.Empty;
 
     public int AccessTokenMinutes { get; init; }
 

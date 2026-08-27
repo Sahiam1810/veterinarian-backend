@@ -4,12 +4,12 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 
 namespace Infrastructure.Security.Tokens;
 
 public sealed class JwtTokenIssuer(
     IOptions<JwtOptions> options,
+    JwtRsaKeyMaterial keyMaterial,
     TimeProvider timeProvider)
 {
     private readonly JwtOptions jwtOptions = options.Value;
@@ -57,10 +57,6 @@ public sealed class JwtTokenIssuer(
                 ClaimValueTypes.Integer64)
         };
 
-        var signingKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(
-                jwtOptions.SigningKey));
-
         var token = new JwtSecurityToken(
             issuer: jwtOptions.Issuer,
             audience: jwtOptions.Audience,
@@ -69,8 +65,8 @@ public sealed class JwtTokenIssuer(
             expires: expiresAt.UtcDateTime,
             signingCredentials:
                 new SigningCredentials(
-                    signingKey,
-                    SecurityAlgorithms.HmacSha256));
+                    keyMaterial.SigningKey,
+                    SecurityAlgorithms.RsaSha256));
 
         return new IssuedAccessToken(
             new JwtSecurityTokenHandler().WriteToken(token),
