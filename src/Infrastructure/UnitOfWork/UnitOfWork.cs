@@ -56,8 +56,7 @@ public sealed class UnitOfWork : IUnitOfWork
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
 
-        IAccountStatementsRepository accountStatementsRepository)
-
+        IAccountStatementsRepository accountStatementsRepository,
 
         ISenderTypeRepository senderTypesRepository,
         IAiRunStatusRepository aiRunStatusesRepository,
@@ -69,9 +68,6 @@ public sealed class UnitOfWork : IUnitOfWork
 
         IPriorityRepository prioritiesRepository,
         IEscalationStatusRepository escalationStatusesRepository)
-
-
-
     {
         _context = context;
         RolesRepository = rolesRepository;
