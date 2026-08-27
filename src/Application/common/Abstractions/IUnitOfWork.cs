@@ -25,6 +25,7 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+using Application.EscalationStatuses.Abstraction;
 
 
 
@@ -65,6 +66,8 @@ public interface IUnitOfWork
     IAiRunStatusRepository AiRunStatusesRepository { get; }
 
     IConversationStatusRepository ConversationStatusesRepository { get; }
+
+    IEscalationStatusRepository EscalationStatusesRepository { get; }
 
 
 

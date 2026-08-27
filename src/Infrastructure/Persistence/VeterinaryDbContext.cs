@@ -26,6 +26,7 @@ using Domain.SenderTypes.Entities;
 using Domain.AiRunStatuses.Entities;
 
 using Domain.ConversationStatuses.Entities;
+using Domain.EscalationStatuses.Entities;
 
 
 
@@ -77,6 +78,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<AiRunStatusEntity> AiRunStatuses => Set<AiRunStatusEntity>();
     public DbSet<ConversationStatusEntity> ConversationStatuses => Set<ConversationStatusEntity>();
+
+    public DbSet<EscalationStatusEntity> EscalationStatuses => Set<EscalationStatusEntity>();
 
 
 
