@@ -14,7 +14,7 @@ public static class AppointmentMappings
             request.VeterinarianId,
             request.ServiceId,
             request.StatusId,
-            request.Reason,
+            request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes);
@@ -30,7 +30,7 @@ public static class AppointmentMappings
             request.VeterinarianId,
             request.ServiceId,
             request.StatusId,
-            request.Reason,
+            request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes);
@@ -47,7 +47,7 @@ public static class AppointmentMappings
             entity.Service?.Name,
             entity.StatusId,
             entity.Status?.Name,
-            entity.Reason,
+            entity.AvailabilityId,
             entity.ScheduledStart,
             entity.ScheduledEnd,
             entity.Notes,

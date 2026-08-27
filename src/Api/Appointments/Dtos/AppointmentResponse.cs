@@ -8,7 +8,7 @@ public sealed record AppointmentResponse(
     string? ServiceName,
     Guid StatusId,
     string? StatusName,
-    string? Reason,
+    Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes,

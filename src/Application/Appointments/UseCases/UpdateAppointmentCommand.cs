@@ -8,7 +8,7 @@ public sealed record UpdateAppointmentCommand(
     Guid VeterinarianId,
     Guid ServiceId,
     Guid StatusId,
-    string? Reason,
+    Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes) : IRequest<bool>;

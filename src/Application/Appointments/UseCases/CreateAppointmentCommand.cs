@@ -7,7 +7,7 @@ public sealed record CreateAppointmentCommand(
     Guid VeterinarianId,
     Guid ServiceId,
     Guid StatusId,
-    string? Reason,
+    Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes) : IRequest<Guid>;

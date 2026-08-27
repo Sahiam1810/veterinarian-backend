@@ -5,7 +5,7 @@ public sealed record UpdateAppointmentRequest(
     Guid VeterinarianId,
     Guid ServiceId,
     Guid StatusId,
-    string? Reason,
+    Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes);
