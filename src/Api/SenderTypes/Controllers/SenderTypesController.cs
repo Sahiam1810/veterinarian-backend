@@ -1,13 +1,16 @@
+using Api.Common.Security;
 using Api.SenderTypes.Dtos;
 using Api.SenderTypes.Mappings;
 using Application.SenderTypes.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.SenderTypes.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class SenderTypesController(ISender sender) : ControllerBase
 {
     [HttpGet]

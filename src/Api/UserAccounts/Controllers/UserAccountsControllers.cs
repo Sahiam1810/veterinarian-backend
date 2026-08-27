@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.UserAccounts.Dtos;
 using Api.UserAccounts.Mappings;
 using Application.UserAccounts.UseCase;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +11,7 @@ namespace Api.UserAccounts.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class UserAccountsController(ISender sender) : ControllerBase
 {
     [HttpPost]

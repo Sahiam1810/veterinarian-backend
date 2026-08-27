@@ -1,14 +1,17 @@
 using Api.ChatUserProfiles.Dtos;
 using Api.ChatUserProfiles.Mappings;
+using Api.Common.Security;
 using Application.ChatUserProfiles.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.ChatUserProfiles.Controllers;
 
 [ApiController]
 [Route("api/chat/user-profiles")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatUserProfileController(ISender sender) : ControllerBase
 {
     [HttpPost]

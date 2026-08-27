@@ -1,13 +1,16 @@
+using Api.Common.Security;
 using Api.Priorities.Dtos;
 using Api.Priorities.Mappings;
 using Application.Priorities.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Priorities.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class PrioritiesController(ISender sender) : ControllerBase
 {
     [HttpGet]

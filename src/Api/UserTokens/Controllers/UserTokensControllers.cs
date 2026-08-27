@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.UserTokens.Dtos;
 using Api.UserTokens.Mappings;
 using Application.UserTokens.UseCase;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +11,7 @@ namespace Api.UserTokens.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class UserTokensController(ISender sender) : ControllerBase
 {
     [HttpPost]

@@ -1,13 +1,16 @@
 using Api.AiRunStatuses.Dtos;
 using Api.AiRunStatuses.Mappings;
+using Api.Common.Security;
 using Application.AiRunStatuses.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.AiRunStatuses.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class AiRunStatusesController(ISender sender) : ControllerBase
 {
     [HttpGet]

@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.Roles.Dtos;
 using Api.Roles.Mappings;
 using Application.Roles.UseCase;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +11,7 @@ namespace Api.Roles.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class RolesController(ISender sender) : ControllerBase
 {
     [HttpPost]

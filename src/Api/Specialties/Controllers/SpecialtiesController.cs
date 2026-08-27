@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.Specialties.Dtos;
 using Api.Specialties.Mappings;
 using Application.Specialties.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Specialties.Controllers;
@@ -11,16 +13,19 @@ namespace Api.Specialties.Controllers;
 public sealed class SpecialtiesController(ISender sender) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene las especialidades")]
     [EndpointDescription("Lista todas las especialidades registradas.")]
     public async Task<ActionResult<IReadOnlyCollection<SpecialtyResponseDto>>> GetAll(CancellationToken ct) => Ok((await sender.Send(new GetAllSpecialtiesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene una especialidad")]
     [EndpointDescription("Busca una especialidad por su identificador.")]
     public async Task<ActionResult<SpecialtyResponseDto>> GetById(Guid id, CancellationToken ct) => Ok((await sender.Send(new GetSpecialtyByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crea una especialidad")]
     [EndpointDescription("Registra una nueva especialidad.")]
     public async Task<ActionResult<SpecialtyResponseDto>> Create(CreateSpecialtyDto dto, CancellationToken ct)
@@ -31,6 +36,7 @@ public sealed class SpecialtiesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualiza una especialidad")]
     [EndpointDescription("Actualiza los datos de una especialidad existente.")]
     public async Task<IActionResult> Update(Guid id, UpdateSpecialtyDto dto, CancellationToken ct)
@@ -40,6 +46,7 @@ public sealed class SpecialtiesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Elimina una especialidad")]
     [EndpointDescription("Elimina una especialidad por su identificador.")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)

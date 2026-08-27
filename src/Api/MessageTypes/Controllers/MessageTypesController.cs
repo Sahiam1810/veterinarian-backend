@@ -1,13 +1,16 @@
+using Api.Common.Security;
 using Api.MessageTypes.Dtos;
 using Api.MessageTypes.Mappings;
 using Application.MessageTypes.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.MessageTypes.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class MessageTypesController(ISender sender) : ControllerBase
 {
     [HttpGet]

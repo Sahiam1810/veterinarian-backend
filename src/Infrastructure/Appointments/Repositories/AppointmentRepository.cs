@@ -37,6 +37,20 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Include(x => x.Availability)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyCollection<Appointment>> GetByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .Include(x => x.ClientPet)
+            .Include(x => x.Veterinarian)
+            .Include(x => x.Service)
+            .Include(x => x.Status)
+            .Include(x => x.Availability)
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .AsNoTracking()
+            .OrderByDescending(x => x.ScheduledStart)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(
         Appointment appointment,
         CancellationToken cancellationToken = default)

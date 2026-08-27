@@ -11,6 +11,10 @@ public interface IAppointmentRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyCollection<Appointment>> GetByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         Appointment appointment,
         CancellationToken cancellationToken);

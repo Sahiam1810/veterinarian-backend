@@ -1,7 +1,9 @@
 using Api.Availabilities.Dtos;
 using Api.Availabilities.Mappings;
+using Api.Common.Security;
 using Application.Availabilities.UseCase;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +14,7 @@ namespace Api.Availabilities.Controllers;
 public sealed class AvailabilitiesController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
     [EndpointSummary("Crea una nueva disponibilidad")]
     [EndpointDescription("Registra una franja horaria recurrente (día de la semana, hora de inicio y fin) en la que un veterinario atiende.")]
     [ProducesResponseType(typeof(CreateAvailabilityResponse), StatusCodes.Status201Created)]
@@ -30,6 +33,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene todas las disponibilidades")]
     [EndpointDescription("Retorna el listado completo de franjas de disponibilidad de todos los veterinarios.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AvailabilityResponse>), StatusCodes.Status200OK)]
@@ -44,6 +48,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene una disponibilidad por su ID")]
     [EndpointDescription("Retorna la información detallada de una franja de disponibilidad específica.")]
     [ProducesResponseType(typeof(AvailabilityResponse), StatusCodes.Status200OK)]
@@ -62,6 +67,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-veterinarian/{veterinarianId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene las disponibilidades de un veterinario")]
     [EndpointDescription("Retorna todas las franjas de disponibilidad configuradas para un veterinario, ordenadas por día y hora.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AvailabilityResponse>), StatusCodes.Status200OK)]
@@ -77,6 +83,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
     [EndpointSummary("Actualiza una disponibilidad existente")]
     [EndpointDescription("Modifica el día, horario o estado de una franja de disponibilidad previamente registrada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -97,6 +104,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
     [EndpointSummary("Elimina una disponibilidad por su ID")]
     [EndpointDescription("Remueve permanentemente una franja de disponibilidad del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

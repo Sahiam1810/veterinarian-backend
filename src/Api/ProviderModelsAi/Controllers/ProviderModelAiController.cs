@@ -1,14 +1,17 @@
+using Api.Common.Security;
 using Api.ProviderModelsAi.Dtos;
 using Api.ProviderModelsAi.Mappings;
 using Application.Common.Exceptions;
 using Application.ProviderModelsAi.UseCase;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.ProviderModelsAi.Controllers;
 
 [ApiController]
 [Route("api/ai/providers")]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ProviderModelAiController(ISender sender) : ControllerBase
 {
     [HttpPost]

@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.Races.Dtos;
 using Api.Races.Mappings;
 using Application.Races.Abstraction;
 using Domain.Races.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +22,7 @@ public class RacesController : ControllerBase
 
     // 1. OBTENER TODAS: GET /api/races
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene todas las razas")]
     [EndpointDescription("Retorna una lista con todas las razas registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RaceResponseDto>), StatusCodes.Status200OK)]
@@ -31,6 +34,7 @@ public class RacesController : ControllerBase
 
     // 2. OBTENER POR ID: GET /api/races/{id}
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
     [EndpointSummary("Obtiene una raza por su ID")]
     [EndpointDescription("Retorna los datos de una raza específica.")]
     [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status200OK)]
@@ -47,6 +51,7 @@ public class RacesController : ControllerBase
 
     // 3. CREAR RAZA: POST /api/races
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crea una nueva raza")]
     [EndpointDescription("Registra una nueva raza en el sistema.")]
     [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status201Created)]
@@ -62,6 +67,7 @@ public class RacesController : ControllerBase
 
     // 4. ACTUALIZAR RAZA: PUT /api/races/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualiza una raza existente")]
     [EndpointDescription("Modifica los datos de una raza existente mediante su ID.")]
     [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status200OK)]
@@ -81,6 +87,7 @@ public class RacesController : ControllerBase
 
     // 5. ELIMINAR RAZA: DELETE /api/races/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Elimina una raza")]
     [EndpointDescription("Elimina permanentemente una raza del sistema por su ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
