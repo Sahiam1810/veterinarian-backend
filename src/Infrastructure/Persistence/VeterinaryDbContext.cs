@@ -34,6 +34,7 @@ using Domain.EscalationStatuses.Entities;
 using Domain.Availabilities.Entities;
 using Domain.Appointments.Entities;
 using Domain.AppointmentStatusHistories.Entities;
+using Domain.MedicalRecords.Entities;
 
 
 namespace Infrastructure.Persistence;
@@ -94,6 +95,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
     public DbSet<AppointmentStatusHistory> AppointmentStatusHistories => Set<AppointmentStatusHistory>();
+
+    public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
 
 
 
