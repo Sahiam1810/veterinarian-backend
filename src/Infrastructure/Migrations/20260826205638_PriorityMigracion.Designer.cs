@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826205638_PriorityMigracion")]
+    partial class PriorityMigracion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,31 +166,6 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CLIENTS_PETS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.ConversationStatuses.Entities.ConversationStatusEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("CONVERSATIONS_STATUSES_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("VARCHAR2(50)")
-                        .HasColumnName("NAME_STATUS");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CONVERSATIONS_STATUSES", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Diagnostics.Entities.Diagnostic", b =>

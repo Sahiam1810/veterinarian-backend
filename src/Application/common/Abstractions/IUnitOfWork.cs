@@ -16,8 +16,16 @@ using Application.Services.Abstraction;
 
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
+
+using Application.Veterinarians.Abstraction;
+using Application.Priorities.Abstraction;
+
 using Application.SenderTypes.Abstraction;
+
 using Application.AiRunStatuses.Abstraction;
+
+using Application.ConversationStatuses.Abstraction;
+
 
 
 
@@ -46,9 +54,19 @@ public interface IUnitOfWork
 
     IClientPetRepository ClientPetsRepository { get; }
 
+
+    IVeterinarianRepository VeterinariansRepository { get; }
+
+    IPriorityRepository PrioritiesRepository { get; }
+
     ISenderTypeRepository SenderTypesRepository { get; }
 
+
     IAiRunStatusRepository AiRunStatusesRepository { get; }
+
+    IConversationStatusRepository ConversationStatusesRepository { get; }
+
+
 
 
     IUserAccountsRepository UserAccountsRepository { get; }

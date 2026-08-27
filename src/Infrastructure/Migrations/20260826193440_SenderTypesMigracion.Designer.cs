@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826193440_SenderTypesMigracion")]
+    partial class SenderTypesMigracion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -165,31 +168,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("CLIENTS_PETS", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.ConversationStatuses.Entities.ConversationStatusEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("CONVERSATIONS_STATUSES_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("VARCHAR2(50)")
-                        .HasColumnName("NAME_STATUS");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CONVERSATIONS_STATUSES", (string)null);
-                });
-
             modelBuilder.Entity("Domain.Diagnostics.Entities.Diagnostic", b =>
                 {
                     b.Property<string>("Id")
@@ -292,31 +270,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("SpeciesId");
 
                     b.ToTable("PETS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Priorities.Entities.PriorityEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("PRIORITY_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("VARCHAR2(50)")
-                        .HasColumnName("NAME_PRIORITY");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PRIORITY", (string)null);
                 });
 
             modelBuilder.Entity("Domain.ProviderModelsAi.Entities.ProviderModelAi", b =>
@@ -791,48 +744,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("USERS", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("VETERINARIAN_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("LicenseNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("LICENSE_NUMBER");
-
-                    b.Property<string>("SpecialtyId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("SPECIALTY_ID");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("USER_ID");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LicenseNumber")
-                        .IsUnique();
-
-                    b.HasIndex("SpecialtyId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("VETERINARIANS", (string)null);
-                });
-
             modelBuilder.Entity("Domain.AiModels.Entities.AiModel", b =>
                 {
                     b.HasOne("Domain.ProviderModelsAi.Entities.ProviderModelAi", null)
@@ -936,25 +847,6 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>
-                {
-                    b.HasOne("Domain.Specialties.Entities.SpecialtyEntity", "Specialty")
-                        .WithMany()
-                        .HasForeignKey("SpecialtyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Users.Entities.Users", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Specialty");
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }
