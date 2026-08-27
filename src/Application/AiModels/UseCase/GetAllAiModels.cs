@@ -1,4 +1,4 @@
-using Application.AiModels.Abstraction;
+using Application.Common.Abstractions;
 using MediatR;
 using AiModelEntity = Domain.AiModels.Entities.AiModel;
 
@@ -9,15 +9,15 @@ public sealed record GetAllAiModelsQuery : IRequest<IReadOnlyCollection<AiModelE
 public sealed class GetAllAiModelsQueryHandler
     : IRequestHandler<GetAllAiModelsQuery, IReadOnlyCollection<AiModelEntity>>
 {
-    private readonly IAiModelRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public GetAllAiModelsQueryHandler(IAiModelRepository repository)
+    public GetAllAiModelsQueryHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public Task<IReadOnlyCollection<AiModelEntity>> Handle(
         GetAllAiModelsQuery request,
         CancellationToken cancellationToken)
-        => _repository.GetAllAsync(cancellationToken);
+        => _uow.AiModelsRepository.GetAllAsync(cancellationToken);
 }

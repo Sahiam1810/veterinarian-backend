@@ -13,6 +13,4 @@ public interface IProviderModelAiRepository
     Task AddAsync(ProviderEntity provider, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(ProviderEntity provider, CancellationToken cancellationToken = default);
-
-    Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

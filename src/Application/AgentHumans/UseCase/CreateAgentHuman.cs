@@ -1,6 +1,5 @@
-using Application.AgentHumans.Abstraction;
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.Users.Abstraction;
 using MediatR;
 using AgentHumanEntity = Domain.AgentHumans.Entities.AgentHuman;
 
@@ -11,22 +10,18 @@ public sealed record CreateAgentHumanCommand(Guid UserId) : IRequest<AgentHumanE
 public sealed class CreateAgentHumanCommandHandler
     : IRequestHandler<CreateAgentHumanCommand, AgentHumanEntity>
 {
-    private readonly IAgentHumanRepository _agentRepository;
-    private readonly IUsersRepository _usersRepository;
+    private readonly IUnitOfWork _uow;
 
-    public CreateAgentHumanCommandHandler(
-        IAgentHumanRepository agentRepository,
-        IUsersRepository usersRepository)
+    public CreateAgentHumanCommandHandler(IUnitOfWork uow)
     {
-        _agentRepository = agentRepository;
-        _usersRepository = usersRepository;
+        _uow = uow;
     }
 
     public async Task<AgentHumanEntity> Handle(
         CreateAgentHumanCommand request,
         CancellationToken cancellationToken)
     {
-        var user = await _usersRepository.GetByIdAsync(request.UserId, cancellationToken);
+        var user = await _uow.UsersRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user is null)
         {
             throw new NotFoundException($"No se encontró el usuario '{request.UserId}'.");
@@ -34,8 +29,8 @@ public sealed class CreateAgentHumanCommandHandler
 
         var agent = AgentHumanEntity.Create(request.UserId);
 
-        await _agentRepository.AddAsync(agent, cancellationToken);
-        await _agentRepository.SaveChangesAsync(cancellationToken);
+        await _uow.AgentHumansRepository.AddAsync(agent, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return agent;
     }

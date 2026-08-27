@@ -1,5 +1,5 @@
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.ProviderModelsAi.Abstraction;
 using MediatR;
 using ProviderEntity = Domain.ProviderModelsAi.Entities.ProviderModelAi;
 
@@ -10,24 +10,24 @@ public sealed record ActivateProviderModelAiCommand(Guid Id) : IRequest<Provider
 public sealed class ActivateProviderModelAiCommandHandler
     : IRequestHandler<ActivateProviderModelAiCommand, ProviderEntity>
 {
-    private readonly IProviderModelAiRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public ActivateProviderModelAiCommandHandler(IProviderModelAiRepository repository)
+    public ActivateProviderModelAiCommandHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public async Task<ProviderEntity> Handle(
         ActivateProviderModelAiCommand request,
         CancellationToken cancellationToken)
     {
-        var provider = await _repository.GetByIdAsync(request.Id, cancellationToken)
+        var provider = await _uow.ProviderModelsAiRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException($"No se encontró el proveedor de IA '{request.Id}'.");
 
         provider.Activate();
 
-        await _repository.UpdateAsync(provider, cancellationToken);
-        await _repository.SaveChangesAsync(cancellationToken);
+        await _uow.ProviderModelsAiRepository.UpdateAsync(provider, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return provider;
     }

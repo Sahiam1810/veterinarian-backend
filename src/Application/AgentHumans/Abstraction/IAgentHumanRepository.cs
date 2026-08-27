@@ -22,6 +22,4 @@ public interface IAgentHumanRepository
     Task UpdateAsync(
         AgentHumanEntity agent,
         CancellationToken cancellationToken = default);
-
-    Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

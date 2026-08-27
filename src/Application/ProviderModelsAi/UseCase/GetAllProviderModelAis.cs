@@ -1,4 +1,4 @@
-using Application.ProviderModelsAi.Abstraction;
+using Application.Common.Abstractions;
 using MediatR;
 using ProviderEntity = Domain.ProviderModelsAi.Entities.ProviderModelAi;
 
@@ -9,15 +9,15 @@ public sealed record GetAllProviderModelAisQuery : IRequest<IReadOnlyCollection<
 public sealed class GetAllProviderModelAisQueryHandler
     : IRequestHandler<GetAllProviderModelAisQuery, IReadOnlyCollection<ProviderEntity>>
 {
-    private readonly IProviderModelAiRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public GetAllProviderModelAisQueryHandler(IProviderModelAiRepository repository)
+    public GetAllProviderModelAisQueryHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public Task<IReadOnlyCollection<ProviderEntity>> Handle(
         GetAllProviderModelAisQuery request,
         CancellationToken cancellationToken)
-        => _repository.GetAllAsync(cancellationToken);
+        => _uow.ProviderModelsAiRepository.GetAllAsync(cancellationToken);
 }

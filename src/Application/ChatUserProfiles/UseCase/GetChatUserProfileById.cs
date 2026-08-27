@@ -1,4 +1,4 @@
-using Application.ChatUserProfiles.Abstraction;
+using Application.Common.Abstractions;
 using MediatR;
 using ChatUserProfileEntity = Domain.ChatUserProfiles.Entities.ChatUserProfile;
 
@@ -9,15 +9,15 @@ public sealed record GetChatUserProfileByIdQuery(Guid Id) : IRequest<ChatUserPro
 public sealed class GetChatUserProfileByIdQueryHandler
     : IRequestHandler<GetChatUserProfileByIdQuery, ChatUserProfileEntity?>
 {
-    private readonly IChatUserProfileRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public GetChatUserProfileByIdQueryHandler(IChatUserProfileRepository repository)
+    public GetChatUserProfileByIdQueryHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public Task<ChatUserProfileEntity?> Handle(
         GetChatUserProfileByIdQuery request,
         CancellationToken cancellationToken)
-        => _repository.GetByIdAsync(request.Id, cancellationToken);
+        => _uow.ChatUserProfilesRepository.GetByIdAsync(request.Id, cancellationToken);
 }

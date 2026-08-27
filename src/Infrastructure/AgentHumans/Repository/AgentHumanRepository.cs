@@ -48,7 +48,4 @@ public sealed class AgentHumanRepository : IAgentHumanRepository
         _context.Set<AgentHumanEntity>().Update(agent);
         return Task.CompletedTask;
     }
-
-    public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => await _context.SaveChangesAsync(cancellationToken) > 0;
 }

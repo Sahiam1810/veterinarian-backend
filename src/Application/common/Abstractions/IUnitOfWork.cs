@@ -44,6 +44,11 @@ using Application.EscalationStatuses.Abstraction;
 
 using Application.Notifications.Abstraction;
 
+using Application.AgentHumans.Abstraction;
+using Application.AiModels.Abstraction;
+using Application.ChatUserProfiles.Abstraction;
+using Application.ProviderModelsAi.Abstraction;
+
 namespace Application.Common.Abstractions;
 
 public interface IUnitOfWork
@@ -97,6 +102,14 @@ public interface IUnitOfWork
     INotificationRepository NotificationsRepository { get; }
 
     IDiagnosticRepository DiagnosticsRepository { get; }
+
+    IAgentHumanRepository AgentHumansRepository { get; }
+
+    IAiModelRepository AiModelsRepository { get; }
+
+    IChatUserProfileRepository ChatUserProfilesRepository { get; }
+
+    IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     IUserAccountsRepository UserAccountsRepository { get; }
 
