@@ -13,6 +13,18 @@ using Application.Services.Abstraction;
 using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
+using Application.Veterinarians.Abstraction;
+using Application.Priorities.Abstraction;
+
+using Application.SenderTypes.Abstraction;
+
+using Application.AiRunStatuses.Abstraction;
+
+using Application.ConversationStatuses.Abstraction;
+using Application.EscalationStatuses.Abstraction;
+
+
+
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -43,7 +55,22 @@ public sealed class UnitOfWork : IUnitOfWork
         IUserTokensRepository userTokensRepository,
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
+
         IAccountStatementsRepository accountStatementsRepository)
+
+
+        ISenderTypeRepository senderTypesRepository,
+        IAiRunStatusRepository aiRunStatusesRepository,
+
+
+        IVeterinarianRepository veterinariansRepository,
+
+        IConversationStatusRepository conversationStatusesRepository,
+
+        IPriorityRepository prioritiesRepository,
+        IEscalationStatusRepository escalationStatusesRepository)
+
+
 
     {
         _context = context;
@@ -63,7 +90,23 @@ public sealed class UnitOfWork : IUnitOfWork
         UserTokensRepository = userTokensRepository;
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
+
         AccountStatementsRepository = accountStatementsRepository;
+
+
+        VeterinariansRepository = veterinariansRepository;
+
+        PrioritiesRepository = prioritiesRepository;
+
+        SenderTypesRepository = senderTypesRepository;
+
+        AiRunStatusesRepository = aiRunStatusesRepository;
+
+        ConversationStatusesRepository = conversationStatusesRepository;
+
+        EscalationStatusesRepository = escalationStatusesRepository;
+
+
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -88,6 +131,17 @@ public sealed class UnitOfWork : IUnitOfWork
     public ISpecialtyRepository SpecialtiesRepository { get; }
     public IClientPetRepository ClientPetsRepository { get; }
 
+    public IVeterinarianRepository VeterinariansRepository { get; }
+
+    public IPriorityRepository PrioritiesRepository { get; }
+
+    public ISenderTypeRepository SenderTypesRepository { get; }
+    public IAiRunStatusRepository AiRunStatusesRepository { get; }
+
+    public IConversationStatusRepository ConversationStatusesRepository { get; }
+
+    public IEscalationStatusRepository EscalationStatusesRepository { get; }
+
 
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -102,6 +156,3 @@ public sealed class UnitOfWork : IUnitOfWork
         await SaveChangesAsync(cancellationToken);
     }
 }
-
-
-
