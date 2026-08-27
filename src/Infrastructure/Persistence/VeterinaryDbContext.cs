@@ -35,6 +35,7 @@ using Domain.Availabilities.Entities;
 using Domain.Appointments.Entities;
 using Domain.AppointmentStatusHistories.Entities;
 using Domain.MedicalRecords.Entities;
+using Domain.Vaccinations.Entities;
 using Domain.Notifications.Entities;
 
 
@@ -98,6 +99,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<AppointmentStatusHistory> AppointmentStatusHistories => Set<AppointmentStatusHistory>();
 
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
+
+    public DbSet<Vaccination> Vaccinations => Set<Vaccination>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
 

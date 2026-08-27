@@ -4,6 +4,7 @@ using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Diagnostics.Abstraction;
 using Application.MedicalRecords.Abstraction;
+using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Pets.Abstraction;
@@ -84,7 +85,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository,
         IMedicalRecordRepository medicalRecordsRepository,
         INotificationRepository notificationsRepository,
-        IDiagnosticRepository diagnosticsRepository)
+        IDiagnosticRepository diagnosticsRepository,
+        IVaccinationRepository vaccinationsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -126,6 +128,7 @@ public sealed class UnitOfWork : IUnitOfWork
         MedicalRecordsRepository = medicalRecordsRepository;
         NotificationsRepository = notificationsRepository;
         DiagnosticsRepository = diagnosticsRepository;
+        VaccinationsRepository = vaccinationsRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -168,6 +171,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAppointmentRepository AppointmentsRepository { get; }
     public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
     public IMedicalRecordRepository MedicalRecordsRepository { get; }
+    public IVaccinationRepository VaccinationsRepository { get; }
     public INotificationRepository NotificationsRepository { get; }
     public IDiagnosticRepository DiagnosticsRepository { get; }
 
