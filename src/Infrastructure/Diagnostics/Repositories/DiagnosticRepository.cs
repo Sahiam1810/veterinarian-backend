@@ -14,7 +14,7 @@ public class DiagnosticRepository : IDiagnosticRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Diagnostic>> GetAllAsync(bool onlyActive = true, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<Diagnostic>> GetAllAsync(bool onlyActive = true, CancellationToken cancellationToken = default)
     {
         return await _context.Set<Diagnostic>()
             .Where(x => !onlyActive || x.IsActive)
@@ -40,14 +40,16 @@ public class DiagnosticRepository : IDiagnosticRepository
         await _context.Set<Diagnostic>().AddAsync(diagnostic, cancellationToken);
     }
 
-    public void Update(Diagnostic diagnostic)
+    public Task UpdateAsync(Diagnostic diagnostic, CancellationToken cancellationToken = default)
     {
         _context.Set<Diagnostic>().Update(diagnostic);
+        return Task.CompletedTask;
     }
 
-    public void Delete(Diagnostic diagnostic)
+    public Task DeleteAsync(Diagnostic diagnostic, CancellationToken cancellationToken = default)
     {
         _context.Set<Diagnostic>().Remove(diagnostic);
+        return Task.CompletedTask;
     }
 
     public async Task<bool> ExistsCodeAsync(string code, CancellationToken cancellationToken = default)
@@ -62,10 +64,5 @@ public class DiagnosticRepository : IDiagnosticRepository
         var normalizedCode = code.Trim().ToUpper();
         return await _context.Set<Diagnostic>()
             .AnyAsync(x => x.Id != id && x.Code == normalizedCode, cancellationToken);
-    }
-
-    public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 }

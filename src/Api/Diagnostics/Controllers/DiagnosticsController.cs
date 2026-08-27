@@ -2,6 +2,7 @@ using Api.Common.Security;
 using Api.Diagnostics.Dtos;
 using Api.Diagnostics.Mappings;
 using Application.Diagnostics.UseCases;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,99 +10,102 @@ namespace Api.Diagnostics.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class DiagnosticsController : ControllerBase
+public sealed class DiagnosticsController(ISender sender) : ControllerBase
 {
-    private readonly GetAllDiagnosticsUseCase _getAllUseCase;
-    private readonly GetDiagnosticByIdUseCase _getByIdUseCase;
-    private readonly CreateDiagnosticUseCase _createUseCase;
-    private readonly UpdateDiagnosticUseCase _updateUseCase;
-    private readonly DeleteDiagnosticUseCase _deleteUseCase;
-
-    public DiagnosticsController(
-        GetAllDiagnosticsUseCase getAllUseCase,
-        GetDiagnosticByIdUseCase getByIdUseCase,
-        CreateDiagnosticUseCase createUseCase,
-        UpdateDiagnosticUseCase updateUseCase,
-        DeleteDiagnosticUseCase deleteUseCase)
-    {
-        _getAllUseCase = getAllUseCase;
-        _getByIdUseCase = getByIdUseCase;
-        _createUseCase = createUseCase;
-        _updateUseCase = updateUseCase;
-        _deleteUseCase = deleteUseCase;
-    }
-
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<DiagnosticDto>))]
-    public async Task<IActionResult> GetAll([FromQuery] bool onlyActive = true, CancellationToken cancellationToken = default)
+    [EndpointSummary("Obtiene todos los diagnósticos")]
+    [EndpointDescription("Retorna el listado de diagnósticos del catálogo clínico. Por defecto solo incluye los diagnósticos activos.")]
+    [ProducesResponseType(typeof(IEnumerable<DiagnosticDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<DiagnosticDto>>> GetAll(
+        [FromQuery] bool onlyActive = true,
+        CancellationToken cancellationToken = default)
     {
-        var diagnostics = await _getAllUseCase.ExecuteAsync(onlyActive, cancellationToken);
-        return Ok(DiagnosticMapping.ToDtoList(diagnostics));
+        var diagnostics = await sender.Send(
+            new GetAllDiagnosticsQuery(onlyActive),
+            cancellationToken);
+
+        return Ok(diagnostics.ToResponse());
     }
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DiagnosticDto))]
+    [EndpointSummary("Obtiene un diagnóstico por su ID")]
+    [EndpointDescription("Retorna la información de un diagnóstico específico por su identificador GUID.")]
+    [ProducesResponseType(typeof(DiagnosticDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById([FromRoute] Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<DiagnosticDto>> GetById(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
     {
-        var diagnostic = await _getByIdUseCase.ExecuteAsync(id, cancellationToken);
-        if (diagnostic == null)
-            return NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." });
+        var diagnostic = await sender.Send(
+            new GetDiagnosticByIdQuery(id),
+            cancellationToken);
 
-        return Ok(DiagnosticMapping.ToDto(diagnostic));
+        return diagnostic is null
+            ? NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." })
+            : Ok(diagnostic.ToResponse());
     }
 
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
-    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(DiagnosticDto))]
+    [EndpointSummary("Crea un nuevo diagnóstico")]
+    [EndpointDescription("Registra un nuevo diagnóstico clínico (código único, nombre y descripción opcional) en el catálogo. Queda activo por defecto.")]
+    [ProducesResponseType(typeof(DiagnosticDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateDiagnosticDto dto, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<DiagnosticDto>> Create(
+        [FromBody] CreateDiagnosticDto dto,
+        CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var diagnostic = await _createUseCase.ExecuteAsync(dto.Code, dto.Name, dto.Description, cancellationToken);
-            var result = DiagnosticMapping.ToDto(diagnostic);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
+        var diagnostic = await sender.Send(
+            dto.ToCommand(),
+            cancellationToken);
+
+        var response = diagnostic.ToResponse();
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = response.Id },
+            response);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
+    [EndpointSummary("Actualiza un diagnóstico existente")]
+    [EndpointDescription("Modifica el código, nombre, descripción o estado de un diagnóstico existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateDiagnosticDto dto, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Update(
+        [FromRoute] Guid id,
+        [FromBody] UpdateDiagnosticDto dto,
+        CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var diagnostic = await _updateUseCase.ExecuteAsync(id, dto.Code, dto.Name, dto.Description, dto.IsActive, cancellationToken);
-            if (diagnostic == null)
-                return NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." });
+        var diagnostic = await sender.Send(
+            dto.ToCommand(id),
+            cancellationToken);
 
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { Message = ex.Message });
-        }
+        return diagnostic is null
+            ? NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." })
+            : NoContent();
     }
 
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [EndpointSummary("Elimina (desactiva) un diagnóstico")]
+    [EndpointDescription("Realiza una baja lógica del diagnóstico: lo marca como inactivo sin eliminarlo físicamente de la base de datos.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Delete(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
     {
-        var success = await _deleteUseCase.ExecuteAsync(id, cancellationToken);
-        if (!success)
-            return NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." });
+        var deleted = await sender.Send(
+            new DeleteDiagnosticCommand(id),
+            cancellationToken);
 
-        return NoContent();
+        return deleted
+            ? NoContent()
+            : NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." });
     }
 }

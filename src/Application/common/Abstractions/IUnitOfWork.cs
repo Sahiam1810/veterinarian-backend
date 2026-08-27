@@ -1,6 +1,7 @@
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
+using Application.Diagnostics.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Pets.Abstraction;
@@ -91,6 +92,8 @@ public interface IUnitOfWork
     IMedicalRecordRepository MedicalRecordsRepository { get; }
 
     INotificationRepository NotificationsRepository { get; }
+
+    IDiagnosticRepository DiagnosticsRepository { get; }
 
     IUserAccountsRepository UserAccountsRepository { get; }
 

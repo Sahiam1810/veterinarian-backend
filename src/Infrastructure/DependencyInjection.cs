@@ -6,7 +6,6 @@ using Application.MedicalRecords.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
-using Application.Diagnostics.UseCases;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
@@ -177,12 +176,6 @@ public static class DependencyInjection
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateOnStart();
-
-        services.AddScoped<GetAllDiagnosticsUseCase>();
-        services.AddScoped<GetDiagnosticByIdUseCase>();
-        services.AddScoped<CreateDiagnosticUseCase>();
-        services.AddScoped<UpdateDiagnosticUseCase>();
-        services.AddScoped<DeleteDiagnosticUseCase>();
 
         var mapsterConfig = TypeAdapterConfig.GlobalSettings;
         mapsterConfig.Scan(typeof(DependencyInjection).Assembly);
