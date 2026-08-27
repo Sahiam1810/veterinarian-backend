@@ -35,6 +35,10 @@ using Application.EscalationStatuses.Abstraction;
 
 
 using Application.Notifications.Abstraction;
+using Application.AgentHumans.Abstraction;
+using Application.AiModels.Abstraction;
+using Application.ChatUserProfiles.Abstraction;
+using Application.ProviderModelsAi.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -84,7 +88,11 @@ public sealed class UnitOfWork : IUnitOfWork
         IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository,
         IMedicalRecordRepository medicalRecordsRepository,
         INotificationRepository notificationsRepository,
-        IDiagnosticRepository diagnosticsRepository)
+        IDiagnosticRepository diagnosticsRepository,
+        IAgentHumanRepository agentHumansRepository,
+        IAiModelRepository aiModelsRepository,
+        IChatUserProfileRepository chatUserProfilesRepository,
+        IProviderModelAiRepository providerModelsAiRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -126,6 +134,10 @@ public sealed class UnitOfWork : IUnitOfWork
         MedicalRecordsRepository = medicalRecordsRepository;
         NotificationsRepository = notificationsRepository;
         DiagnosticsRepository = diagnosticsRepository;
+        AgentHumansRepository = agentHumansRepository;
+        AiModelsRepository = aiModelsRepository;
+        ChatUserProfilesRepository = chatUserProfilesRepository;
+        ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -170,9 +182,10 @@ public sealed class UnitOfWork : IUnitOfWork
     public IMedicalRecordRepository MedicalRecordsRepository { get; }
     public INotificationRepository NotificationsRepository { get; }
     public IDiagnosticRepository DiagnosticsRepository { get; }
-
-
-
+    public IAgentHumanRepository AgentHumansRepository { get; }
+    public IAiModelRepository AiModelsRepository { get; }
+    public IChatUserProfileRepository ChatUserProfilesRepository { get; }
+    public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
