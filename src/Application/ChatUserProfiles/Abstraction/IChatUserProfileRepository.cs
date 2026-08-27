@@ -26,6 +26,4 @@ public interface IChatUserProfileRepository
     Task DeleteAsync(
         ChatUserProfileEntity profile,
         CancellationToken cancellationToken = default);
-
-    Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

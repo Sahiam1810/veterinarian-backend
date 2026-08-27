@@ -56,7 +56,4 @@ public sealed class ChatUserProfileRepository : IChatUserProfileRepository
         _context.Set<ChatUserProfileEntity>().Remove(profile);
         return Task.CompletedTask;
     }
-
-    public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => await _context.SaveChangesAsync(cancellationToken) > 0;
 }

@@ -7,9 +7,6 @@ namespace Infrastructure.AiModels.Repository;
 
 public sealed class AiModelRepository : IAiModelRepository
 {
-    // TODO: Registrar IAiModelRepository -> AiModelRepository en Infrastructure DependencyInjection.
-    // TODO: Agregar el mapeo de persistencia compartido (DbSet / IEntityTypeConfiguration) cuando se permita el trabajo de esquema.
-
     private readonly VeterinaryDbContext _context;
 
     public AiModelRepository(VeterinaryDbContext context)
@@ -51,7 +48,4 @@ public sealed class AiModelRepository : IAiModelRepository
         _context.Set<AiModelEntity>().Update(model);
         return Task.CompletedTask;
     }
-
-    public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => await _context.SaveChangesAsync(cancellationToken) > 0;
 }

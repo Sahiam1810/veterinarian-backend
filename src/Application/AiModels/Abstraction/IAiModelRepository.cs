@@ -15,6 +15,4 @@ public interface IAiModelRepository
     Task AddAsync(AiModelEntity model, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(AiModelEntity model, CancellationToken cancellationToken = default);
-
-    Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

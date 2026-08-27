@@ -7,9 +7,6 @@ namespace Infrastructure.ProviderModelsAi.Repository;
 
 public sealed class ProviderModelAiRepository : IProviderModelAiRepository
 {
-    // TODO: Registrar IProviderModelAiRepository -> ProviderModelAiRepository en Infrastructure DependencyInjection.
-    // TODO: Agregar el mapeo de persistencia compartido (DbSet / IEntityTypeConfiguration) cuando se permita el trabajo de esquema.
-
     private readonly VeterinaryDbContext _context;
 
     public ProviderModelAiRepository(VeterinaryDbContext context)
@@ -48,7 +45,4 @@ public sealed class ProviderModelAiRepository : IProviderModelAiRepository
         _context.Set<ProviderEntity>().Update(provider);
         return Task.CompletedTask;
     }
-
-    public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => await _context.SaveChangesAsync(cancellationToken) > 0;
 }
