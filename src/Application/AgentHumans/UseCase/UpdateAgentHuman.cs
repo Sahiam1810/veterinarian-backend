@@ -1,4 +1,4 @@
-using Application.AgentHumans.Abstraction;
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using MediatR;
 using AgentHumanEntity = Domain.AgentHumans.Entities.AgentHuman;
@@ -10,18 +10,18 @@ public sealed record UpdateAgentHumanCommand(Guid Id) : IRequest<AgentHumanEntit
 public sealed class UpdateAgentHumanCommandHandler
     : IRequestHandler<UpdateAgentHumanCommand, AgentHumanEntity>
 {
-    private readonly IAgentHumanRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateAgentHumanCommandHandler(IAgentHumanRepository repository)
+    public UpdateAgentHumanCommandHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public async Task<AgentHumanEntity> Handle(
         UpdateAgentHumanCommand request,
         CancellationToken cancellationToken)
     {
-        var agent = await _repository.GetByIdAsync(request.Id, cancellationToken)
+        var agent = await _uow.AgentHumansRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException($"No se encontró el agente humano '{request.Id}'.");
 
         // El identificador de usuario no se modifica.

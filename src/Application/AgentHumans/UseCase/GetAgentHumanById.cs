@@ -1,4 +1,4 @@
-using Application.AgentHumans.Abstraction;
+using Application.Common.Abstractions;
 using MediatR;
 using AgentHumanEntity = Domain.AgentHumans.Entities.AgentHuman;
 
@@ -9,15 +9,15 @@ public sealed record GetAgentHumanByIdQuery(Guid Id) : IRequest<AgentHumanEntity
 public sealed class GetAgentHumanByIdQueryHandler
     : IRequestHandler<GetAgentHumanByIdQuery, AgentHumanEntity?>
 {
-    private readonly IAgentHumanRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public GetAgentHumanByIdQueryHandler(IAgentHumanRepository repository)
+    public GetAgentHumanByIdQueryHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public Task<AgentHumanEntity?> Handle(
         GetAgentHumanByIdQuery request,
         CancellationToken cancellationToken)
-        => _repository.GetByIdAsync(request.Id, cancellationToken);
+        => _uow.AgentHumansRepository.GetByIdAsync(request.Id, cancellationToken);
 }
