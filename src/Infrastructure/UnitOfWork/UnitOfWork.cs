@@ -1,3 +1,5 @@
+using Application.AccountStatements.Abstraction;
+using Application.Availabilities.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Pets.Abstraction;
@@ -20,7 +22,11 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+
 using Application.MessageTypes.Abstraction;
+
+using Application.EscalationStatuses.Abstraction;
+
 
 
 
@@ -55,6 +61,8 @@ public sealed class UnitOfWork : IUnitOfWork
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
 
+        IAccountStatementsRepository accountStatementsRepository,
+
         ISenderTypeRepository senderTypesRepository,
         IAiRunStatusRepository aiRunStatusesRepository,
 
@@ -64,9 +72,9 @@ public sealed class UnitOfWork : IUnitOfWork
         IConversationStatusRepository conversationStatusesRepository,
         IMessageTypeRepository messageTypesRepository,
 
-        IPriorityRepository prioritiesRepository)
-
-
+        IPriorityRepository prioritiesRepository,
+        IEscalationStatusRepository escalationStatusesRepository,
+        IAvailabilityRepository availabilitiesRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -86,6 +94,9 @@ public sealed class UnitOfWork : IUnitOfWork
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
 
+        AccountStatementsRepository = accountStatementsRepository;
+
+
         VeterinariansRepository = veterinariansRepository;
 
         PrioritiesRepository = prioritiesRepository;
@@ -97,6 +108,9 @@ public sealed class UnitOfWork : IUnitOfWork
         ConversationStatusesRepository = conversationStatusesRepository;
         MessageTypesRepository = messageTypesRepository;
 
+        EscalationStatusesRepository = escalationStatusesRepository;
+
+        AvailabilitiesRepository = availabilitiesRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -110,6 +124,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IClientRepository ClientsRepository { get; }
 
     public IUserTokensRepository UserTokensRepository { get; }
+
+    public IAccountStatementsRepository AccountStatementsRepository { get; }
 
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
     public ITypeServiceRepository TypeServicesRepository { get; }
@@ -128,7 +144,13 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public IConversationStatusRepository ConversationStatusesRepository { get; }
 
+
     public IMessageTypeRepository MessageTypesRepository { get; }
+
+    public IEscalationStatusRepository EscalationStatusesRepository { get; }
+
+    public IAvailabilityRepository AvailabilitiesRepository { get; }
+
 
 
 

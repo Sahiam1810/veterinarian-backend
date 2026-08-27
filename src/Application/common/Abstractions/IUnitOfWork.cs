@@ -1,3 +1,5 @@
+using Application.AccountStatements.Abstraction;
+using Application.Availabilities.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
@@ -25,7 +27,11 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+
 using Application.MessageTypes.Abstraction;
+
+using Application.EscalationStatuses.Abstraction;
+
 
 
 
@@ -67,7 +73,11 @@ public interface IUnitOfWork
 
     IConversationStatusRepository ConversationStatusesRepository { get; }
 
+
     IMessageTypeRepository MessageTypesRepository { get; }
+
+    IEscalationStatusRepository EscalationStatusesRepository { get; }
+
 
 
 
@@ -79,6 +89,10 @@ public interface IUnitOfWork
     IClientRepository ClientsRepository { get; }
 
     IUserTokensRepository UserTokensRepository { get; }
+
+    IAccountStatementsRepository AccountStatementsRepository { get; }
+
+    IAvailabilityRepository AvailabilitiesRepository { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

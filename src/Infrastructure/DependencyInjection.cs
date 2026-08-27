@@ -1,3 +1,5 @@
+using Application.AccountStatements.Abstraction;
+using Application.Availabilities.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
@@ -22,7 +24,11 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+
 using Application.MessageTypes.Abstraction;
+
+using Application.EscalationStatuses.Abstraction;
+
 
 
 
@@ -30,12 +36,18 @@ using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
+using Infrastructure.AccountStatements.Repositories;
+using Infrastructure.Availabilities.Repositories;
 using Infrastructure.Clients.Repositories;
 
+using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
+using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
+using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
+using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
@@ -65,7 +77,11 @@ using Infrastructure.SenderTypes.Repositories;
 using Infrastructure.AiRunStatuses.Repositories;
 
 using Infrastructure.ConversationStatuses.Repositories;
+
 using Infrastructure.MessageTypes.Repositories;
+
+using Infrastructure.EscalationStatuses.Repositories;
+
 
 
 
@@ -117,7 +133,11 @@ public static class DependencyInjection
         services.AddScoped<IAiRunStatusRepository, AiRunStatusRepository>();
 
         services.AddScoped<IConversationStatusRepository, ConversationStatusRepository>();
+
         services.AddScoped<IMessageTypeRepository, MessageTypeRepository>();
+
+        services.AddScoped<IEscalationStatusRepository, EscalationStatusRepository>();
+
 
         services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
         services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
@@ -125,8 +145,12 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
 
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
+        services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
+        services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
         services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
         services.AddScoped<IAiModelRepository, AiModelRepository>();
+        services.AddScoped<IChatUserProfileRepository, ChatUserProfileRepository>();
+        services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

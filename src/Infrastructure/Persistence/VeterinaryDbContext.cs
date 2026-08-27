@@ -5,6 +5,7 @@ using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
 using Microsoft.EntityFrameworkCore;
+using AccountStatementEntity = Domain.AccountStatements.Entities.AccountStatements;
 using RoleEntity = Domain.Roles.Entities.Roles;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
@@ -26,7 +27,12 @@ using Domain.SenderTypes.Entities;
 using Domain.AiRunStatuses.Entities;
 
 using Domain.ConversationStatuses.Entities;
+
 using Domain.MessageTypes.Entities;
+
+using Domain.EscalationStatuses.Entities;
+using Domain.Availabilities.Entities;
+
 
 
 
@@ -55,6 +61,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<UserTokenEntity> UserTokens => Set<UserTokenEntity>();
 
+    public DbSet<AccountStatementEntity> AccountStatements => Set<AccountStatementEntity>();
+
 
     public DbSet<Diagnostic> Diagnostics => Set<Diagnostic>();
 
@@ -79,6 +87,10 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<AiRunStatusEntity> AiRunStatuses => Set<AiRunStatusEntity>();
     public DbSet<ConversationStatusEntity> ConversationStatuses => Set<ConversationStatusEntity>();
     public DbSet<MessageTypeEntity> MessageTypes => Set<MessageTypeEntity>();
+
+    public DbSet<EscalationStatusEntity> EscalationStatuses => Set<EscalationStatusEntity>();
+
+    public DbSet<Availability> Availabilities => Set<Availability>();
 
 
 

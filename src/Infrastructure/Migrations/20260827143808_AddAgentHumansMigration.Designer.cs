@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260827143808_AddAgentHumansMigration")]
+    partial class AddAgentHumansMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -171,53 +174,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AI_RUNS_STATUSES", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Availabilities.Entities.Availability", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("AVAILABILITY_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<decimal>("DayOfWeek")
-                        .HasColumnType("NUMBER")
-                        .HasColumnName("DAY_OF_WEEK");
-
-                    b.Property<string>("EndTime")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("VARCHAR2(30)")
-                        .HasColumnName("END_TIME");
-
-                    b.Property<string>("IsActive")
-                        .IsRequired()
-                        .HasColumnType("CHAR(1)")
-                        .HasColumnName("IS_ACTIVE");
-
-                    b.Property<string>("StartTime")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("VARCHAR2(30)")
-                        .HasColumnName("START_TIME");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.Property<string>("VeterinarianId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("VETERINARIAN_ID");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VeterinarianId");
-
-                    b.ToTable("AVAILABILITIES", (string)null);
                 });
 
             modelBuilder.Entity("Domain.ChatUserProfiles.Entities.ChatUserProfile", b =>
@@ -1064,17 +1020,6 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("ProviderModelAiId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Availabilities.Entities.Availability", b =>
-                {
-                    b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
-                        .WithMany()
-                        .HasForeignKey("VeterinarianId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Veterinarian");
                 });
 
             modelBuilder.Entity("Domain.ChatUserProfiles.Entities.ChatUserProfile", b =>
