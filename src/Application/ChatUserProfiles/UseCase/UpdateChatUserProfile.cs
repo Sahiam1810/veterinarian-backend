@@ -1,4 +1,4 @@
-using Application.ChatUserProfiles.Abstraction;
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using MediatR;
 using ChatUserProfileEntity = Domain.ChatUserProfiles.Entities.ChatUserProfile;
@@ -14,24 +14,24 @@ public sealed record UpdateChatUserProfileCommand(
 public sealed class UpdateChatUserProfileCommandHandler
     : IRequestHandler<UpdateChatUserProfileCommand, ChatUserProfileEntity>
 {
-    private readonly IChatUserProfileRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateChatUserProfileCommandHandler(IChatUserProfileRepository repository)
+    public UpdateChatUserProfileCommandHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public async Task<ChatUserProfileEntity> Handle(
         UpdateChatUserProfileCommand request,
         CancellationToken cancellationToken)
     {
-        var profile = await _repository.GetByIdAsync(request.Id, cancellationToken)
+        var profile = await _uow.ChatUserProfilesRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException($"No se encontró el perfil de chat '{request.Id}'.");
 
         profile.Update(request.DisplayName, request.AvatarUrl, request.Bio);
 
-        await _repository.UpdateAsync(profile, cancellationToken);
-        await _repository.SaveChangesAsync(cancellationToken);
+        await _uow.ChatUserProfilesRepository.UpdateAsync(profile, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return profile;
     }

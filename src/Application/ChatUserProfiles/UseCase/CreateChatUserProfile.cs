@@ -1,6 +1,5 @@
-using Application.ChatUserProfiles.Abstraction;
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.Users.Abstraction;
 using MediatR;
 using ChatUserProfileEntity = Domain.ChatUserProfiles.Entities.ChatUserProfile;
 
@@ -15,22 +14,18 @@ public sealed record CreateChatUserProfileCommand(
 public sealed class CreateChatUserProfileCommandHandler
     : IRequestHandler<CreateChatUserProfileCommand, ChatUserProfileEntity>
 {
-    private readonly IChatUserProfileRepository _profileRepository;
-    private readonly IUsersRepository _usersRepository;
+    private readonly IUnitOfWork _uow;
 
-    public CreateChatUserProfileCommandHandler(
-        IChatUserProfileRepository profileRepository,
-        IUsersRepository usersRepository)
+    public CreateChatUserProfileCommandHandler(IUnitOfWork uow)
     {
-        _profileRepository = profileRepository;
-        _usersRepository = usersRepository;
+        _uow = uow;
     }
 
     public async Task<ChatUserProfileEntity> Handle(
         CreateChatUserProfileCommand request,
         CancellationToken cancellationToken)
     {
-        var user = await _usersRepository.GetByIdAsync(request.PersonId, cancellationToken);
+        var user = await _uow.UsersRepository.GetByIdAsync(request.PersonId, cancellationToken);
         if (user is null)
         {
             throw new NotFoundException(
@@ -43,8 +38,8 @@ public sealed class CreateChatUserProfileCommandHandler
             request.AvatarUrl,
             request.Bio);
 
-        await _profileRepository.AddAsync(profile, cancellationToken);
-        await _profileRepository.SaveChangesAsync(cancellationToken);
+        await _uow.ChatUserProfilesRepository.AddAsync(profile, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return profile;
     }
