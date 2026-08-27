@@ -21,7 +21,11 @@ using Application.Veterinarians.Abstraction;
 using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
+
+using Application.AiRunStatuses.Abstraction;
+
 using Application.ConversationStatuses.Abstraction;
+
 
 
 
@@ -57,7 +61,11 @@ public interface IUnitOfWork
 
     ISenderTypeRepository SenderTypesRepository { get; }
 
+
+    IAiRunStatusRepository AiRunStatusesRepository { get; }
+
     IConversationStatusRepository ConversationStatusesRepository { get; }
+
 
 
 
