@@ -1,3 +1,4 @@
+using Application.AccountStatements.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
@@ -79,6 +80,8 @@ public interface IUnitOfWork
     IClientRepository ClientsRepository { get; }
 
     IUserTokensRepository UserTokensRepository { get; }
+
+    IAccountStatementsRepository AccountStatementsRepository { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

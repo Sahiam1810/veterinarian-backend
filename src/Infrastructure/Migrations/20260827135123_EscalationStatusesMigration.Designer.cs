@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260827135123_EscalationStatusesMigration")]
+    partial class EscalationStatusesMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,42 +24,6 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Domain.AccountStatements.Entities.AccountStatements", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("STATEMENT_ID");
-
-                    b.Property<string>("AccountId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("ACCOUNT_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<DateTime>("IssueDate")
-                        .HasColumnType("DATE")
-                        .HasColumnName("ISSUE_DATE");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("VARCHAR2(30)")
-                        .HasColumnName("STATUS");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.ToTable("ACCOUNT_STATEMENTS", (string)null);
-                });
 
             modelBuilder.Entity("Domain.AiModels.Entities.AiModel", b =>
                 {
@@ -917,15 +884,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("VETERINARIANS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.AccountStatements.Entities.AccountStatements", b =>
-                {
-                    b.HasOne("Domain.UserAccounts.Entities.UserAccounts", null)
-                        .WithMany()
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.AiModels.Entities.AiModel", b =>

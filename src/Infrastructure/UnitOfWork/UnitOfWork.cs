@@ -1,3 +1,4 @@
+using Application.AccountStatements.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Pets.Abstraction;
@@ -55,6 +56,8 @@ public sealed class UnitOfWork : IUnitOfWork
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
 
+        IAccountStatementsRepository accountStatementsRepository,
+
         ISenderTypeRepository senderTypesRepository,
         IAiRunStatusRepository aiRunStatusesRepository,
 
@@ -65,8 +68,6 @@ public sealed class UnitOfWork : IUnitOfWork
 
         IPriorityRepository prioritiesRepository,
         IEscalationStatusRepository escalationStatusesRepository)
-
-
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -86,6 +87,9 @@ public sealed class UnitOfWork : IUnitOfWork
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
 
+        AccountStatementsRepository = accountStatementsRepository;
+
+
         VeterinariansRepository = veterinariansRepository;
 
         PrioritiesRepository = prioritiesRepository;
@@ -97,6 +101,7 @@ public sealed class UnitOfWork : IUnitOfWork
         ConversationStatusesRepository = conversationStatusesRepository;
 
         EscalationStatusesRepository = escalationStatusesRepository;
+
 
     }
 
@@ -111,6 +116,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IClientRepository ClientsRepository { get; }
 
     public IUserTokensRepository UserTokensRepository { get; }
+
+    public IAccountStatementsRepository AccountStatementsRepository { get; }
 
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
     public ITypeServiceRepository TypeServicesRepository { get; }

@@ -5,6 +5,7 @@ using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
 using Microsoft.EntityFrameworkCore;
+using AccountStatementEntity = Domain.AccountStatements.Entities.AccountStatements;
 using RoleEntity = Domain.Roles.Entities.Roles;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
@@ -54,6 +55,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<ClientEntity> Clients => Set<ClientEntity>();
 
     public DbSet<UserTokenEntity> UserTokens => Set<UserTokenEntity>();
+
+    public DbSet<AccountStatementEntity> AccountStatements => Set<AccountStatementEntity>();
 
 
     public DbSet<Diagnostic> Diagnostics => Set<Diagnostic>();
