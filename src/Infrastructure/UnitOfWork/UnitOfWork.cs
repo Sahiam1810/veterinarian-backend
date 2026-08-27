@@ -22,7 +22,11 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+
+using Application.MessageTypes.Abstraction;
+
 using Application.EscalationStatuses.Abstraction;
+
 
 
 
@@ -66,6 +70,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IVeterinarianRepository veterinariansRepository,
 
         IConversationStatusRepository conversationStatusesRepository,
+        IMessageTypeRepository messageTypesRepository,
 
         IPriorityRepository prioritiesRepository,
         IEscalationStatusRepository escalationStatusesRepository,
@@ -101,6 +106,7 @@ public sealed class UnitOfWork : IUnitOfWork
         AiRunStatusesRepository = aiRunStatusesRepository;
 
         ConversationStatusesRepository = conversationStatusesRepository;
+        MessageTypesRepository = messageTypesRepository;
 
         EscalationStatusesRepository = escalationStatusesRepository;
 
@@ -138,9 +144,13 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public IConversationStatusRepository ConversationStatusesRepository { get; }
 
+
+    public IMessageTypeRepository MessageTypesRepository { get; }
+
     public IEscalationStatusRepository EscalationStatusesRepository { get; }
 
     public IAvailabilityRepository AvailabilitiesRepository { get; }
+
 
 
 
