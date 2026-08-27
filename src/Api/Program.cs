@@ -1,3 +1,4 @@
+using Api.Common.Errors;
 using Api.Common.Security;
 using Api.Extensions;
 using Application;
@@ -16,6 +17,8 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfig
     .WriteTo.Console());
 
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -55,6 +58,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseApiCors();
