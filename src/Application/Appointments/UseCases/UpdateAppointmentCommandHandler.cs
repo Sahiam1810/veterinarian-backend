@@ -24,7 +24,7 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
             request.VeterinarianId,
             request.ServiceId,
             request.StatusId,
-            request.Reason,
+            request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes);

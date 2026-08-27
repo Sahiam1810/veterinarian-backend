@@ -1,3 +1,4 @@
+using Domain.Availabilities.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Common;
 using Domain.Services.Entities;
@@ -17,7 +18,7 @@ public sealed class Appointment : BaseEntity<Guid>
         Guid veterinarianId,
         Guid serviceId,
         Guid statusId,
-        string? reason,
+        Guid availabilityId,
         DateTime scheduledStart,
         DateTime scheduledEnd,
         string? notes)
@@ -27,7 +28,7 @@ public sealed class Appointment : BaseEntity<Guid>
         VeterinarianId = veterinarianId;
         ServiceId = serviceId;
         StatusId = statusId;
-        Reason = reason;
+        AvailabilityId = availabilityId;
         ScheduledStart = scheduledStart;
         ScheduledEnd = scheduledEnd;
         Notes = notes;
@@ -45,7 +46,9 @@ public sealed class Appointment : BaseEntity<Guid>
     public Guid StatusId { get; private set; }
     public StatusAppointment? Status { get; private set; }
 
-    public string? Reason { get; private set; }
+    public Guid AvailabilityId { get; private set; }
+    public Availability? Availability { get; private set; }
+
     public DateTime ScheduledStart { get; private set; }
     public DateTime ScheduledEnd { get; private set; }
     public string? Notes { get; private set; }
@@ -55,7 +58,7 @@ public sealed class Appointment : BaseEntity<Guid>
         Guid veterinarianId,
         Guid serviceId,
         Guid statusId,
-        string? reason,
+        Guid availabilityId,
         DateTime scheduledStart,
         DateTime scheduledEnd,
         string? notes)
@@ -64,7 +67,7 @@ public sealed class Appointment : BaseEntity<Guid>
         VeterinarianId = veterinarianId;
         ServiceId = serviceId;
         StatusId = statusId;
-        Reason = reason;
+        AvailabilityId = availabilityId;
         ScheduledStart = scheduledStart;
         ScheduledEnd = scheduledEnd;
         Notes = notes;

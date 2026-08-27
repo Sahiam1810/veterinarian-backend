@@ -16,7 +16,7 @@ public sealed class CreateAppointmentCommandHandler(IUnitOfWork unitOfWork)
             request.VeterinarianId,
             request.ServiceId,
             request.StatusId,
-            request.Reason,
+            request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes);

@@ -21,6 +21,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Include(x => x.Veterinarian)
             .Include(x => x.Service)
             .Include(x => x.Status)
+            .Include(x => x.Availability)
             .AsNoTracking()
             .OrderByDescending(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
@@ -33,6 +34,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Include(x => x.Veterinarian)
             .Include(x => x.Service)
             .Include(x => x.Status)
+            .Include(x => x.Availability)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public async Task AddAsync(

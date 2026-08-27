@@ -53,10 +53,13 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
                 value => Guid.Parse(value))
             .IsRequired();
 
-        builder.Property(x => x.Reason)
-            .HasColumnName("REASON")
-            .HasColumnType("VARCHAR2(100)")
-            .HasMaxLength(100);
+        builder.Property(x => x.AvailabilityId)
+            .HasColumnName("AVAILABILITY_ID")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.ToString(),
+                value => Guid.Parse(value))
+            .IsRequired();
 
         builder.Property(x => x.ScheduledStart)
             .HasColumnName("SCHEDULED_START")
@@ -70,8 +73,8 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
 
         builder.Property(x => x.Notes)
             .HasColumnName("NOTES")
-            .HasColumnType("VARCHAR2(500)")
-            .HasMaxLength(500);
+            .HasColumnType("VARCHAR2(100)")
+            .HasMaxLength(100);
 
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
@@ -100,6 +103,11 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.HasOne(x => x.Status)
             .WithMany()
             .HasForeignKey(x => x.StatusId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Availability)
+            .WithMany()
+            .HasForeignKey(x => x.AvailabilityId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
