@@ -55,13 +55,11 @@ public sealed class UnitOfWork : IUnitOfWork
         IClientPetRepository clientPetsRepository,
 
         ISenderTypeRepository senderTypesRepository,
-        IAiRunStatusRepository aiRunStatusesRepository)
+        IAiRunStatusRepository aiRunStatusesRepository,
 
 
         IVeterinarianRepository veterinariansRepository,
 
-
-        ISenderTypeRepository senderTypesRepository,
         IConversationStatusRepository conversationStatusesRepository,
 
         IPriorityRepository prioritiesRepository)
