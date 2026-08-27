@@ -1,4 +1,4 @@
-using Application.ProviderModelsAi.Abstraction;
+using Application.Common.Abstractions;
 using MediatR;
 using ProviderEntity = Domain.ProviderModelsAi.Entities.ProviderModelAi;
 
@@ -12,11 +12,11 @@ public sealed record CreateProviderModelAiCommand(
 public sealed class CreateProviderModelAiCommandHandler
     : IRequestHandler<CreateProviderModelAiCommand, ProviderEntity>
 {
-    private readonly IProviderModelAiRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public CreateProviderModelAiCommandHandler(IProviderModelAiRepository repository)
+    public CreateProviderModelAiCommandHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public async Task<ProviderEntity> Handle(
@@ -28,8 +28,8 @@ public sealed class CreateProviderModelAiCommandHandler
             request.BusinessName,
             request.Website);
 
-        await _repository.AddAsync(provider, cancellationToken);
-        await _repository.SaveChangesAsync(cancellationToken);
+        await _uow.ProviderModelsAiRepository.AddAsync(provider, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return provider;
     }
