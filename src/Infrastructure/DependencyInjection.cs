@@ -3,6 +3,7 @@ using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.MedicalRecords.Abstraction;
+using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
@@ -45,6 +46,7 @@ using Infrastructure.Availabilities.Repositories;
 using Infrastructure.Appointments.Repositories;
 using Infrastructure.AppointmentStatusHistories.Repositories;
 using Infrastructure.MedicalRecords.Repositories;
+using Infrastructure.Vaccinations.Repositories;
 using Infrastructure.Clients.Repositories;
 
 using Application.AgentHumans.Abstraction;
@@ -157,6 +159,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
         services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+        services.AddScoped<IVaccinationRepository, VaccinationRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
         services.AddScoped<IAiModelRepository, AiModelRepository>();

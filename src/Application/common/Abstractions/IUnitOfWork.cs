@@ -3,6 +3,7 @@ using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Diagnostics.Abstraction;
 using Application.MedicalRecords.Abstraction;
+using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
@@ -95,6 +96,8 @@ public interface IUnitOfWork
     IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
 
     IMedicalRecordRepository MedicalRecordsRepository { get; }
+
+    IVaccinationRepository VaccinationsRepository { get; }
 
     INotificationRepository NotificationsRepository { get; }
 
