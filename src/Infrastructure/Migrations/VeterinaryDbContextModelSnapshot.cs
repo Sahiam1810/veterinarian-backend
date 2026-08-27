@@ -17,7 +17,7 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -258,31 +258,6 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("DIAGNOSTICS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.EscalationStatuses.Entities.EscalationStatusEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("ESCALATIONS_ID");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("VARCHAR2(50)")
-                        .HasColumnName("NAME_STATUS");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ESCALATIONS_STATUSES", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Pets.Entities.PetEntity", b =>
