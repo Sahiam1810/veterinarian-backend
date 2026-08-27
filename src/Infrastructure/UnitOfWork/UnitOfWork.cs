@@ -20,6 +20,7 @@ using Application.SenderTypes.Abstraction;
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
+using Application.EscalationStatuses.Abstraction;
 
 
 
@@ -62,7 +63,8 @@ public sealed class UnitOfWork : IUnitOfWork
 
         IConversationStatusRepository conversationStatusesRepository,
 
-        IPriorityRepository prioritiesRepository)
+        IPriorityRepository prioritiesRepository,
+        IEscalationStatusRepository escalationStatusesRepository)
 
 
     {
@@ -94,6 +96,8 @@ public sealed class UnitOfWork : IUnitOfWork
 
         ConversationStatusesRepository = conversationStatusesRepository;
 
+        EscalationStatusesRepository = escalationStatusesRepository;
+
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -124,6 +128,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAiRunStatusRepository AiRunStatusesRepository { get; }
 
     public IConversationStatusRepository ConversationStatusesRepository { get; }
+
+    public IEscalationStatusRepository EscalationStatusesRepository { get; }
 
 
 
