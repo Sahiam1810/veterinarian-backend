@@ -33,6 +33,7 @@ using Application.EscalationStatuses.Abstraction;
 
 
 
+using Application.Notifications.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -80,7 +81,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IAvailabilityRepository availabilitiesRepository,
         IAppointmentRepository appointmentsRepository,
         IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository,
-        IMedicalRecordRepository medicalRecordsRepository)
+        IMedicalRecordRepository medicalRecordsRepository,
+        INotificationRepository notificationsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -120,6 +122,7 @@ public sealed class UnitOfWork : IUnitOfWork
         AppointmentsRepository = appointmentsRepository;
         AppointmentStatusHistoriesRepository = appointmentStatusHistoriesRepository;
         MedicalRecordsRepository = medicalRecordsRepository;
+        NotificationsRepository = notificationsRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -162,6 +165,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAppointmentRepository AppointmentsRepository { get; }
     public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
     public IMedicalRecordRepository MedicalRecordsRepository { get; }
+    public INotificationRepository NotificationsRepository { get; }
 
 
 

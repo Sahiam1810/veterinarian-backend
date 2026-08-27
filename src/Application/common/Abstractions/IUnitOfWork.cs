@@ -40,6 +40,8 @@ using Application.EscalationStatuses.Abstraction;
 
 
 
+using Application.Notifications.Abstraction;
+
 namespace Application.Common.Abstractions;
 
 public interface IUnitOfWork
@@ -88,9 +90,7 @@ public interface IUnitOfWork
 
     IMedicalRecordRepository MedicalRecordsRepository { get; }
 
-
-
-
+    INotificationRepository NotificationsRepository { get; }
 
     IUserAccountsRepository UserAccountsRepository { get; }
 
