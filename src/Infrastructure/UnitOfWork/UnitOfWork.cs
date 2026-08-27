@@ -1,6 +1,7 @@
 using Application.AccountStatements.Abstraction;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
+using Application.AppointmentStatusHistories.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Pets.Abstraction;
@@ -76,7 +77,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IPriorityRepository prioritiesRepository,
         IEscalationStatusRepository escalationStatusesRepository,
         IAvailabilityRepository availabilitiesRepository,
-        IAppointmentRepository appointmentsRepository)
+        IAppointmentRepository appointmentsRepository,
+        IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -114,6 +116,7 @@ public sealed class UnitOfWork : IUnitOfWork
 
         AvailabilitiesRepository = availabilitiesRepository;
         AppointmentsRepository = appointmentsRepository;
+        AppointmentStatusHistoriesRepository = appointmentStatusHistoriesRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -154,6 +157,7 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public IAvailabilityRepository AvailabilitiesRepository { get; }
     public IAppointmentRepository AppointmentsRepository { get; }
+    public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
 
 
 
