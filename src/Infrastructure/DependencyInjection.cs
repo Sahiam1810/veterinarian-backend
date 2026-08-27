@@ -1,3 +1,4 @@
+using Application.AccountStatements.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
@@ -18,6 +19,7 @@ using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
+using Infrastructure.AccountStatements.Repositories;
 using Infrastructure.Clients.Repositories;
 
 using Application.AiModels.Abstraction;
@@ -90,6 +92,7 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
 
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
+        services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
         services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
         services.AddScoped<IAiModelRepository, AiModelRepository>();
 
