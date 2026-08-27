@@ -1,4 +1,4 @@
-using Application.AiModels.Abstraction;
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using MediatR;
 using AiModelEntity = Domain.AiModels.Entities.AiModel;
@@ -17,18 +17,18 @@ public sealed record UpdateAiModelCommand(
 public sealed class UpdateAiModelCommandHandler
     : IRequestHandler<UpdateAiModelCommand, AiModelEntity>
 {
-    private readonly IAiModelRepository _repository;
+    private readonly IUnitOfWork _uow;
 
-    public UpdateAiModelCommandHandler(IAiModelRepository repository)
+    public UpdateAiModelCommandHandler(IUnitOfWork uow)
     {
-        _repository = repository;
+        _uow = uow;
     }
 
     public async Task<AiModelEntity> Handle(
         UpdateAiModelCommand request,
         CancellationToken cancellationToken)
     {
-        var model = await _repository.GetByIdAsync(request.Id, cancellationToken)
+        var model = await _uow.AiModelsRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException($"No se encontró el modelo de IA '{request.Id}'.");
 
         model.Update(
@@ -39,8 +39,8 @@ public sealed class UpdateAiModelCommandHandler
             request.MaxTokens,
             request.ContextWindow);
 
-        await _repository.UpdateAsync(model, cancellationToken);
-        await _repository.SaveChangesAsync(cancellationToken);
+        await _uow.AiModelsRepository.UpdateAsync(model, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return model;
     }

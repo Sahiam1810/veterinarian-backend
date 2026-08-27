@@ -1,6 +1,5 @@
-using Application.AiModels.Abstraction;
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.ProviderModelsAi.Abstraction;
 using MediatR;
 using AiModelEntity = Domain.AiModels.Entities.AiModel;
 
@@ -18,22 +17,18 @@ public sealed record CreateAiModelCommand(
 public sealed class CreateAiModelCommandHandler
     : IRequestHandler<CreateAiModelCommand, AiModelEntity>
 {
-    private readonly IAiModelRepository _modelRepository;
-    private readonly IProviderModelAiRepository _providerRepository;
+    private readonly IUnitOfWork _uow;
 
-    public CreateAiModelCommandHandler(
-        IAiModelRepository modelRepository,
-        IProviderModelAiRepository providerRepository)
+    public CreateAiModelCommandHandler(IUnitOfWork uow)
     {
-        _modelRepository = modelRepository;
-        _providerRepository = providerRepository;
+        _uow = uow;
     }
 
     public async Task<AiModelEntity> Handle(
         CreateAiModelCommand request,
         CancellationToken cancellationToken)
     {
-        var providerExists = await _providerRepository.ExistsAsync(
+        var providerExists = await _uow.ProviderModelsAiRepository.ExistsAsync(
             request.ProviderModelAiId,
             cancellationToken);
 
@@ -52,8 +47,8 @@ public sealed class CreateAiModelCommandHandler
             request.MaxTokens,
             request.ContextWindow);
 
-        await _modelRepository.AddAsync(model, cancellationToken);
-        await _modelRepository.SaveChangesAsync(cancellationToken);
+        await _uow.AiModelsRepository.AddAsync(model, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
 
         return model;
     }
