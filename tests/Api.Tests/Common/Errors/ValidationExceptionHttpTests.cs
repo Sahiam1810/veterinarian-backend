@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Api.Auth.Controllers;
+using Api.Tests.Support;
 using Application.Common.Results;
 using Application.Security.Abstractions;
 using Application.Security.Models;
@@ -52,6 +53,8 @@ public sealed class ValidationExceptionHttpTests : IClassFixture<OracleFreeApiFa
 
 public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
 {
+    private static readonly RsaTestKeys Keys = RsaTestKeys.Create();
+
     private static readonly IReadOnlyDictionary<string, string> TestEnvironment =
         new Dictionary<string, string>
         {
@@ -60,7 +63,9 @@ public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.test",
             ["Jwt__Audience"] = "huellitas-api-tests",
-            ["Jwt__SigningKey"] = "test-only-signing-key-with-at-least-32-bytes",
+            ["Jwt__PrivateKeyPemBase64"] = Keys.PrivateKeyPemBase64,
+            ["Jwt__PublicKeyPemBase64"] = Keys.PublicKeyPemBase64,
+            ["Jwt__KeyId"] = "validation-errors-test-key",
             ["Jwt__AccessTokenMinutes"] = "15",
             ["Jwt__RefreshTokenDays"] = "7",
             ["Jwt__ClockSkewSeconds"] = "0"

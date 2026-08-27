@@ -1,7 +1,7 @@
-using System.Text;
 using Api.Common.Security;
 using Microsoft.Extensions.Options;
 using Infrastructure.Security.Options;
+using Infrastructure.Security.Tokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -16,7 +16,8 @@ public static class JwtAuthenticationExtensions
             .AddJwtBearer();
         services.AddOptions<JwtBearerOptions>(
                 JwtBearerDefaults.AuthenticationScheme)
-            .Configure<IOptions<JwtOptions>>((bearer, jwtOptions) =>
+            .Configure<IOptions<JwtOptions>, JwtRsaKeyMaterial>(
+                (bearer, jwtOptions, keyMaterial) =>
             {
                 var jwt = jwtOptions.Value;
                 bearer.MapInboundClaims = false;
@@ -27,8 +28,8 @@ public static class JwtAuthenticationExtensions
                     ValidateAudience = true,
                     ValidAudience = jwt.Audience,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwt.SigningKey)),
+                    IssuerSigningKey = keyMaterial.ValidationKey,
+                    ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromSeconds(jwt.ClockSkewSeconds),
                     NameClaimType = "preferred_username",

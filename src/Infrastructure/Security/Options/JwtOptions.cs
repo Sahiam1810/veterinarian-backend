@@ -13,8 +13,6 @@ public sealed class JwtOptions
 
     public string KeyId { get; init; } = string.Empty;
 
-    public string SigningKey { get; init; } = string.Empty;
-
     public int AccessTokenMinutes { get; init; }
 
     public int RefreshTokenDays { get; init; }
