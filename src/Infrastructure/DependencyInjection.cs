@@ -1,4 +1,5 @@
 using Application.AccountStatements.Abstraction;
+using Application.Agent.Abstractions;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
@@ -41,6 +42,8 @@ using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
 using Infrastructure.AccountStatements.Repositories;
+using Infrastructure.Agent.Configuration;
+using Infrastructure.Agent.Conversations;
 using Infrastructure.Notifications.Repositories;
 using Infrastructure.Availabilities.Repositories;
 using Infrastructure.Appointments.Repositories;
@@ -168,6 +171,12 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
+        services.AddSingleton<IValidateOptions<AgentOptions>, AgentOptionsValidator>();
+        services.AddOptions<AgentOptions>()
+            .Bind(configuration.GetSection(AgentOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IConversationContextProvider, TransientConversationContextProvider>();
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<JwtRsaKeyMaterial>();
