@@ -18,8 +18,4 @@ public interface IVaccinationRepository
     Task UpdateAsync(
         Vaccination vaccination,
         CancellationToken cancellationToken);
-
-    Task DeleteAsync(
-        Vaccination vaccination,
-        CancellationToken cancellationToken);
 }

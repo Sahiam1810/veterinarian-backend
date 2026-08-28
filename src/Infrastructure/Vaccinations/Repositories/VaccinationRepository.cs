@@ -44,12 +44,4 @@ public sealed class VaccinationRepository : IVaccinationRepository
         _context.Set<Vaccination>().Update(vaccination);
         return Task.CompletedTask;
     }
-
-    public Task DeleteAsync(
-        Vaccination vaccination,
-        CancellationToken cancellationToken = default)
-    {
-        _context.Set<Vaccination>().Remove(vaccination);
-        return Task.CompletedTask;
-    }
 }

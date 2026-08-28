@@ -43,23 +43,4 @@ public sealed class MedicalRecord : BaseEntity<Guid>
     public string? Treatment { get; private set; }
     public decimal? WeightAtVisit { get; private set; }
     public decimal? Temperature { get; private set; }
-
-    public void Update(
-        Guid clientPetId,
-        Guid appointmentId,
-        Guid diagnosticId,
-        string? symptoms,
-        string? treatment,
-        decimal? weightAtVisit,
-        decimal? temperature)
-    {
-        ClientPetId = clientPetId;
-        AppointmentId = appointmentId;
-        DiagnosticId = diagnosticId;
-        Symptoms = symptoms;
-        Treatment = treatment;
-        WeightAtVisit = weightAtVisit;
-        Temperature = temperature;
-        UpdatedAt = DateTime.UtcNow;
-    }
 }

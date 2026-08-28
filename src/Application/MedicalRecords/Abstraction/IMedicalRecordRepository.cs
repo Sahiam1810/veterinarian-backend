@@ -14,12 +14,4 @@ public interface IMedicalRecordRepository
     Task AddAsync(
         MedicalRecord medicalRecord,
         CancellationToken cancellationToken);
-
-    Task UpdateAsync(
-        MedicalRecord medicalRecord,
-        CancellationToken cancellationToken);
-
-    Task DeleteAsync(
-        MedicalRecord medicalRecord,
-        CancellationToken cancellationToken);
 }

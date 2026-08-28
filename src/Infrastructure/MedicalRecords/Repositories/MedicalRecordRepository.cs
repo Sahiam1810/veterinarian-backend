@@ -38,20 +38,4 @@ public sealed class MedicalRecordRepository : IMedicalRecordRepository
         CancellationToken cancellationToken = default)
         => await _context.Set<MedicalRecord>()
             .AddAsync(medicalRecord, cancellationToken);
-
-    public Task UpdateAsync(
-        MedicalRecord medicalRecord,
-        CancellationToken cancellationToken = default)
-    {
-        _context.Set<MedicalRecord>().Update(medicalRecord);
-        return Task.CompletedTask;
-    }
-
-    public Task DeleteAsync(
-        MedicalRecord medicalRecord,
-        CancellationToken cancellationToken = default)
-    {
-        _context.Set<MedicalRecord>().Remove(medicalRecord);
-        return Task.CompletedTask;
-    }
 }

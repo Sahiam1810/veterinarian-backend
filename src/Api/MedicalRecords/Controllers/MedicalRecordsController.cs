@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.MedicalRecords.Dtos;
 using Api.MedicalRecords.Mappings;
 using Application.MedicalRecords.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,8 +14,9 @@ namespace Api.MedicalRecords.Controllers;
 public sealed class MedicalRecordsController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
     [EndpointSummary("Crea un nuevo registro de historia médica")]
-    [EndpointDescription("Registra una nueva historia médica para la mascota de un cliente.")]
+    [EndpointDescription("Registra una nueva historia médica para la mascota de un cliente. Una vez creada, la historia clínica queda inmutable como parte del historial de la mascota.")]
     [ProducesResponseType(typeof(CreateMedicalRecordResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CreateMedicalRecordResponse>> Create(
@@ -30,6 +33,7 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
     [EndpointSummary("Obtiene todas las historias médicas")]
     [EndpointDescription("Retorna el listado completo de historias médicas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<MedicalRecordResponse>), StatusCodes.Status200OK)]
@@ -44,6 +48,7 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
     [EndpointSummary("Obtiene una historia médica por su ID")]
     [EndpointDescription("Retorna la información detallada de una historia médica específica.")]
     [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status200OK)]
@@ -59,43 +64,5 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
         return record is null
             ? NotFound()
             : Ok(record.ToResponse());
-    }
-
-    [HttpPut("{id:guid}")]
-    [EndpointSummary("Actualiza una historia médica existente")]
-    [EndpointDescription("Modifica los datos de una historia médica previamente registrada.")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(
-        Guid id,
-        [FromBody] UpdateMedicalRecordRequest request,
-        CancellationToken cancellationToken)
-    {
-        var updated = await sender.Send(
-            request.ToCommand(id),
-            cancellationToken);
-
-        return updated
-            ? NoContent()
-            : NotFound();
-    }
-
-    [HttpDelete("{id:guid}")]
-    [EndpointSummary("Elimina una historia médica por su ID")]
-    [EndpointDescription("Remueve permanentemente una historia médica del sistema.")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(
-        Guid id,
-        CancellationToken cancellationToken)
-    {
-        var deleted = await sender.Send(
-            new DeleteMedicalRecordCommand(id),
-            cancellationToken);
-
-        return deleted
-            ? NoContent()
-            : NotFound();
     }
 }

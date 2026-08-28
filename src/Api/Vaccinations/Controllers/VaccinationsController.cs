@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.Vaccinations.Dtos;
 using Api.Vaccinations.Mappings;
 using Application.Vaccinations.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,8 +14,9 @@ namespace Api.Vaccinations.Controllers;
 public sealed class VaccinationsController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [EndpointSummary("Crea un nuevo registro de vacunación")]
-    [EndpointDescription("Registra una nueva vacuna aplicada a la mascota de un cliente.")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
+    [EndpointSummary("Registra una nueva vacunación")]
+    [EndpointDescription("Registra una vacuna aplicada a la mascota de un cliente.")]
     [ProducesResponseType(typeof(CreateVaccinationResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CreateVaccinationResponse>> Create(
@@ -30,6 +33,7 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
     [EndpointSummary("Obtiene todas las vacunaciones")]
     [EndpointDescription("Retorna el listado completo de todas las vacunas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VaccinationResponse>), StatusCodes.Status200OK)]
@@ -44,6 +48,7 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
     [EndpointSummary("Obtiene un registro de vacunación por su ID")]
     [EndpointDescription("Retorna la información detallada de un registro de vacunación específico.")]
     [ProducesResponseType(typeof(VaccinationResponse), StatusCodes.Status200OK)]
@@ -62,8 +67,9 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualiza un registro de vacunación existente")]
-    [EndpointDescription("Modifica los datos de una vacunación previamente registrada.")]
+    [EndpointDescription("Modifica los datos de una vacunación previamente registrada. Solo el administrador puede corregir un registro ya creado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -77,24 +83,6 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
             cancellationToken);
 
         return updated
-            ? NoContent()
-            : NotFound();
-    }
-
-    [HttpDelete("{id:guid}")]
-    [EndpointSummary("Elimina un registro de vacunación por su ID")]
-    [EndpointDescription("Remueve permanentemente un registro de vacunación del sistema.")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(
-        Guid id,
-        CancellationToken cancellationToken)
-    {
-        var deleted = await sender.Send(
-            new DeleteVaccinationCommand(id),
-            cancellationToken);
-
-        return deleted
             ? NoContent()
             : NotFound();
     }

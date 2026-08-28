@@ -19,21 +19,6 @@ public static class MedicalRecordMappings
             request.Temperature);
     }
 
-    public static UpdateMedicalRecordCommand ToCommand(
-        this UpdateMedicalRecordRequest request,
-        Guid id)
-    {
-        return new UpdateMedicalRecordCommand(
-            id,
-            request.ClientPetId,
-            request.AppointmentId,
-            request.DiagnosticId,
-            request.Symptoms,
-            request.Treatment,
-            request.WeightAtVisit,
-            request.Temperature);
-    }
-
     public static MedicalRecordResponse ToResponse(
         this MedicalRecord entity)
     {

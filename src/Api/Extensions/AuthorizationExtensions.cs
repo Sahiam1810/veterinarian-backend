@@ -60,6 +60,13 @@ public static class AuthorizationExtensions
                     "Administrador",
                     "Recepcionista",
                     "Auxiliar"));
+            options.AddPolicy(
+                AuthorizationPolicies.ClinicalHistoryReadOnly,
+                policy => policy.RequireRole(
+                    "Administrador",
+                    "Veterinario",
+                    "Recepcionista",
+                    "Cliente"));
         });
 
         return services;
