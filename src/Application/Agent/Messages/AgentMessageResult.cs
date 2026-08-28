@@ -5,4 +5,8 @@ public sealed record AgentMessageResult(
     Guid ConversationId,
     Guid CorrelationId,
     string ResponseType,
-    string? Module);
+    string? Provider,
+    string? Model,
+    AgentTokenUsage? Usage,
+    string? Module,
+    AgentRagResult Rag);

@@ -16,7 +16,15 @@ public sealed class SendAgentMessageHandlerTests
         var conversations = new RecordingConversationContextProvider(
             new AgentConversationContext(ConversationId, "web", false));
         var expected = new AgentMessageResult(
-            "Respuesta", ConversationId, CorrelationId, "ai_generated", null);
+            "Respuesta",
+            ConversationId,
+            CorrelationId,
+            "ai_generated",
+            "openrouter",
+            "google/gemini-flash",
+            new AgentTokenUsage(12, 7),
+            "appointments",
+            new AgentRagResult("used", "contextual", 0.91, 2, 1, true, false));
         var client = new RecordingAgentMessagingClient(expected);
         var handler = new SendAgentMessageHandler(
             conversations,
@@ -41,7 +49,7 @@ public sealed class SendAgentMessageHandlerTests
         var conversations = new RecordingConversationContextProvider(
             new AgentConversationContext(requested, "web", false));
         var client = new RecordingAgentMessagingClient(
-            new AgentMessageResult("Respuesta", requested, CorrelationId, "ai_generated", null));
+            Result(conversationId: requested));
         var handler = new SendAgentMessageHandler(
             conversations,
             new StubUserAccessTokenProvider("signed-access-token"),
@@ -62,7 +70,7 @@ public sealed class SendAgentMessageHandlerTests
         var conversations = new RecordingConversationContextProvider(
             new AgentConversationContext(ConversationId, "web", false));
         var client = new RecordingAgentMessagingClient(
-            new AgentMessageResult("Respuesta", ConversationId, CorrelationId, "ai_generated", null));
+            Result());
         var handler = new SendAgentMessageHandler(
             conversations,
             new StubUserAccessTokenProvider("signed-access-token"),
@@ -78,7 +86,15 @@ public sealed class SendAgentMessageHandlerTests
     public async Task Handle_returns_human_controlled_result_without_rewriting_it()
     {
         var expected = new AgentMessageResult(
-            null, ConversationId, CorrelationId, "human_controlled", "escalations");
+            null,
+            ConversationId,
+            CorrelationId,
+            "human_controlled",
+            null,
+            null,
+            null,
+            "escalations",
+            new AgentRagResult("disabled", "general", null, 0, 0, false, false));
         var handler = new SendAgentMessageHandler(
             new RecordingConversationContextProvider(
                 new AgentConversationContext(ConversationId, "web", true)),
@@ -100,6 +116,18 @@ public sealed class SendAgentMessageHandlerTests
             "Cliente",
             "message-001",
             CorrelationId);
+
+    private static AgentMessageResult Result(Guid? conversationId = null) =>
+        new(
+            "Respuesta",
+            conversationId ?? ConversationId,
+            CorrelationId,
+            "ai_generated",
+            "openrouter",
+            "google/gemini-flash",
+            new AgentTokenUsage(12, 7),
+            null,
+            new AgentRagResult("used", "contextual", 0.91, 2, 1, true, false));
 
     private sealed class RecordingConversationContextProvider(AgentConversationContext result)
         : IConversationContextProvider
