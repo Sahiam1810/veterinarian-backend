@@ -46,6 +46,7 @@ using Application.Notifications.Abstraction;
 
 using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
+using Application.ChatConversations.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 
@@ -108,6 +109,8 @@ public interface IUnitOfWork
     IAiModelRepository AiModelsRepository { get; }
 
     IChatUserProfileRepository ChatUserProfilesRepository { get; }
+
+    IChatConversationRepository ChatConversationsRepository { get; }
 
     IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
