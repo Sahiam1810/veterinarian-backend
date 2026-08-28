@@ -38,6 +38,7 @@ using Application.EscalationStatuses.Abstraction;
 using Application.Notifications.Abstraction;
 using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
+using Application.ChatConversations.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserAccounts.Abstraction;
@@ -94,6 +95,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IAgentHumanRepository agentHumansRepository,
         IAiModelRepository aiModelsRepository,
         IChatUserProfileRepository chatUserProfilesRepository,
+        IChatConversationRepository chatConversationsRepository,
         IProviderModelAiRepository providerModelsAiRepository)
     {
         _context = context;
@@ -140,6 +142,7 @@ public sealed class UnitOfWork : IUnitOfWork
         AgentHumansRepository = agentHumansRepository;
         AiModelsRepository = aiModelsRepository;
         ChatUserProfilesRepository = chatUserProfilesRepository;
+        ChatConversationsRepository = chatConversationsRepository;
         ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
@@ -189,6 +192,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAgentHumanRepository AgentHumansRepository { get; }
     public IAiModelRepository AiModelsRepository { get; }
     public IChatUserProfileRepository ChatUserProfilesRepository { get; }
+    public IChatConversationRepository ChatConversationsRepository { get; }
     public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
