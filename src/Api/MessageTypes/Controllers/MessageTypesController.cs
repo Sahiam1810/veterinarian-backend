@@ -16,18 +16,23 @@ public sealed class MessageTypesController(ISender sender) : ControllerBase
     [HttpGet]
     [EndpointSummary("Obtiene los tipos de mensaje")]
     [EndpointDescription("Lista los tipos de mensaje registrados.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<MessageTypeResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<MessageTypeResponseDto>>> GetAll(CancellationToken ct) =>
         Ok((await sender.Send(new GetAllMessageTypesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
     [EndpointSummary("Obtiene un tipo de mensaje")]
     [EndpointDescription("Busca un tipo de mensaje por su identificador.")]
+    [ProducesResponseType(typeof(MessageTypeResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MessageTypeResponseDto>> GetById(Guid id, CancellationToken ct) =>
         Ok((await sender.Send(new GetMessageTypeByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
     [EndpointSummary("Crea un tipo de mensaje")]
     [EndpointDescription("Registra un nuevo tipo de mensaje.")]
+    [ProducesResponseType(typeof(MessageTypeResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MessageTypeResponseDto>> Create(CreateMessageTypeDto dto, CancellationToken ct)
     {
         var id = await sender.Send(new CreateMessageTypeCommand(dto.Name), ct);
@@ -38,6 +43,9 @@ public sealed class MessageTypesController(ISender sender) : ControllerBase
     [HttpPut("{id:guid}")]
     [EndpointSummary("Actualiza un tipo de mensaje")]
     [EndpointDescription("Actualiza el nombre de un tipo de mensaje.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(Guid id, UpdateMessageTypeDto dto, CancellationToken ct)
     {
         await sender.Send(new UpdateMessageTypeCommand(id, dto.Name), ct);
@@ -47,6 +55,8 @@ public sealed class MessageTypesController(ISender sender) : ControllerBase
     [HttpDelete("{id:guid}")]
     [EndpointSummary("Elimina un tipo de mensaje")]
     [EndpointDescription("Elimina un tipo de mensaje por su identificador.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await sender.Send(new DeleteMessageTypeCommand(id), ct);
