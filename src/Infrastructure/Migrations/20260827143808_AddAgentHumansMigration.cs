@@ -37,7 +37,7 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     CHAT_USER_PROFILE_ID = table.Column<string>(type: "VARCHAR2(36)", nullable: false),
-                    PERSON_ID = table.Column<string>(type: "VARCHAR2(36)", nullable: false),
+                    USER_ID = table.Column<string>(type: "VARCHAR2(36)", nullable: false),
                     DISPLAY_NAME = table.Column<string>(type: "VARCHAR2(150)", maxLength: 150, nullable: true),
                     AVATAR_URL = table.Column<string>(type: "VARCHAR2(500)", maxLength: 500, nullable: true),
                     BIO = table.Column<string>(type: "VARCHAR2(500)", maxLength: 500, nullable: true),
@@ -48,8 +48,8 @@ namespace Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_CHAT_USER_PROFILES", x => x.CHAT_USER_PROFILE_ID);
                     table.ForeignKey(
-                        name: "FK_CHAT_USER_PROFILES_USERS_PERSON_ID",
-                        column: x => x.PERSON_ID,
+                        name: "FK_CHAT_USER_PROFILES_USERS_USER_ID",
+                        column: x => x.USER_ID,
                         principalTable: "USERS",
                         principalColumn: "USER_ID",
                         onDelete: ReferentialAction.Restrict);
@@ -61,9 +61,9 @@ namespace Infrastructure.Migrations
                 column: "USER_ID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CHAT_USER_PROFILES_PERSON_ID",
+                name: "IX_CHAT_USER_PROFILES_USER_ID",
                 table: "CHAT_USER_PROFILES",
-                column: "PERSON_ID");
+                column: "USER_ID");
         }
 
         /// <inheritdoc />
