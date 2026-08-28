@@ -33,7 +33,17 @@ public sealed class AgentMessagingHttpClientTests
         Assert.Equal(ConversationId, result.ConversationId);
         Assert.Equal(CorrelationId, result.CorrelationId);
         Assert.Equal("ai_generated", result.ResponseType);
-        Assert.DoesNotContain("provider", JsonSerializer.Serialize(result));
+        Assert.Equal("openai", result.Provider);
+        Assert.Equal("gpt-4o-mini", result.Model);
+        Assert.Equal(10, result.Usage!.InputTokens);
+        Assert.Equal(5, result.Usage.OutputTokens);
+        Assert.Equal("used", result.Rag.Status);
+        Assert.Equal("contextual", result.Rag.Route);
+        Assert.Equal(0.91, result.Rag.TopScore);
+        Assert.Equal(2, result.Rag.GlobalMatches);
+        Assert.Equal(1, result.Rag.ConversationMatches);
+        Assert.True(result.Rag.MemoryStored);
+        Assert.False(result.Rag.KnowledgePublished);
 
         using var document = JsonDocument.Parse(handler.Body!);
         var root = document.RootElement;
@@ -49,6 +59,22 @@ public sealed class AgentMessagingHttpClientTests
         Assert.Equal(CorrelationId, root.GetProperty("correlationId").GetGuid());
         Assert.Equal("message-001", root.GetProperty("idempotencyKey").GetString());
         Assert.False(root.GetProperty("publishAsGlobalKnowledge").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Send_preserves_nullable_agent_metadata()
+    {
+        var client = CreateClient(Respond(HttpStatusCode.OK, NullableSuccessJson()));
+
+        var result = await client.SendAsync(Envelope(), "secret-token", default);
+
+        Assert.Null(result.Provider);
+        Assert.Null(result.Model);
+        Assert.Null(result.Usage);
+        Assert.Null(result.Module);
+        Assert.Null(result.Rag.TopScore);
+        Assert.Equal("empty", result.Rag.Status);
+        Assert.Equal("general", result.Rag.Route);
     }
 
     [Theory]
@@ -197,7 +223,37 @@ public sealed class AgentMessagingHttpClientTests
           "model":"gpt-4o-mini",
           "usage":{"inputTokens":10,"outputTokens":5},
           "module":null,
-          "rag":{"status":"empty"}
+          "rag":{
+            "status":"used",
+            "route":"contextual",
+            "topScore":0.91,
+            "globalMatches":2,
+            "conversationMatches":1,
+            "memoryStored":true,
+            "knowledgePublished":false
+          }
+        }
+        """;
+
+    private static string NullableSuccessJson() => $$"""
+        {
+          "message":null,
+          "conversationId":"{{ConversationId}}",
+          "correlationId":"{{CorrelationId}}",
+          "responseType":"human_controlled",
+          "provider":null,
+          "model":null,
+          "usage":null,
+          "module":null,
+          "rag":{
+            "status":"empty",
+            "route":"general",
+            "topScore":null,
+            "globalMatches":0,
+            "conversationMatches":0,
+            "memoryStored":false,
+            "knowledgePublished":false
+          }
         }
         """;
 

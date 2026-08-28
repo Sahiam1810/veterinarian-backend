@@ -40,7 +40,10 @@ public sealed class AgentMessagingHttpClient(
             var payload = await ReadSuccessAsync(response.Content, cancellationToken);
             if (payload.ConversationId != message.ConversationId ||
                 payload.CorrelationId != message.CorrelationId ||
-                string.IsNullOrWhiteSpace(payload.ResponseType))
+                string.IsNullOrWhiteSpace(payload.ResponseType) ||
+                payload.Rag is null ||
+                string.IsNullOrWhiteSpace(payload.Rag.Status) ||
+                string.IsNullOrWhiteSpace(payload.Rag.Route))
             {
                 throw new AgentContractException();
             }
@@ -50,7 +53,22 @@ public sealed class AgentMessagingHttpClient(
                 payload.ConversationId,
                 payload.CorrelationId,
                 payload.ResponseType,
-                payload.Module);
+                payload.Provider,
+                payload.Model,
+                payload.Usage is null
+                    ? null
+                    : new AgentTokenUsage(
+                        payload.Usage.InputTokens,
+                        payload.Usage.OutputTokens),
+                payload.Module,
+                new AgentRagResult(
+                    payload.Rag.Status,
+                    payload.Rag.Route,
+                    payload.Rag.TopScore,
+                    payload.Rag.GlobalMatches,
+                    payload.Rag.ConversationMatches,
+                    payload.Rag.MemoryStored,
+                    payload.Rag.KnowledgePublished));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
