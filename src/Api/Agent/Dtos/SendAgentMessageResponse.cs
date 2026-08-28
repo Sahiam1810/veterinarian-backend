@@ -5,4 +5,21 @@ public sealed record SendAgentMessageResponse(
     Guid ConversationId,
     Guid CorrelationId,
     string ResponseType,
-    string? Module);
+    string? Provider,
+    string? Model,
+    SendAgentTokenUsageResponse? Usage,
+    string? Module,
+    SendAgentRagResponse Rag);
+
+public sealed record SendAgentTokenUsageResponse(
+    int? InputTokens,
+    int? OutputTokens);
+
+public sealed record SendAgentRagResponse(
+    string Status,
+    string Route,
+    double? TopScore,
+    int GlobalMatches,
+    int ConversationMatches,
+    bool MemoryStored,
+    bool KnowledgePublished);

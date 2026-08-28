@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Api.Agent.Dtos;
 using Api.Auth.Controllers;
 using Api.Tests.Support;
 using Application.Agent.Abstractions;
@@ -32,10 +33,11 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
     {
         this.factory = factory;
         factory.AgentClient.ExceptionToThrow = null;
+        factory.AgentClient.ResultToReturn = null;
     }
 
     [Fact]
-    public async Task Post_derives_identity_forwards_token_and_returns_reduced_response()
+    public async Task Post_derives_identity_forwards_token_and_returns_complete_response()
     {
         using var client = factory.CreateAuthenticatedClient();
         using var request = CreateRequest(correlationId: CorrelationId);
@@ -50,10 +52,19 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
         var body = document.RootElement;
         Assert.Equal(ConversationId, body.GetProperty("conversationId").GetGuid());
         Assert.Equal(CorrelationId, body.GetProperty("correlationId").GetGuid());
-        Assert.False(body.TryGetProperty("provider", out _));
-        Assert.False(body.TryGetProperty("model", out _));
-        Assert.False(body.TryGetProperty("rag", out _));
-        Assert.False(body.TryGetProperty("usage", out _));
+        Assert.Equal("openrouter", body.GetProperty("provider").GetString());
+        Assert.Equal("google/gemini-flash", body.GetProperty("model").GetString());
+        Assert.Equal(12, body.GetProperty("usage").GetProperty("inputTokens").GetInt32());
+        Assert.Equal(7, body.GetProperty("usage").GetProperty("outputTokens").GetInt32());
+        Assert.Equal("appointments", body.GetProperty("module").GetString());
+        var rag = body.GetProperty("rag");
+        Assert.Equal("disabled", rag.GetProperty("status").GetString());
+        Assert.Equal("direct", rag.GetProperty("route").GetString());
+        Assert.Equal(-1, rag.GetProperty("topScore").GetDouble());
+        Assert.Equal(0, rag.GetProperty("globalMatches").GetInt32());
+        Assert.Equal(0, rag.GetProperty("conversationMatches").GetInt32());
+        Assert.True(rag.GetProperty("memoryStored").GetBoolean());
+        Assert.True(rag.GetProperty("knowledgePublished").GetBoolean());
     }
 
     [Fact]
@@ -137,6 +148,39 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
 
         Assert.False(idempotency.IsRequired);
         Assert.False(correlation.IsRequired);
+        Assert.Contains(
+            endpoint.SupportedResponseTypes,
+            response => response.StatusCode == (int)HttpStatusCode.OK &&
+                        response.Type == typeof(SendAgentMessageResponse));
+    }
+
+    [Fact]
+    public async Task Post_preserves_nullable_agent_metadata()
+    {
+        factory.AgentClient.ResultToReturn = new AgentMessageResult(
+            null,
+            ConversationId,
+            CorrelationId,
+            "human_controlled",
+            null,
+            null,
+            null,
+            null,
+            new AgentRagResult("empty", "general", null, 0, 0, false, false));
+        using var client = factory.CreateAuthenticatedClient();
+        using var request = CreateRequest(correlationId: CorrelationId);
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var body = document.RootElement;
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("message").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("provider").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("model").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("usage").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("module").ValueKind);
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("rag").GetProperty("topScore").ValueKind);
     }
 
     [Fact]
@@ -420,6 +464,7 @@ public sealed class RecordingAgentMessagingClient : IAgentMessagingClient
     public AgentMessageEnvelope? Envelope { get; private set; }
     public string? AccessToken { get; private set; }
     public Exception? ExceptionToThrow { get; set; }
+    public AgentMessageResult? ResultToReturn { get; set; }
 
     public Task<AgentMessageResult> SendAsync(
         AgentMessageEnvelope message,
@@ -433,7 +478,7 @@ public sealed class RecordingAgentMessagingClient : IAgentMessagingClient
             return Task.FromException<AgentMessageResult>(ExceptionToThrow);
         }
 
-        return Task.FromResult(new AgentMessageResult(
+        return Task.FromResult(ResultToReturn ?? new AgentMessageResult(
             "Respuesta",
             message.ConversationId,
             message.CorrelationId,

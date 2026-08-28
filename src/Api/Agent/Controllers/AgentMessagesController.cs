@@ -60,6 +60,21 @@ public sealed class AgentMessagesController(ISender sender) : ControllerBase
             result.ConversationId,
             result.CorrelationId,
             result.ResponseType,
-            result.Module));
+            result.Provider,
+            result.Model,
+            result.Usage is null
+                ? null
+                : new SendAgentTokenUsageResponse(
+                    result.Usage.InputTokens,
+                    result.Usage.OutputTokens),
+            result.Module,
+            new SendAgentRagResponse(
+                result.Rag.Status,
+                result.Rag.Route,
+                result.Rag.TopScore,
+                result.Rag.GlobalMatches,
+                result.Rag.ConversationMatches,
+                result.Rag.MemoryStored,
+                result.Rag.KnowledgePublished)));
     }
 }
