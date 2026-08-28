@@ -11,8 +11,8 @@ public interface IChatUserProfileRepository
         Guid id,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyCollection<ChatUserProfileEntity>> GetByPersonIdAsync(
-        Guid personId,
+    Task<IReadOnlyCollection<ChatUserProfileEntity>> GetByUserIdAsync(
+        Guid userId,
         CancellationToken cancellationToken = default);
 
     Task AddAsync(

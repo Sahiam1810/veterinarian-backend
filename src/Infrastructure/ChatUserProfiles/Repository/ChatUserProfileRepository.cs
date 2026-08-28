@@ -27,12 +27,12 @@ public sealed class ChatUserProfileRepository : IChatUserProfileRepository
         => _context.Set<ChatUserProfileEntity>()
             .FirstOrDefaultAsync(profile => profile.Id == id, cancellationToken);
 
-    public async Task<IReadOnlyCollection<ChatUserProfileEntity>> GetByPersonIdAsync(
-        Guid personId,
+    public async Task<IReadOnlyCollection<ChatUserProfileEntity>> GetByUserIdAsync(
+        Guid userId,
         CancellationToken cancellationToken = default)
         => await _context.Set<ChatUserProfileEntity>()
             .AsNoTracking()
-            .Where(profile => profile.PersonId == personId)
+            .Where(profile => profile.UserId == userId)
             .OrderBy(profile => profile.CreatedAt)
             .ToListAsync(cancellationToken);
 

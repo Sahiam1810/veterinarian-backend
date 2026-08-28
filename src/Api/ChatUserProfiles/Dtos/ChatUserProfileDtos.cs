@@ -1,7 +1,7 @@
 namespace Api.ChatUserProfiles.Dtos;
 
 public sealed record CreateChatUserProfileDto(
-    Guid PersonId,
+    Guid UserId,
     string? DisplayName,
     string? AvatarUrl,
     string? Bio);
@@ -13,7 +13,7 @@ public sealed record UpdateChatUserProfileDto(
 
 public sealed record ChatUserProfileResponseDto(
     Guid Id,
-    Guid PersonId,
+    Guid UserId,
     string? DisplayName,
     string? AvatarUrl,
     string? Bio,

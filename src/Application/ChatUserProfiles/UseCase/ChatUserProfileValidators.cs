@@ -7,9 +7,9 @@ public sealed class CreateChatUserProfileCommandValidator
 {
     public CreateChatUserProfileCommandValidator()
     {
-        RuleFor(command => command.PersonId)
+        RuleFor(command => command.UserId)
             .NotEmpty()
-            .WithMessage("El identificador de la persona es obligatorio.");
+            .WithMessage("El identificador del usuario es obligatorio.");
     }
 }
 
@@ -24,14 +24,14 @@ public sealed class GetChatUserProfileByIdQueryValidator
     }
 }
 
-public sealed class GetChatUserProfilesByPersonIdQueryValidator
-    : AbstractValidator<GetChatUserProfilesByPersonIdQuery>
+public sealed class GetChatUserProfilesByUserIdQueryValidator
+    : AbstractValidator<GetChatUserProfilesByUserIdQuery>
 {
-    public GetChatUserProfilesByPersonIdQueryValidator()
+    public GetChatUserProfilesByUserIdQueryValidator()
     {
-        RuleFor(query => query.PersonId)
+        RuleFor(query => query.UserId)
             .NotEmpty()
-            .WithMessage("El identificador de la persona es obligatorio.");
+            .WithMessage("El identificador del usuario es obligatorio.");
     }
 }
 

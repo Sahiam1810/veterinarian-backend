@@ -26,19 +26,21 @@ public sealed class ChatUserProfileConfiguration : IEntityTypeConfiguration<Chat
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Property(profile => profile.PersonId)
-            .HasColumnName("PERSON_ID")
+        builder.Property(profile => profile.UserId)
+            .HasColumnName("USER_ID")
             .HasColumnType("VARCHAR2(36)")
             .HasConversion(
                 guid => guid.ToString(),
                 value => Guid.Parse(value))
             .IsRequired();
 
-        builder.HasIndex(profile => profile.PersonId);
+        builder.HasIndex(profile => profile.UserId)
+            .HasDatabaseName("IX_CHAT_USER_PROFILES_USER_ID");
 
         builder.HasOne<UserEntity>()
             .WithMany()
-            .HasForeignKey(profile => profile.PersonId)
+            .HasForeignKey(profile => profile.UserId)
+            .HasConstraintName("FK_CHAT_USER_PROFILES_USERS_USER_ID")
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(profile => profile.DisplayName)
