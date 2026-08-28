@@ -44,6 +44,7 @@ using Application.Users.Abstraction;
 using Infrastructure.AccountStatements.Repositories;
 using Infrastructure.Agent.Configuration;
 using Infrastructure.Agent.Conversations;
+using Infrastructure.Agent.Http;
 using Infrastructure.Notifications.Repositories;
 using Infrastructure.Availabilities.Repositories;
 using Infrastructure.Appointments.Repositories;
@@ -177,6 +178,23 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(AgentOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IConversationContextProvider, TransientConversationContextProvider>();
+
+        var agentOptions = configuration
+            .GetSection(AgentOptions.SectionName)
+            .Get<AgentOptions>() ?? new AgentOptions();
+        if (agentOptions.Enabled)
+        {
+            services.AddHttpClient<IAgentMessagingClient, AgentMessagingHttpClient>((provider, client) =>
+            {
+                var validated = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
+                client.BaseAddress = new Uri(validated.BaseUrl, UriKind.Absolute);
+                client.Timeout = TimeSpan.FromSeconds(validated.RequestTimeoutSeconds);
+            });
+        }
+        else
+        {
+            services.AddSingleton<IAgentMessagingClient, DisabledAgentMessagingClient>();
+        }
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<JwtRsaKeyMaterial>();
