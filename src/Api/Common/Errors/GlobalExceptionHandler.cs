@@ -1,4 +1,5 @@
 using FluentValidation;
+using Application.Agent.Errors;
 using Application.Common.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var (status, message) = Map(exception);
+        var (status, message, agentError) = Map(exception);
         var violations = exception is ValidationException validationException
             ? validationException.Errors
                 .Select(failure => new FieldViolationResponse(
@@ -41,7 +42,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             StatusCodes.Status404NotFound => "TYPE_CONTRACT_NOT_FOUND",
             StatusCodes.Status409Conflict => "TYPE_CONTRACT_CONFLICT",
             _ => null
-        } : null;
+        } : agentError;
         var path = typeContract ? $"uri={httpContext.Request.Path}" : null;
 
         httpContext.Response.StatusCode = status;
@@ -58,18 +59,30 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static (int Status, string Message) Map(Exception exception) =>
+    private static (int Status, string Message, string? AgentError) Map(Exception exception) =>
         exception switch
         {
-            ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
-            BadRequestException badRequest => (StatusCodes.Status400BadRequest, badRequest.Message),
-            ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message),
-            UnauthorizedException unauthorized => (StatusCodes.Status401Unauthorized, unauthorized.Message),
-            UnauthorizedAccessException unauthorizedAccess => (StatusCodes.Status401Unauthorized, unauthorizedAccess.Message),
-            NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message),
-            KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message),
-            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message),
-            DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation"),
-            _ => (StatusCodes.Status500InternalServerError, "Unexpected error")
+            AgentAuthenticationException authentication =>
+                (StatusCodes.Status502BadGateway, authentication.Message, "agent_authentication_error"),
+            AgentContractException contract =>
+                (StatusCodes.Status502BadGateway, contract.Message, "agent_contract_error"),
+            AgentIdempotencyConflictException conflict =>
+                (StatusCodes.Status409Conflict, conflict.Message, "agent_idempotency_conflict"),
+            AgentUnavailableException unavailable =>
+                (StatusCodes.Status503ServiceUnavailable, unavailable.Message, "agent_unavailable"),
+            AgentConversationCapacityException capacity =>
+                (StatusCodes.Status503ServiceUnavailable, capacity.Message, "agent_context_capacity_exhausted"),
+            AgentTimeoutException timeout =>
+                (StatusCodes.Status504GatewayTimeout, timeout.Message, "agent_timeout"),
+            ValidationException => (StatusCodes.Status400BadRequest, "Validation failed", null),
+            BadRequestException badRequest => (StatusCodes.Status400BadRequest, badRequest.Message, null),
+            ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message, null),
+            UnauthorizedException unauthorized => (StatusCodes.Status401Unauthorized, unauthorized.Message, null),
+            UnauthorizedAccessException unauthorizedAccess => (StatusCodes.Status401Unauthorized, unauthorizedAccess.Message, null),
+            NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
+            KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
+            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, null),
+            DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation", null),
+            _ => (StatusCodes.Status500InternalServerError, "Unexpected error", null)
         };
 }

@@ -1,12 +1,14 @@
+using Api.Agent;
 using Api.Common.Errors;
 using Api.Common.Security;
+using Api.Configuration;
 using Api.Extensions;
 using Application;
 using Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 
-DotNetEnv.Env.TraversePath().Load();
+DotEnvLoader.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,7 @@ builder.Services.AddApiSwaggerGen();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAgentApi();
 builder.Services.AddApiCors(builder.Configuration);
 
 builder.Services.AddJwtAuthentication();
