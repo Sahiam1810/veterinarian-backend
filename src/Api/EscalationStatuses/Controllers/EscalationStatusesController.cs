@@ -16,18 +16,23 @@ public sealed class EscalationStatusesController(ISender sender) : ControllerBas
     [HttpGet]
     [EndpointSummary("Obtiene los estados de escalamiento")]
     [EndpointDescription("Lista los estados registrados para escalamientos.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<EscalationStatusResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<EscalationStatusResponseDto>>> GetAll(CancellationToken ct) =>
         Ok((await sender.Send(new GetAllEscalationStatusesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
     [EndpointSummary("Obtiene un estado de escalamiento")]
     [EndpointDescription("Busca un estado de escalamiento por su identificador.")]
+    [ProducesResponseType(typeof(EscalationStatusResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EscalationStatusResponseDto>> GetById(Guid id, CancellationToken ct) =>
         Ok((await sender.Send(new GetEscalationStatusByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
     [EndpointSummary("Crea un estado de escalamiento")]
     [EndpointDescription("Registra un nuevo estado de escalamiento.")]
+    [ProducesResponseType(typeof(EscalationStatusResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<EscalationStatusResponseDto>> Create(CreateEscalationStatusDto dto, CancellationToken ct)
     {
         var id = await sender.Send(new CreateEscalationStatusCommand(dto.Name), ct);
@@ -38,6 +43,9 @@ public sealed class EscalationStatusesController(ISender sender) : ControllerBas
     [HttpPut("{id:guid}")]
     [EndpointSummary("Actualiza un estado de escalamiento")]
     [EndpointDescription("Actualiza el nombre de un estado de escalamiento.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(Guid id, UpdateEscalationStatusDto dto, CancellationToken ct)
     {
         await sender.Send(new UpdateEscalationStatusCommand(id, dto.Name), ct);
@@ -47,6 +55,8 @@ public sealed class EscalationStatusesController(ISender sender) : ControllerBas
     [HttpDelete("{id:guid}")]
     [EndpointSummary("Elimina un estado de escalamiento")]
     [EndpointDescription("Elimina un estado de escalamiento por su identificador.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await sender.Send(new DeleteEscalationStatusCommand(id), ct);
