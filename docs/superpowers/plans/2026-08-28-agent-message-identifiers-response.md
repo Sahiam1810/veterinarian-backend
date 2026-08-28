@@ -21,7 +21,7 @@
 - Target module: \`Agent\`.
 - Existing endpoint: authenticated \`POST /api/agent/messages\`.
 - Git state before this plan: clean feature branch plus committed design documentation.
-- Baseline: 107 tests passing (\`Application.Tests\` 17, \`Infrastructure.Tests\` 44, \`Api.Tests\` 40).
+- Baseline: 101 tests passing (\`Application.Tests\` 17, \`Infrastructure.Tests\` 44, \`Api.Tests\` 40).
 
 ## Approved Use Case Contract
 
@@ -303,6 +303,5 @@ git commit -m "docs: :memo: document generated agent identifiers"
 - Endpoint/OpenAPI: optional headers and complete response schemas.
 - Authorization/error/idempotency: JWT-derived identity and current safe errors unchanged; supplied and generated identifiers covered.
 - \`AuthManagementGrant\`: must remain absent from Agent and must not be default/fallback/global.
-- Regression: all existing solution tests compared with the 107-test baseline.
+- Regression: all existing solution tests compared with the 101-test baseline.
 - Remaining risk: generated idempotency keys identify individual backend calls but cannot deduplicate independent client retries until durable message persistence exists.
-

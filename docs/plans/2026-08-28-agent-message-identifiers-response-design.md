@@ -41,4 +41,3 @@ La generación local no agrega resultados de error. Se conservan las traduccione
 - Infrastructure deserializa todos los campos y preserva los valores nullable.
 - API serializa `usage` y `rag` con nombres camelCase.
 - Las comprobaciones existentes de identidad, autorización, tamaño, cancelación y errores continúan pasando.
-
