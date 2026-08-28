@@ -54,9 +54,13 @@ Agent__BaseUrl=http://agent-api:8000
 3. Obtenga un access token mediante `POST /api/auth/login` o
    `POST /api/auth/register`.
 4. Autorice Swagger con el access token.
-5. Ejecute `POST /api/agent/messages` y agregue un valor único en el header
-   `Idempotency-Key`.
-6. Reutilice el `conversationId` retornado en los mensajes siguientes del mismo
+5. Ejecute `POST /api/agent/messages`. Los headers `Idempotency-Key` y
+   `X-Correlation-ID` son opcionales: si se omiten, el backend genera una clave
+   `msg-{UUID}` y un identificador de correlación respectivamente.
+6. Para reintentar de forma controlada una misma operación, reutilice el mismo
+   `Idempotency-Key`; una clave generada por el backend identifica solamente la
+   llamada actual mientras no exista persistencia durable de mensajes.
+7. Reutilice el `conversationId` retornado en los mensajes siguientes del mismo
    hilo.
 
 Solicitud inicial:
@@ -73,6 +77,10 @@ Solicitud inicial:
 El contrato público no permite enviar `userId`, `roles`, `channel`,
 `isEscalated` ni `publishAsGlobalKnowledge`. Esos valores son controlados por
 el backend.
+
+La respuesta incluye los metadatos del agente `provider`, `model`, `usage`,
+`module` y `rag`, además del mensaje y los identificadores de conversación y
+correlación. Los campos no aplicables pueden retornar `null`.
 
 Por ahora, los identificadores generados se mantienen en memoria con TTL y
 capacidad limitada. No representan historial canónico y se pierden al reiniciar
