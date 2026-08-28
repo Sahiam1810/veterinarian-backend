@@ -38,6 +38,8 @@ using Application.EscalationStatuses.Abstraction;
 using Application.Notifications.Abstraction;
 using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
+using Application.ChatConversationAssignments.Abstraction;
+using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
@@ -96,6 +98,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IAiModelRepository aiModelsRepository,
         IChatUserProfileRepository chatUserProfilesRepository,
         IChatConversationRepository chatConversationsRepository,
+        IChatConversationAssignmentRepository chatConversationAssignmentsRepository,
+        IChatConversationAiSettingRepository chatConversationAiSettingsRepository,
         IProviderModelAiRepository providerModelsAiRepository)
     {
         _context = context;
@@ -143,6 +147,8 @@ public sealed class UnitOfWork : IUnitOfWork
         AiModelsRepository = aiModelsRepository;
         ChatUserProfilesRepository = chatUserProfilesRepository;
         ChatConversationsRepository = chatConversationsRepository;
+        ChatConversationAssignmentsRepository = chatConversationAssignmentsRepository;
+        ChatConversationAiSettingsRepository = chatConversationAiSettingsRepository;
         ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
@@ -193,6 +199,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAiModelRepository AiModelsRepository { get; }
     public IChatUserProfileRepository ChatUserProfilesRepository { get; }
     public IChatConversationRepository ChatConversationsRepository { get; }
+    public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
+    public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
     public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

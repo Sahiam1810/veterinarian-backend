@@ -55,12 +55,16 @@ using Infrastructure.Clients.Repositories;
 
 using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
+using Application.ChatConversationAssignments.Abstraction;
+using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
+using Infrastructure.ChatConversationAssignments.Repository;
+using Infrastructure.ChatConversationAiSettings.Repository;
 using Infrastructure.ChatConversations.Repository;
 using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
@@ -171,6 +175,8 @@ public static class DependencyInjection
         services.AddScoped<IAiModelRepository, AiModelRepository>();
         services.AddScoped<IChatUserProfileRepository, ChatUserProfileRepository>();
         services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
+        services.AddScoped<IChatConversationAssignmentRepository, ChatConversationAssignmentRepository>();
+        services.AddScoped<IChatConversationAiSettingRepository, ChatConversationAiSettingRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
