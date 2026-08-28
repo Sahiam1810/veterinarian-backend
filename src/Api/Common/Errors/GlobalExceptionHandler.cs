@@ -37,6 +37,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         var error = typeContract ? status switch
         {
             StatusCodes.Status400BadRequest => "TYPE_CONTRACT_INVALID",
+            StatusCodes.Status401Unauthorized => "TYPE_CONTRACT_UNAUTHORIZED",
             StatusCodes.Status404NotFound => "TYPE_CONTRACT_NOT_FOUND",
             StatusCodes.Status409Conflict => "TYPE_CONTRACT_CONFLICT",
             _ => null
@@ -63,6 +64,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
             BadRequestException badRequest => (StatusCodes.Status400BadRequest, badRequest.Message),
             ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message),
+            UnauthorizedException unauthorized => (StatusCodes.Status401Unauthorized, unauthorized.Message),
+            UnauthorizedAccessException unauthorizedAccess => (StatusCodes.Status401Unauthorized, unauthorizedAccess.Message),
             NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message),
             ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message),
