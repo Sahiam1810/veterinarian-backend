@@ -26,7 +26,7 @@ public sealed class AgentMessagesController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status504GatewayTimeout)]
     public async Task<ActionResult<SendAgentMessageResponse>> Send(
         [FromBody] SendAgentMessageRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         [FromHeader(Name = "X-Correlation-ID")] Guid? correlationId,
         CancellationToken cancellationToken)
     {
@@ -38,6 +38,11 @@ public sealed class AgentMessagesController(ISender sender) : ControllerBase
             throw new UnauthorizedException("Authenticated identity is invalid.");
         }
 
+        var resolvedIdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey)
+            ? $"msg-{Guid.NewGuid():N}"
+            : idempotencyKey;
+        var resolvedCorrelationId = correlationId ?? Guid.NewGuid();
+
         var result = await sender.Send(
             new SendAgentMessageCommand(
                 request.Message,
@@ -46,8 +51,8 @@ public sealed class AgentMessagesController(ISender sender) : ControllerBase
                 request.Language,
                 personId,
                 role,
-                idempotencyKey,
-                correlationId ?? Guid.NewGuid()),
+                resolvedIdempotencyKey,
+                resolvedCorrelationId),
             cancellationToken);
 
         return Ok(new SendAgentMessageResponse(

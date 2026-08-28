@@ -12,6 +12,7 @@ using Application.Agent.Abstractions;
 using Application.Agent.Errors;
 using Application.Agent.Messages;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,14 +91,52 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
     }
 
     [Fact]
-    public async Task Post_without_idempotency_header_returns_bad_request()
+    public async Task Post_without_transport_headers_generates_identifiers()
     {
         using var client = factory.CreateAuthenticatedClient();
         using var request = CreateRequest(includeIdempotencyKey: false);
 
         using var response = await client.SendAsync(request);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Matches("^msg-[0-9a-f]{32}$", factory.AgentClient.Envelope!.IdempotencyKey);
+        Assert.NotEqual(Guid.Empty, factory.AgentClient.Envelope.CorrelationId);
+    }
+
+    [Fact]
+    public async Task Post_with_transport_headers_preserves_identifiers()
+    {
+        using var client = factory.CreateAuthenticatedClient();
+        using var request = CreateRequest(correlationId: CorrelationId);
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("message-001", factory.AgentClient.Envelope!.IdempotencyKey);
+        Assert.Equal(CorrelationId, factory.AgentClient.Envelope.CorrelationId);
+    }
+
+    [Fact]
+    public void OpenApi_describes_transport_headers_as_optional()
+    {
+        var descriptions = factory.Services
+            .GetRequiredService<IApiDescriptionGroupCollectionProvider>()
+            .ApiDescriptionGroups.Items
+            .SelectMany(group => group.Items);
+        var endpoint = Assert.Single(
+            descriptions,
+            description => description.HttpMethod == HttpMethod.Post.Method &&
+                           description.RelativePath == "api/agent/messages");
+
+        var idempotency = Assert.Single(
+            endpoint.ParameterDescriptions,
+            parameter => parameter.Name == "Idempotency-Key");
+        var correlation = Assert.Single(
+            endpoint.ParameterDescriptions,
+            parameter => parameter.Name == "X-Correlation-ID");
+
+        Assert.False(idempotency.IsRequired);
+        Assert.False(correlation.IsRequired);
     }
 
     [Fact]
@@ -399,6 +438,10 @@ public sealed class RecordingAgentMessagingClient : IAgentMessagingClient
             message.ConversationId,
             message.CorrelationId,
             "ai_generated",
-            null));
+            "openrouter",
+            "google/gemini-flash",
+            new AgentTokenUsage(12, 7),
+            "appointments",
+            new AgentRagResult("disabled", "direct", -1, 0, 0, true, true)));
     }
 }
