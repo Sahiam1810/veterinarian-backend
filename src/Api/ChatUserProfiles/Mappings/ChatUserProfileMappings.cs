@@ -7,7 +7,7 @@ namespace Api.ChatUserProfiles.Mappings;
 public static class ChatUserProfileMappings
 {
     public static CreateChatUserProfileCommand ToCommand(this CreateChatUserProfileDto dto)
-        => new(dto.PersonId, dto.DisplayName, dto.AvatarUrl, dto.Bio);
+        => new(dto.UserId, dto.DisplayName, dto.AvatarUrl, dto.Bio);
 
     public static UpdateChatUserProfileCommand ToCommand(this UpdateChatUserProfileDto dto, Guid id)
         => new(id, dto.DisplayName, dto.AvatarUrl, dto.Bio);
@@ -15,7 +15,7 @@ public static class ChatUserProfileMappings
     public static ChatUserProfileResponseDto ToResponse(this ChatUserProfileEntity profile)
         => new(
             profile.Id,
-            profile.PersonId,
+            profile.UserId,
             profile.DisplayName.Value,
             profile.AvatarUrl.Value,
             profile.Bio.Value,

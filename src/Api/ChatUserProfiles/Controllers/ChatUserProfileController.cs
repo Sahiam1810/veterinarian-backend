@@ -66,21 +66,21 @@ public sealed class ChatUserProfileController(ISender sender) : ControllerBase
             : Ok(profile.ToResponse());
     }
 
-    [HttpGet("by-person/{personId:guid}")]
+    [HttpGet("by-user/{userId:guid}")]
     [EndpointSummary("Consultar perfiles de chat por usuario")]
     [EndpointDescription("Devuelve todos los perfiles de chat asociados al usuario indicado. Si no hay registros, responde con una lista vacía.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatUserProfileResponseDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<ChatUserProfileResponseDto>>> GetByPersonId(
-        Guid personId,
+    public async Task<ActionResult<IReadOnlyCollection<ChatUserProfileResponseDto>>> GetByUserId(
+        Guid userId,
         CancellationToken cancellationToken)
     {
-        var profiles = await sender.Send(new GetChatUserProfilesByPersonIdQuery(personId), cancellationToken);
+        var profiles = await sender.Send(new GetChatUserProfilesByUserIdQuery(userId), cancellationToken);
         return Ok(profiles.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
     [EndpointSummary("Actualizar un perfil de chat")]
-    [EndpointDescription("Actualiza el nombre visible, el avatar y la biografía. No modifica la persona asociada.")]
+    [EndpointDescription("Actualiza el nombre visible, el avatar y la biografía. No modifica el usuario asociado.")]
     [ProducesResponseType(typeof(ChatUserProfileResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

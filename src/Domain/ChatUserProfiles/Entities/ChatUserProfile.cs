@@ -12,7 +12,7 @@ public sealed class ChatUserProfile : BaseEntity<Guid>
     {
     }
 
-    public Guid PersonId { get; private set; }
+    public Guid UserId { get; private set; }
 
     public ProfileDisplayName DisplayName { get; private set; } = null!;
 
@@ -24,17 +24,17 @@ public sealed class ChatUserProfile : BaseEntity<Guid>
     /// Crea un perfil de chat. Las fechas de auditoría las asigna el dominio.
     /// </summary>
     public static ChatUserProfile Create(
-        Guid personId,
+        Guid userId,
         string? displayName,
         string? avatarUrl,
         string? bio)
     {
-        EnsurePersonId(personId);
+        EnsureUserId(userId);
 
         return new ChatUserProfile
         {
             Id = Guid.NewGuid(),
-            PersonId = personId,
+            UserId = userId,
             DisplayName = ProfileDisplayName.Create(displayName),
             AvatarUrl = ProfileAvatarUrl.Create(avatarUrl),
             Bio = ProfileBio.Create(bio)
@@ -57,13 +57,13 @@ public sealed class ChatUserProfile : BaseEntity<Guid>
         UpdatedAt = DateTime.UtcNow;
     }
 
-    private static void EnsurePersonId(Guid personId)
+    private static void EnsureUserId(Guid userId)
     {
-        if (personId == Guid.Empty)
+        if (userId == Guid.Empty)
         {
             throw new ArgumentException(
-                "El identificador de la persona es obligatorio.",
-                nameof(personId));
+                "El identificador del usuario es obligatorio.",
+                nameof(userId));
         }
     }
 }
