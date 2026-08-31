@@ -39,6 +39,12 @@ public sealed class ProcessTelegramUpdateHandler(
         var messageText = update.MessageText;
         try
         {
+            if (!string.IsNullOrWhiteSpace(update.ResponseText))
+            {
+                await DeliverAsync(update, update.ResponseText, cancellationToken);
+                return;
+            }
+
             if (!string.Equals(update.ChatType, "private", StringComparison.Ordinal))
             {
                 await DeliverAsync(update, "Por el momento solo atiendo chats privados.", cancellationToken);

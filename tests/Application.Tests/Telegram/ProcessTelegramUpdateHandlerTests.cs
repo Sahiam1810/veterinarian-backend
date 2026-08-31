@@ -76,7 +76,30 @@ public sealed class ProcessTelegramUpdateHandlerTests
         await fixture.Bot.Received(1).SendTextAsync(1001, "Respuesta veterinaria", default);
     }
 
-    private static Fixture CreateFixture()
+    [Fact]
+    public async Task Retry_resumes_prepared_response_without_reprocessing_the_command()
+    {
+        var retryAt = Now.AddSeconds(1);
+        var fixture = CreateFixture(retryAt);
+        var update = ProcessingUpdate(44, "/start one-use-code");
+        update.PrepareResponse("Tu cuenta quedó vinculada.", Now.UtcDateTime);
+        update.ScheduleRetry(retryAt.UtcDateTime, "telegram_delivery_failed", 3, Now.UtcDateTime);
+        update.Claim(retryAt.UtcDateTime);
+        fixture.Updates.GetByIdAsync(44, default).Returns(update);
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(44), default);
+
+        Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
+        await fixture.Bot.Received(1).SendTextAsync(1001, "Tu cuenta quedó vinculada.", default);
+        await fixture.Sender.DidNotReceive().Send(Arg.Any<IRequest>(), Arg.Any<CancellationToken>());
+        await fixture.Dispatcher.DidNotReceive().DispatchAsync(
+            Arg.Any<AgentMessageDispatchRequest>(),
+            Arg.Any<AgentConversationContext>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    private static Fixture CreateFixture(DateTimeOffset? currentTime = null)
     {
         var unitOfWork = Substitute.For<ITelegramUnitOfWork>();
         var updates = Substitute.For<ITelegramInboundUpdateRepository>();
@@ -102,14 +125,15 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 bot,
                 sender,
                 settings,
-                new FixedTimeProvider(Now)),
+                new FixedTimeProvider(currentTime ?? Now)),
             updates,
             userLinks,
             conversationLinks,
             context,
             dispatcher,
             identity,
-            bot);
+            bot,
+            sender);
     }
 
     private static TelegramInboundUpdate ProcessingUpdate(long id, string text)
@@ -131,7 +155,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
         IConversationContextProvider Context,
         IAgentMessageDispatcher Dispatcher,
         IAgentDelegatedIdentityProvider Identity,
-        ITelegramBotClient Bot);
+        ITelegramBotClient Bot,
+        ISender Sender);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {
