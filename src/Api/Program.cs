@@ -3,6 +3,7 @@ using Api.Common.Errors;
 using Api.Common.Security;
 using Api.Configuration;
 using Api.Extensions;
+using Api.Telegram;
 using Application;
 using Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
@@ -27,6 +28,7 @@ builder.Services.AddApiSwaggerGen();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAgentApi();
+builder.Services.AddTelegramApi();
 builder.Services.AddApiCors(builder.Configuration);
 
 builder.Services.AddJwtAuthentication();
@@ -50,6 +52,12 @@ builder.Services.AddRateLimiter(options =>
     {
         limiter.PermitLimit = 20;
         limiter.Window = TimeSpan.FromMinutes(1);
+    });
+    options.AddFixedWindowLimiter(RateLimitPolicies.TelegramWebhook, limiter =>
+    {
+        limiter.PermitLimit = 120;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
     });
 });
 
