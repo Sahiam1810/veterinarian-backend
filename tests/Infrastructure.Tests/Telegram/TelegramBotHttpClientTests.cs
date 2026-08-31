@@ -42,10 +42,31 @@ public sealed class TelegramBotHttpClientTests
         Assert.DoesNotContain("secret", exception.Message);
     }
 
-    private static TelegramBotHttpClient CreateClient(HttpMessageHandler handler) =>
+    [Fact]
+    public async Task Token_separator_is_kept_inside_the_https_request_path()
+    {
+        var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                "{\"ok\":true,\"result\":{\"message_id\":78}}",
+                Encoding.UTF8,
+                "application/json")
+        });
+        var client = CreateClient(handler, "123456:token-secret");
+
+        await client.SendTextAsync(1001, "hola", default);
+
+        Assert.Equal(
+            "https://api.telegram.org/bot123456:token-secret/sendMessage",
+            handler.Request!.RequestUri!.AbsoluteUri);
+    }
+
+    private static TelegramBotHttpClient CreateClient(
+        HttpMessageHandler handler,
+        string token = "secret") =>
         new(
             new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") },
-            Options.Create(new TelegramOptions { Enabled = true, BotToken = "secret" }));
+            Options.Create(new TelegramOptions { Enabled = true, BotToken = token }));
 
     private sealed class RecordingHandler(HttpResponseMessage response) : HttpMessageHandler
     {
