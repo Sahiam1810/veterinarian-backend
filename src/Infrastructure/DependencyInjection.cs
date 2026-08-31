@@ -208,25 +208,25 @@ public static class DependencyInjection
         services.AddOptions<AgentOptions>()
             .Bind(configuration.GetSection(AgentOptions.SectionName))
             .ValidateOnStart();
-        services.AddScoped<IAgentConversationDefaults>(provider =>
-        {
-            var options = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
-            return new ConfiguredAgentConversationDefaults(
-                Guid.Parse(options.InitialConversationStatusId),
-                Guid.Parse(options.ClientParticipantTypeId));
-        });
-        services.AddScoped<
-            IActiveConversationEscalationReader,
-            ActiveConversationEscalationReader>();
-        services.AddScoped<
-            IConversationContextProvider,
-            PersistentConversationContextProvider>();
 
         var agentOptions = configuration
             .GetSection(AgentOptions.SectionName)
             .Get<AgentOptions>() ?? new AgentOptions();
         if (agentOptions.Enabled)
         {
+            services.AddScoped<IAgentConversationDefaults>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
+                return new ConfiguredAgentConversationDefaults(
+                    Guid.Parse(options.InitialConversationStatusId),
+                    Guid.Parse(options.ClientParticipantTypeId));
+            });
+            services.AddScoped<
+                IActiveConversationEscalationReader,
+                ActiveConversationEscalationReader>();
+            services.AddScoped<
+                IConversationContextProvider,
+                PersistentConversationContextProvider>();
             services.AddHttpClient<IAgentMessagingClient, AgentMessagingHttpClient>((provider, client) =>
             {
                 var validated = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
@@ -236,6 +236,9 @@ public static class DependencyInjection
         }
         else
         {
+            services.AddSingleton<
+                IConversationContextProvider,
+                DisabledConversationContextProvider>();
             services.AddSingleton<IAgentMessagingClient, DisabledAgentMessagingClient>();
         }
 

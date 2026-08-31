@@ -1,5 +1,6 @@
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
+using Application.Agent.Errors;
 using Infrastructure.Agent.Conversations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,19 +53,46 @@ public sealed class AgentDependencyInjectionTests
             defaults.ClientParticipantTypeId);
     }
 
-    private static IConfiguration Configuration() =>
-        new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] =
-                    "User Id=unused;Password=unused;Data Source=unused",
-                ["Agent:Enabled"] = "true",
-                ["Agent:BaseUrl"] = "https://agent-api.test",
-                ["Agent:MessagesPath"] = "/api/v1/messages",
-                ["Agent:InitialConversationStatusId"] =
-                    "81000000-0000-0000-0000-000000000001",
-                ["Agent:ClientParticipantTypeId"] =
-                    "82000000-0000-0000-0000-000000000001"
-            })
+    [Fact]
+    public async Task AddInfrastructure_disabled_agent_resolves_an_unavailable_context()
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructure(Configuration(enabled: false));
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        await Assert.ThrowsAsync<AgentUnavailableException>(async () =>
+        {
+            var context = scope.ServiceProvider
+                .GetRequiredService<IConversationContextProvider>();
+            await context.ResolveAsync(
+                Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                null,
+                "message-disabled",
+                default);
+        });
+    }
+
+    private static IConfiguration Configuration(bool enabled = true)
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:DefaultConnection"] =
+                "User Id=unused;Password=unused;Data Source=unused",
+            ["Agent:Enabled"] = enabled.ToString()
+        };
+        if (enabled)
+        {
+            values["Agent:BaseUrl"] = "https://agent-api.test";
+            values["Agent:MessagesPath"] = "/api/v1/messages";
+            values["Agent:InitialConversationStatusId"] =
+                "81000000-0000-0000-0000-000000000001";
+            values["Agent:ClientParticipantTypeId"] =
+                "82000000-0000-0000-0000-000000000001";
+        }
+
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(values)
             .Build();
+    }
 }
