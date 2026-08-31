@@ -215,6 +215,8 @@ public sealed class ChatAiRunMetricsTests
         public Application.AiModels.Abstraction.IAiModelRepository AiModelsRepository => null!;
         public Application.AiRunStatuses.Abstraction.IAiRunStatusRepository AiRunStatusesRepository => null!;
         public Application.Roles.Abstraction.IRolesRepository RolesRepository => null!;
+        public Application.RolePermissions.Abstraction.IRolePermissionsRepository RolePermissionsRepository => null!;
+        public Application.Modules.Abstraction.IModuleRepository ModulesRepository => null!;
         public Application.Species.Abstraction.ISpeciesRepository SpeciesRepository => null!;
         public Application.Races.Abstraction.IRaceRepository RacesRepository => null!;
         public Application.Pets.Abstraction.IPetRepository PetsRepository => null!;

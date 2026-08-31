@@ -72,6 +72,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IRolesRepository rolesRepository,
         IModulesRepository modulesRepository,
         IRolePermissionsRepository rolePermissionsRepository,
+        IModuleRepository modulesRepository,
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
         IUsersRepository usersRepository,
@@ -130,6 +131,7 @@ public sealed class UnitOfWork : IUnitOfWork
         RolesRepository = rolesRepository;
         ModulesRepository = modulesRepository;
         RolePermissionsRepository = rolePermissionsRepository;
+        ModulesRepository = modulesRepository;
         SpeciesRepository = speciesRepository;
         RacesRepository = racesRepository;
         PetsRepository = petsRepository;
@@ -191,6 +193,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IRolesRepository RolesRepository { get; }
     public IModulesRepository ModulesRepository { get; }
     public IRolePermissionsRepository RolePermissionsRepository { get; }
+    public IModuleRepository ModulesRepository { get; }
     public ISpeciesRepository SpeciesRepository { get; }
     public IRaceRepository RacesRepository { get; }
     public IPetRepository PetsRepository { get; }

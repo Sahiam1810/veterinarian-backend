@@ -13,6 +13,7 @@ using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
+using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
@@ -100,7 +101,11 @@ using Infrastructure.Races.Repositories;
 using Infrastructure.Roles.Repository;
 using Application.Modules.Abstraction;
 using Application.RolePermissions.Abstraction;
+
+using Infrastructure.Modules.Repository;
+
 using Infrastructure.Modules.Repositories;
+
 using Infrastructure.RolePermissions.Repositories;
 using Infrastructure.Security;
 using Infrastructure.Security.Authentication;
@@ -163,6 +168,7 @@ public static class DependencyInjection
         services.AddScoped<IRolesRepository, RolesRepository>();
         services.AddScoped<IModulesRepository, ModulesRepository>();
         services.AddScoped<IRolePermissionsRepository, RolePermissionsRepository>();
+        services.AddScoped<IModuleRepository, ModuleRepository>();
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IStatusAppointmentRepository, StatusAppointmentRepository>();
         services.AddScoped<ITypeServiceRepository, TypeServiceRepository>();
