@@ -14,4 +14,8 @@ public sealed class TelegramOptions
     public int ProcessingLeaseSeconds { get; init; } = 300;
     public int MaxProcessingAttempts { get; init; } = 3;
     public int DelegatedTokenMinutes { get; init; } = 5;
+    public int OtpTtlMinutes { get; init; } = 5;
+    public int OtpMaximumAttempts { get; init; } = 5;
+    public int OtpResendSeconds { get; init; } = 60;
+    public string OtpPepperBase64 { get; init; } = string.Empty;
 }

@@ -103,6 +103,18 @@ public sealed class TelegramInboundUpdate : BaseEntity<long>
         UpdatedAt = preparedAt;
     }
 
+    public void RedactSensitiveText(DateTime redactedAt)
+    {
+        if (Status != TelegramInboundUpdateStatus.Processing)
+        {
+            throw new InvalidOperationException(
+                "Solo se puede proteger una actualización en procesamiento.");
+        }
+
+        MessageText = null;
+        UpdatedAt = redactedAt;
+    }
+
     public void ConfirmChunk(int chunkIndex, DateTime confirmedAt)
     {
         if (Status != TelegramInboundUpdateStatus.Prepared ||

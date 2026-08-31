@@ -64,7 +64,7 @@
 **Configuration and documentation**
 
 - Modify `.env.example`: variables SMTP y OTP documentadas.
-- Modify `docs/telegram-channel-setup.md`: comandos y operación del flujo.
+- Modify `docs/integrations/telegram.md`: comandos y operación del flujo.
 
 **Focused tests**
 
@@ -448,7 +448,7 @@ git commit -m "feat: ✨ link Huellitas accounts from Telegram"
 
 **Files:**
 - Modify: `.env.example`
-- Modify: `docs/telegram-channel-setup.md`
+- Modify: `docs/integrations/telegram.md`
 
 **Interfaces:**
 - Produces: reproducible local configuration and operator instructions.
@@ -476,7 +476,8 @@ Explain how to generate a 32-byte pepper in PowerShell without printing unrelate
 
 ```powershell
 $bytes = New-Object byte[] 32
-[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+$randomGenerator = [Security.Cryptography.RandomNumberGenerator]::Create()
+try { $randomGenerator.GetBytes($bytes) } finally { $randomGenerator.Dispose() }
 [Convert]::ToBase64String($bytes)
 ```
 
@@ -486,7 +487,7 @@ Include `/vincular`, email, OTP, `/cancelar`, `/desvincular`, permanent link sem
 
 - [ ] **Step 3: Build without running the full test estate**
 
-Run: `dotnet build veterinarian-backend.sln --no-restore`
+Run: `dotnet build veterinarian_backend.slnx --no-restore`
 
 Expected: build succeeds with zero errors.
 
@@ -518,7 +519,7 @@ Start the API visibly, keep the existing public webhook tunnel, send `/vincular`
 - [ ] **Step 7: Commit documentation**
 
 ```bash
-git add .env.example docs/telegram-channel-setup.md
+git add .env.example docs/integrations/telegram.md
 git commit -m "docs: 📝 document Telegram OTP linking"
 ```
 

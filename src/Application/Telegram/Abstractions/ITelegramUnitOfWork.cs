@@ -14,6 +14,8 @@ public interface ITelegramUnitOfWork
 
     ITelegramInboundUpdateRepository InboundUpdatesRepository { get; }
 
+    ITelegramLinkingSessionRepository LinkingSessionsRepository { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     Task ExecuteInTransactionAsync(
