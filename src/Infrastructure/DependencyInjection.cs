@@ -73,6 +73,7 @@ using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
+using Application.Telegram.Linking;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
 using Infrastructure.ChatConversationAssignments.Repository;
@@ -226,6 +227,7 @@ public static class DependencyInjection
         services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
+        services.AddScoped<TelegramChatLinkingService>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
         services.AddSingleton<ITelegramOtpProtector>(provider =>
         {

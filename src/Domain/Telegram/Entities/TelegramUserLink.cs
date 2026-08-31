@@ -16,6 +16,10 @@ public sealed class TelegramUserLink : BaseEntity<Guid>
 
     public DateTime LinkedAt { get; private set; }
 
+    public DateTime? UnlinkedAt { get; private set; }
+
+    public bool IsActive => UnlinkedAt is null;
+
     public static TelegramUserLink Create(
         Guid personId,
         long telegramUserId,
@@ -49,7 +53,20 @@ public sealed class TelegramUserLink : BaseEntity<Guid>
         TelegramUserId = telegramUserId;
         TelegramChatId = telegramChatId;
         LinkedAt = linkedAt;
+        UnlinkedAt = null;
         UpdatedAt = linkedAt;
+    }
+
+    public void Revoke(DateTime unlinkedAt)
+    {
+        if (!IsActive)
+        {
+            throw new InvalidOperationException(
+                "La vinculación de Telegram ya está revocada.");
+        }
+
+        UnlinkedAt = unlinkedAt;
+        UpdatedAt = unlinkedAt;
     }
 
     private static void EnsurePersonId(Guid personId)

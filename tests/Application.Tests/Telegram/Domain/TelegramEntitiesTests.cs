@@ -74,6 +74,22 @@ public sealed class TelegramEntitiesTests
     }
 
     [Fact]
+    public void User_link_can_be_revoked_and_relinked()
+    {
+        var link = TelegramUserLink.Create(PersonId, 1001, 1001, Now);
+
+        link.Revoke(Now.AddMinutes(1));
+
+        Assert.False(link.IsActive);
+        Assert.Equal(Now.AddMinutes(1), link.UnlinkedAt);
+
+        link.Relink(2002, 2002, Now.AddMinutes(2));
+
+        Assert.True(link.IsActive);
+        Assert.Null(link.UnlinkedAt);
+    }
+
+    [Fact]
     public void Conversation_link_can_move_to_a_new_internal_conversation()
     {
         var link = TelegramConversationLink.Create(
