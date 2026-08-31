@@ -156,7 +156,9 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("Oracle connection string is not configured.");
 
         services.AddDbContext<VeterinaryDbContext>(options =>
-            options.UseOracle(connectionString));
+            options.UseOracle(connectionString, oracle =>
+                // XE 21c no soporta booleanos nativos (default del provider 23).
+                oracle.UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion21)));
 
         services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
         services.AddScoped<IPetRepository, PetRepository>();

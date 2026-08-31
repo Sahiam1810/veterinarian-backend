@@ -19,7 +19,9 @@ public sealed class VeterinaryDbContextFactory : IDesignTimeDbContextFactory<Vet
             ?? throw new InvalidOperationException("DefaultConnection is not configured.");
 
         var options = new DbContextOptionsBuilder<VeterinaryDbContext>()
-            .UseOracle(connectionString)
+            .UseOracle(connectionString, oracle =>
+                // XE 21c no soporta booleanos nativos (default del provider 23).
+                oracle.UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion21))
             .Options;
 
         return new VeterinaryDbContext(options);
