@@ -4,6 +4,10 @@ namespace Application.Telegram.Abstractions;
 
 public interface ITelegramConversationLinkRepository
 {
+    Task<TelegramConversationBinding?> GetBindingAsync(
+        Guid telegramUserLinkId,
+        CancellationToken cancellationToken);
+
     Task<TelegramConversationLink?> GetByUserLinkIdAsync(
         Guid telegramUserLinkId,
         CancellationToken cancellationToken);
@@ -16,3 +20,5 @@ public interface ITelegramConversationLinkRepository
         TelegramConversationLink link,
         CancellationToken cancellationToken);
 }
+
+public sealed record TelegramConversationBinding(Guid ConversationId, bool Closed);
