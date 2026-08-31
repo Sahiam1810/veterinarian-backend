@@ -25,3 +25,12 @@ public sealed class AgentIdempotencyConflictException()
 
 public sealed class AgentConversationCapacityException()
     : AgentGatewayException("Transient conversation capacity is exhausted.");
+
+public sealed class AgentConversationNotFoundException()
+    : AgentGatewayException("Conversation was not found.");
+
+public sealed class AgentConversationForbiddenException()
+    : AgentGatewayException("Authenticated user is not a participant in this conversation.");
+
+public sealed class AgentConversationConfigurationException()
+    : AgentGatewayException("Conversation catalogs are not configured.");
