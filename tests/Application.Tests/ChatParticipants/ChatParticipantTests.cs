@@ -7,6 +7,9 @@ using Application.AppointmentStatusHistories.Abstraction;
 using Application.Availabilities.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
+using Application.ChatAiRunErrors.Abstraction;
+using Application.ChatAiRunMetrics.Abstraction;
+using Application.ChatAiRuns.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatAttachments.Abstraction;
 using Application.ChatEscalationAssignments.Abstraction;
@@ -517,6 +520,9 @@ public sealed class ChatParticipantTests
         public IChatUserProfileRepository ChatUserProfilesRepository { get; }
         public IAgentHumanRepository AgentHumansRepository { get; }
         public IChatParticipantRepository ChatParticipantsRepository { get; }
+        public IChatAiRunRepository ChatAiRunsRepository => null!;
+        public IChatAiRunMetricsRepository ChatAiRunMetricsRepository => null!;
+        public IChatAiRunErrorRepository ChatAiRunErrorsRepository => null!;
 
         public IRolesRepository RolesRepository => null!;
         public ISpeciesRepository SpeciesRepository => null!;
