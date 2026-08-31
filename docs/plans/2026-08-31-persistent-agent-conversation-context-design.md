@@ -64,7 +64,7 @@ La operación coordinará los repositorios especializados existentes; no llamar�
 
 El alta inicial agregará las entidades al mismo contexto EF y realizará un solo `SaveChangesAsync`, aprovechando la transacción automática de EF Core. Si falla la creación de cualquier relación, no debe quedar una conversación parcial.
 
-La idempotencia actual continuará formando parte de la resolución. Las pruebas cubrirán que repetir una misma solicitud idempotente no genere dos conversaciones dentro de la misma ejecución del servicio. La protección distribuida entre instancias queda fuera de este alcance y deberá abordarse cuando se implemente un almacén de idempotencia compartido.
+La clave de idempotencia continuará propagándose al chatbot, pero el esquema actual no permite asociarla de manera durable con una conversación creada. Por ello, los reintentos posteriores a una primera respuesta deberán enviar el `conversationId` retornado. La idempotencia durable de la creación queda fuera de este alcance y deberá abordarse con un almacén compartido antes de operar varias instancias del backend.
 
 ## Errores
 
