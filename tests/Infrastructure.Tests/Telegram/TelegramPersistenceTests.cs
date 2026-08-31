@@ -23,9 +23,16 @@ public sealed class TelegramPersistenceTests
         Assert.Equal("TELEGRAM_INBOUND_UPDATES", update.GetTableName());
         Assert.Equal("NUMBER(19)", update.FindProperty(nameof(TelegramInboundUpdate.TelegramChatId))!.GetColumnType());
         Assert.Equal("TELEGRAM_USER_LINKS", userLink.GetTableName());
-        Assert.Contains(userLink.GetIndexes(), index =>
+        var lifecycleScopedProperties = new[]
+        {
+            nameof(TelegramUserLink.PersonId),
+            nameof(TelegramUserLink.TelegramUserId),
+            nameof(TelegramUserLink.TelegramChatId)
+        };
+        Assert.DoesNotContain(userLink.GetIndexes(), index =>
             index.IsUnique &&
-            index.Properties.Single().Name == nameof(TelegramUserLink.TelegramUserId));
+            index.Properties.Count == 1 &&
+            lifecycleScopedProperties.Contains(index.Properties[0].Name));
         Assert.NotNull(linkingSession);
         Assert.Equal("TELEGRAM_LINKING_SESSIONS", linkingSession.GetTableName());
         Assert.Equal(
