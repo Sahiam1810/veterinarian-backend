@@ -12,6 +12,7 @@ public interface ITelegramInboundUpdateRepository
 
     Task<TelegramInboundUpdate?> ClaimNextAsync(
         DateTime now,
+        DateTime staleBefore,
         CancellationToken cancellationToken);
 
     Task AddAsync(

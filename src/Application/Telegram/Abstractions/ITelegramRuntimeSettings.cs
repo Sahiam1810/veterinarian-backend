@@ -8,6 +8,8 @@ public interface ITelegramRuntimeSettings
 
     TimeSpan WorkerPollInterval { get; }
 
+    TimeSpan ProcessingLease { get; }
+
     int MaxProcessingAttempts { get; }
 
     TimeSpan DelegatedTokenLifetime { get; }

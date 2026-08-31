@@ -19,6 +19,7 @@ Telegram__WebhookSecret=secreto-aleatorio-con-letras-numeros-guion-o-guion-bajo
 Telegram__PublicWebhookUrl=https://<url-publica-del-tunel>
 Telegram__LinkCodeTtlMinutes=10
 Telegram__WorkerPollMilliseconds=1000
+Telegram__ProcessingLeaseSeconds=300
 Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5
 ```

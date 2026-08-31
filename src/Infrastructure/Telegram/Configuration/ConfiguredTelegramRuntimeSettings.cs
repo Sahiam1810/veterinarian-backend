@@ -6,5 +6,6 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     string BotUsername,
     TimeSpan LinkCodeTtl,
     TimeSpan WorkerPollInterval,
+    TimeSpan ProcessingLease,
     int MaxProcessingAttempts,
     TimeSpan DelegatedTokenLifetime) : ITelegramRuntimeSettings;

@@ -30,6 +30,7 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
 
         if (options.LinkCodeTtlMinutes <= 0) failures.Add("Telegram:LinkCodeTtlMinutes must be positive.");
         if (options.WorkerPollMilliseconds <= 0) failures.Add("Telegram:WorkerPollMilliseconds must be positive.");
+        if (options.ProcessingLeaseSeconds <= 0) failures.Add("Telegram:ProcessingLeaseSeconds must be positive.");
         if (options.MaxProcessingAttempts is < 1 or > 10) failures.Add("Telegram:MaxProcessingAttempts must be between 1 and 10.");
         if (options.DelegatedTokenMinutes is < 1 or > 15) failures.Add("Telegram:DelegatedTokenMinutes must be between 1 and 15.");
 

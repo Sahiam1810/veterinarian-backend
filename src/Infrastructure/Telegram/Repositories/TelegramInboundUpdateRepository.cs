@@ -15,11 +15,18 @@ public sealed class TelegramInboundUpdateRepository(VeterinaryDbContext context)
     public Task<TelegramInboundUpdate?> GetByIdAsync(long updateId, CancellationToken cancellationToken) =>
         context.Set<TelegramInboundUpdate>().FirstOrDefaultAsync(update => update.Id == updateId, cancellationToken);
 
-    public async Task<TelegramInboundUpdate?> ClaimNextAsync(DateTime now, CancellationToken cancellationToken)
+    public async Task<TelegramInboundUpdate?> ClaimNextAsync(
+        DateTime now,
+        DateTime staleBefore,
+        CancellationToken cancellationToken)
     {
         var candidateId = await context.Set<TelegramInboundUpdate>()
             .AsNoTracking()
-            .Where(update => update.Status == TelegramInboundUpdateStatus.Pending && update.NextAttemptAt <= now)
+            .Where(update =>
+                (update.Status == TelegramInboundUpdateStatus.Pending && update.NextAttemptAt <= now) ||
+                ((update.Status == TelegramInboundUpdateStatus.Processing ||
+                  update.Status == TelegramInboundUpdateStatus.Prepared) &&
+                 update.UpdatedAt <= staleBefore))
             .OrderBy(update => update.NextAttemptAt)
             .ThenBy(update => update.Id)
             .Select(update => (long?)update.Id)
@@ -30,7 +37,11 @@ public sealed class TelegramInboundUpdateRepository(VeterinaryDbContext context)
         }
 
         var affected = await context.Set<TelegramInboundUpdate>()
-            .Where(update => update.Id == candidateId && update.Status == TelegramInboundUpdateStatus.Pending)
+            .Where(update => update.Id == candidateId &&
+                ((update.Status == TelegramInboundUpdateStatus.Pending && update.NextAttemptAt <= now) ||
+                 ((update.Status == TelegramInboundUpdateStatus.Processing ||
+                   update.Status == TelegramInboundUpdateStatus.Prepared) &&
+                  update.UpdatedAt <= staleBefore)))
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(update => update.Status, TelegramInboundUpdateStatus.Processing)
                 .SetProperty(update => update.Attempts, update => update.Attempts + 1)
