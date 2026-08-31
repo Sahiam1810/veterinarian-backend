@@ -9,6 +9,7 @@ using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
+using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.RolePermissions.Abstraction;
 using Application.Species.Abstraction;
@@ -69,6 +70,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public UnitOfWork(
         VeterinaryDbContext context,
         IRolesRepository rolesRepository,
+        IModulesRepository modulesRepository,
         IRolePermissionsRepository rolePermissionsRepository,
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
@@ -126,6 +128,7 @@ public sealed class UnitOfWork : IUnitOfWork
     {
         _context = context;
         RolesRepository = rolesRepository;
+        ModulesRepository = modulesRepository;
         RolePermissionsRepository = rolePermissionsRepository;
         SpeciesRepository = speciesRepository;
         RacesRepository = racesRepository;
@@ -186,6 +189,7 @@ public sealed class UnitOfWork : IUnitOfWork
     }
 
     public IRolesRepository RolesRepository { get; }
+    public IModulesRepository ModulesRepository { get; }
     public IRolePermissionsRepository RolePermissionsRepository { get; }
     public ISpeciesRepository SpeciesRepository { get; }
     public IRaceRepository RacesRepository { get; }
