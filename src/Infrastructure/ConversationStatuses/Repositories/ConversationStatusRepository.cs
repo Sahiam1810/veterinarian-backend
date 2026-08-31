@@ -11,7 +11,7 @@ public sealed class ConversationStatusRepository(VeterinaryDbContext context) : 
     public async Task<IReadOnlyCollection<ConversationStatusEntity>> GetAllAsync(CancellationToken cancellationToken) =>
         await context.Set<ConversationStatusEntity>()
             .AsNoTracking()
-            .OrderBy(x => x.Name.Value)
+            .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
     public Task<ConversationStatusEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>

@@ -11,7 +11,7 @@ public sealed class EscalationStatusRepository(VeterinaryDbContext context) : IE
     public async Task<IReadOnlyCollection<EscalationStatusEntity>> GetAllAsync(CancellationToken cancellationToken) =>
         await context.Set<EscalationStatusEntity>()
             .AsNoTracking()
-            .OrderBy(x => x.Name.Value)
+            .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
     public Task<EscalationStatusEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>

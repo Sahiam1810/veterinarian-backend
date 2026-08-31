@@ -1,5 +1,6 @@
 using Application.Species.Abstraction;
 using Domain.Species.Entities;
+using Domain.Species.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,8 @@ public sealed class SpeciesRepository : ISpeciesRepository
 
     public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken, Guid? excludedId = null)
     {
-        var query = _context.Set<SpeciesEntity>().Where(s => s.Name.Value == name);
+        var nameVo = SpeciesName.Create(name);
+        var query = _context.Set<SpeciesEntity>().Where(s => s.Name == nameVo);
         if (excludedId.HasValue)
         {
             query = query.Where(s => s.Id != excludedId.Value);

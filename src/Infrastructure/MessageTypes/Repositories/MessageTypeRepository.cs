@@ -10,7 +10,7 @@ public sealed class MessageTypeRepository(VeterinaryDbContext context) : IMessag
     public async Task<IReadOnlyCollection<MessageTypeEntity>> GetAllAsync(CancellationToken cancellationToken) =>
         await context.Set<MessageTypeEntity>()
             .AsNoTracking()
-            .OrderBy(x => x.Name.Value)
+            .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
     public Task<MessageTypeEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
