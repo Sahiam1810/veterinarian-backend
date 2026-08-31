@@ -135,6 +135,7 @@ using Infrastructure.Telegram.Repositories;
 using Infrastructure.Telegram.Configuration;
 using Infrastructure.Telegram.Security;
 using Infrastructure.Telegram.Http;
+using Infrastructure.Telegram.Workers;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -220,6 +221,7 @@ public static class DependencyInjection
         services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
+        services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
         services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
         services.AddHttpClient<ITelegramBotClient, TelegramBotHttpClient>(client =>
@@ -242,6 +244,14 @@ public static class DependencyInjection
                 options.MaxProcessingAttempts,
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes));
         });
+
+        var telegramOptions = configuration
+            .GetSection(TelegramOptions.SectionName)
+            .Get<TelegramOptions>() ?? new TelegramOptions();
+        if (telegramOptions.Enabled)
+        {
+            services.AddHostedService<TelegramUpdateWorker>();
+        }
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
