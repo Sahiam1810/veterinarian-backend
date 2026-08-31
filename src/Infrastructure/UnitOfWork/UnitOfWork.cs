@@ -41,6 +41,8 @@ using Application.AiModels.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
+using Application.ChatAttachments.Abstraction;
+using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
@@ -102,6 +104,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IChatConversationAssignmentRepository chatConversationAssignmentsRepository,
         IChatConversationAiSettingRepository chatConversationAiSettingsRepository,
         IChatParticipantRepository chatParticipantsRepository,
+        IChatMessageRepository chatMessagesRepository,
+        IChatAttachmentRepository chatAttachmentsRepository,
         IProviderModelAiRepository providerModelsAiRepository)
     {
         _context = context;
@@ -152,6 +156,8 @@ public sealed class UnitOfWork : IUnitOfWork
         ChatConversationAssignmentsRepository = chatConversationAssignmentsRepository;
         ChatConversationAiSettingsRepository = chatConversationAiSettingsRepository;
         ChatParticipantsRepository = chatParticipantsRepository;
+        ChatMessagesRepository = chatMessagesRepository;
+        ChatAttachmentsRepository = chatAttachmentsRepository;
         ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
@@ -205,6 +211,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
     public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
     public IChatParticipantRepository ChatParticipantsRepository { get; }
+    public IChatMessageRepository ChatMessagesRepository { get; }
+    public IChatAttachmentRepository ChatAttachmentsRepository { get; }
     public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
