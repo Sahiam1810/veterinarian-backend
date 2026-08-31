@@ -13,4 +13,10 @@ public interface ITelegramRuntimeSettings
     int MaxProcessingAttempts { get; }
 
     TimeSpan DelegatedTokenLifetime { get; }
+
+    TimeSpan OtpLifetime { get; }
+
+    int OtpMaximumAttempts { get; }
+
+    TimeSpan OtpResendInterval { get; }
 }

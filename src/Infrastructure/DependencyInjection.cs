@@ -243,7 +243,10 @@ public static class DependencyInjection
                 TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),
                 TimeSpan.FromSeconds(options.ProcessingLeaseSeconds),
                 options.MaxProcessingAttempts,
-                TimeSpan.FromMinutes(options.DelegatedTokenMinutes));
+                TimeSpan.FromMinutes(options.DelegatedTokenMinutes),
+                TimeSpan.FromMinutes(options.OtpTtlMinutes),
+                options.OtpMaximumAttempts,
+                TimeSpan.FromSeconds(options.OtpResendSeconds));
         });
 
         var telegramOptions = configuration

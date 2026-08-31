@@ -8,4 +8,7 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     TimeSpan WorkerPollInterval,
     TimeSpan ProcessingLease,
     int MaxProcessingAttempts,
-    TimeSpan DelegatedTokenLifetime) : ITelegramRuntimeSettings;
+    TimeSpan DelegatedTokenLifetime,
+    TimeSpan OtpLifetime,
+    int OtpMaximumAttempts,
+    TimeSpan OtpResendInterval) : ITelegramRuntimeSettings;
