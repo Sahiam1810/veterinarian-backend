@@ -6,7 +6,7 @@ namespace Application.Agent.Messages;
 public sealed class SendAgentMessageHandler(
     IConversationContextProvider conversationContextProvider,
     IUserAccessTokenProvider userAccessTokenProvider,
-    IAgentMessagingClient agentMessagingClient)
+    IAgentMessageDispatcher dispatcher)
     : IRequestHandler<SendAgentMessageCommand, AgentMessageResult>
 {
     public async Task<AgentMessageResult> Handle(
@@ -19,21 +19,16 @@ public sealed class SendAgentMessageHandler(
             request.IdempotencyKey,
             cancellationToken);
         var accessToken = userAccessTokenProvider.GetRequiredAccessToken();
-        var envelope = new AgentMessageEnvelope(
+        return await dispatcher.DispatchAsync(
+            new AgentMessageDispatchRequest(
             request.Message,
-            context.ConversationId,
             request.PersonId,
             request.PetId,
-            context.Channel,
             request.Language,
-            [request.Role],
-            context.IsEscalated,
-            request.CorrelationId,
+            request.Role,
             request.IdempotencyKey,
-            false);
-
-        return await agentMessagingClient.SendAsync(
-            envelope,
+            request.CorrelationId),
+            context,
             accessToken,
             cancellationToken);
     }

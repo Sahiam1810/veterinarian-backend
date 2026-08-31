@@ -75,6 +75,7 @@ using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
+using Application.Telegram.Abstractions;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
 using Infrastructure.ChatConversationAssignments.Repository;
@@ -137,6 +138,12 @@ using Infrastructure.UserAccounts.Repository;
 using Infrastructure.UserCredentials.Repositories;
 using Infrastructure.Users.Repository;
 using Infrastructure.UserTokens.Repositories;
+using Infrastructure.Telegram;
+using Infrastructure.Telegram.Repositories;
+using Infrastructure.Telegram.Configuration;
+using Infrastructure.Telegram.Security;
+using Infrastructure.Telegram.Http;
+using Infrastructure.Telegram.Workers;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -221,6 +228,43 @@ public static class DependencyInjection
         services.AddScoped<IChatAiRunMetricsRepository, ChatAiRunMetricsRepository>();
         services.AddScoped<IChatAiRunErrorRepository, ChatAiRunErrorRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
+        services.AddScoped<ITelegramLinkCodeRepository, TelegramLinkCodeRepository>();
+        services.AddScoped<ITelegramUserLinkRepository, TelegramUserLinkRepository>();
+        services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
+        services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
+        services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
+        services.AddScoped<TelegramUpdatePump>();
+        services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
+        services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
+        services.AddHttpClient<ITelegramBotClient, TelegramBotHttpClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.telegram.org/", UriKind.Absolute);
+            client.Timeout = TimeSpan.FromSeconds(15);
+        }).RemoveAllLoggers();
+
+        services.AddSingleton<IValidateOptions<TelegramOptions>, TelegramOptionsValidator>();
+        services.AddOptions<TelegramOptions>()
+            .Bind(configuration.GetSection(TelegramOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<ITelegramRuntimeSettings>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
+            return new ConfiguredTelegramRuntimeSettings(
+                options.BotUsername,
+                TimeSpan.FromMinutes(options.LinkCodeTtlMinutes),
+                TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),
+                TimeSpan.FromSeconds(options.ProcessingLeaseSeconds),
+                options.MaxProcessingAttempts,
+                TimeSpan.FromMinutes(options.DelegatedTokenMinutes));
+        });
+
+        var telegramOptions = configuration
+            .GetSection(TelegramOptions.SectionName)
+            .Get<TelegramOptions>() ?? new TelegramOptions();
+        if (telegramOptions.Enabled)
+        {
+            services.AddHostedService<TelegramUpdateWorker>();
+        }
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

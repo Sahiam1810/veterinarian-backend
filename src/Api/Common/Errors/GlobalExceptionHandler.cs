@@ -1,6 +1,7 @@
 using FluentValidation;
 using Application.Agent.Errors;
 using Application.Common.Exceptions;
+using Application.Telegram.Errors;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
@@ -84,6 +85,12 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 (StatusCodes.Status503ServiceUnavailable, unavailable.Message, "agent_unavailable"),
             AgentTimeoutException timeout =>
                 (StatusCodes.Status504GatewayTimeout, timeout.Message, "agent_timeout"),
+            TelegramAccountUnavailableException unavailable =>
+                (StatusCodes.Status403Forbidden, unavailable.Message, "telegram_account_unavailable"),
+            TelegramIdentityConflictException conflict =>
+                (StatusCodes.Status409Conflict, conflict.Message, "telegram_identity_conflict"),
+            TelegramLinkCodeInvalidException invalidCode =>
+                (StatusCodes.Status400BadRequest, invalidCode.Message, "telegram_link_code_invalid"),
             ValidationException => (StatusCodes.Status400BadRequest, "Validation failed", null),
             BadRequestException badRequest => (StatusCodes.Status400BadRequest, badRequest.Message, null),
             ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message, null),

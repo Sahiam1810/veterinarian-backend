@@ -1,3 +1,5 @@
+using Application.Agent.Abstractions;
+using Application.Agent.Messages;
 using Application.Common.Validators;
 using FluentValidation;
 using MediatR;
@@ -15,6 +17,7 @@ public static class DependencyInjection
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
         services.AddValidatorsFromAssemblyContaining<ApplicationAssemblyMarker>();
+        services.AddScoped<IAgentMessageDispatcher, AgentMessageDispatcher>();
 
         return services;
     }

@@ -29,7 +29,7 @@ public sealed class SendAgentMessageHandlerTests
         var handler = new SendAgentMessageHandler(
             conversations,
             new StubUserAccessTokenProvider("signed-access-token"),
-            client);
+            new AgentMessageDispatcher(client));
 
         var result = await handler.Handle(Command(), CancellationToken.None);
 
@@ -53,7 +53,7 @@ public sealed class SendAgentMessageHandlerTests
         var handler = new SendAgentMessageHandler(
             conversations,
             new StubUserAccessTokenProvider("signed-access-token"),
-            client);
+            new AgentMessageDispatcher(client));
 
         await handler.Handle(Command(requested), CancellationToken.None);
 
@@ -74,7 +74,7 @@ public sealed class SendAgentMessageHandlerTests
         var handler = new SendAgentMessageHandler(
             conversations,
             new StubUserAccessTokenProvider("signed-access-token"),
-            client);
+            new AgentMessageDispatcher(client));
 
         await handler.Handle(Command(), cancellation.Token);
 
@@ -99,7 +99,7 @@ public sealed class SendAgentMessageHandlerTests
             new RecordingConversationContextProvider(
                 new AgentConversationContext(ConversationId, "web", true)),
             new StubUserAccessTokenProvider("signed-access-token"),
-            new RecordingAgentMessagingClient(expected));
+            new AgentMessageDispatcher(new RecordingAgentMessagingClient(expected)));
 
         var result = await handler.Handle(Command(), CancellationToken.None);
 

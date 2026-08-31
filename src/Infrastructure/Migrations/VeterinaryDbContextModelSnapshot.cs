@@ -1671,6 +1671,210 @@ namespace Infrastructure.Migrations
                     b.ToTable("STATUS_APPOINTMENTS", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramConversationLink", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("ConversationId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CONVERSATION_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("TelegramUserLinkId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("TELEGRAM_USER_LINK_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TELEGRAM_CONVERSATION_LINKS_CONVERSATION");
+
+                    b.HasIndex("TelegramUserLinkId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TELEGRAM_CONVERSATION_LINKS_USER");
+
+                    b.ToTable("TELEGRAM_CONVERSATION_LINKS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramInboundUpdate", b =>
+                {
+                    b.Property<long>("Id")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("UPDATE_ID");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ATTEMPTS");
+
+                    b.Property<string>("ChatType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("CHAT_TYPE");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(120)
+                        .HasColumnType("VARCHAR2(120)")
+                        .HasColumnName("LAST_ERROR_CODE");
+
+                    b.Property<int>("LastSentChunkIndex")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("LAST_SENT_CHUNK_INDEX");
+
+                    b.Property<string>("MessageText")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("MESSAGE_TEXT");
+
+                    b.Property<DateTime>("NextAttemptAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("NEXT_ATTEMPT_AT");
+
+                    b.Property<string>("ResponseText")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("RESPONSE_TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<long>("TelegramChatId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_CHAT_ID");
+
+                    b.Property<long>("TelegramMessageId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_MESSAGE_ID");
+
+                    b.Property<long>("TelegramUserId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_USER_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "NextAttemptAt")
+                        .HasDatabaseName("IX_TELEGRAM_INBOUND_UPDATES_PENDING");
+
+                    b.ToTable("TELEGRAM_INBOUND_UPDATES", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramLinkCode", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("CODE_HASH");
+
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CONSUMED_AT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("EXPIRES_AT");
+
+                    b.Property<DateTime?>("InvalidatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("INVALIDATED_AT");
+
+                    b.Property<string>("PersonId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("PERSON_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodeHash")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TELEGRAM_LINK_CODES_HASH");
+
+                    b.HasIndex("PersonId")
+                        .HasDatabaseName("IX_TELEGRAM_LINK_CODES_PERSON");
+
+                    b.ToTable("TELEGRAM_LINK_CODES", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramUserLink", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("LINKED_AT");
+
+                    b.Property<string>("PersonId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("PERSON_ID");
+
+                    b.Property<long>("TelegramChatId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_CHAT_ID");
+
+                    b.Property<long>("TelegramUserId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_USER_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TELEGRAM_USER_LINKS_PERSON");
+
+                    b.HasIndex("TelegramChatId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TELEGRAM_USER_LINKS_CHAT");
+
+                    b.HasIndex("TelegramUserId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TELEGRAM_USER_LINKS_USER");
+
+                    b.ToTable("TELEGRAM_USER_LINKS", (string)null);
+                });
+
             modelBuilder.Entity("Domain.TypeServices.Entities.TypeService", b =>
                 {
                     b.Property<string>("Id")
@@ -2445,6 +2649,43 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("TypeService");
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramConversationLink", b =>
+                {
+                    b.HasOne("Domain.ChatConversations.Entities.ChatConversation", null)
+                        .WithMany()
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_TELEGRAM_CONVERSATION_LINKS_CONVERSATION");
+
+                    b.HasOne("Domain.Telegram.Entities.TelegramUserLink", null)
+                        .WithMany()
+                        .HasForeignKey("TelegramUserLinkId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_TELEGRAM_CONVERSATION_LINKS_USER_LINK");
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramLinkCode", b =>
+                {
+                    b.HasOne("Domain.Users.Entities.Users", null)
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_TELEGRAM_LINK_CODES_USERS");
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramUserLink", b =>
+                {
+                    b.HasOne("Domain.Users.Entities.Users", null)
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_TELEGRAM_USER_LINKS_USERS");
                 });
 
             modelBuilder.Entity("Domain.UserAccounts.Entities.UserAccounts", b =>
