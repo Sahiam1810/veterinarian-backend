@@ -74,8 +74,6 @@ public interface IUnitOfWork
 
     IRolePermissionsRepository RolePermissionsRepository { get; }
 
-    IModuleRepository ModulesRepository { get; }
-
     ISpeciesRepository SpeciesRepository { get; }
 
     IRaceRepository RacesRepository { get; }

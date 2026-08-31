@@ -137,9 +137,9 @@ public sealed class ModuleTests
         var alpha = new ModuleEntity("Alpha", null);
         context.Modules[zebra.Id] = zebra;
         context.Modules[alpha.Id] = alpha;
-        var handler = new GetModulesQueryHandler(context.UnitOfWork);
+        var handler = new GetAllModulesQueryHandler(context.UnitOfWork);
 
-        var results = await handler.Handle(new GetModulesQuery(), CancellationToken.None);
+        var results = await handler.Handle(new GetAllModulesQuery(), CancellationToken.None);
 
         Assert.Equal(2, results.Count);
         Assert.Equal("Alpha", results.First().Name.Value);
@@ -241,7 +241,7 @@ public sealed class ModuleTests
             ModulesRepository = new FakeModuleRepository(context);
         }
 
-        public IModuleRepository ModulesRepository { get; }
+        public IModulesRepository ModulesRepository { get; }
 
         public IRolePermissionsRepository RolePermissionsRepository => null!;
         public Application.Roles.Abstraction.IRolesRepository RolesRepository => null!;
@@ -303,7 +303,7 @@ public sealed class ModuleTests
             => action(cancellationToken);
     }
 
-    private sealed class FakeModuleRepository : IModuleRepository
+    private sealed class FakeModuleRepository : IModulesRepository
     {
         private readonly ModuleTestContext _context;
 
@@ -346,15 +346,10 @@ public sealed class ModuleTests
             return Task.CompletedTask;
         }
 
-        public Task<bool> ExistsByNameAsync(
-            string name,
-            CancellationToken cancellationToken,
-            Guid? excludedId = null)
+        public Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken)
         {
             var moduleName = ModuleName.Create(name);
-            var exists = _context.Modules.Values.Any(
-                module => module.Name == moduleName
-                    && (!excludedId.HasValue || module.Id != excludedId.Value));
+            var exists = _context.Modules.Values.Any(module => module.Name == moduleName);
             return Task.FromResult(exists);
         }
     }
