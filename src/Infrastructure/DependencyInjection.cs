@@ -72,6 +72,7 @@ using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
+using Application.Telegram.Abstractions;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
 using Infrastructure.ChatConversationAssignments.Repository;
@@ -129,6 +130,8 @@ using Infrastructure.UserAccounts.Repository;
 using Infrastructure.UserCredentials.Repositories;
 using Infrastructure.Users.Repository;
 using Infrastructure.UserTokens.Repositories;
+using Infrastructure.Telegram;
+using Infrastructure.Telegram.Repositories;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -209,6 +212,11 @@ public static class DependencyInjection
         services.AddScoped<IChatAiRunMetricsRepository, ChatAiRunMetricsRepository>();
         services.AddScoped<IChatAiRunErrorRepository, ChatAiRunErrorRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
+        services.AddScoped<ITelegramLinkCodeRepository, TelegramLinkCodeRepository>();
+        services.AddScoped<ITelegramUserLinkRepository, TelegramUserLinkRepository>();
+        services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
+        services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
+        services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
