@@ -1,5 +1,6 @@
 using Application.AccountStatements.Abstraction;
 using Application.Agent.Abstractions;
+using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
@@ -207,7 +208,19 @@ public static class DependencyInjection
         services.AddOptions<AgentOptions>()
             .Bind(configuration.GetSection(AgentOptions.SectionName))
             .ValidateOnStart();
-        services.AddSingleton<IConversationContextProvider, TransientConversationContextProvider>();
+        services.AddScoped<IAgentConversationDefaults>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
+            return new ConfiguredAgentConversationDefaults(
+                Guid.Parse(options.InitialConversationStatusId),
+                Guid.Parse(options.ClientParticipantTypeId));
+        });
+        services.AddScoped<
+            IActiveConversationEscalationReader,
+            ActiveConversationEscalationReader>();
+        services.AddScoped<
+            IConversationContextProvider,
+            PersistentConversationContextProvider>();
 
         var agentOptions = configuration
             .GetSection(AgentOptions.SectionName)

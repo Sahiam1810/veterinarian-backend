@@ -60,26 +60,6 @@ public sealed class AgentOptionsValidatorTests
     }
 
     [Theory]
-    [InlineData(29)]
-    [InlineData(3601)]
-    public void Enabled_options_require_ttl_between_30_and_3600_seconds(int ttl)
-    {
-        var result = validator.Validate(null, Valid(conversationContextTtlSeconds: ttl));
-
-        Assert.True(result.Failed);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(100001)]
-    public void Enabled_options_require_capacity_between_1_and_100000(int capacity)
-    {
-        var result = validator.Validate(null, Valid(conversationContextCapacity: capacity));
-
-        Assert.True(result.Failed);
-    }
-
-    [Theory]
     [InlineData(1023)]
     [InlineData(1048577)]
     public void Enabled_options_require_max_response_bytes_between_1024_and_1048576(int maxBytes)
@@ -133,8 +113,6 @@ public sealed class AgentOptionsValidatorTests
         string baseUrl = "https://agent-api:8000",
         string messagesPath = "/api/v1/messages",
         int requestTimeoutSeconds = 30,
-        int conversationContextTtlSeconds = 900,
-        int conversationContextCapacity = 10_000,
         int maxResponseBytes = 1_048_576,
         string initialConversationStatusId = "81000000-0000-0000-0000-000000000001",
         string clientParticipantTypeId = "82000000-0000-0000-0000-000000000001") => new()
@@ -143,8 +121,6 @@ public sealed class AgentOptionsValidatorTests
         BaseUrl = baseUrl,
         MessagesPath = messagesPath,
         RequestTimeoutSeconds = requestTimeoutSeconds,
-        ConversationContextTtlSeconds = conversationContextTtlSeconds,
-        ConversationContextCapacity = conversationContextCapacity,
         MaxResponseBytes = maxResponseBytes,
         InitialConversationStatusId = initialConversationStatusId,
         ClientParticipantTypeId = clientParticipantTypeId
