@@ -8,6 +8,7 @@ using Application.Availabilities.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversations.Abstraction;
+using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
@@ -241,6 +242,7 @@ public sealed class ChatConversationAiSettingTests
         public IAgentHumanRepository AgentHumansRepository => null!;
         public IChatUserProfileRepository ChatUserProfilesRepository => null!;
         public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
+        public IChatParticipantRepository ChatParticipantsRepository => null!;
         public IProviderModelAiRepository ProviderModelsAiRepository => null!;
         public IUserAccountsRepository UserAccountsRepository => null!;
         public IUserCredentialsRepository UserCredentialsRepository => null!;

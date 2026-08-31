@@ -49,6 +49,7 @@ using Application.AiModels.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
+using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 
@@ -117,6 +118,8 @@ public interface IUnitOfWork
     IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
 
     IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
+
+    IChatParticipantRepository ChatParticipantsRepository { get; }
 
     IProviderModelAiRepository ProviderModelsAiRepository { get; }
 

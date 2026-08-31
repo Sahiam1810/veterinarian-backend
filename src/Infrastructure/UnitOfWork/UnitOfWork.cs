@@ -41,6 +41,7 @@ using Application.AiModels.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
+using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserAccounts.Abstraction;
@@ -100,6 +101,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IChatConversationRepository chatConversationsRepository,
         IChatConversationAssignmentRepository chatConversationAssignmentsRepository,
         IChatConversationAiSettingRepository chatConversationAiSettingsRepository,
+        IChatParticipantRepository chatParticipantsRepository,
         IProviderModelAiRepository providerModelsAiRepository)
     {
         _context = context;
@@ -149,6 +151,7 @@ public sealed class UnitOfWork : IUnitOfWork
         ChatConversationsRepository = chatConversationsRepository;
         ChatConversationAssignmentsRepository = chatConversationAssignmentsRepository;
         ChatConversationAiSettingsRepository = chatConversationAiSettingsRepository;
+        ChatParticipantsRepository = chatParticipantsRepository;
         ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
@@ -201,6 +204,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IChatConversationRepository ChatConversationsRepository { get; }
     public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
     public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
+    public IChatParticipantRepository ChatParticipantsRepository { get; }
     public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
