@@ -2,7 +2,7 @@ namespace Domain.Specialties.ValueObjects;
 
 public sealed record SpecialtyDescription
 {
-    public const int MaxLength = 30;
+    public const int MaxLength = 120;
     private SpecialtyDescription(string? value) => Value = value;
     public string? Value { get; }
 
