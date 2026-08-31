@@ -3,6 +3,8 @@ using Api.Common.Errors;
 using Api.Common.Security;
 using Api.Configuration;
 using Api.Extensions;
+using Api.Notifications;
+using Api.Notifications.Hubs;
 using Application;
 using Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
@@ -27,6 +29,7 @@ builder.Services.AddApiSwaggerGen();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAgentApi();
+builder.Services.AddNotificationsRealtime();
 builder.Services.AddApiCors(builder.Configuration);
 
 builder.Services.AddJwtAuthentication();
@@ -70,5 +73,6 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.Run();

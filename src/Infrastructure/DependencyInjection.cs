@@ -3,6 +3,8 @@ using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
+using Infrastructure.Appointments.BackgroundServices;
+using Infrastructure.Appointments.Configuration;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
@@ -267,6 +269,12 @@ public static class DependencyInjection
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateOnStart();
+
+        services.AddSingleton<IValidateOptions<ReminderOptions>, ReminderOptionsValidator>();
+        services.AddOptions<ReminderOptions>()
+            .Bind(configuration.GetSection(ReminderOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHostedService<AppointmentReminderBackgroundService>();
 
         var mapsterConfig = TypeAdapterConfig.GlobalSettings;
         mapsterConfig.Scan(typeof(DependencyInjection).Assembly);

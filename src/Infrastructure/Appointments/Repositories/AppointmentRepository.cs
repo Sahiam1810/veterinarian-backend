@@ -51,6 +51,21 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .OrderByDescending(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<Appointment>> GetScheduledBetweenAsync(
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .Include(x => x.ClientPet!)
+                .ThenInclude(x => x.Client)
+            .Include(x => x.ClientPet!)
+                .ThenInclude(x => x.Pet)
+            .Include(x => x.Status)
+            .Where(x => x.ScheduledStart >= fromUtc && x.ScheduledStart <= toUtc)
+            .AsNoTracking()
+            .OrderBy(x => x.ScheduledStart)
+            .ToListAsync(cancellationToken);
+
     public async Task<bool> HasOverlappingAppointmentAsync(
         Guid clientPetId,
         Guid veterinarianId,

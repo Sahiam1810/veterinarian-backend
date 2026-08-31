@@ -5,8 +5,23 @@ namespace Api.Common.Security;
 
 public static class JwtResponseEvents
 {
+    private const string NotificationsHubPath = "/hubs/notifications";
+
     public static JwtBearerEvents Create() => new()
     {
+        // El cliente de SignalR no puede mandar el header Authorization en el
+        // handshake de WebSocket, así que manda el token por query string.
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) &&
+                context.HttpContext.Request.Path.StartsWithSegments(NotificationsHubPath))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        },
         OnChallenge = async context =>
         {
             context.HandleResponse();

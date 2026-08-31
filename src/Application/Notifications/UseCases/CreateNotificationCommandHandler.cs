@@ -1,10 +1,13 @@
 using Application.Common.Abstractions;
+using Application.Notifications.Abstraction;
 using Domain.Notifications.Entities;
 using MediatR;
 
 namespace Application.Notifications.UseCases;
 
-public sealed class CreateNotificationCommandHandler(IUnitOfWork unitOfWork)
+public sealed class CreateNotificationCommandHandler(
+    IUnitOfWork unitOfWork,
+    IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<CreateNotificationCommand, Guid>
 {
     public async Task<Guid> Handle(
@@ -24,6 +27,8 @@ public sealed class CreateNotificationCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await realtimeNotifier.NotifyUserAsync(notification, cancellationToken);
 
         return notification.Id;
     }
