@@ -34,6 +34,7 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
         this.factory = factory;
         factory.AgentClient.ExceptionToThrow = null;
         factory.AgentClient.ResultToReturn = null;
+        factory.ConversationContext.ExceptionToThrow = null;
     }
 
     [Fact]
@@ -152,6 +153,12 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
             endpoint.SupportedResponseTypes,
             response => response.StatusCode == (int)HttpStatusCode.OK &&
                         response.Type == typeof(SendAgentMessageResponse));
+        Assert.Contains(
+            endpoint.SupportedResponseTypes,
+            response => response.StatusCode == (int)HttpStatusCode.Forbidden);
+        Assert.Contains(
+            endpoint.SupportedResponseTypes,
+            response => response.StatusCode == (int)HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -284,6 +291,46 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
         { new AgentTimeoutException(), HttpStatusCode.GatewayTimeout, "agent_timeout" }
     };
 
+    [Theory]
+    [MemberData(nameof(ConversationContextErrors))]
+    public async Task Post_maps_conversation_context_errors_to_safe_public_contract(
+        Exception exception,
+        HttpStatusCode expectedStatus,
+        string expectedCode)
+    {
+        factory.ConversationContext.ExceptionToThrow = exception;
+        using var client = factory.CreateAuthenticatedClient();
+        using var request = CreateRequest();
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(expectedStatus, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(expectedCode, document.RootElement.GetProperty("error").GetString());
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(AgentApiFactory.PersonId.ToString(), body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(ConversationId.ToString(), body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static TheoryData<Exception, HttpStatusCode, string> ConversationContextErrors => new()
+    {
+        {
+            new AgentConversationNotFoundException(),
+            HttpStatusCode.NotFound,
+            "agent_conversation_not_found"
+        },
+        {
+            new AgentConversationForbiddenException(),
+            HttpStatusCode.Forbidden,
+            "agent_conversation_forbidden"
+        },
+        {
+            new AgentConversationConfigurationException(),
+            HttpStatusCode.ServiceUnavailable,
+            "agent_conversation_configuration_error"
+        }
+    };
+
     private static HttpRequestMessage CreateRequest(
         bool includeIdempotencyKey = true,
         Guid? correlationId = null)
@@ -366,6 +413,8 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
     }
 
     public RecordingAgentMessagingClient AgentClient { get; } = new();
+    public RecordingConversationContextProvider ConversationContext { get; } =
+        new(ConversationId);
     public string AccessToken { get; private set; } = string.Empty;
 
     public HttpClient CreateAuthenticatedClient(
@@ -391,8 +440,7 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
             services.RemoveAll<IAgentMessagingClient>();
             services.RemoveAll<IConversationContextProvider>();
             services.AddSingleton<IAgentMessagingClient>(AgentClient);
-            services.AddSingleton<IConversationContextProvider>(
-                new FixedConversationContextProvider(ConversationId));
+            services.AddSingleton<IConversationContextProvider>(ConversationContext);
         });
     }
 
@@ -444,19 +492,24 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private sealed class FixedConversationContextProvider(Guid conversationId)
-        : IConversationContextProvider
-    {
-        public ValueTask<AgentConversationContext> ResolveAsync(
-            Guid personId,
-            Guid? requestedConversationId,
-            string idempotencyKey,
-            CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new AgentConversationContext(
+}
+
+public sealed class RecordingConversationContextProvider(Guid conversationId)
+    : IConversationContextProvider
+{
+    public Exception? ExceptionToThrow { get; set; }
+
+    public ValueTask<AgentConversationContext> ResolveAsync(
+        Guid personId,
+        Guid? requestedConversationId,
+        string idempotencyKey,
+        CancellationToken cancellationToken) =>
+        ExceptionToThrow is null
+            ? ValueTask.FromResult(new AgentConversationContext(
                 requestedConversationId ?? conversationId,
                 "web",
-                false));
-    }
+                false))
+            : ValueTask.FromException<AgentConversationContext>(ExceptionToThrow);
 }
 
 public sealed class RecordingAgentMessagingClient : IAgentMessagingClient

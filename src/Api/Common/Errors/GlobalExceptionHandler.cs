@@ -62,6 +62,18 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
     private static (int Status, string Message, string? AgentError) Map(Exception exception) =>
         exception switch
         {
+            AgentConversationNotFoundException notFound =>
+                (StatusCodes.Status404NotFound,
+                    notFound.Message,
+                    "agent_conversation_not_found"),
+            AgentConversationForbiddenException forbidden =>
+                (StatusCodes.Status403Forbidden,
+                    forbidden.Message,
+                    "agent_conversation_forbidden"),
+            AgentConversationConfigurationException configuration =>
+                (StatusCodes.Status503ServiceUnavailable,
+                    configuration.Message,
+                    "agent_conversation_configuration_error"),
             AgentAuthenticationException authentication =>
                 (StatusCodes.Status502BadGateway, authentication.Message, "agent_authentication_error"),
             AgentContractException contract =>
