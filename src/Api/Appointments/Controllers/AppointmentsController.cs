@@ -16,7 +16,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
 {
     // GET /api/appointments/mine
     [HttpGet("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
     [EndpointSummary("Obtiene las citas del cliente autenticado")]
     [EndpointDescription("Retorna las citas médicas de las mascotas del cliente correspondiente al usuario autenticado actual (portal de dueño).")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentResponse>), StatusCodes.Status200OK)]
