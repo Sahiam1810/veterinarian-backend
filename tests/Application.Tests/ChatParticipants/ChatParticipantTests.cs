@@ -7,9 +7,13 @@ using Application.AppointmentStatusHistories.Abstraction;
 using Application.Availabilities.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatMessages.Abstraction;
 using Application.ChatConversations.Abstraction;
+using Application.ChatAttachments.Abstraction;
+using Application.ChatEscalationAssignments.Abstraction;
+using Application.ChatEscalationResolutions.Abstraction;
+using Application.ChatEscalations.Abstraction;
+using Application.ChatEscalationStatusHistories.Abstraction;
+using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatParticipants.UseCase;
 using Application.ChatUserProfiles.Abstraction;
@@ -513,8 +517,6 @@ public sealed class ChatParticipantTests
         public IChatUserProfileRepository ChatUserProfilesRepository { get; }
         public IAgentHumanRepository AgentHumansRepository { get; }
         public IChatParticipantRepository ChatParticipantsRepository { get; }
-        public IChatMessageRepository ChatMessagesRepository => null!;
-        public IChatAttachmentRepository ChatAttachmentsRepository => null!;
 
         public IRolesRepository RolesRepository => null!;
         public ISpeciesRepository SpeciesRepository => null!;
@@ -541,6 +543,12 @@ public sealed class ChatParticipantTests
         public IAiModelRepository AiModelsRepository => null!;
         public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;
+        public IChatMessageRepository ChatMessagesRepository => null!;
+        public IChatAttachmentRepository ChatAttachmentsRepository => null!;
+        public IChatEscalationRepository ChatEscalationsRepository => null!;
+        public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
+        public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
+        public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
         public IProviderModelAiRepository ProviderModelsAiRepository => null!;
         public IUserAccountsRepository UserAccountsRepository => null!;
         public IUserCredentialsRepository UserCredentialsRepository => null!;

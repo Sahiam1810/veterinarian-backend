@@ -10,6 +10,10 @@ using Application.ChatAttachments.UseCase;
 using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
+using Application.ChatEscalationAssignments.Abstraction;
+using Application.ChatEscalationResolutions.Abstraction;
+using Application.ChatEscalations.Abstraction;
+using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
@@ -296,6 +300,10 @@ public sealed class ChatAttachmentTests
 
         public IChatMessageRepository ChatMessagesRepository { get; }
         public IChatAttachmentRepository ChatAttachmentsRepository { get; }
+        public IChatEscalationRepository ChatEscalationsRepository => null!;
+        public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
+        public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
+        public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
 
         public IRolesRepository RolesRepository => null!;
         public ISpeciesRepository SpeciesRepository => null!;
