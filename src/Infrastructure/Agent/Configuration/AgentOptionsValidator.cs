@@ -38,6 +38,14 @@ public sealed class AgentOptionsValidator : IValidateOptions<AgentOptions>
             1_048_576,
             "Agent:MaxResponseBytes must be between 1024 and 1048576.",
             failures);
+        ValidateRequiredGuid(
+            options.InitialConversationStatusId,
+            "Agent:InitialConversationStatusId must be a non-empty GUID.",
+            failures);
+        ValidateRequiredGuid(
+            options.ClientParticipantTypeId,
+            "Agent:ClientParticipantTypeId must be a non-empty GUID.",
+            failures);
 
         return failures.Count == 0
             ? ValidateOptionsResult.Success
@@ -81,6 +89,17 @@ public sealed class AgentOptionsValidator : IValidateOptions<AgentOptions>
         ICollection<string> failures)
     {
         if (value < minimum || value > maximum)
+        {
+            failures.Add(message);
+        }
+    }
+
+    private static void ValidateRequiredGuid(
+        string value,
+        string message,
+        ICollection<string> failures)
+    {
+        if (!Guid.TryParse(value, out var identifier) || identifier == Guid.Empty)
         {
             failures.Add(message);
         }

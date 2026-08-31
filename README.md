@@ -493,7 +493,15 @@ Agent__RequestTimeoutSeconds=30
 Agent__ConversationContextTtlSeconds=900
 Agent__ConversationContextCapacity=10000
 Agent__MaxResponseBytes=1048576
+Agent__InitialConversationStatusId=81000000-0000-0000-0000-000000000001
+Agent__ClientParticipantTypeId=82000000-0000-0000-0000-000000000001
 ```
+
+Antes de habilitar el gateway por primera vez, ejecute el seed idempotente
+`database/seeds/chat_conversation_catalogs_seed.sql` en el esquema Oracle del
+backend. El script registra el estado inicial `Abierta` y el tipo de
+participante `Cliente` con los mismos identificadores configurados arriba. No
+incluye credenciales y puede ejecutarse nuevamente sin duplicar esos registros.
 
 Cuando backend y chatbot estén en la misma red de Docker, use el nombre DNS del
 servicio en lugar de `localhost`, por ejemplo:

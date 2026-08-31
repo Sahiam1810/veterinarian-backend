@@ -11,4 +11,6 @@ public sealed class AgentOptions
     public int ConversationContextTtlSeconds { get; init; } = 900;
     public int ConversationContextCapacity { get; init; } = 10_000;
     public int MaxResponseBytes { get; init; } = 1_048_576;
+    public string InitialConversationStatusId { get; init; } = string.Empty;
+    public string ClientParticipantTypeId { get; init; } = string.Empty;
 }
