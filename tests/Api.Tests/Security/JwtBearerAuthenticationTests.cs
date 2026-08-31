@@ -42,6 +42,38 @@ public sealed class JwtBearerAuthenticationTests : IClassFixture<JwtBearerApiFac
             document.RootElement.GetProperty("email").GetString());
     }
 
+    [Fact]
+    public async Task Notifications_hub_negotiate_accepts_token_via_query_string()
+    {
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var token = factory.CreateRs256Token();
+        using var response = await client.PostAsync(
+            $"/hubs/notifications/negotiate?negotiateVersion=1&access_token={token}",
+            content: null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Me_ignores_token_via_query_string_outside_the_notifications_hub()
+    {
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost")
+        });
+
+        var token = factory.CreateRs256Token();
+        using var response = await client.GetAsync($"/api/auth/me?access_token={token}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     [Theory]
     [InlineData(InvalidToken.WrongSigningKey)]
     [InlineData(InvalidToken.Hs256)]

@@ -19,6 +19,11 @@ public interface INotificationRepository
         Guid appointmentId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<Guid>> GetNotifiedAppointmentIdsAsync(
+        IReadOnlyCollection<Guid> appointmentIds,
+        string type,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(
         Notification notification,
         CancellationToken cancellationToken = default);

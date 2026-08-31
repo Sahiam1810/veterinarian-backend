@@ -27,7 +27,7 @@ public sealed class GetMyAppointmentsQueryHandler : IRequestHandler<GetMyAppoint
         var client = await _uow.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
         if (client is null)
         {
-            throw new NotFoundException("El usuario autenticado no tiene un perfil de cliente asociado.");
+            return Array.Empty<Appointment>();
         }
 
         var clientPets = await _uow.ClientPetsRepository.GetByClientIdAsync(client.Id, cancellationToken);

@@ -1192,6 +1192,38 @@ namespace Infrastructure.Migrations
                     b.ToTable("MESSAGE_TYPES", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Modules.Entities.ModuleEntity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("MODULE_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("NAME");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("MODULES", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Notifications.Entities.Notification", b =>
                 {
                     b.Property<string>("Id")
@@ -1394,6 +1426,56 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("RACES", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.RolePermissions.Entities.RolePermission", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ROLE_PERMISSION_ID");
+
+                    b.Property<int>("CanCreate")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CAN_CREATE");
+
+                    b.Property<int>("CanDelete")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CAN_DELETE");
+
+                    b.Property<int>("CanEdit")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CAN_EDIT");
+
+                    b.Property<int>("CanView")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("CAN_VIEW");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("ModuleId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("MODULE_ID");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ROLE_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModuleId");
+
+                    b.HasIndex("RoleId", "ModuleId")
+                        .IsUnique();
+
+                    b.ToTable("ROLE_PERMISSIONS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Roles.Entities.Roles", b =>
@@ -2608,6 +2690,21 @@ namespace Infrastructure.Migrations
                     b.Navigation("Race");
 
                     b.Navigation("Species");
+                });
+
+            modelBuilder.Entity("Domain.RolePermissions.Entities.RolePermission", b =>
+                {
+                    b.HasOne("Domain.Modules.Entities.ModuleEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Roles.Entities.Roles", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Services.Entities.Service", b =>
