@@ -7,13 +7,32 @@ namespace Application.Modules.UseCases;
 
 public sealed record CreateModuleCommand(string Name, string? Description) : IRequest<Guid>;
 
+
+public sealed record GetModulesQuery : IRequest<IReadOnlyCollection<ModuleEntity>>;
+=======
 public sealed record GetAllModulesQuery : IRequest<IReadOnlyCollection<ModuleEntity>>;
+
 
 public sealed record GetModuleByIdQuery(Guid Id) : IRequest<ModuleEntity>;
 
 public sealed record UpdateModuleCommand(Guid Id, string Name, string? Description) : IRequest;
 
 public sealed record DeleteModuleCommand(Guid Id) : IRequest;
+
+
+public sealed class CreateModuleCommandHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<CreateModuleCommand, Guid>
+{
+    public async Task<Guid> Handle(
+        CreateModuleCommand request,
+        CancellationToken cancellationToken)
+    {
+        if (await unitOfWork.ModulesRepository.ExistsByNameAsync(
+                request.Name.Trim(),
+                cancellationToken))
+        {
+            throw new ConflictException(
+                "Ya existe un módulo con el mismo nombre.");
 
 // Crea un módulo de la aplicación.
 public sealed class CreateModuleCommandHandler(IUnitOfWork unitOfWork)
@@ -24,6 +43,7 @@ public sealed class CreateModuleCommandHandler(IUnitOfWork unitOfWork)
         if (await unitOfWork.ModulesRepository.ExistsByNameAsync(request.Name, cancellationToken))
         {
             throw new ConflictException("Ya existe un módulo con ese nombre.");
+
         }
 
         var module = new ModuleEntity(request.Name, request.Description);
@@ -32,6 +52,48 @@ public sealed class CreateModuleCommandHandler(IUnitOfWork unitOfWork)
         return module.Id;
     }
 }
+
+
+public sealed class GetModulesQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetModulesQuery, IReadOnlyCollection<ModuleEntity>>
+{
+    public Task<IReadOnlyCollection<ModuleEntity>> Handle(
+        GetModulesQuery request,
+        CancellationToken cancellationToken)
+        => unitOfWork.ModulesRepository.GetAllAsync(cancellationToken);
+}
+
+public sealed class GetModuleByIdQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetModuleByIdQuery, ModuleEntity>
+{
+    public async Task<ModuleEntity> Handle(
+        GetModuleByIdQuery request,
+        CancellationToken cancellationToken)
+        => await unitOfWork.ModulesRepository.GetByIdAsync(
+               request.Id,
+               cancellationToken)
+           ?? throw new NotFoundException("Módulo no encontrado.");
+}
+
+public sealed class UpdateModuleCommandHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<UpdateModuleCommand>
+{
+    public async Task Handle(
+        UpdateModuleCommand request,
+        CancellationToken cancellationToken)
+    {
+        var module = await unitOfWork.ModulesRepository.GetByIdAsync(
+                         request.Id,
+                         cancellationToken)
+                     ?? throw new NotFoundException("Módulo no encontrado.");
+
+        if (await unitOfWork.ModulesRepository.ExistsByNameAsync(
+                request.Name.Trim(),
+                cancellationToken,
+                request.Id))
+        {
+            throw new ConflictException(
+                "Ya existe un módulo con el mismo nombre.");
 
 // Lista todos los módulos.
 public sealed class GetAllModulesQueryHandler(IUnitOfWork unitOfWork)
@@ -65,6 +127,7 @@ public sealed class UpdateModuleCommandHandler(IUnitOfWork unitOfWork)
         if (existing is not null && existing.Id != module.Id)
         {
             throw new ConflictException("Ya existe un módulo con ese nombre.");
+
         }
 
         module.Update(request.Name, request.Description);
@@ -72,6 +135,19 @@ public sealed class UpdateModuleCommandHandler(IUnitOfWork unitOfWork)
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
+
+
+public sealed class DeleteModuleCommandHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<DeleteModuleCommand>
+{
+    public async Task Handle(
+        DeleteModuleCommand request,
+        CancellationToken cancellationToken)
+    {
+        var module = await unitOfWork.ModulesRepository.GetByIdAsync(
+                         request.Id,
+                         cancellationToken)
+                     ?? throw new NotFoundException("Módulo no encontrado.");
 
 // Elimina un módulo.
 public sealed class DeleteModuleCommandHandler(IUnitOfWork unitOfWork)
@@ -81,6 +157,7 @@ public sealed class DeleteModuleCommandHandler(IUnitOfWork unitOfWork)
     {
         var module = await unitOfWork.ModulesRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Módulo no encontrado.");
+
 
         await unitOfWork.ModulesRepository.DeleteAsync(module, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
