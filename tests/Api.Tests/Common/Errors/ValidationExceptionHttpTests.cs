@@ -60,6 +60,7 @@ public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
         {
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
+            ["Agent__Enabled"] = "false",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.test",
             ["Jwt__Audience"] = "huellitas-api-tests",

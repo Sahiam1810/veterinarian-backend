@@ -101,6 +101,7 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
         {
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
+            ["Agent__Enabled"] = "false",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = Issuer,
             ["Jwt__Audience"] = Audience,
