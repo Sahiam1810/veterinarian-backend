@@ -11,7 +11,7 @@ public sealed class PriorityRepository(VeterinaryDbContext context) : IPriorityR
     public async Task<IReadOnlyCollection<PriorityEntity>> GetAllAsync(CancellationToken cancellationToken) =>
         await context.Set<PriorityEntity>()
             .AsNoTracking()
-            .OrderBy(x => x.Name.Value)
+            .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
     public Task<PriorityEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>

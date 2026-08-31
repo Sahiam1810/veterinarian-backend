@@ -1,5 +1,6 @@
 using Application.Races.Abstraction;
 using Domain.Races.Entities;
+using Domain.Races.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,8 @@ public sealed class RaceRepository : IRaceRepository
 
     public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken, Guid? excludedId = null)
     {
-        var query = _context.Set<RaceEntity>().Where(r => r.Name.Value == name);
+        var nameVo = RaceName.Create(name);
+        var query = _context.Set<RaceEntity>().Where(r => r.Name == nameVo);
         if (excludedId.HasValue)
         {
             query = query.Where(r => r.Id != excludedId.Value);
