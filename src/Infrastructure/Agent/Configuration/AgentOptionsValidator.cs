@@ -21,22 +21,18 @@ public sealed class AgentOptionsValidator : IValidateOptions<AgentOptions>
             "Agent:RequestTimeoutSeconds must be between 1 and 120.",
             failures);
         ValidateRange(
-            options.ConversationContextTtlSeconds,
-            30,
-            3600,
-            "Agent:ConversationContextTtlSeconds must be between 30 and 3600.",
-            failures);
-        ValidateRange(
-            options.ConversationContextCapacity,
-            1,
-            100_000,
-            "Agent:ConversationContextCapacity must be between 1 and 100000.",
-            failures);
-        ValidateRange(
             options.MaxResponseBytes,
             1024,
             1_048_576,
             "Agent:MaxResponseBytes must be between 1024 and 1048576.",
+            failures);
+        ValidateRequiredGuid(
+            options.InitialConversationStatusId,
+            "Agent:InitialConversationStatusId must be a non-empty GUID.",
+            failures);
+        ValidateRequiredGuid(
+            options.ClientParticipantTypeId,
+            "Agent:ClientParticipantTypeId must be a non-empty GUID.",
             failures);
 
         return failures.Count == 0
@@ -81,6 +77,17 @@ public sealed class AgentOptionsValidator : IValidateOptions<AgentOptions>
         ICollection<string> failures)
     {
         if (value < minimum || value > maximum)
+        {
+            failures.Add(message);
+        }
+    }
+
+    private static void ValidateRequiredGuid(
+        string value,
+        string message,
+        ICollection<string> failures)
+    {
+        if (!Guid.TryParse(value, out var identifier) || identifier == Guid.Empty)
         {
             failures.Add(message);
         }

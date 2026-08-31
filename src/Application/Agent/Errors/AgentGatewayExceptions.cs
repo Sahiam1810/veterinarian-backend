@@ -23,5 +23,11 @@ public sealed class AgentAuthenticationException(Exception? innerException = nul
 public sealed class AgentIdempotencyConflictException()
     : AgentGatewayException("Agent idempotency key conflicts with another request.");
 
-public sealed class AgentConversationCapacityException()
-    : AgentGatewayException("Transient conversation capacity is exhausted.");
+public sealed class AgentConversationNotFoundException()
+    : AgentGatewayException("Conversation was not found.");
+
+public sealed class AgentConversationForbiddenException()
+    : AgentGatewayException("Authenticated user is not a participant in this conversation.");
+
+public sealed class AgentConversationConfigurationException()
+    : AgentGatewayException("Conversation catalogs are not configured.");

@@ -62,6 +62,18 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
     private static (int Status, string Message, string? AgentError) Map(Exception exception) =>
         exception switch
         {
+            AgentConversationNotFoundException notFound =>
+                (StatusCodes.Status404NotFound,
+                    notFound.Message,
+                    "agent_conversation_not_found"),
+            AgentConversationForbiddenException forbidden =>
+                (StatusCodes.Status403Forbidden,
+                    forbidden.Message,
+                    "agent_conversation_forbidden"),
+            AgentConversationConfigurationException configuration =>
+                (StatusCodes.Status503ServiceUnavailable,
+                    configuration.Message,
+                    "agent_conversation_configuration_error"),
             AgentAuthenticationException authentication =>
                 (StatusCodes.Status502BadGateway, authentication.Message, "agent_authentication_error"),
             AgentContractException contract =>
@@ -70,8 +82,6 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 (StatusCodes.Status409Conflict, conflict.Message, "agent_idempotency_conflict"),
             AgentUnavailableException unavailable =>
                 (StatusCodes.Status503ServiceUnavailable, unavailable.Message, "agent_unavailable"),
-            AgentConversationCapacityException capacity =>
-                (StatusCodes.Status503ServiceUnavailable, capacity.Message, "agent_context_capacity_exhausted"),
             AgentTimeoutException timeout =>
                 (StatusCodes.Status504GatewayTimeout, timeout.Message, "agent_timeout"),
             ValidationException => (StatusCodes.Status400BadRequest, "Validation failed", null),

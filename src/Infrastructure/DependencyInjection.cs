@@ -1,5 +1,6 @@
 using Application.AccountStatements.Abstraction;
 using Application.Agent.Abstractions;
+using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
@@ -216,13 +217,25 @@ public static class DependencyInjection
         services.AddOptions<AgentOptions>()
             .Bind(configuration.GetSection(AgentOptions.SectionName))
             .ValidateOnStart();
-        services.AddSingleton<IConversationContextProvider, TransientConversationContextProvider>();
 
         var agentOptions = configuration
             .GetSection(AgentOptions.SectionName)
             .Get<AgentOptions>() ?? new AgentOptions();
         if (agentOptions.Enabled)
         {
+            services.AddScoped<IAgentConversationDefaults>(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
+                return new ConfiguredAgentConversationDefaults(
+                    Guid.Parse(options.InitialConversationStatusId),
+                    Guid.Parse(options.ClientParticipantTypeId));
+            });
+            services.AddScoped<
+                IActiveConversationEscalationReader,
+                ActiveConversationEscalationReader>();
+            services.AddScoped<
+                IConversationContextProvider,
+                PersistentConversationContextProvider>();
             services.AddHttpClient<IAgentMessagingClient, AgentMessagingHttpClient>((provider, client) =>
             {
                 var validated = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
@@ -232,6 +245,9 @@ public static class DependencyInjection
         }
         else
         {
+            services.AddSingleton<
+                IConversationContextProvider,
+                DisabledConversationContextProvider>();
             services.AddSingleton<IAgentMessagingClient, DisabledAgentMessagingClient>();
         }
 
