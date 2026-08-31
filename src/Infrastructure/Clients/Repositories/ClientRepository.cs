@@ -1,5 +1,6 @@
 using Application.Clients.Abstraction;
 using Domain.Clients.Entities;
+using Domain.Clients.ValueObjects; // 👈 1. Importante para usar ClientIdentificationNumber
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,11 +29,14 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
+    // 👈 2. CORREGIDO: Compara contra el Value Object
     public async Task<ClientEntity?> GetByIdentificationNumberAsync(string identificationNumber, CancellationToken cancellationToken)
     {
+        var idVo = ClientIdentificationNumber.Create(identificationNumber);
+
         return await _context.Set<ClientEntity>()
             .Include(c => c.User)
-            .FirstOrDefaultAsync(c => c.IdentificationNumber.Value == identificationNumber, cancellationToken);
+            .FirstOrDefaultAsync(c => c.IdentificationNumber == idVo, cancellationToken);
     }
 
     public async Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
@@ -42,13 +46,19 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
 
+    // 👈 3. CORREGIDO: Compara contra el Value Object sin usar '.Value'
     public async Task<bool> ExistsByIdentificationNumberAsync(string identificationNumber, CancellationToken cancellationToken, Guid? excludedId = null)
     {
-        var query = _context.Set<ClientEntity>().Where(c => c.IdentificationNumber.Value == identificationNumber);
+        var idVo = ClientIdentificationNumber.Create(identificationNumber);
+
+        var query = _context.Set<ClientEntity>()
+            .Where(c => c.IdentificationNumber == idVo);
+
         if (excludedId.HasValue)
         {
             query = query.Where(c => c.Id != excludedId.Value);
         }
+
         return await query.AnyAsync(cancellationToken);
     }
 
