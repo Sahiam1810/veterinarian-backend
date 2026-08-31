@@ -132,6 +132,8 @@ using Infrastructure.Users.Repository;
 using Infrastructure.UserTokens.Repositories;
 using Infrastructure.Telegram;
 using Infrastructure.Telegram.Repositories;
+using Infrastructure.Telegram.Configuration;
+using Infrastructure.Telegram.Security;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -217,6 +219,23 @@ public static class DependencyInjection
         services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
+        services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
+        services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
+
+        services.AddSingleton<IValidateOptions<TelegramOptions>, TelegramOptionsValidator>();
+        services.AddOptions<TelegramOptions>()
+            .Bind(configuration.GetSection(TelegramOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<ITelegramRuntimeSettings>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
+            return new ConfiguredTelegramRuntimeSettings(
+                options.BotUsername,
+                TimeSpan.FromMinutes(options.LinkCodeTtlMinutes),
+                TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),
+                options.MaxProcessingAttempts,
+                TimeSpan.FromMinutes(options.DelegatedTokenMinutes));
+        });
 
         services.AddScoped<IUnitOfWork, Infrastructure.UnitOfWork.UnitOfWork>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

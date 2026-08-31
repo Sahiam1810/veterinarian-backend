@@ -14,12 +14,19 @@ public sealed class JwtTokenIssuer(
 {
     private readonly JwtOptions jwtOptions = options.Value;
 
-    public IssuedAccessToken Issue(AuthenticatedIdentity identity)
+    public IssuedAccessToken Issue(AuthenticatedIdentity identity) =>
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+
+    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime)
     {
+        if (lifetime <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(lifetime));
+        }
+
         var now = timeProvider.GetUtcNow();
 
-        var expiresAt = now.AddMinutes(
-            jwtOptions.AccessTokenMinutes);
+        var expiresAt = now.Add(lifetime);
 
         var claims = new List<Claim>
         {
