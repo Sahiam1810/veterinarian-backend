@@ -82,8 +82,6 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 (StatusCodes.Status409Conflict, conflict.Message, "agent_idempotency_conflict"),
             AgentUnavailableException unavailable =>
                 (StatusCodes.Status503ServiceUnavailable, unavailable.Message, "agent_unavailable"),
-            AgentConversationCapacityException capacity =>
-                (StatusCodes.Status503ServiceUnavailable, capacity.Message, "agent_context_capacity_exhausted"),
             AgentTimeoutException timeout =>
                 (StatusCodes.Status504GatewayTimeout, timeout.Message, "agent_timeout"),
             ValidationException => (StatusCodes.Status400BadRequest, "Validation failed", null),

@@ -287,7 +287,6 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
         { new AgentContractException(), HttpStatusCode.BadGateway, "agent_contract_error" },
         { new AgentIdempotencyConflictException(), HttpStatusCode.Conflict, "agent_idempotency_conflict" },
         { new AgentUnavailableException(), HttpStatusCode.ServiceUnavailable, "agent_unavailable" },
-        { new AgentConversationCapacityException(), HttpStatusCode.ServiceUnavailable, "agent_context_capacity_exhausted" },
         { new AgentTimeoutException(), HttpStatusCode.GatewayTimeout, "agent_timeout" }
     };
 
