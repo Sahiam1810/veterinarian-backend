@@ -70,6 +70,8 @@ public interface IUnitOfWork
 {
     IRolesRepository RolesRepository { get; }
 
+    IModulesRepository ModulesRepository { get; }
+
     IRolePermissionsRepository RolePermissionsRepository { get; }
 
     IModuleRepository ModulesRepository { get; }

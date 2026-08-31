@@ -70,6 +70,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public UnitOfWork(
         VeterinaryDbContext context,
         IRolesRepository rolesRepository,
+        IModulesRepository modulesRepository,
         IRolePermissionsRepository rolePermissionsRepository,
         IModuleRepository modulesRepository,
         ISpeciesRepository speciesRepository,
@@ -128,6 +129,7 @@ public sealed class UnitOfWork : IUnitOfWork
     {
         _context = context;
         RolesRepository = rolesRepository;
+        ModulesRepository = modulesRepository;
         RolePermissionsRepository = rolePermissionsRepository;
         ModulesRepository = modulesRepository;
         SpeciesRepository = speciesRepository;
@@ -189,6 +191,7 @@ public sealed class UnitOfWork : IUnitOfWork
     }
 
     public IRolesRepository RolesRepository { get; }
+    public IModulesRepository ModulesRepository { get; }
     public IRolePermissionsRepository RolePermissionsRepository { get; }
     public IModuleRepository ModulesRepository { get; }
     public ISpeciesRepository SpeciesRepository { get; }
