@@ -21,6 +21,7 @@ public sealed class ProcessTelegramUpdateHandler(
     IAgentDelegatedIdentityProvider identityProvider,
     ITelegramBotClient botClient,
     ISender sender,
+    ITelegramChatLinkingService linkingService,
     ITelegramRuntimeSettings settings,
     TimeProvider timeProvider) : IRequestHandler<ProcessTelegramUpdateCommand>
 {
@@ -60,6 +61,16 @@ public sealed class ProcessTelegramUpdateHandler(
             if (messageText.StartsWith("/start ", StringComparison.Ordinal))
             {
                 await ProcessLinkCodeAsync(update, messageText[7..].Trim(), cancellationToken);
+                return;
+            }
+
+            var linkingOutcome = await linkingService.HandleAsync(update, cancellationToken);
+            if (linkingOutcome.Consumed)
+            {
+                await DeliverAsync(
+                    update,
+                    linkingOutcome.Reply ?? "Solicitud procesada.",
+                    cancellationToken);
                 return;
             }
 

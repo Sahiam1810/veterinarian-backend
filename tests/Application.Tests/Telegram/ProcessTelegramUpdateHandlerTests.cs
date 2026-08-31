@@ -2,6 +2,7 @@ using Application.Agent.Abstractions;
 using Application.Agent.Messages;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Models;
+using Application.Telegram.Linking;
 using Application.Telegram.Processing;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
@@ -77,6 +78,29 @@ public sealed class ProcessTelegramUpdateHandlerTests
     }
 
     [Fact]
+    public async Task Linking_message_is_delivered_without_calling_the_agent()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(48, "/vincular");
+        fixture.Updates.GetByIdAsync(48, default).Returns(update);
+        fixture.Linking.HandleAsync(update, default)
+            .Returns(new TelegramLinkingOutcome(true, "Escribe tu correo registrado."));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(48), default);
+
+        Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            "Escribe tu correo registrado.",
+            default);
+        await fixture.Dispatcher.DidNotReceive().DispatchAsync(
+            Arg.Any<AgentMessageDispatchRequest>(),
+            Arg.Any<AgentConversationContext>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Retry_resumes_prepared_response_without_reprocessing_the_command()
     {
         var retryAt = Now.AddSeconds(1);
@@ -115,6 +139,9 @@ public sealed class ProcessTelegramUpdateHandlerTests
         var sender = Substitute.For<ISender>();
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.MaxProcessingAttempts.Returns(3);
+        var linking = Substitute.For<ITelegramChatLinkingService>();
+        linking.HandleAsync(Arg.Any<TelegramInboundUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(new TelegramLinkingOutcome(false, null));
 
         return new Fixture(
             new ProcessTelegramUpdateHandler(
@@ -124,6 +151,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 identity,
                 bot,
                 sender,
+                linking,
                 settings,
                 new FixedTimeProvider(currentTime ?? Now)),
             updates,
@@ -133,7 +161,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
             dispatcher,
             identity,
             bot,
-            sender);
+            sender,
+            linking);
     }
 
     private static TelegramInboundUpdate ProcessingUpdate(long id, string text)
@@ -156,7 +185,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
         IAgentMessageDispatcher Dispatcher,
         IAgentDelegatedIdentityProvider Identity,
         ITelegramBotClient Bot,
-        ISender Sender);
+        ISender Sender,
+        ITelegramChatLinkingService Linking);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

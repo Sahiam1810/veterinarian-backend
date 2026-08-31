@@ -6,13 +6,20 @@ namespace Application.Telegram.Linking;
 
 public sealed record TelegramLinkingOutcome(bool Consumed, string? Reply);
 
+public interface ITelegramChatLinkingService
+{
+    Task<TelegramLinkingOutcome> HandleAsync(
+        TelegramInboundUpdate update,
+        CancellationToken cancellationToken);
+}
+
 public sealed class TelegramChatLinkingService(
     ITelegramUnitOfWork unitOfWork,
     ITelegramAccountLookup accountLookup,
     ITelegramVerificationCodeSender verificationCodeSender,
     ITelegramOtpProtector otpProtector,
     ITelegramRuntimeSettings settings,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider) : ITelegramChatLinkingService
 {
     private const string GenericCodeSentReply =
         "Si el correo corresponde a una cuenta activa, recibirás un código de verificación. Escríbelo aquí.";
