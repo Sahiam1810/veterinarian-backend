@@ -1,5 +1,6 @@
 using Application.Notifications.Abstraction;
 using Domain.Notifications.Entities;
+using Domain.Notifications.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,6 +53,20 @@ public sealed class NotificationRepository : INotificationRepository
             .AsNoTracking()
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<Guid>> GetNotifiedAppointmentIdsAsync(
+        IReadOnlyCollection<Guid> appointmentIds,
+        string type,
+        CancellationToken cancellationToken = default)
+    {
+        var notificationType = NotificationType.Create(type);
+
+        return await _context.Set<Notification>()
+            .Where(x => appointmentIds.Contains(x.AppointmentId) && x.Type == notificationType)
+            .Select(x => x.AppointmentId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task AddAsync(
         Notification notification,

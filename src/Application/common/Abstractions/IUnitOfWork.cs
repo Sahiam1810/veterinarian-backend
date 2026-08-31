@@ -7,7 +7,9 @@ using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
+using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
+using Application.RolePermissions.Abstraction;
 using Application.Species.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
@@ -67,6 +69,10 @@ namespace Application.Common.Abstractions;
 public interface IUnitOfWork
 {
     IRolesRepository RolesRepository { get; }
+
+    IModulesRepository ModulesRepository { get; }
+
+    IRolePermissionsRepository RolePermissionsRepository { get; }
 
     ISpeciesRepository SpeciesRepository { get; }
 

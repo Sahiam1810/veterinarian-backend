@@ -1,10 +1,11 @@
+using Application.Common.Abstractions;
 using FluentValidation;
 
 namespace Application.Appointments.UseCases;
 
 public sealed class UpdateAppointmentCommandValidator : AbstractValidator<UpdateAppointmentCommand>
 {
-    public UpdateAppointmentCommandValidator()
+    public UpdateAppointmentCommandValidator(IUnitOfWork unitOfWork)
     {
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("El id de la cita es requerido.");
@@ -34,5 +35,16 @@ public sealed class UpdateAppointmentCommandValidator : AbstractValidator<Update
 
         RuleFor(x => x.Notes)
             .MaximumLength(100).WithMessage("Las notas no pueden exceder 100 caracteres.");
+
+        RuleFor(x => x)
+            .MustAsync(async (command, cancellationToken) =>
+                !await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
+                    command.ClientPetId,
+                    command.VeterinarianId,
+                    command.ScheduledStart,
+                    command.ScheduledEnd,
+                    excludeAppointmentId: command.Id,
+                    cancellationToken: cancellationToken))
+            .WithMessage("Ya existe otra cita agendada para la mascota o el veterinario en el horario seleccionado.");
     }
 }

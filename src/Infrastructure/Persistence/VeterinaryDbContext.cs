@@ -37,6 +37,8 @@ using Domain.AppointmentStatusHistories.Entities;
 using Domain.MedicalRecords.Entities;
 using Domain.Vaccinations.Entities;
 using Domain.Notifications.Entities;
+using Domain.Modules.Entities;
+using RolePermissionEntity = Domain.RolePermissions.Entities.RolePermission;
 
 
 namespace Infrastructure.Persistence;
@@ -103,6 +105,10 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<Vaccination> Vaccinations => Set<Vaccination>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<ModuleEntity> Modules => Set<ModuleEntity>();
+
+    public DbSet<RolePermissionEntity> RolePermissions => Set<RolePermissionEntity>();
 
 
 

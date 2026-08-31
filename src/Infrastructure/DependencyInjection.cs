@@ -3,6 +3,8 @@ using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
+using Infrastructure.Appointments.BackgroundServices;
+using Infrastructure.Appointments.Configuration;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
@@ -11,6 +13,7 @@ using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
+using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
@@ -97,6 +100,11 @@ using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
 using Infrastructure.Races.Repositories;
 using Infrastructure.Roles.Repository;
+using Application.RolePermissions.Abstraction;
+
+using Infrastructure.Modules.Repositories;
+
+using Infrastructure.RolePermissions.Repositories;
 using Infrastructure.Security;
 using Infrastructure.Security.Authentication;
 using Infrastructure.Security.Options;
@@ -155,13 +163,17 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("Oracle connection string is not configured.");
 
         services.AddDbContext<VeterinaryDbContext>(options =>
-            options.UseOracle(connectionString));
+            options.UseOracle(connectionString, oracle =>
+                // XE 21c no soporta booleanos nativos (default del provider 23).
+                oracle.UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion21)));
 
         services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
         services.AddScoped<IPetRepository, PetRepository>();
         services.AddScoped<IRaceRepository, RaceRepository>();
         services.AddScoped<ISpeciesRepository, SpeciesRepository>();
         services.AddScoped<IRolesRepository, RolesRepository>();
+        services.AddScoped<IModulesRepository, ModulesRepository>();
+        services.AddScoped<IRolePermissionsRepository, RolePermissionsRepository>();
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IStatusAppointmentRepository, StatusAppointmentRepository>();
         services.AddScoped<ITypeServiceRepository, TypeServiceRepository>();
@@ -305,6 +317,12 @@ public static class DependencyInjection
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateOnStart();
+
+        services.AddSingleton<IValidateOptions<ReminderOptions>, ReminderOptionsValidator>();
+        services.AddOptions<ReminderOptions>()
+            .Bind(configuration.GetSection(ReminderOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHostedService<AppointmentReminderBackgroundService>();
 
         var mapsterConfig = TypeAdapterConfig.GlobalSettings;
         mapsterConfig.Scan(typeof(DependencyInjection).Assembly);
