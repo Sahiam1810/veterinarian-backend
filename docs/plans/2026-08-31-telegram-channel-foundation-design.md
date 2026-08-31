@@ -239,6 +239,23 @@ La configuración se valida al iniciar solo cuando Telegram está habilitado.
 El registro mediante `setWebhook` será una operación explícita documentada y
 no un efecto lateral de cada inicio del contenedor.
 
+### Variables retiradas del contexto transitorio
+
+Las siguientes variables no deben volver a añadirse al `.env` ni a
+`.env.example`:
+
+```env
+Agent__ConversationContextTtlSeconds=900
+Agent__ConversationContextCapacity=10000
+```
+
+Ambas configuraban exclusivamente el proveedor temporal de conversaciones en
+memoria. La rama de contexto persistente sustituyó ese proveedor por Oracle,
+por lo que ya no existe una capacidad local ni un TTL que aplicar. README debe
+documentar esta retirada para evitar que se interprete como una omisión y debe
+señalar como reemplazo funcional `Agent__InitialConversationStatusId` y
+`Agent__ClientParticipantTypeId`.
+
 ## Verificación
 
 Las pruebas focalizadas cubrirán:
