@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Extensions;
@@ -68,6 +69,13 @@ public static class AuthorizationExtensions
                     "Recepcionista",
                     "Cliente"));
         });
+
+        // Habilita las policies dinámicas "perm:{módulo}:{acción}" usadas por
+        // [RequirePermission(...)], resueltas contra la tabla ROLE_PERMISSIONS.
+        // Se registra después de AddAuthorization para que este provider
+        // reemplace al DefaultAuthorizationPolicyProvider.
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
         return services;
     }
