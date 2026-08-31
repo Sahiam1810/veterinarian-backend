@@ -134,6 +134,7 @@ using Infrastructure.Telegram;
 using Infrastructure.Telegram.Repositories;
 using Infrastructure.Telegram.Configuration;
 using Infrastructure.Telegram.Security;
+using Infrastructure.Telegram.Http;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -221,6 +222,11 @@ public static class DependencyInjection
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
         services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
+        services.AddHttpClient<ITelegramBotClient, TelegramBotHttpClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.telegram.org/", UriKind.Absolute);
+            client.Timeout = TimeSpan.FromSeconds(15);
+        }).RemoveAllLoggers();
 
         services.AddSingleton<IValidateOptions<TelegramOptions>, TelegramOptionsValidator>();
         services.AddOptions<TelegramOptions>()
