@@ -136,6 +136,9 @@ using Infrastructure.Telegram.Configuration;
 using Infrastructure.Telegram.Security;
 using Infrastructure.Telegram.Http;
 using Infrastructure.Telegram.Workers;
+using Infrastructure.Telegram.Identity;
+using Infrastructure.Email;
+using Infrastructure.Email.Configuration;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -224,6 +227,14 @@ public static class DependencyInjection
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
+        services.AddSingleton<ITelegramOtpProtector>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
+            return new TelegramOtpProtector(options.OtpPepperBase64);
+        });
+        services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
+        services.AddScoped<ITelegramVerificationCodeSender, SmtpTelegramVerificationCodeSender>();
+        services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
         services.AddHttpClient<ITelegramBotClient, TelegramBotHttpClient>(client =>
         {
@@ -234,6 +245,10 @@ public static class DependencyInjection
         services.AddSingleton<IValidateOptions<TelegramOptions>, TelegramOptionsValidator>();
         services.AddOptions<TelegramOptions>()
             .Bind(configuration.GetSection(TelegramOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<EmailOptions>, EmailOptionsValidator>();
+        services.AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.SectionName))
             .ValidateOnStart();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
