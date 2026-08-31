@@ -527,6 +527,8 @@ public sealed class ChatConversationTests
         public IChatAiRunErrorRepository ChatAiRunErrorsRepository => null!;
 
         public IRolesRepository RolesRepository => null!;
+        public Application.RolePermissions.Abstraction.IRolePermissionsRepository RolePermissionsRepository => null!;
+        public Application.Modules.Abstraction.IModuleRepository ModulesRepository => null!;
         public ISpeciesRepository SpeciesRepository => null!;
         public IRaceRepository RacesRepository => null!;
         public IPetRepository PetsRepository => null!;
