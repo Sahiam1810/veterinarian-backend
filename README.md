@@ -4,11 +4,10 @@ Backend del **Sistema de Gestión para Veterinarias "Huellitas"**: la API centra
 sostiene la operación de la clínica (usuarios, roles, dueños, mascotas, agenda,
 citas, historia clínica) y sirve de puerta de entrada única, tanto para el
 frontend web en React como para el agente conversacional en Python
-(LangChain/LangGraph + RAG) que atiende por WhatsApp/Telegram. Ambos canales
+(LangChain/LangGraph + RAG) que atiende por Telegram. Ambos canales
 comparten la misma base de datos y el mismo calendario a través de esta API.
 
-Proyecto desarrollado en el marco de las prácticas de CampusLands (24 de
-agosto – 4 de septiembre), por un equipo de 8 personas dividido en frentes de
+Proyecto desarrollado por un equipo de 8 personas dividido en frentes de
 backend, frontend, agente/RAG y despliegue.
 
 ## Arquitectura
