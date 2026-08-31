@@ -1,61 +1,87 @@
-using Domain.ChatAiRunMetrics.ValueObjects;
 using Domain.Common;
 
 namespace Domain.ChatAiRunMetrics.Entities;
 
-// Entidad de métricas de una ejecución de chat con IA (tabla chat_ai_run_metrics).
+/// <summary>
+/// Métricas de consumo y costo de una ejecución de IA (inmutable tras creación).
+/// </summary>
 public sealed class ChatAiRunMetrics : BaseEntity<Guid>
 {
-    // Constructor privado para EF Core / materialización.
     private ChatAiRunMetrics()
     {
     }
 
-    // Crea una métrica nueva con Id generado y value objects validados.
-    public ChatAiRunMetrics(
-        Guid aiRunId,
-        int? promptTokens = null,
-        int? completionTokens = null,
-        int? totalTokens = null,
-        decimal? cost = null)
+    public Guid ChatAiRunId { get; private set; }
+
+    public int PromptTokens { get; private set; }
+
+    public int CompletionTokens { get; private set; }
+
+    public int TotalTokens { get; private set; }
+
+    public decimal Cost { get; private set; }
+
+    /// <summary>
+    /// Crea métricas validando tokens no negativos y coherencia del total.
+    /// </summary>
+    public static ChatAiRunMetrics Create(
+        Guid chatAiRunId,
+        int promptTokens,
+        int completionTokens,
+        int totalTokens,
+        decimal cost)
     {
-        Id = Guid.NewGuid();
-        AiRunId = ChatAiRunId.Create(aiRunId);
-        PromptTokens = TokenCount.Create(promptTokens);
-        CompletionTokens = TokenCount.Create(completionTokens);
-        TotalTokens = TokenCount.Create(totalTokens);
-        Cost = MetricCost.Create(cost);
+        EnsureChatAiRunId(chatAiRunId);
+        EnsureNonNegative(promptTokens, nameof(promptTokens));
+        EnsureNonNegative(completionTokens, nameof(completionTokens));
+        EnsureNonNegative(totalTokens, nameof(totalTokens));
+        EnsureNonNegativeCost(cost);
+
+        if (totalTokens != promptTokens + completionTokens)
+        {
+            throw new ArgumentException(
+                "El total de tokens debe ser igual a la suma de tokens de prompt y completado.",
+                nameof(totalTokens));
+        }
+
+        return new ChatAiRunMetrics
+        {
+            Id = Guid.NewGuid(),
+            ChatAiRunId = chatAiRunId,
+            PromptTokens = promptTokens,
+            CompletionTokens = completionTokens,
+            TotalTokens = totalTokens,
+            Cost = decimal.Round(cost, 6, MidpointRounding.AwayFromZero)
+        };
     }
 
-    // Identificador de la ejecución de IA (único en BD, columna ai_run_id).
-    public ChatAiRunId AiRunId { get; private set; } = null!;
-
-    // Tokens del prompt (columna prompt_tokens).
-    public TokenCount PromptTokens { get; private set; } = null!;
-
-    // Tokens de la respuesta (columna completion_tokens).
-    public TokenCount CompletionTokens { get; private set; } = null!;
-
-    // Total de tokens (columna total_tokens).
-    public TokenCount TotalTokens { get; private set; } = null!;
-
-    // Costo de la ejecución (columna cost, NUMBER(10,6)).
-    public MetricCost Cost { get; private set; } = null!;
-
-    // TODO: habilitar cuando exista la entidad de ai_runs
-    // public AiRun AiRun { get; private set; } = null!;
-
-    // Actualiza métricas y marca UpdatedAt en UTC.
-    public void Update(
-        int? promptTokens,
-        int? completionTokens,
-        int? totalTokens,
-        decimal? cost)
+    private static void EnsureChatAiRunId(Guid chatAiRunId)
     {
-        PromptTokens = TokenCount.Create(promptTokens);
-        CompletionTokens = TokenCount.Create(completionTokens);
-        TotalTokens = TokenCount.Create(totalTokens);
-        Cost = MetricCost.Create(cost);
-        UpdatedAt = DateTime.UtcNow;
+        if (chatAiRunId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "El identificador de la ejecución de IA es obligatorio.",
+                nameof(chatAiRunId));
+        }
+    }
+
+    private static void EnsureNonNegative(int value, string paramName)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentException(
+                "La cantidad de tokens no puede ser negativa.",
+                paramName);
+        }
+    }
+
+    private static void EnsureNonNegativeCost(decimal cost)
+    {
+        if (cost < 0)
+        {
+            throw new ArgumentException(
+                "El costo no puede ser negativo.",
+                nameof(cost));
+        }
     }
 }
