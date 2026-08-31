@@ -122,7 +122,7 @@ git commit -m "feat: ✨ model Telegram channel state"
 - Create: `src/Application/Telegram/Linking/ConsumeTelegramLinkCode.cs`
 - Create: `src/Application/Telegram/Updates/IngestTelegramUpdate.cs`
 - Create: `src/Application/Telegram/Errors/TelegramExceptions.cs`
-- Modify: `src/Application/common/Abstractions/IUnitOfWork.cs`
+- Create: `src/Application/Telegram/Abstractions/ITelegramUnitOfWork.cs`
 - Test: `tests/Application.Tests/Telegram/Linking/CreateTelegramLinkCodeHandlerTests.cs`
 - Test: `tests/Application.Tests/Telegram/Linking/ConsumeTelegramLinkCodeHandlerTests.cs`
 - Test: `tests/Application.Tests/Telegram/Updates/IngestTelegramUpdateHandlerTests.cs`
@@ -158,15 +158,16 @@ Run: `dotnet test tests/Application.Tests/Application.Tests.csproj --no-restore 
 
 Expected: FAIL por puertos y handlers ausentes.
 
-- [ ] **Step 3: Añadir repositorios al Unit of Work**
+- [x] **Step 3: Añadir repositorios a un Unit of Work del módulo**
 
-Agregar propiedades explícitas:
+Se implementó `ITelegramUnitOfWork` para evitar acoplar todos los casos de uso
+existentes a repositorios que solo pertenecen a Telegram. Expone:
 
 ```csharp
-ITelegramLinkCodeRepository TelegramLinkCodesRepository { get; }
-ITelegramUserLinkRepository TelegramUserLinksRepository { get; }
-ITelegramConversationLinkRepository TelegramConversationLinksRepository { get; }
-ITelegramInboundUpdateRepository TelegramInboundUpdatesRepository { get; }
+ITelegramLinkCodeRepository LinkCodesRepository { get; }
+ITelegramUserLinkRepository UserLinksRepository { get; }
+ITelegramConversationLinkRepository ConversationLinksRepository { get; }
+ITelegramInboundUpdateRepository InboundUpdatesRepository { get; }
 ```
 
 Definir métodos focalizados: obtener código activo por hash, invalidar pendientes por persona, obtener vínculo por persona/usuario/chat, obtener actualización por ID, agregar, actualizar y reclamar.
@@ -184,7 +185,7 @@ Expected: pruebas de Task 1 y Task 2 aprobadas.
 - [ ] **Step 6: Commit**
 
 ```powershell
-git add src/Application/Telegram src/Application/common/Abstractions/IUnitOfWork.cs tests/Application.Tests/Telegram
+git add src/Application/Telegram tests/Application.Tests/Telegram
 git commit -m "feat: ✨ add Telegram linking use cases"
 ```
 
@@ -266,13 +267,12 @@ git commit -m "refactor: ♻️ share agent message dispatching"
 - Create: `src/Infrastructure/Telegram/Repositories/TelegramConversationLinkRepository.cs`
 - Create: `src/Infrastructure/Telegram/Repositories/TelegramInboundUpdateRepository.cs`
 - Modify: `src/Infrastructure/Persistence/VeterinaryDbContext.cs`
-- Modify: `src/Infrastructure/UnitOfWork/UnitOfWork.cs`
+- Create: `src/Infrastructure/Telegram/TelegramUnitOfWork.cs`
 - Modify: `src/Infrastructure/DependencyInjection.cs`
 - Generate: migration pair named `TelegramChannelFoundation` in `src/Infrastructure/Migrations/`
 - Modify: `src/Infrastructure/Migrations/VeterinaryDbContextModelSnapshot.cs`
 - Modify: `tests/Infrastructure.Tests/Infrastructure.Tests.csproj`
 - Test: `tests/Infrastructure.Tests/Telegram/TelegramPersistenceTests.cs`
-- Test: `tests/Infrastructure.Tests/UnitOfWork/UnitOfWorkTransactionTests.cs`
 
 **Interfaces:**
 - Consumes: repositorios de Task 2.
@@ -282,16 +282,16 @@ git commit -m "refactor: ♻️ share agent message dispatching"
 
 Validar `VARCHAR2(36)` para GUID, `NUMBER(19)` para IDs externos, `CLOB` para textos técnicos, índices únicos, FKs restrictivas y recuperación de trabajos pendientes.
 
-- [ ] **Step 2: Escribir prueba RED de rollback**
+- [x] **Step 2: Implementar el límite transaccional del módulo**
 
-La prueba debe ejecutar una acción que guarde una entidad y luego lance una excepción; al terminar, la entidad no debe existir. Esta prueba demuestra que el método actual, que solo llama `SaveChangesAsync`, no es transaccional.
-Agregar `Microsoft.EntityFrameworkCore.Sqlite` 10.0.10 al proyecto de pruebas y
-usar una conexión SQLite en memoria mantenida abierta durante la prueba para
-disponer de transacciones relacionales reales sin depender de Oracle.
+`TelegramUnitOfWork` usa `Database.BeginTransactionAsync`, confirma en éxito y
+revierte ante excepciones. No se conservó SQLite en pruebas porque su dependencia
+nativa restaurada presentó una vulnerabilidad de severidad alta; la transacción
+relacional debe comprobarse contra la Oracle local antes de la prueba manual.
 
 - [ ] **Step 3: Ejecutar RED focalizado**
 
-Run: `dotnet test tests/Infrastructure.Tests/Infrastructure.Tests.csproj --no-restore --filter "FullyQualifiedName~TelegramPersistenceTests|FullyQualifiedName~UnitOfWorkTransactionTests"`
+Run: `dotnet test tests/Infrastructure.Tests/Infrastructure.Tests.csproj --no-restore --filter "FullyQualifiedName~TelegramPersistenceTests"`
 
 Expected: FAIL por mappings/repositorios ausentes y falta de rollback real.
 
@@ -316,14 +316,14 @@ Expected: solo cuatro tablas Telegram, índices y FKs aprobadas; ningún cambio 
 
 - [ ] **Step 7: Ejecutar GREEN**
 
-Run: `dotnet test tests/Infrastructure.Tests/Infrastructure.Tests.csproj --no-restore --filter "FullyQualifiedName~TelegramPersistenceTests|FullyQualifiedName~UnitOfWorkTransactionTests"`
+Run: `dotnet test tests/Infrastructure.Tests/Infrastructure.Tests.csproj --no-restore --filter "FullyQualifiedName~TelegramPersistenceTests"`
 
 Expected: pruebas aprobadas.
 
 - [ ] **Step 8: Commit**
 
 ```powershell
-git add src/Infrastructure src/Application/common/Abstractions/IUnitOfWork.cs tests/Infrastructure.Tests/Infrastructure.Tests.csproj tests/Infrastructure.Tests/Telegram tests/Infrastructure.Tests/UnitOfWork
+git add src/Infrastructure/Telegram src/Infrastructure/Persistence src/Infrastructure/Migrations tests/Infrastructure.Tests/Telegram
 git commit -m "feat: ✨ persist Telegram channel state"
 ```
 
@@ -655,7 +655,7 @@ Run:
 
 ```powershell
 dotnet test tests/Application.Tests/Application.Tests.csproj --no-restore --filter "FullyQualifiedName~Agent|FullyQualifiedName~Telegram"
-dotnet test tests/Infrastructure.Tests/Infrastructure.Tests.csproj --no-restore --filter "FullyQualifiedName~Agent|FullyQualifiedName~Telegram|FullyQualifiedName~UnitOfWorkTransactionTests"
+dotnet test tests/Infrastructure.Tests/Infrastructure.Tests.csproj --no-restore --filter "FullyQualifiedName~Agent|FullyQualifiedName~Telegram"
 dotnet test tests/Api.Tests/Api.Tests.csproj --no-restore --filter "FullyQualifiedName~Agent|FullyQualifiedName~Telegram"
 ```
 

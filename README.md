@@ -544,6 +544,25 @@ La respuesta incluye los metadatos del agente `provider`, `model`, `usage`,
 `module` y `rag`, además del mensaje y los identificadores de conversación y
 correlación. Los campos no aplicables pueden retornar `null`.
 
+### Contexto persistente del agente
+
+`Agent__ConversationContextTtlSeconds` y
+`Agent__ConversationContextCapacity` fueron retiradas porque configuraban el
+proveedor transitorio en memoria. El contexto actual se conserva en Oracle y
+utiliza los catálogos indicados por `Agent__InitialConversationStatusId` y
+`Agent__ClientParticipantTypeId`.
+
+## Canal Telegram
+
+El backend expone un webhook técnico y un endpoint autenticado para generar
+códigos de vinculación. Al habilitar el canal, un worker procesa el inbox de
+Oracle, reutiliza el dispatcher del agente y devuelve texto al chat privado.
+La primera fase no escribe historial en `CHAT_MESSAGES`.
+
+Las variables requeridas están documentadas en `.env.example`. La guía de
+BotFather, túnel HTTPS, `setWebhook` y prueba desde Swagger está en
+[`docs/integrations/telegram.md`](docs/integrations/telegram.md).
+
 Por ahora, los identificadores generados se mantienen en memoria con TTL y
 capacidad limitada. No representan historial canónico y se pierden al reiniciar
 la API. El futuro módulo especializado de conversaciones reemplazará este
