@@ -42,6 +42,10 @@ using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatAttachments.Abstraction;
+using Application.ChatEscalationAssignments.Abstraction;
+using Application.ChatEscalationResolutions.Abstraction;
+using Application.ChatEscalations.Abstraction;
+using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
@@ -106,6 +110,10 @@ public sealed class UnitOfWork : IUnitOfWork
         IChatParticipantRepository chatParticipantsRepository,
         IChatMessageRepository chatMessagesRepository,
         IChatAttachmentRepository chatAttachmentsRepository,
+        IChatEscalationRepository chatEscalationsRepository,
+        IChatEscalationStatusHistoryRepository chatEscalationStatusHistoriesRepository,
+        IChatEscalationResolutionRepository chatEscalationResolutionsRepository,
+        IChatEscalationAssignmentRepository chatEscalationAssignmentsRepository,
         IProviderModelAiRepository providerModelsAiRepository)
     {
         _context = context;
@@ -158,6 +166,10 @@ public sealed class UnitOfWork : IUnitOfWork
         ChatParticipantsRepository = chatParticipantsRepository;
         ChatMessagesRepository = chatMessagesRepository;
         ChatAttachmentsRepository = chatAttachmentsRepository;
+        ChatEscalationsRepository = chatEscalationsRepository;
+        ChatEscalationStatusHistoriesRepository = chatEscalationStatusHistoriesRepository;
+        ChatEscalationResolutionsRepository = chatEscalationResolutionsRepository;
+        ChatEscalationAssignmentsRepository = chatEscalationAssignmentsRepository;
         ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
@@ -213,6 +225,10 @@ public sealed class UnitOfWork : IUnitOfWork
     public IChatParticipantRepository ChatParticipantsRepository { get; }
     public IChatMessageRepository ChatMessagesRepository { get; }
     public IChatAttachmentRepository ChatAttachmentsRepository { get; }
+    public IChatEscalationRepository ChatEscalationsRepository { get; }
+    public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository { get; }
+    public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
+    public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
     public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

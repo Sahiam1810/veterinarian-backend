@@ -497,6 +497,147 @@ namespace Infrastructure.Migrations
                     b.ToTable("CHAT_CONVERSATIONS", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.ChatEscalationAssignments.Entities.ChatEscalationAssignment", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_ESCALATION_ASSIGNMENTS_ID");
+
+                    b.Property<string>("AgentHumanId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("AGENT_HUMAN_ID");
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("ASSIGNED_AT");
+
+                    b.Property<string>("ChatEscalationId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_ESCALATIONS_ID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentHumanId")
+                        .HasDatabaseName("IX_CHAT_ESC_ASG_AGT");
+
+                    b.HasIndex("ChatEscalationId")
+                        .HasDatabaseName("IX_CHAT_ESC_ASG_ESC");
+
+                    b.ToTable("CHAT_ESCALATION_ASSIGNMENTS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.ChatEscalationResolutions.Entities.ChatEscalationResolution", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_ESCALATION_RESOLUTION_ID");
+
+                    b.Property<string>("ChatEscalationId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_ESCALATIONS_ID");
+
+                    b.Property<string>("ResolutionNote")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("RESOLUTION_NOTE");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("RESOLVED_AT");
+
+                    b.Property<string>("ResolvedBy")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("RESOLVED_BY");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatEscalationId")
+                        .HasDatabaseName("IX_CHAT_ESC_RES_ESC");
+
+                    b.ToTable("CHAT_ESCALATION_RESOLUTION", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.ChatEscalationStatusHistories.Entities.ChatEscalationStatusHistory", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_ESCALATION_STATUS_ID");
+
+                    b.Property<string>("ChatEscalationId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_ESCALATIONS_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("EscalationStatusId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ESCALATIONS_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id")
+                        .HasName("PK_CHAT_ESC_STAT_HIST");
+
+                    b.HasIndex("ChatEscalationId")
+                        .HasDatabaseName("IX_CHAT_ESC_HIST_ESC");
+
+                    b.HasIndex("EscalationStatusId")
+                        .HasDatabaseName("IX_CHAT_ESC_HIST_STA");
+
+                    b.ToTable("CHAT_ESCALATION_STATUS_HISTORY", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.ChatEscalations.Entities.ChatEscalation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_ESCALATIONS_ID");
+
+                    b.Property<string>("ChatConversationId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("CHAT_CONVERSATIONS_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("EscalationStatusId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ESCALATIONS_ID");
+
+                    b.Property<int>("FromAi")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("FROM_AI");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("REASON");
+
+                    b.Property<string>("UpdateAt")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("UPDATE_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatConversationId")
+                        .HasDatabaseName("IX_CHAT_ESC_CONV_ID");
+
+                    b.HasIndex("EscalationStatusId")
+                        .HasDatabaseName("IX_CHAT_ESC_STAT_ID");
+
+                    b.ToTable("CHAT_ESCALATIONS", (string)null);
+                });
+
             modelBuilder.Entity("Domain.ChatMessages.Entities.ChatMessage", b =>
                 {
                     b.Property<string>("Id")
@@ -1779,6 +1920,67 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("PriorityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("FK_CHAT_CONVERSATIONS_PRIORITY_PRIORITY_ID");
+                });
+
+            modelBuilder.Entity("Domain.ChatEscalationAssignments.Entities.ChatEscalationAssignment", b =>
+                {
+                    b.HasOne("Domain.AgentHumans.Entities.AgentHuman", null)
+                        .WithMany()
+                        .HasForeignKey("AgentHumanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CHAT_ESC_ASG_AGT");
+
+                    b.HasOne("Domain.ChatEscalations.Entities.ChatEscalation", null)
+                        .WithMany()
+                        .HasForeignKey("ChatEscalationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CHAT_ESC_ASG_ESC");
+                });
+
+            modelBuilder.Entity("Domain.ChatEscalationResolutions.Entities.ChatEscalationResolution", b =>
+                {
+                    b.HasOne("Domain.ChatEscalations.Entities.ChatEscalation", null)
+                        .WithMany()
+                        .HasForeignKey("ChatEscalationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CHAT_ESC_RES_ESC");
+                });
+
+            modelBuilder.Entity("Domain.ChatEscalationStatusHistories.Entities.ChatEscalationStatusHistory", b =>
+                {
+                    b.HasOne("Domain.ChatEscalations.Entities.ChatEscalation", null)
+                        .WithMany()
+                        .HasForeignKey("ChatEscalationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CHAT_ESC_HIST_ESC");
+
+                    b.HasOne("Domain.EscalationStatuses.Entities.EscalationStatusEntity", null)
+                        .WithMany()
+                        .HasForeignKey("EscalationStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CHAT_ESC_HIST_STA");
+                });
+
+            modelBuilder.Entity("Domain.ChatEscalations.Entities.ChatEscalation", b =>
+                {
+                    b.HasOne("Domain.ChatConversations.Entities.ChatConversation", null)
+                        .WithMany()
+                        .HasForeignKey("ChatConversationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CHAT_ESC_CONV_ID");
+
+                    b.HasOne("Domain.EscalationStatuses.Entities.EscalationStatusEntity", null)
+                        .WithMany()
+                        .HasForeignKey("EscalationStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CHAT_ESC_STAT_ID");
                 });
 
             modelBuilder.Entity("Domain.ChatMessages.Entities.ChatMessage", b =>

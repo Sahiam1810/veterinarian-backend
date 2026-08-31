@@ -50,6 +50,10 @@ using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatAttachments.Abstraction;
+using Application.ChatEscalationAssignments.Abstraction;
+using Application.ChatEscalationResolutions.Abstraction;
+using Application.ChatEscalations.Abstraction;
+using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
@@ -126,6 +130,14 @@ public interface IUnitOfWork
     IChatMessageRepository ChatMessagesRepository { get; }
 
     IChatAttachmentRepository ChatAttachmentsRepository { get; }
+
+    IChatEscalationRepository ChatEscalationsRepository { get; }
+
+    IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository { get; }
+
+    IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
+
+    IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
 
     IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
