@@ -27,7 +27,9 @@ public sealed class GetMyAppointmentsQueryHandler : IRequestHandler<GetMyAppoint
         var client = await _uow.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
         if (client is null)
         {
-            return Array.Empty<Appointment>();
+            // Si el usuario autenticado no tiene un perfil de cliente (es Administrador o Staff),
+            // se devuelven todas las citas médicas registradas en el sistema para su gestión.
+            return await _uow.AppointmentsRepository.GetAllAsync(cancellationToken);
         }
 
         var clientPets = await _uow.ClientPetsRepository.GetByClientIdAsync(client.Id, cancellationToken);
