@@ -21,7 +21,7 @@ public sealed class TelegramBotHttpClient(
         try
         {
             using var response = await httpClient.PostAsJsonAsync(
-                $"bot{botToken}/sendMessage",
+                $"./bot{botToken}/sendMessage",
                 new TelegramSendMessageRequest(chatId, text),
                 cancellationToken);
             if (!response.IsSuccessStatusCode)

@@ -22,9 +22,6 @@ public sealed class TelegramUserLinkConfiguration
         builder.Property(link => link.UnlinkedAt).HasColumnName("UNLINKED_AT").HasColumnType("TIMESTAMP");
         builder.Property(link => link.CreatedAt).HasColumnName("CREATED_AT").HasColumnType("TIMESTAMP").IsRequired();
         builder.Property(link => link.UpdatedAt).HasColumnName("UPDATED_AT").HasColumnType("TIMESTAMP");
-        builder.HasIndex(link => link.PersonId).IsUnique().HasDatabaseName("UX_TELEGRAM_USER_LINKS_PERSON");
-        builder.HasIndex(link => link.TelegramUserId).IsUnique().HasDatabaseName("UX_TELEGRAM_USER_LINKS_USER");
-        builder.HasIndex(link => link.TelegramChatId).IsUnique().HasDatabaseName("UX_TELEGRAM_USER_LINKS_CHAT");
         builder.HasOne<UserEntity>().WithMany().HasForeignKey(link => link.PersonId)
             .HasConstraintName("FK_TELEGRAM_USER_LINKS_USERS").OnDelete(DeleteBehavior.Restrict);
     }

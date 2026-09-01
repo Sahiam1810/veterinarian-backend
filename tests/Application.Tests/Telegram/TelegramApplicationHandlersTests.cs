@@ -86,7 +86,10 @@ public sealed class TelegramApplicationHandlersTests
     {
         var fixture = CreateFixture();
         fixture.InboundUpdates.ExistsAsync(42, fixture.Token).Returns(true);
-        var handler = new IngestTelegramUpdateHandler(fixture.UnitOfWork, fixture.TimeProvider);
+        var handler = new IngestTelegramUpdateHandler(
+            fixture.UnitOfWork,
+            fixture.Signal,
+            fixture.TimeProvider);
 
         var result = await handler.Handle(
             new IngestTelegramUpdateCommand(42, 1001, 1001, 7, "private", "hola"),
@@ -96,6 +99,7 @@ public sealed class TelegramApplicationHandlersTests
         await fixture.InboundUpdates.DidNotReceive().AddAsync(
             Arg.Any<TelegramInboundUpdate>(),
             Arg.Any<CancellationToken>());
+        fixture.Signal.DidNotReceive().Notify();
     }
 
     [Fact]
@@ -103,7 +107,10 @@ public sealed class TelegramApplicationHandlersTests
     {
         var fixture = CreateFixture();
         fixture.InboundUpdates.ExistsAsync(42, fixture.Token).Returns(false);
-        var handler = new IngestTelegramUpdateHandler(fixture.UnitOfWork, fixture.TimeProvider);
+        var handler = new IngestTelegramUpdateHandler(
+            fixture.UnitOfWork,
+            fixture.Signal,
+            fixture.TimeProvider);
 
         var result = await handler.Handle(
             new IngestTelegramUpdateCommand(42, 1001, 1001, 7, "private", "hola"),
@@ -115,6 +122,7 @@ public sealed class TelegramApplicationHandlersTests
                 update.Id == 42 && update.MessageText == "hola"),
             fixture.Token);
         await fixture.UnitOfWork.Received(1).SaveChangesAsync(fixture.Token);
+        fixture.Signal.Received(1).Notify();
     }
 
     private static Fixture CreateFixture()
@@ -127,6 +135,7 @@ public sealed class TelegramApplicationHandlersTests
         var inboundUpdates = Substitute.For<ITelegramInboundUpdateRepository>();
         var protector = Substitute.For<ITelegramLinkCodeProtector>();
         var settings = Substitute.For<ITelegramRuntimeSettings>();
+        var signal = Substitute.For<ITelegramUpdateSignal>();
         settings.BotUsername.Returns("HuellitasBot");
         settings.LinkCodeTtl.Returns(TimeSpan.FromMinutes(10));
         unitOfWork.UsersRepository.Returns(users);
@@ -143,6 +152,7 @@ public sealed class TelegramApplicationHandlersTests
             inboundUpdates,
             protector,
             settings,
+            signal,
             new FixedTimeProvider(Now),
             CancellationToken.None);
     }
@@ -155,6 +165,7 @@ public sealed class TelegramApplicationHandlersTests
         ITelegramInboundUpdateRepository InboundUpdates,
         ITelegramLinkCodeProtector Protector,
         ITelegramRuntimeSettings Settings,
+        ITelegramUpdateSignal Signal,
         TimeProvider TimeProvider,
         CancellationToken Token);
 
