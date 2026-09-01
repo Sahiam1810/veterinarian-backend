@@ -39,4 +39,3 @@ El RAG invitado puede leer conocimiento global y mantener memoria aislada por co
 - Un usuario vinculado conserva su identidad, mascotas y conversacion persistente.
 - El rol `TelegramGuest` nunca llama al router ni a ejecutores modulares.
 - Un invitado no puede publicar conocimiento global y recibe una instruccion de vinculacion para operaciones privadas.
-

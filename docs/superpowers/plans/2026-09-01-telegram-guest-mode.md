@@ -81,4 +81,3 @@
 - [ ] Confirmar que no hay migracion EF y que los arboles quedan limpios.
 - [ ] Commit backend: `docs: 📝 document Telegram guest mode`.
 - [ ] Commit agent: `docs: 📝 document guest access policy`.
-
