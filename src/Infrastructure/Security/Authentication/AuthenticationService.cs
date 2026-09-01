@@ -10,6 +10,7 @@ using Application.Users.Abstraction;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
 using Microsoft.Extensions.Options;
+using ClientEntity = Domain.Clients.Entities.ClientEntity;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserCredentialEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
@@ -42,12 +43,14 @@ public sealed class AuthenticationService(
         string email,
         string userName,
         string password,
+        string identificationNumber,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(fullName) ||
             string.IsNullOrWhiteSpace(email) ||
             string.IsNullOrWhiteSpace(userName) ||
-            string.IsNullOrWhiteSpace(password))
+            string.IsNullOrWhiteSpace(password) ||
+            string.IsNullOrWhiteSpace(identificationNumber))
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidRegistrationData);
@@ -55,6 +58,7 @@ public sealed class AuthenticationService(
 
         var normalizedUserName = userName.Trim().ToLowerInvariant();
         var normalizedEmail = email.Trim().ToLowerInvariant();
+        var trimmedIdentificationNumber = identificationNumber.Trim();
 
         // El email del SuperAdmin no tiene fila en Users: si se permitiera
         // registrar aquí, quedaría una cuenta fantasma que nunca podría
@@ -80,6 +84,13 @@ public sealed class AuthenticationService(
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.UserAlreadyExists);
+        }
+
+        if (await unitOfWork.ClientsRepository.ExistsByIdentificationNumberAsync(
+            trimmedIdentificationNumber, cancellationToken))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.IdentificationNumberAlreadyExists);
         }
 
         Result<AuthenticationTokens>? result = null;
@@ -108,6 +119,16 @@ public sealed class AuthenticationService(
                 passwordHash);
 
             await userCredentialRepository.AddAsync(credential, transactionToken);
+
+            // El registro público solo alimenta el rol "Cliente": sin esto, la
+            // cuenta queda funcional pero sin perfil de Client, y /clients/me,
+            // /pets/mine y /appointments/mine devuelven 404 para siempre.
+            var client = new ClientEntity(
+                user.Id,
+                trimmedIdentificationNumber,
+                address: null);
+
+            await unitOfWork.ClientsRepository.AddAsync(client, transactionToken);
 
             var identity = new AuthenticatedIdentity(
                 account.Id,
@@ -184,7 +205,7 @@ public sealed class AuthenticationService(
         var currentToken = await userTokenRepository.GetByTokenValueAsync(
             tokenHash, cancellationToken);
 
-        if (currentToken is null || currentToken.IsExpired)
+        if (currentToken is null || currentToken.IsExpiredAsOf(timeProvider))
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidRefreshToken);

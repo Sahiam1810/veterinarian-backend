@@ -16,7 +16,9 @@ public sealed class RateLimitOptionsValidator
             options.RefreshPermitLimit,
             options.RefreshWindowSeconds,
             options.RegisterPermitLimit,
-            options.RegisterWindowSeconds
+            options.RegisterWindowSeconds,
+            options.TelegramWebhookPermitLimit,
+            options.TelegramWebhookWindowSeconds
         };
 
         return values.All(value => value > 0)

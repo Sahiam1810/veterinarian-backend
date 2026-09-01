@@ -2,12 +2,14 @@ using System.Security.Claims;
 using System.Text.Json;
 using Api.Auth.Dtos;
 using Api.Common.Errors;
+using Api.UserCredentials.Dtos;
 using Microsoft.AspNetCore.Http;
 using Application.Security.Models;
 using Application.Security.Register;
 using Application.Security.Login;
 using Application.Security.Refresh;
 using Application.Security.Revoke;
+using Application.Security.ChangePassword;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -15,6 +17,7 @@ using Api.Common.Security;
 using MediatR;
 using Application.Security.Profile;
 using Application.Permissions.UseCases;
+using Application.Modules.UseCases;
 
 
 namespace Api.Auth.Controllers;
@@ -55,12 +58,14 @@ public sealed class AuthController(ISender sender) : ControllerBase
                 request.FullName,
                 request.Email,
                 request.UserName,
-                request.Password),
+                request.Password,
+                request.IdentificationNumber),
             cancellationToken);
 
         if (result.IsFailure)
         {
-            if (result.Error.Code == "Authentication.UserAlreadyExists")
+            if (result.Error.Code is "Authentication.UserAlreadyExists"
+                or "Authentication.IdentificationNumberAlreadyExists")
             {
                 return Conflict(ApiErrorResponseFactory.Create(
                     HttpContext,
@@ -129,7 +134,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [HttpGet("me")]
     [EndpointSummary("Obtiene los datos del usuario autenticado actual")]
     [EndpointDescription("Retorna el identificador, nombre de usuario y correo del usuario correspondiente al token JWT provisto.")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CurrentProfile), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
@@ -150,11 +155,21 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [Authorize]
     [HttpGet("permissions")]
     [EndpointSummary("Obtiene los permisos efectivos del usuario autenticado")]
-    [EndpointDescription("Retorna el mapa completo de permisos efectivos del usuario (rol + permisos puntuales) por cada módulo, con sus 4 flags (Ver/Crear/Editar/Eliminar).")]
+    [EndpointDescription("Retorna el mapa completo de permisos efectivos del usuario (rol + permisos puntuales) por cada módulo, con sus 4 flags (Ver/Crear/Editar/Eliminar). El SuperAdmin recibe los 4 flags en true para todos los módulos, igual que se salta la matriz de permisos en el resto de la API.")]
     [ProducesResponseType(typeof(UserPermissionsResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Permissions(CancellationToken cancellationToken)
     {
+        if (User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        {
+            var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
+
+            return Ok(new UserPermissionsResponseDto(
+                modules.ToDictionary(
+                    module => module.Name.Value,
+                    _ => new ModulePermissionDto(true, true, true, true))));
+        }
+
         var roleIdClaim = User.FindFirstValue("role_id");
 
         if (!Guid.TryParse(roleIdClaim, out var roleId))
@@ -181,12 +196,41 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [Authorize]
+    [HttpPatch("me/password")]
+    [EndpointSummary("Cambia la contraseña propia del usuario autenticado")]
+    [EndpointDescription("Autoservicio de cambio de contraseña: valida la contraseña actual del usuario autenticado y, si es correcta, la reemplaza por la nueva. Cualquier rol puede usarlo para su propia cuenta; para restablecer la contraseña de otra persona, ver el endpoint exclusivo de SuperAdmin en UserCredentials.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangeMyPassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            new ChangeMyPasswordCommand(
+                userAccountId,
+                request.CurrentPassword,
+                request.NewPassword),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [Authorize]
     [HttpPost("revoke")]
     [EndpointSummary("Revoca un Refresh Token y cierra la sesión")]
     [EndpointDescription("Invalida el Refresh Token proporcionado para evitar su reutilización futura.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Revoke(
         [FromBody] RevokeTokenRequest request,
         CancellationToken cancellationToken)
@@ -205,9 +249,11 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
-            return result.Error.Code == "Authentication.ForbiddenTokenOwner"
-                ? Forbid()
-                : AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
+            // RevokeAsync busca el token solo entre los del usuario autenticado
+            // (GetAllByAccountIdAsync(userId)): "no existe" y "es de otro
+            // usuario" son indistinguibles y ambos caen en InvalidRefreshToken
+            // a propósito, para no filtrar si el token pertenece a alguien más.
+            return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
         return NoContent();

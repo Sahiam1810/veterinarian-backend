@@ -17,12 +17,13 @@ public static class AuthenticationErrors
         "Authentication.RefreshTokenReuse",
         GenericDescription);
 
-    public static readonly Error ForbiddenTokenOwner = new(
-        "Authentication.ForbiddenTokenOwner",
-        GenericDescription);
-
     public static readonly Error UserAlreadyExists = new(
         "Authentication.UserAlreadyExists",
+        GenericDescription
+    );
+
+    public static readonly Error IdentificationNumberAlreadyExists = new(
+        "Authentication.IdentificationNumberAlreadyExists",
         GenericDescription
     );
 

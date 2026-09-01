@@ -10,6 +10,7 @@ public interface IAuthenticationService
         string email,
         string userName,
         string password,
+        string identificationNumber,
         CancellationToken cancellationToken);
 
     Task<Result<AuthenticationTokens>> LoginAsync(

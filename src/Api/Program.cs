@@ -1,6 +1,5 @@
 using Api.Agent;
 using Api.Common.Errors;
-using Api.Common.Security;
 using Api.Configuration;
 using Api.Extensions;
 using Api.Telegram;
@@ -9,7 +8,6 @@ using Api.Notifications.Hubs;
 
 using Application;
 using Infrastructure;
-using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 
 DotEnvLoader.Load();
@@ -38,32 +36,7 @@ builder.Services.AddApiCors(builder.Configuration);
 builder.Services.AddJwtAuthentication();
 builder.Services.AddApiAuthorizationPolicies();
 
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.AddFixedWindowLimiter(RateLimitPolicies.Login, limiter =>
-    {
-        limiter.PermitLimit = 10;
-        limiter.Window = TimeSpan.FromMinutes(1);
-    });
-    options.AddFixedWindowLimiter(RateLimitPolicies.Register, limiter =>
-    {
-        limiter.PermitLimit = 5;
-        limiter.Window = TimeSpan.FromMinutes(1);
-    });
-    options.AddFixedWindowLimiter(RateLimitPolicies.Refresh, limiter =>
-    {
-        limiter.PermitLimit = 20;
-        limiter.Window = TimeSpan.FromMinutes(1);
-    });
-    options.AddFixedWindowLimiter(RateLimitPolicies.TelegramWebhook, limiter =>
-    {
-        limiter.PermitLimit = 120;
-        limiter.Window = TimeSpan.FromMinutes(1);
-        limiter.QueueLimit = 0;
-    });
-});
+builder.Services.AddApiRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 
@@ -79,7 +52,7 @@ app.UseHttpsRedirection();
 app.UseApiCors();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRateLimiter();
+app.UseApiRateLimiting();
 
 app.MapControllers();
 app.MapHub<NotificationsHub>("/hubs/notifications");

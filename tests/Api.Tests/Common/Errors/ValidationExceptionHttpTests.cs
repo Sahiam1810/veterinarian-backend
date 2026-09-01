@@ -118,6 +118,7 @@ public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
             string email,
             string userName,
             string password,
+            string identificationNumber,
             CancellationToken cancellationToken) =>
             throw UnexpectedCall();
 

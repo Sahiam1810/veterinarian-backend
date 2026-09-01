@@ -25,5 +25,8 @@ public sealed class UserTokens : BaseEntity<Guid>
 
     public DateTime ExpiresAt { get; private set; }
 
-    public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
+    public bool IsExpired => IsExpiredAsOf(TimeProvider.System);
+
+    public bool IsExpiredAsOf(TimeProvider timeProvider) =>
+        timeProvider.GetUtcNow().UtcDateTime >= ExpiresAt;
 }

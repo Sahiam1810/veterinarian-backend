@@ -134,6 +134,7 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
             SuperAdminEmail.ToUpperInvariant(),
             "someone",
             "Password123!",
+            "1234567890",
             CancellationToken.None);
 
         Assert.True(result.IsFailure);

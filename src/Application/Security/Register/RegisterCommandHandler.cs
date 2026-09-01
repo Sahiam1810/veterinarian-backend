@@ -15,5 +15,6 @@ public sealed class RegisterCommandHandler(IAuthenticationService authentication
             request.Email,
             request.UserName,
             request.Password,
+            request.IdentificationNumber,
             cancellationToken);
 }

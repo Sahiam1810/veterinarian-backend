@@ -70,12 +70,13 @@ public sealed class UserCredentialsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/change-password")]
-    [RequirePermission("Usuarios", PermissionAction.Edit)]
-    [EndpointSummary("Cambia la contraseña de una cuenta")]
-    [EndpointDescription("Valida la contraseña actual y, si es correcta, la reemplaza por la nueva contraseña (hasheada).")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
+    [EndpointSummary("Restablece la contraseña de una cuenta ajena")]
+    [EndpointDescription("Exclusivo de SuperAdmin: reemplaza la contraseña (hasheada) de cualquier cuenta, validando primero la contraseña actual. Para cambiar la contraseña propia, cualquier rol debe usar PATCH /api/auth/me/password.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangePassword(
         Guid id,

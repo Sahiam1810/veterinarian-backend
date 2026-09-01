@@ -10,4 +10,6 @@ public sealed class RateLimitOptions
     public int RefreshWindowSeconds { get; init; }
     public int RegisterPermitLimit { get; init; }
     public int RegisterWindowSeconds { get; init; }
+    public int TelegramWebhookPermitLimit { get; init; }
+    public int TelegramWebhookWindowSeconds { get; init; }
 }

@@ -1,3 +1,4 @@
+using Domain.Clients.ValueObjects;
 using FluentValidation;
 
 namespace Application.Security.Register;
@@ -17,5 +18,11 @@ public sealed class RegisterCommandValidator : AbstractValidator<RegisterCommand
             .NotEmpty()
             .MinimumLength(8)
             .MaximumLength(100);
+        RuleFor(command => command.IdentificationNumber)
+            .NotEmpty()
+            .WithMessage("El número de identificación es obligatorio.")
+            .MaximumLength(ClientIdentificationNumber.MaxLength)
+            .WithMessage(
+                $"El número de identificación no puede superar los {ClientIdentificationNumber.MaxLength} caracteres.");
     }
 }

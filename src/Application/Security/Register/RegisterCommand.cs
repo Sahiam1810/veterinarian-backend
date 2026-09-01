@@ -7,4 +7,5 @@ public sealed record RegisterCommand(
     string FullName,
     string Email,
     string UserName,
-    string Password) : IRequest<Result<AuthenticationTokens>>;
+    string Password,
+    string IdentificationNumber) : IRequest<Result<AuthenticationTokens>>;
