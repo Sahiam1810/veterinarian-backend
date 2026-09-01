@@ -6,6 +6,8 @@ using Application.Telegram.Models;
 using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Security.Tokens;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Infrastructure.Telegram.Security;
 
@@ -16,6 +18,31 @@ public sealed class AgentDelegatedIdentityProvider(
     ITelegramRuntimeSettings settings,
     JwtTokenIssuer tokenIssuer) : IAgentDelegatedIdentityProvider
 {
+    private const string GuestRole = "TelegramGuest";
+
+    public AgentDelegatedIdentity GetGuest(long telegramUserId)
+    {
+        if (telegramUserId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(telegramUserId));
+        }
+
+        var accountId = DeterministicId("account", telegramUserId);
+        var personId = DeterministicId("person", telegramUserId);
+        var roleId = DeterministicId("role", 1);
+        var identity = new AuthenticatedIdentity(
+            accountId,
+            personId,
+            roleId,
+            GuestRole,
+            "Telegram Guest",
+            "telegram_guest",
+            "guest@telegram.invalid",
+            "Invitado");
+        var token = tokenIssuer.Issue(identity, settings.DelegatedTokenLifetime);
+        return new AgentDelegatedIdentity(personId, GuestRole, token.Token);
+    }
+
     public async Task<AgentDelegatedIdentity> GetAsync(
         Guid personId,
         CancellationToken cancellationToken)
@@ -45,5 +72,12 @@ public sealed class AgentDelegatedIdentityProvider(
             account.Status);
         var token = tokenIssuer.Issue(identity, settings.DelegatedTokenLifetime);
         return new AgentDelegatedIdentity(user.Id, role.Name.Value, token.Token);
+    }
+
+    private static Guid DeterministicId(string scope, long externalId)
+    {
+        var hash = SHA256.HashData(
+            Encoding.UTF8.GetBytes($"huellitas:telegram:guest:{scope}:{externalId}"));
+        return new Guid(hash.AsSpan(0, 16));
     }
 }
