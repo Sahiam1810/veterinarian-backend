@@ -17,7 +17,12 @@ public sealed class UsersController(ISender sender) : ControllerBase
     [HttpPost]
     [RequirePermission("Usuarios", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo usuario")]
-    [EndpointDescription("Registra un nuevo usuario del sistema, asignándole un rol existente.")]
+    [EndpointDescription("Registra un nuevo usuario del sistema, asignándole un rol existente. " +
+        "IMPORTANTE: esto por sí solo NO deja al usuario en condiciones de iniciar sesión — la contraseña " +
+        "que se envía aquí no se usa para autenticar. Para tener un usuario funcional hay que completar, " +
+        "en este orden: (1) POST /api/users (este endpoint), (2) POST /api/useraccounts con el UserId " +
+        "devuelto, y (3) POST /api/usercredentials con el AccountId devuelto — recién ahí el usuario puede " +
+        "loguearse en POST /api/auth/login.")]
     [ProducesResponseType(typeof(CreateUserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

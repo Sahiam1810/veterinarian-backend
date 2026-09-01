@@ -31,6 +31,9 @@ public sealed class UpdateUserAccountCommandValidator
             .NotEmpty()
             .WithMessage("El estado de la cuenta es obligatorio.")
             .MaximumLength(40)
-            .WithMessage("El estado de la cuenta no puede superar los 40 caracteres.");
+            .WithMessage("El estado de la cuenta no puede superar los 40 caracteres.")
+            .Must(status => AccountStatus.AllowedValues.Contains(status, StringComparer.Ordinal))
+            .WithMessage(
+                $"El estado de la cuenta debe ser uno de: {string.Join(", ", AccountStatus.AllowedValues)}.");
     }
 }

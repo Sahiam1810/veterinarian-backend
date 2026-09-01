@@ -34,6 +34,17 @@ public sealed class UpdateUserAccountCommandHandler
                 "Ya existe una cuenta con ese nombre de usuario.");
         }
 
+        var mailInUse = await _uow.UserAccountsRepository.ExistsByMailAsync(
+            request.Mail,
+            cancellationToken,
+            request.Id);
+
+        if (mailInUse)
+        {
+            throw new ConflictException(
+                "Ya existe una cuenta con ese correo electrónico.");
+        }
+
         account.Update(request.Username, request.Mail, request.Status);
 
         await _uow.UserAccountsRepository.UpdateAsync(

@@ -49,6 +49,16 @@ public sealed class CreateUserAccountCommandHandler
                 "Ya existe una cuenta con ese nombre de usuario.");
         }
 
+        var mailInUse = await _uow.UserAccountsRepository.ExistsByMailAsync(
+            request.Mail,
+            cancellationToken);
+
+        if (mailInUse)
+        {
+            throw new ConflictException(
+                "Ya existe una cuenta con ese correo electrónico.");
+        }
+
         var account = new UserAccountEntity(
             request.UserId,
             request.Username,

@@ -68,6 +68,9 @@ public sealed class UserAccountsConfiguration
         builder.HasIndex(account => account.Username)
             .IsUnique();
 
+        builder.HasIndex(account => account.Mail)
+            .IsUnique();
+
         builder.HasIndex(account => account.UserId)
             .IsUnique();
 

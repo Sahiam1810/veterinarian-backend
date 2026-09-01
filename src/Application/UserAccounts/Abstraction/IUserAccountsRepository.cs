@@ -24,6 +24,11 @@ public interface IUserAccountsRepository
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 
+    Task<bool> ExistsByMailAsync(
+        string mail,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null);
+
     Task<bool> ExistsByUserIdAsync(
         Guid userId,
         CancellationToken cancellationToken,

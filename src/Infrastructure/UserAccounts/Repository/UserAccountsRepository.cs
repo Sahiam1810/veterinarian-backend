@@ -63,6 +63,20 @@ public sealed class UserAccountsRepository : IUserAccountsRepository
                 cancellationToken);
     }
 
+    public Task<bool> ExistsByMailAsync(
+        string mail,
+        CancellationToken cancellationToken = default,
+        Guid? excludedId = null)
+    {
+        var accountMail = AccountMail.Create(mail);
+
+        return _context.Set<UserAccountEntity>()
+            .AnyAsync(
+                account => account.Mail == accountMail
+                    && (!excludedId.HasValue || account.Id != excludedId.Value),
+                cancellationToken);
+    }
+
     public Task<bool> ExistsByUserIdAsync(
         Guid userId,
         CancellationToken cancellationToken = default,

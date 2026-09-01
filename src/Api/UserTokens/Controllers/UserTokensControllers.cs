@@ -1,5 +1,4 @@
 using Api.Common.Security;
-using Api.Common.Security.Permissions;
 using Api.UserTokens.Dtos;
 using Api.UserTokens.Mappings;
 using Application.UserTokens.UseCase;
@@ -10,14 +9,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.UserTokens.Controllers;
 
+// SEC-04: manipular tokens de sesión (crearlos a mano, verlos, borrarlos de
+// cualquier cuenta) es tan sensible como resetear la contraseña de otro
+// (SEC-02) -- mismo criterio, exclusivo de SuperAdmin. La creación manual,
+// además, rechaza los tipos "refresh"/"access" en el validator: esos solo
+// pueden originarse del flujo real de login/refresh.
 [ApiController]
 [Route("api/[controller]")]
 public sealed class UserTokensController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [RequirePermission("Usuarios", PermissionAction.Create)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Registra un nuevo token de sesión")]
-    [EndpointDescription("Registra un token (refresh, reset_password, etc.) asociado a una cuenta, con su fecha de expiración.")]
+    [EndpointDescription("Exclusivo de SuperAdmin. Registra un token no autenticante (ej. reset_password) asociado a una cuenta, con su fecha de expiración. No permite crear tokens de tipo 'refresh' ni 'access': esos solo pueden originarse del flujo real de login/refresh.")]
     [ProducesResponseType(typeof(CreateUserTokenResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -35,9 +39,9 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [RequirePermission("Usuarios", PermissionAction.View)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Obtiene un token por su ID")]
-    [EndpointDescription("Retorna la información de un token específico por su identificador GUID.")]
+    [EndpointDescription("Exclusivo de SuperAdmin. Retorna la información de un token específico por su identificador GUID.")]
     [ProducesResponseType(typeof(UserTokenResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserTokenResponse>> GetById(
@@ -52,9 +56,9 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-account/{accountId:guid}")]
-    [RequirePermission("Usuarios", PermissionAction.View)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Obtiene los tokens de una cuenta")]
-    [EndpointDescription("Retorna todos los tokens activos e inactivos asociados a una cuenta de usuario.")]
+    [EndpointDescription("Exclusivo de SuperAdmin. Retorna todos los tokens activos e inactivos asociados a una cuenta de usuario.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<UserTokenResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<UserTokenResponse>>> GetByAccountId(
         Guid accountId,
@@ -68,9 +72,9 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [RequirePermission("Usuarios", PermissionAction.Delete)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Revoca un token")]
-    [EndpointDescription("Elimina un token (por ejemplo, para cerrar sesión o invalidar un refresh token).")]
+    [EndpointDescription("Exclusivo de SuperAdmin. Elimina un token (por ejemplo, para cerrar sesión o invalidar un refresh token).")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
