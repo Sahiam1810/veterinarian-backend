@@ -3,6 +3,7 @@ using Application.Telegram.Abstractions;
 namespace Infrastructure.Telegram.Configuration;
 
 public sealed record ConfiguredTelegramRuntimeSettings(
+    bool GuestModeEnabled,
     string BotUsername,
     TimeSpan LinkCodeTtl,
     TimeSpan WorkerPollInterval,

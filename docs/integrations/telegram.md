@@ -13,6 +13,7 @@ el puerto HTTPS del backend y copie su URL pública sin `/` final.
 
 ```dotenv
 Telegram__Enabled=true
+Telegram__GuestModeEnabled=true
 Telegram__BotToken=<token entregado por BotFather>
 Telegram__BotUsername=<nombre del bot sin @>
 Telegram__WebhookSecret=secreto-aleatorio-con-letras-numeros-guion-o-guion-bajo
@@ -113,9 +114,23 @@ una vinculación activa, envíe `/desvincular` y después
 `/desvincular confirmar`.
 
 Desvincular conserva el historial, pero libera la persona, el usuario y el
-chat de Telegram para completar una vinculación nueva. Un chat no vinculado no
-envía mensajes al agente: cualquier saludo o `/start` sin código responde con
-la instrucción de usar `/vincular`.
+chat de Telegram para completar una vinculación nueva.
+
+Con `Telegram__GuestModeEnabled=true`, un chat no vinculado puede hacer
+preguntas veterinarias generales o consultar información pública de la
+clínica. `/start` devuelve una bienvenida estática y cada respuesta general
+recuerda que `/vincular` habilita el contexto personal. El backend firma para
+cada llamada una identidad invitada determinística con rol `TelegramGuest`;
+no crea usuarios, clientes, participantes ni conversaciones invitadas en
+Oracle. El agente bloquea los módulos privados y la publicación global de
+conocimiento para ese rol.
+
+Los datos de mascotas, citas, vacunas, historias clínicas y cualquier
+operación siguen requiriendo una vinculación OTP. Una vez vinculado, el chat
+continúa usando la identidad, conversación y participantes persistentes sin
+cambiar el flujo existente. Con `Telegram__GuestModeEnabled=false`, se conserva
+el modo estricto anterior: un chat no vinculado solo recibe la instrucción de
+usar `/vincular`.
 
 La vinculación es persistente: no vence cada cinco o quince minutos. La
 variable `Telegram__DelegatedTokenMinutes` controla solamente el JWT interno

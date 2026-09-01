@@ -2,6 +2,8 @@ namespace Application.Telegram.Abstractions;
 
 public interface ITelegramRuntimeSettings
 {
+    bool GuestModeEnabled { get; }
+
     string BotUsername { get; }
 
     TimeSpan LinkCodeTtl { get; }

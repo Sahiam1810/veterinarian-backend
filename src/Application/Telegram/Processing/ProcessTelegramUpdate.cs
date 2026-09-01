@@ -28,6 +28,11 @@ public sealed class ProcessTelegramUpdateHandler(
     private const string LinkingRequiredReply =
         "¡Hola! Para proteger tu información, primero debes vincular este chat una sola vez. " +
         "Envía /vincular para comenzar.";
+    private const string GuestStartReply =
+        "¡Hola! Puedes hacer preguntas veterinarias generales como invitado. " +
+        "Para consultar tus mascotas o realizar operaciones, envía /vincular; solo debes hacerlo una vez.";
+    private const string GuestLinkingHint =
+        "\n\nPara usar información de tus mascotas o realizar operaciones, envía /vincular.";
 
     public async Task Handle(
         ProcessTelegramUpdateCommand request,
@@ -83,6 +88,19 @@ public sealed class ProcessTelegramUpdateHandler(
                 cancellationToken);
             if (userLink is null)
             {
+                if (settings.GuestModeEnabled &&
+                    string.Equals(messageText, "/start", StringComparison.OrdinalIgnoreCase))
+                {
+                    await DeliverAsync(update, GuestStartReply, cancellationToken);
+                    return;
+                }
+
+                if (settings.GuestModeEnabled)
+                {
+                    await ProcessGuestMessageAsync(update, messageText, cancellationToken);
+                    return;
+                }
+
                 await DeliverAsync(
                     update,
                     LinkingRequiredReply,
@@ -121,6 +139,35 @@ public sealed class ProcessTelegramUpdateHandler(
             await unitOfWork.InboundUpdatesRepository.UpdateAsync(update, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private async Task ProcessGuestMessageAsync(
+        TelegramInboundUpdate update,
+        string messageText,
+        CancellationToken cancellationToken)
+    {
+        var idempotencyKey = $"telegram-update-{update.Id}";
+        var identity = identityProvider.GetGuest(update.TelegramUserId);
+        var context = new AgentConversationContext(
+            CreateGuestConversationId(update.TelegramChatId),
+            "telegram",
+            false);
+        var result = await dispatcher.DispatchAsync(
+            new AgentMessageDispatchRequest(
+                messageText,
+                identity.PersonId,
+                null,
+                "es-CO",
+                identity.Role,
+                idempotencyKey,
+                CreateCorrelationId(update.Id)),
+            context,
+            identity.AccessToken,
+            cancellationToken);
+        var response = string.IsNullOrWhiteSpace(result.Message)
+            ? GuestStartReply
+            : result.Message + GuestLinkingHint;
+        await DeliverAsync(update, response, cancellationToken);
     }
 
     private async Task ProcessLinkCodeAsync(
@@ -215,6 +262,14 @@ public sealed class ProcessTelegramUpdateHandler(
     private static Guid CreateCorrelationId(long updateId)
     {
         var hash = SHA256.HashData(BitConverter.GetBytes(updateId));
+        return new Guid(hash.AsSpan(0, 16));
+    }
+
+    private static Guid CreateGuestConversationId(long telegramChatId)
+    {
+        var hash = SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(
+                $"huellitas:telegram:guest:conversation:{telegramChatId}"));
         return new Guid(hash.AsSpan(0, 16));
     }
 
