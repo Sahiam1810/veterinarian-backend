@@ -2,6 +2,12 @@
 -- Este script se ejecuta directamente contra la base de datos Oracle
 -- (SQL*Plus, SQL Developer o DBeaver), fuera de la aplicación .NET.
 --
+-- Configuración de Encoding para SQL*Plus en Windows UTF-8:
+SET DEFINE OFF;
+ALTER SESSION SET NLS_LANGUAGE = 'SPANISH';
+ALTER SESSION SET NLS_TERRITORY = 'SPAIN';
+
+--
 -- Requisitos antes de correr esto:
 --   1. Las migraciones que crean la tabla MODULES deben estar aplicadas.
 --
