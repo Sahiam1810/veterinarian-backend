@@ -1,9 +1,9 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Roles.Dtos;
 using Api.Roles.Mappings;
 using Application.Roles.UseCase;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +11,10 @@ namespace Api.Roles.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class RolesController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Roles", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo rol de usuario")]
     [EndpointDescription("Registra un nuevo rol (ej. Administrador, Agente, Cliente) en el sistema.")]
     [ProducesResponseType(typeof(CreateRoleResponse), StatusCodes.Status201Created)]
@@ -33,6 +33,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("Roles", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los roles")]
     [EndpointDescription("Retorna el listado de todos los roles configurados en la plataforma.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RoleResponse>), StatusCodes.Status200OK)]
@@ -47,6 +48,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Roles", PermissionAction.View)]
     [EndpointSummary("Obtiene un rol por su ID")]
     [EndpointDescription("Retorna la información de un rol específico por su identificador GUID.")]
     [ProducesResponseType(typeof(RoleResponse), StatusCodes.Status200OK)]
@@ -63,6 +65,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("Roles", PermissionAction.Edit)]
     [EndpointSummary("Actualiza los datos de un rol")]
     [EndpointDescription("Modifica el nombre o la descripción de un rol de usuario existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -81,6 +84,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("Roles", PermissionAction.Delete)]
     [EndpointSummary("Elimina un rol por su ID")]
     [EndpointDescription("Remueve un rol de usuario del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

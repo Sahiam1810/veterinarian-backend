@@ -57,10 +57,11 @@ public sealed class AgentOptionsValidator : IValidateOptions<AgentOptions>
         var hasTraversal = messagesPath
             .Split('/', StringSplitOptions.RemoveEmptyEntries)
             .Any(segment => segment == "..");
+        var isAbsoluteScheme = Uri.TryCreate(messagesPath, UriKind.Absolute, out var uri) && uri.Scheme != Uri.UriSchemeFile;
         if (string.IsNullOrWhiteSpace(messagesPath) ||
             !messagesPath.StartsWith("/", StringComparison.Ordinal) ||
             messagesPath.StartsWith("//", StringComparison.Ordinal) ||
-            Uri.TryCreate(messagesPath, UriKind.Absolute, out _) ||
+            isAbsoluteScheme ||
             hasTraversal ||
             messagesPath.Contains("?", StringComparison.Ordinal) ||
             messagesPath.Contains("#", StringComparison.Ordinal))
