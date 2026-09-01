@@ -1,4 +1,5 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.Vaccinations.Entities;
 using MediatR;
 
@@ -11,6 +12,16 @@ public sealed class CreateVaccinationCommandHandler(IUnitOfWork unitOfWork)
         CreateVaccinationCommand request,
         CancellationToken cancellationToken)
     {
+        var medicalRecord = await unitOfWork.MedicalRecordsRepository.GetByIdAsync(
+            request.RecordId,
+            cancellationToken)
+            ?? throw new NotFoundException("La historia clínica indicada no existe.");
+
+        if (medicalRecord.ClientPetId != request.ClientPetId)
+        {
+            throw new BadRequestException("La historia clínica no corresponde a la relación cliente-mascota indicada.");
+        }
+
         var vaccination = new Vaccination(
             request.ClientPetId,
             request.RecordId,
