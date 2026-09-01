@@ -90,8 +90,10 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
         [FromBody] UpdateVaccinationRequest request,
         CancellationToken cancellationToken)
     {
+        TryGetUserAccountId(out var userAccountId);
+
         await sender.Send(
-            request.ToCommand(id),
+            request.ToCommand(id, userAccountId),
             cancellationToken);
 
         return NoContent();

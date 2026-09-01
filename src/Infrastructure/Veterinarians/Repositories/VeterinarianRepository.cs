@@ -31,6 +31,15 @@ public sealed class VeterinarianRepository : IVeterinarianRepository
             .Include(x => x.Specialty)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public Task<Veterinarian?> GetByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+        => _context.Set<Veterinarian>()
+            .Include(x => x.User)
+            .Include(x => x.Specialty)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
     public Task<bool> ExistsByLicenseNumberAsync(
         string licenseNumber,
         CancellationToken cancellationToken = default,

@@ -35,6 +35,31 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return Ok(appointments.ToResponse());
     }
 
+    [HttpGet("me")]
+    [RequirePermission("Citas", PermissionAction.View)]
+    [EndpointSummary("Obtiene las citas del veterinario autenticado")]
+    [EndpointDescription("Retorna las citas médicas asignadas al veterinario correspondiente al usuario autenticado.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<AppointmentResponse>>> GetMe(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var appointments = await sender.Send(
+            new GetMyAppointmentsAsVeterinarianQuery(userAccountId, from, to),
+            cancellationToken);
+
+        return Ok(appointments.ToResponse());
+    }
+
     [HttpPost]
     [RequirePermission("Citas", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva cita médica")]

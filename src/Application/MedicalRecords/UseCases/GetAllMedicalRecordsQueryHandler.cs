@@ -1,4 +1,5 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.MedicalRecords.Entities;
 using MediatR;
 
@@ -14,10 +15,10 @@ public sealed class GetAllMedicalRecordsQueryHandler(IUnitOfWork unitOfWork)
         // Si el usuario autenticado tiene un perfil de Cliente asociado, solo ve
         // las historias médicas de sus propias mascotas. El personal (sin perfil
         // de Cliente) sigue viendo el listado completo, sin filtrar.
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken);
-        var client = account is null
-            ? null
-            : await unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
+        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken)
+            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
+
+        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
 
         if (client is null)
         {

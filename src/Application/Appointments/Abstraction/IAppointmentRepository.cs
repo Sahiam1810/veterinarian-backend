@@ -15,6 +15,12 @@ public interface IAppointmentRepository
         IReadOnlyCollection<Guid> clientPetIds,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyCollection<Appointment>> GetByVeterinarianIdAsync(
+        Guid veterinarianId,
+        DateTime? fromUtc = null,
+        DateTime? toUtc = null,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<Appointment>> GetScheduledBetweenAsync(
         DateTime fromUtc,
         DateTime toUtc,

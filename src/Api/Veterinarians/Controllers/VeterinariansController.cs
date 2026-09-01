@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Veterinarians.Dtos;
@@ -14,6 +15,25 @@ namespace Api.Veterinarians.Controllers;
 [Route("api/[controller]")]
 public sealed class VeterinariansController(ISender sender) : ControllerBase
 {
+    [HttpGet("me")]
+    [RequirePermission("Veterinarios", PermissionAction.View)]
+    [EndpointSummary("Obtiene el perfil del veterinario autenticado")]
+    [EndpointDescription("Retorna la información detallada del perfil del veterinario correspondiente al usuario autenticado.")]
+    [ProducesResponseType(typeof(VeterinarianResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<VeterinarianResponse>> GetMe(CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var veterinarian = await sender.Send(new GetMyVeterinarianQuery(userAccountId), cancellationToken);
+        return Ok(veterinarian.ToResponse());
+    }
+
     [HttpPost]
     [RequirePermission("Veterinarios", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo veterinario")]
