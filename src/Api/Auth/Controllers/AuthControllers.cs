@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Api.Common.Security;
 using MediatR;
 using Application.Security.Profile;
+using Application.Permissions.UseCases;
 
 
 namespace Api.Auth.Controllers;
@@ -144,6 +145,39 @@ public sealed class AuthController(ISender sender) : ControllerBase
             new GetCurrentProfileQuery(userAccountId), cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value) : Unauthorized();
+    }
+
+    [Authorize]
+    [HttpGet("permissions")]
+    [EndpointSummary("Obtiene los permisos efectivos del usuario autenticado")]
+    [EndpointDescription("Retorna el mapa completo de permisos efectivos del usuario (rol + permisos puntuales) por cada módulo, con sus 4 flags (Ver/Crear/Editar/Eliminar).")]
+    [ProducesResponseType(typeof(UserPermissionsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Permissions(CancellationToken cancellationToken)
+    {
+        var roleIdClaim = User.FindFirstValue("role_id");
+
+        if (!Guid.TryParse(roleIdClaim, out var roleId))
+        {
+            return Unauthorized();
+        }
+
+        Guid.TryParse(User.FindFirstValue("person_id"), out var userId);
+
+        var permissions = await sender.Send(
+            new GetUserEffectivePermissionsQuery(roleId, userId),
+            cancellationToken);
+
+        var dto = new UserPermissionsResponseDto(
+            permissions.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new ModulePermissionDto(
+                    kvp.Value.CanView,
+                    kvp.Value.CanCreate,
+                    kvp.Value.CanEdit,
+                    kvp.Value.CanDelete)));
+
+        return Ok(dto);
     }
 
     [Authorize]
