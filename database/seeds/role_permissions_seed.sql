@@ -6,7 +6,7 @@
 -- Requisitos antes de correr esto:
 --   1. Migracion AddUserPermissions (y las anteriores de Modules/RolePermissions) aplicadas.
 --   2. roles_seed.sql ya ejecutado (se referencian los 5 ROLE_ID fijos de ahi).
---   3. Los 16 modulos del catalogo ya creados via POST /api/modules (logueado
+--   3. Los 17 modulos del catalogo ya creados via POST /api/modules (logueado
 --      como SuperAdmin). El MODULE_ID se resuelve por NAME con una subquery,
 --      no por GUID fijo, porque los modulos se crean con Guid.NewGuid() y su ID
 --      puede variar entre el entorno de cada integrante.
@@ -16,6 +16,13 @@
 --
 -- No incluye los modulos del chatbot (Chat, Escalamientos, IA y Agente, Catalogos
 -- del Chat) -- esos quedan pendientes hasta que se retome esa parte del proyecto.
+--
+-- 2026-09-01: se agrego el modulo "Roles" (no estaba en el catalogo original de 16;
+-- RolesController usaba RequirePermission("Roles", ...) sin que existiera la fila,
+-- dejando el modulo inaccesible para todo el mundo salvo SuperAdmin). Creado via
+-- POST /api/modules igual que los demas, con Administrador como unico rol con
+-- acceso (V C E D) -- gestionar roles no delega la gestion de permisos, que sigue
+-- siendo exclusiva de SuperAdmin via RolePermissionsController/UserPermissionsController.
 
 -- ===== Administrador =====
 INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
@@ -66,6 +73,14 @@ INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, 
 VALUES ('07a733f3-3a97-42be-82d7-7aeb39366eca', '11111111-1111-1111-1111-111111111111',
         (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Usuarios'),
         1, 1, 1, 1, SYSTIMESTAMP);
+INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
+VALUES ('7fb38b70-ac2f-4998-b64a-a769f27fdf7b', '11111111-1111-1111-1111-111111111111',
+        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Roles'),
+        1, 1, 1, 1, SYSTIMESTAMP);
+
+-- Veterinario, Recepcionista, Auxiliar y Cliente no tienen fila para "Roles"
+-- (igual que con otros modulos administrativos) -- sin fila, GetEffectivePermissionQuery
+-- devuelve EffectivePermission.None y RolesController les da 403.
 
 -- ===== Veterinario =====
 INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
