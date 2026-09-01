@@ -1,18 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.TypeServices.Entities;
 using MediatR;
 
 namespace Application.TypeServices.UseCases;
 
 public sealed class GetTypeServiceByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetTypeServiceByIdQuery, TypeService?>
+    : IRequestHandler<GetTypeServiceByIdQuery, TypeService>
 {
-    public Task<TypeService?> Handle(
+    public async Task<TypeService> Handle(
         GetTypeServiceByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return unitOfWork.TypeServicesRepository.GetByIdAsync(
+        return await unitOfWork.TypeServicesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
+            cancellationToken)
+            ?? throw new NotFoundException("Tipo de servicio no encontrado.");
     }
 }

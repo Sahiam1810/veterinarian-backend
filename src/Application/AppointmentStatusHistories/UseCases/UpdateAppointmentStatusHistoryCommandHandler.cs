@@ -1,23 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.AppointmentStatusHistories.UseCases;
 
 public sealed class UpdateAppointmentStatusHistoryCommandHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateAppointmentStatusHistoryCommand, bool>
+    : IRequestHandler<UpdateAppointmentStatusHistoryCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateAppointmentStatusHistoryCommand request,
         CancellationToken cancellationToken)
     {
         var history = await unitOfWork.AppointmentStatusHistoriesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (history is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Historial de estado de cita no encontrado.");
 
         history.Update(
             request.AppointmentId,
@@ -30,7 +27,5 @@ public sealed class UpdateAppointmentStatusHistoryCommandHandler(IUnitOfWork uni
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

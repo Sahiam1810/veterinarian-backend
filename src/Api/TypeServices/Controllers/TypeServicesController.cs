@@ -63,9 +63,7 @@ public sealed class TypeServicesController(ISender sender) : ControllerBase
             new GetTypeServiceByIdQuery(id),
             cancellationToken);
 
-        return service is null
-            ? NotFound()
-            : Ok(service.ToResponse());
+        return Ok(service.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -81,13 +79,11 @@ public sealed class TypeServicesController(ISender sender) : ControllerBase
         [FromBody] UpdateTypeServiceRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -100,12 +96,10 @@ public sealed class TypeServicesController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteTypeServiceCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Application.Diagnostics.UseCases;
 
-public sealed record GetDiagnosticByIdQuery(Guid Id) : IRequest<Diagnostic?>;
+public sealed record GetDiagnosticByIdQuery(Guid Id) : IRequest<Diagnostic>;

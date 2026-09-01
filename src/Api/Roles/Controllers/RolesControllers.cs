@@ -59,9 +59,7 @@ public sealed class RolesController(ISender sender) : ControllerBase
             new GetRoleByIdQuery(id),
             cancellationToken);
 
-        return role is null
-            ? NotFound()
-            : Ok(role.ToResponse());
+        return Ok(role.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -75,13 +73,11 @@ public sealed class RolesController(ISender sender) : ControllerBase
         [FromBody] UpdateRoleRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -93,12 +89,10 @@ public sealed class RolesController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteRoleCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

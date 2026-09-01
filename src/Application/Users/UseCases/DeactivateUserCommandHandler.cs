@@ -1,10 +1,11 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Users.UseCase;
 
 public sealed class DeactivateUserCommandHandler
-    : IRequestHandler<DeactivateUserCommand, bool>
+    : IRequestHandler<DeactivateUserCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -13,18 +14,14 @@ public sealed class DeactivateUserCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeactivateUserCommand request,
         CancellationToken cancellationToken)
     {
         var user = await _uow.UsersRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (user is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Usuario no encontrado.");
 
         user.Deactivate();
 
@@ -33,7 +30,5 @@ public sealed class DeactivateUserCommandHandler
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

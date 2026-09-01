@@ -5,4 +5,4 @@ namespace Application.StatusAppointments.UseCases;
 public sealed record UpdateStatusAppointmentCommand(
     Guid Id,
     string Name,
-    string? Description) : IRequest<bool>;
+    string? Description) : IRequest;

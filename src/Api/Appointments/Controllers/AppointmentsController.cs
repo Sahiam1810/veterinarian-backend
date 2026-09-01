@@ -83,9 +83,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
             new GetAppointmentByIdQuery(id),
             cancellationToken);
 
-        return appointment is null
-            ? NotFound()
-            : Ok(appointment.ToResponse());
+        return Ok(appointment.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -100,13 +98,11 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         [FromBody] UpdateAppointmentRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -119,12 +115,10 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteAppointmentCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

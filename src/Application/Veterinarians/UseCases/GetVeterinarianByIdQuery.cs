@@ -4,4 +4,4 @@ using MediatR;
 namespace Application.Veterinarians.UseCases;
 
 public sealed record GetVeterinarianByIdQuery(Guid Id)
-    : IRequest<Veterinarian?>;
+    : IRequest<Veterinarian>;

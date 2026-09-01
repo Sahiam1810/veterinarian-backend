@@ -5,7 +5,7 @@ using MediatR;
 namespace Application.StatusAppointments.UseCases;
 
 public sealed class UpdateStatusAppointmentCommandHandler
-    : IRequestHandler<UpdateStatusAppointmentCommand, bool>
+    : IRequestHandler<UpdateStatusAppointmentCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -14,16 +14,14 @@ public sealed class UpdateStatusAppointmentCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateStatusAppointmentCommand request,
         CancellationToken cancellationToken)
     {
         var statusAppointment = await _uow.StatusAppointmentsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (statusAppointment is null)
-            return false;
+            cancellationToken)
+            ?? throw new NotFoundException("Estado de cita no encontrado.");
 
         var nameExists = await _uow.StatusAppointmentsRepository.ExistsByNameAsync(
             request.Name,
@@ -45,7 +43,5 @@ public sealed class UpdateStatusAppointmentCommandHandler
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

@@ -64,9 +64,7 @@ public sealed class UserAccountsController(ISender sender) : ControllerBase
             new GetUserAccountByIdQuery(id),
             cancellationToken);
 
-        return account is null
-            ? NotFound()
-            : Ok(account.ToResponse());
+        return Ok(account.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -82,13 +80,11 @@ public sealed class UserAccountsController(ISender sender) : ControllerBase
         [FromBody] UpdateUserAccountRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -101,12 +97,10 @@ public sealed class UserAccountsController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteUserAccountCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

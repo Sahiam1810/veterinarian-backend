@@ -1,11 +1,12 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
 
 namespace Application.UserCredentials.UseCase;
 
 public sealed class GetUserCredentialsByIdQueryHandler
-    : IRequestHandler<GetUserCredentialsByIdQuery, UserCredentialsEntity?>
+    : IRequestHandler<GetUserCredentialsByIdQuery, UserCredentialsEntity>
 {
     private readonly IUnitOfWork _uow;
 
@@ -14,12 +15,13 @@ public sealed class GetUserCredentialsByIdQueryHandler
         _uow = uow;
     }
 
-    public async Task<UserCredentialsEntity?> Handle(
+    public async Task<UserCredentialsEntity> Handle(
         GetUserCredentialsByIdQuery request,
         CancellationToken cancellationToken)
     {
         return await _uow.UserCredentialsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
+            cancellationToken)
+            ?? throw new NotFoundException("Credenciales no encontradas.");
     }
 }

@@ -5,7 +5,7 @@ using MediatR;
 namespace Application.UserCredentials.UseCase;
 
 public sealed class ChangePasswordCommandHandler
-    : IRequestHandler<ChangePasswordCommand, bool>
+    : IRequestHandler<ChangePasswordCommand>
 {
     private readonly IUnitOfWork _uow;
     private readonly IPasswordHasher _passwordHasher;
@@ -18,18 +18,14 @@ public sealed class ChangePasswordCommandHandler
         _passwordHasher = passwordHasher;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         ChangePasswordCommand request,
         CancellationToken cancellationToken)
     {
         var credentials = await _uow.UserCredentialsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (credentials is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Credenciales no encontradas.");
 
         if (!_passwordHasher.Verify(request.CurrentPassword, credentials.PasswordHash))
         {
@@ -46,7 +42,5 @@ public sealed class ChangePasswordCommandHandler
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

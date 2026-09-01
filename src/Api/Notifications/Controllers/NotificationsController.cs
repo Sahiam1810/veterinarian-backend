@@ -65,9 +65,7 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
             new GetNotificationByIdQuery(id),
             cancellationToken);
 
-        return notification is null
-            ? NotFound()
-            : Ok(notification.ToResponse());
+        return Ok(notification.ToResponse());
     }
 
     [HttpGet("user/{userId:guid}")]
@@ -114,13 +112,11 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         [FromBody] UpdateNotificationRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -133,12 +129,10 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteNotificationCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

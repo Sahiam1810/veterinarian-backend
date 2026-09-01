@@ -5,7 +5,7 @@ using MediatR;
 namespace Application.Roles.UseCase;
 
 public sealed class UpdateRoleCommandHandler
-    : IRequestHandler<UpdateRoleCommand, bool>
+    : IRequestHandler<UpdateRoleCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -14,18 +14,14 @@ public sealed class UpdateRoleCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateRoleCommand request,
         CancellationToken cancellationToken)
     {
         var role = await _uow.RolesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (role is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Rol no encontrado.");
 
         var roleExists = await _uow.RolesRepository.ExistsByNameAsync(
             request.Name,
@@ -45,7 +41,5 @@ public sealed class UpdateRoleCommandHandler
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

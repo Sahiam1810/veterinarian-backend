@@ -1,10 +1,11 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.AccountStatements.UseCases;
 
 public sealed class DeleteAccountStatementCommandHandler
-    : IRequestHandler<DeleteAccountStatementCommand, bool>
+    : IRequestHandler<DeleteAccountStatementCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -13,25 +14,19 @@ public sealed class DeleteAccountStatementCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteAccountStatementCommand request,
         CancellationToken cancellationToken)
     {
         var statement = await _uow.AccountStatementsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (statement is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Estado de cuenta no encontrado.");
 
         await _uow.AccountStatementsRepository.DeleteAsync(
             statement,
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

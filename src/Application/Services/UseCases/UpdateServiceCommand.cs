@@ -8,4 +8,4 @@ public sealed record UpdateServiceCommand(
     string Name,
     int DurationMinutes,
     decimal Price,
-    bool IsActive) : IRequest<bool>;
+    bool IsActive) : IRequest;

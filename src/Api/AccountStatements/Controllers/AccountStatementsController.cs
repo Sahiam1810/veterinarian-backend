@@ -48,9 +48,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
             new GetAccountStatementByIdQuery(id),
             cancellationToken);
 
-        return statement is null
-            ? NotFound()
-            : Ok(statement.ToResponse());
+        return Ok(statement.ToResponse());
     }
 
     [HttpGet("by-account/{accountId:guid}")]
@@ -81,13 +79,11 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
         [FromBody] UpdateAccountStatementStatusRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -100,12 +96,10 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteAccountStatementCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

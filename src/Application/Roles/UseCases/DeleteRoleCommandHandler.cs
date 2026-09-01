@@ -1,10 +1,11 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Roles.UseCase;
 
 public sealed class DeleteRoleCommandHandler
-    : IRequestHandler<DeleteRoleCommand, bool>
+    : IRequestHandler<DeleteRoleCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -13,25 +14,19 @@ public sealed class DeleteRoleCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteRoleCommand request,
         CancellationToken cancellationToken)
     {
         var role = await _uow.RolesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (role is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Rol no encontrado.");
 
         await _uow.RolesRepository.DeleteAsync(
             role,
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

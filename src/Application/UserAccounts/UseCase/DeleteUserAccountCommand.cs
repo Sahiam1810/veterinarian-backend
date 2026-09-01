@@ -2,4 +2,4 @@ using MediatR;
 
 namespace Application.UserAccounts.UseCase;
 
-public sealed record DeleteUserAccountCommand(Guid Id) : IRequest<bool>;
+public sealed record DeleteUserAccountCommand(Guid Id) : IRequest;

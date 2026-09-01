@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Api.Auth.Dtos;
+using Api.Common.Errors;
 using Microsoft.AspNetCore.Http;
 using Application.Security.Models;
 using Application.Security.Register;
@@ -20,6 +22,21 @@ namespace Api.Auth.Controllers;
 [Route("api/auth")]
 public sealed class AuthController(ISender sender) : ControllerBase
 {
+    // 401/403 de autenticación usan application/problem+json (RFC 7807),
+    // igual que JwtResponseEvents — es el mismo tipo de error, no uno de negocio.
+    private ContentResult AuthProblem(int status, string title, string code) => new()
+    {
+        StatusCode = status,
+        ContentType = "application/problem+json",
+        Content = JsonSerializer.Serialize(new
+        {
+            type = $"https://httpstatuses.com/{status}",
+            title,
+            status,
+            code
+        })
+    };
+
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.Register)]
     [HttpPost("register")]
@@ -44,18 +61,18 @@ public sealed class AuthController(ISender sender) : ControllerBase
         {
             if (result.Error.Code == "Authentication.UserAlreadyExists")
             {
-                return Conflict(new
-                {
-                    code = result.Error.Code,
-                    message = result.Error.Description
-                });
+                return Conflict(ApiErrorResponseFactory.Create(
+                    HttpContext,
+                    StatusCodes.Status409Conflict,
+                    result.Error.Description,
+                    error: result.Error.Code));
             }
 
-            return BadRequest(new
-            {
-                code = result.Error.Code,
-                message = result.Error.Description
-            });
+            return BadRequest(ApiErrorResponseFactory.Create(
+                HttpContext,
+                StatusCodes.Status400BadRequest,
+                result.Error.Description,
+                error: result.Error.Code));
         }
 
         return Ok(AuthenticationResponse.From(result.Value));
@@ -78,11 +95,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
-            return Unauthorized(new
-            {
-                code = result.Error.Code,
-                message = result.Error.Description
-            });
+            return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
         return Ok(AuthenticationResponse.From(result.Value));
@@ -105,11 +118,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
-            return Unauthorized(new
-            {
-                code = result.Error.Code,
-                message = result.Error.Description
-            });
+            return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
         return Ok(AuthenticationResponse.From(result.Value));
@@ -164,11 +173,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
         {
             return result.Error.Code == "Authentication.ForbiddenTokenOwner"
                 ? Forbid()
-                : Unauthorized(new
-                {
-                    code = result.Error.Code,
-                    message = result.Error.Description
-                });
+                : AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
         return NoContent();

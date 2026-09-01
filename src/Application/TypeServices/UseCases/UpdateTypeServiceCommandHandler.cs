@@ -1,23 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.TypeServices.UseCases;
 
 public sealed class UpdateTypeServiceCommandHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateTypeServiceCommand, bool>
+    : IRequestHandler<UpdateTypeServiceCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateTypeServiceCommand request,
         CancellationToken cancellationToken)
     {
         var typeService = await unitOfWork.TypeServicesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (typeService is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Tipo de servicio no encontrado.");
 
         typeService.Update(
             request.Name,
@@ -28,7 +25,5 @@ public sealed class UpdateTypeServiceCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

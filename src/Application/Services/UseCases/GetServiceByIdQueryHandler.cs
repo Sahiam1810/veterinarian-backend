@@ -1,18 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.Services.Entities;
 using MediatR;
 
 namespace Application.Services.UseCases;
 
 public sealed class GetServiceByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetServiceByIdQuery, Service?>
+    : IRequestHandler<GetServiceByIdQuery, Service>
 {
-    public Task<Service?> Handle(
+    public async Task<Service> Handle(
         GetServiceByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return unitOfWork.ServicesRepository.GetByIdAsync(
+        return await unitOfWork.ServicesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
+            cancellationToken)
+            ?? throw new NotFoundException("Servicio no encontrado.");
     }
 }

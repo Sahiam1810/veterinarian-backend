@@ -1,18 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.AppointmentStatusHistories.Entities;
 using MediatR;
 
 namespace Application.AppointmentStatusHistories.UseCases;
 
 public sealed class GetAppointmentStatusHistoryByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetAppointmentStatusHistoryByIdQuery, AppointmentStatusHistory?>
+    : IRequestHandler<GetAppointmentStatusHistoryByIdQuery, AppointmentStatusHistory>
 {
-    public Task<AppointmentStatusHistory?> Handle(
+    public async Task<AppointmentStatusHistory> Handle(
         GetAppointmentStatusHistoryByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return unitOfWork.AppointmentStatusHistoriesRepository.GetByIdAsync(
+        return await unitOfWork.AppointmentStatusHistoriesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
+            cancellationToken)
+            ?? throw new NotFoundException("Historial de estado de cita no encontrado.");
     }
 }

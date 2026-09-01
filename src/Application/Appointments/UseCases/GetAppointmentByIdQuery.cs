@@ -4,4 +4,4 @@ using MediatR;
 namespace Application.Appointments.UseCases;
 
 public sealed record GetAppointmentByIdQuery(Guid Id)
-    : IRequest<Appointment?>;
+    : IRequest<Appointment>;

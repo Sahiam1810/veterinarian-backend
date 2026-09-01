@@ -1,11 +1,12 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Application.UserTokens.UseCase;
 
 public sealed class GetUserTokenByIdQueryHandler
-    : IRequestHandler<GetUserTokenByIdQuery, UserTokenEntity?>
+    : IRequestHandler<GetUserTokenByIdQuery, UserTokenEntity>
 {
     private readonly IUnitOfWork _uow;
 
@@ -14,12 +15,13 @@ public sealed class GetUserTokenByIdQueryHandler
         _uow = uow;
     }
 
-    public async Task<UserTokenEntity?> Handle(
+    public async Task<UserTokenEntity> Handle(
         GetUserTokenByIdQuery request,
         CancellationToken cancellationToken)
     {
         return await _uow.UserTokensRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
+            cancellationToken)
+            ?? throw new NotFoundException("Token no encontrado.");
     }
 }

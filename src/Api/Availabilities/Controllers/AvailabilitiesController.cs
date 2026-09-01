@@ -62,9 +62,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
             new GetAvailabilityByIdQuery(id),
             cancellationToken);
 
-        return availability is null
-            ? NotFound()
-            : Ok(availability.ToResponse());
+        return Ok(availability.ToResponse());
     }
 
     [HttpGet("by-veterinarian/{veterinarianId:guid}")]
@@ -95,13 +93,11 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
         [FromBody] UpdateAvailabilityRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -114,12 +110,10 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteAvailabilityCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

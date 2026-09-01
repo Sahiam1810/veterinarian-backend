@@ -63,9 +63,7 @@ public sealed class StatusAppointmentsController(ISender sender) : ControllerBas
             new GetStatusAppointmentByIdQuery(id),
             cancellationToken);
 
-        return status is null
-            ? NotFound()
-            : Ok(status.ToResponse());
+        return Ok(status.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -81,13 +79,11 @@ public sealed class StatusAppointmentsController(ISender sender) : ControllerBas
         [FromBody] UpdateStatusAppointmentRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -100,12 +96,10 @@ public sealed class StatusAppointmentsController(ISender sender) : ControllerBas
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteStatusAppointmentCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

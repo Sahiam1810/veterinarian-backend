@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Application.Notifications.UseCases;
 
-public sealed record GetNotificationByIdQuery(Guid Id) : IRequest<Notification?>;
+public sealed record GetNotificationByIdQuery(Guid Id) : IRequest<Notification>;

@@ -1,18 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.Appointments.Entities;
 using MediatR;
 
 namespace Application.Appointments.UseCases;
 
 public sealed class GetAppointmentByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetAppointmentByIdQuery, Appointment?>
+    : IRequestHandler<GetAppointmentByIdQuery, Appointment>
 {
-    public Task<Appointment?> Handle(
+    public async Task<Appointment> Handle(
         GetAppointmentByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return unitOfWork.AppointmentsRepository.GetByIdAsync(
+        return await unitOfWork.AppointmentsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
+            cancellationToken)
+            ?? throw new NotFoundException("Cita médica no encontrada.");
     }
 }

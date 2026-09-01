@@ -65,9 +65,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
             new GetAppointmentStatusHistoryByIdQuery(id),
             cancellationToken);
 
-        return history is null
-            ? NotFound()
-            : Ok(history.ToResponse());
+        return Ok(history.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -82,13 +80,11 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
         [FromBody] UpdateAppointmentStatusHistoryRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -101,12 +97,10 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteAppointmentStatusHistoryCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

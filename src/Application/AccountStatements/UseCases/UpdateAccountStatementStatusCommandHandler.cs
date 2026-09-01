@@ -1,10 +1,11 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.AccountStatements.UseCases;
 
 public sealed class UpdateAccountStatementStatusCommandHandler
-    : IRequestHandler<UpdateAccountStatementStatusCommand, bool>
+    : IRequestHandler<UpdateAccountStatementStatusCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -13,18 +14,14 @@ public sealed class UpdateAccountStatementStatusCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateAccountStatementStatusCommand request,
         CancellationToken cancellationToken)
     {
         var statement = await _uow.AccountStatementsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (statement is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Estado de cuenta no encontrado.");
 
         statement.UpdateStatus(request.Status);
 
@@ -33,7 +30,5 @@ public sealed class UpdateAccountStatementStatusCommandHandler
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

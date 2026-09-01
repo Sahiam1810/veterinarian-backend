@@ -6,4 +6,4 @@ public sealed record UpdateVeterinarianCommand(
     Guid Id,
     Guid UserId,
     Guid SpecialtyId,
-    string LicenseNumber) : IRequest<bool>;
+    string LicenseNumber) : IRequest;

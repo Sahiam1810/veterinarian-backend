@@ -1,18 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.Availabilities.Entities;
 using MediatR;
 
 namespace Application.Availabilities.UseCase;
 
 public sealed class GetAvailabilityByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetAvailabilityByIdQuery, Availability?>
+    : IRequestHandler<GetAvailabilityByIdQuery, Availability>
 {
-    public Task<Availability?> Handle(
+    public async Task<Availability> Handle(
         GetAvailabilityByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return unitOfWork.AvailabilitiesRepository.GetByIdAsync(
+        return await unitOfWork.AvailabilitiesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
+            cancellationToken)
+            ?? throw new NotFoundException("Disponibilidad no encontrada.");
     }
 }

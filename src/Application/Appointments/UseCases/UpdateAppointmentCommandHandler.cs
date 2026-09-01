@@ -1,23 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Appointments.UseCases;
 
 public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateAppointmentCommand, bool>
+    : IRequestHandler<UpdateAppointmentCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateAppointmentCommand request,
         CancellationToken cancellationToken)
     {
         var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (appointment is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Cita médica no encontrada.");
 
         appointment.Update(
             request.ClientPetId,
@@ -34,7 +31,5 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

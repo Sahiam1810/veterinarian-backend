@@ -1,11 +1,12 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.Diagnostics.Entities;
 using MediatR;
 
 namespace Application.Diagnostics.UseCases;
 
 public sealed class UpdateDiagnosticCommandHandler
-    : IRequestHandler<UpdateDiagnosticCommand, Diagnostic?>
+    : IRequestHandler<UpdateDiagnosticCommand, Diagnostic>
 {
     private readonly IUnitOfWork _uow;
 
@@ -14,18 +15,14 @@ public sealed class UpdateDiagnosticCommandHandler
         _uow = uow;
     }
 
-    public async Task<Diagnostic?> Handle(
+    public async Task<Diagnostic> Handle(
         UpdateDiagnosticCommand request,
         CancellationToken cancellationToken)
     {
         var diagnostic = await _uow.DiagnosticsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (diagnostic is null)
-        {
-            return null;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException($"Diagnóstico con ID {request.Id} no fue encontrado.");
 
         diagnostic.Code = request.Code.Trim().ToUpper();
         diagnostic.Name = request.Name.Trim();

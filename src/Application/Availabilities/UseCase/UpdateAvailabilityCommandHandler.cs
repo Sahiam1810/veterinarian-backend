@@ -1,23 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Availabilities.UseCase;
 
 public sealed class UpdateAvailabilityCommandHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateAvailabilityCommand, bool>
+    : IRequestHandler<UpdateAvailabilityCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateAvailabilityCommand request,
         CancellationToken cancellationToken)
     {
         var availability = await unitOfWork.AvailabilitiesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (availability is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Disponibilidad no encontrada.");
 
         availability.Update(
             request.VeterinarianId,
@@ -31,7 +28,5 @@ public sealed class UpdateAvailabilityCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

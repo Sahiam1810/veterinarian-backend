@@ -5,7 +5,7 @@ using MediatR;
 namespace Application.Users.UseCase;
 
 public sealed class UpdateUserCommandHandler
-    : IRequestHandler<UpdateUserCommand, bool>
+    : IRequestHandler<UpdateUserCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -14,18 +14,14 @@ public sealed class UpdateUserCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateUserCommand request,
         CancellationToken cancellationToken)
     {
         var user = await _uow.UsersRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (user is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Usuario no encontrado.");
 
         var role = await _uow.RolesRepository.GetByIdAsync(
             request.RoleId,
@@ -55,7 +51,5 @@ public sealed class UpdateUserCommandHandler
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

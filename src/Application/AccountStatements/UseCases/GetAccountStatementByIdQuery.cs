@@ -4,4 +4,4 @@ using AccountStatementEntity = Domain.AccountStatements.Entities.AccountStatemen
 namespace Application.AccountStatements.UseCases;
 
 public sealed record GetAccountStatementByIdQuery(Guid Id)
-    : IRequest<AccountStatementEntity?>;
+    : IRequest<AccountStatementEntity>;

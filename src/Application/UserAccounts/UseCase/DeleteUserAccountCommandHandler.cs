@@ -1,10 +1,11 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.UserAccounts.UseCase;
 
 public sealed class DeleteUserAccountCommandHandler
-    : IRequestHandler<DeleteUserAccountCommand, bool>
+    : IRequestHandler<DeleteUserAccountCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -13,25 +14,19 @@ public sealed class DeleteUserAccountCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteUserAccountCommand request,
         CancellationToken cancellationToken)
     {
         var account = await _uow.UserAccountsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (account is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
 
         await _uow.UserAccountsRepository.DeleteAsync(
             account,
             cancellationToken);
 
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

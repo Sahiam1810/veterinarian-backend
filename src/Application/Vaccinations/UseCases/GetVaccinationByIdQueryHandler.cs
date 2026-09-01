@@ -1,21 +1,19 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Domain.Vaccinations.Entities;
 using MediatR;
 
 namespace Application.Vaccinations.UseCases;
 
 public sealed class GetVaccinationByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetVaccinationByIdQuery, Vaccination?>
+    : IRequestHandler<GetVaccinationByIdQuery, Vaccination>
 {
-    public async Task<Vaccination?> Handle(
+    public async Task<Vaccination> Handle(
         GetVaccinationByIdQuery request,
         CancellationToken cancellationToken)
     {
-        var vaccination = await unitOfWork.VaccinationsRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (vaccination is null)
-        {
-            return null;
-        }
+        var vaccination = await unitOfWork.VaccinationsRepository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Registro de vacunación no encontrado.");
 
         var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken);
         var client = account is null
@@ -33,6 +31,8 @@ public sealed class GetVaccinationByIdQueryHandler(IUnitOfWork unitOfWork)
         var clientPets = await unitOfWork.ClientPetsRepository.GetByClientIdAsync(client.Id, cancellationToken);
         var ownsVaccination = clientPets.Any(cp => cp.Id == vaccination.ClientPetId);
 
-        return ownsVaccination ? vaccination : null;
+        return ownsVaccination
+            ? vaccination
+            : throw new NotFoundException("Registro de vacunación no encontrado.");
     }
 }

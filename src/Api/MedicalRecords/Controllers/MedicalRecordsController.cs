@@ -75,9 +75,7 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
             new GetMedicalRecordByIdQuery(id, userAccountId),
             cancellationToken);
 
-        return record is null
-            ? NotFound()
-            : Ok(record.ToResponse());
+        return Ok(record.ToResponse());
     }
 
     private bool TryGetUserAccountId(out Guid userAccountId)

@@ -63,9 +63,7 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
             new GetVeterinarianByIdQuery(id),
             cancellationToken);
 
-        return veterinarian is null
-            ? NotFound()
-            : Ok(veterinarian.ToResponse());
+        return Ok(veterinarian.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -81,13 +79,11 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
         [FromBody] UpdateVeterinarianRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -100,12 +96,10 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteVeterinarianCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

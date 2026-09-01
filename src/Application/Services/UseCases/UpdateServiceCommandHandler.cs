@@ -1,23 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Services.UseCases;
 
 public sealed class UpdateServiceCommandHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateServiceCommand, bool>
+    : IRequestHandler<UpdateServiceCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateServiceCommand request,
         CancellationToken cancellationToken)
     {
         var service = await unitOfWork.ServicesRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (service is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Servicio no encontrado.");
 
         service.Update(
             request.TypeServiceId,
@@ -31,7 +28,5 @@ public sealed class UpdateServiceCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

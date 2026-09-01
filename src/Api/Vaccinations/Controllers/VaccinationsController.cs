@@ -75,9 +75,7 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
             new GetVaccinationByIdQuery(id, userAccountId),
             cancellationToken);
 
-        return vaccination is null
-            ? NotFound()
-            : Ok(vaccination.ToResponse());
+        return Ok(vaccination.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -92,13 +90,11 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
         [FromBody] UpdateVaccinationRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     private bool TryGetUserAccountId(out Guid userAccountId)

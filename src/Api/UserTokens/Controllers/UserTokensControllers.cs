@@ -48,9 +48,7 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
             new GetUserTokenByIdQuery(id),
             cancellationToken);
 
-        return token is null
-            ? NotFound()
-            : Ok(token.ToResponse());
+        return Ok(token.ToResponse());
     }
 
     [HttpGet("by-account/{accountId:guid}")]
@@ -79,12 +77,10 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteUserTokenCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

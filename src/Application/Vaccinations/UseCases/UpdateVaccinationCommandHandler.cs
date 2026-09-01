@@ -1,23 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Vaccinations.UseCases;
 
 public sealed class UpdateVaccinationCommandHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateVaccinationCommand, bool>
+    : IRequestHandler<UpdateVaccinationCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateVaccinationCommand request,
         CancellationToken cancellationToken)
     {
         var vaccination = await unitOfWork.VaccinationsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (vaccination is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Registro de vacunación no encontrado.");
 
         vaccination.Update(
             request.ClientPetId,
@@ -32,7 +29,5 @@ public sealed class UpdateVaccinationCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

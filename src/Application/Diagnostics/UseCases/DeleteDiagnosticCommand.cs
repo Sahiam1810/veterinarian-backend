@@ -2,4 +2,4 @@ using MediatR;
 
 namespace Application.Diagnostics.UseCases;
 
-public sealed record DeleteDiagnosticCommand(Guid Id) : IRequest<bool>;
+public sealed record DeleteDiagnosticCommand(Guid Id) : IRequest;

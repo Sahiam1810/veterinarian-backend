@@ -43,9 +43,7 @@ public sealed class DiagnosticsController(ISender sender) : ControllerBase
             new GetDiagnosticByIdQuery(id),
             cancellationToken);
 
-        return diagnostic is null
-            ? NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." })
-            : Ok(diagnostic.ToResponse());
+        return Ok(diagnostic.ToResponse());
     }
 
     [HttpPost]
@@ -82,13 +80,11 @@ public sealed class DiagnosticsController(ISender sender) : ControllerBase
         [FromBody] UpdateDiagnosticDto dto,
         CancellationToken cancellationToken = default)
     {
-        var diagnostic = await sender.Send(
+        await sender.Send(
             dto.ToCommand(id),
             cancellationToken);
 
-        return diagnostic is null
-            ? NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." })
-            : NoContent();
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -101,12 +97,10 @@ public sealed class DiagnosticsController(ISender sender) : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken = default)
     {
-        var deleted = await sender.Send(
+        await sender.Send(
             new DeleteDiagnosticCommand(id),
             cancellationToken);
 
-        return deleted
-            ? NoContent()
-            : NotFound(new { Message = $"Diagnóstico con ID {id} no fue encontrado." });
+        return NoContent();
     }
 }

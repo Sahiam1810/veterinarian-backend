@@ -8,4 +8,4 @@ public sealed record UpdateDiagnosticCommand(
     string Code,
     string Name,
     string? Description,
-    bool IsActive) : IRequest<Diagnostic?>;
+    bool IsActive) : IRequest<Diagnostic>;

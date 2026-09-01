@@ -11,4 +11,4 @@ public sealed record UpdateAppointmentCommand(
     Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
-    string? Notes) : IRequest<bool>;
+    string? Notes) : IRequest;

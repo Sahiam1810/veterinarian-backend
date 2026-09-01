@@ -1,10 +1,11 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Diagnostics.UseCases;
 
 public sealed class DeleteDiagnosticCommandHandler
-    : IRequestHandler<DeleteDiagnosticCommand, bool>
+    : IRequestHandler<DeleteDiagnosticCommand>
 {
     private readonly IUnitOfWork _uow;
 
@@ -13,18 +14,14 @@ public sealed class DeleteDiagnosticCommandHandler
         _uow = uow;
     }
 
-    public async Task<bool> Handle(
+    public async Task Handle(
         DeleteDiagnosticCommand request,
         CancellationToken cancellationToken)
     {
         var diagnostic = await _uow.DiagnosticsRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (diagnostic is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException($"Diagnóstico con ID {request.Id} no fue encontrado.");
 
         // Baja lógica: se desactiva sin borrar físicamente el registro.
         diagnostic.IsActive = false;
@@ -32,7 +29,5 @@ public sealed class DeleteDiagnosticCommandHandler
 
         await _uow.DiagnosticsRepository.UpdateAsync(diagnostic, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

@@ -9,4 +9,4 @@ public sealed record UpdateNotificationCommand(
     string Message,
     DateTime SentAt,
     string Status,
-    string Type) : IRequest<bool>;
+    string Type) : IRequest;

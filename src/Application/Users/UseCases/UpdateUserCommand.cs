@@ -6,4 +6,4 @@ public sealed record UpdateUserCommand(
     Guid Id,
     string FullName,
     string Email,
-    Guid RoleId) : IRequest<bool>;
+    Guid RoleId) : IRequest;

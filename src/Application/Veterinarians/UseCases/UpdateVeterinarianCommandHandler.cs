@@ -1,23 +1,20 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using MediatR;
 
 namespace Application.Veterinarians.UseCases;
 
 public sealed class UpdateVeterinarianCommandHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<UpdateVeterinarianCommand, bool>
+    : IRequestHandler<UpdateVeterinarianCommand>
 {
-    public async Task<bool> Handle(
+    public async Task Handle(
         UpdateVeterinarianCommand request,
         CancellationToken cancellationToken)
     {
         var veterinarian = await unitOfWork.VeterinariansRepository.GetByIdAsync(
             request.Id,
-            cancellationToken);
-
-        if (veterinarian is null)
-        {
-            return false;
-        }
+            cancellationToken)
+            ?? throw new NotFoundException("Veterinario no encontrado.");
 
         veterinarian.Update(
             request.UserId,
@@ -29,7 +26,5 @@ public sealed class UpdateVeterinarianCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return true;
     }
 }

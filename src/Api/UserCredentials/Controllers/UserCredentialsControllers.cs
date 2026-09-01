@@ -49,9 +49,7 @@ public sealed class UserCredentialsController(ISender sender) : ControllerBase
             new GetUserCredentialsByIdQuery(id),
             cancellationToken);
 
-        return credentials is null
-            ? NotFound()
-            : Ok(credentials.ToResponse());
+        return Ok(credentials.ToResponse());
     }
 
     [HttpGet("by-account/{accountId:guid}")]
@@ -68,9 +66,7 @@ public sealed class UserCredentialsController(ISender sender) : ControllerBase
             new GetUserCredentialsByAccountIdQuery(accountId),
             cancellationToken);
 
-        return credentials is null
-            ? NotFound()
-            : Ok(credentials.ToResponse());
+        return Ok(credentials.ToResponse());
     }
 
     [HttpPatch("{id:guid}/change-password")]
@@ -86,12 +82,10 @@ public sealed class UserCredentialsController(ISender sender) : ControllerBase
         [FromBody] ChangePasswordRequest request,
         CancellationToken cancellationToken)
     {
-        var changed = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return changed
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

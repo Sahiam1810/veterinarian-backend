@@ -7,4 +7,4 @@ public sealed record UpdateAppointmentStatusHistoryCommand(
     Guid AppointmentId,
     Guid StatusId,
     Guid ClientPetId,
-    string? Comment) : IRequest<bool>;
+    string? Comment) : IRequest;

@@ -9,4 +9,4 @@ public sealed record UpdateVaccinationCommand(
     string VaccineName,
     int DoseNumber,
     DateTime ApplicationDate,
-    DateTime? NextDoseDate) : IRequest<bool>;
+    DateTime? NextDoseDate) : IRequest;

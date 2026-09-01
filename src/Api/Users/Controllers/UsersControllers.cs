@@ -64,9 +64,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
             new GetUserByIdQuery(id),
             cancellationToken);
 
-        return user is null
-            ? NotFound()
-            : Ok(user.ToResponse());
+        return Ok(user.ToResponse());
     }
 
     [HttpPut("{id:guid}")]
@@ -82,13 +80,11 @@ public sealed class UsersController(ISender sender) : ControllerBase
         [FromBody] UpdateUserRequest request,
         CancellationToken cancellationToken)
     {
-        var updated = await sender.Send(
+        await sender.Send(
             request.ToCommand(id),
             cancellationToken);
 
-        return updated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpPatch("{id:guid}/deactivate")]
@@ -101,13 +97,11 @@ public sealed class UsersController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var deactivated = await sender.Send(
+        await sender.Send(
             new DeactivateUserCommand(id),
             cancellationToken);
 
-        return deactivated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 
     [HttpPatch("{id:guid}/activate")]
@@ -120,12 +114,10 @@ public sealed class UsersController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var activated = await sender.Send(
+        await sender.Send(
             new ActivateUserCommand(id),
             cancellationToken);
 
-        return activated
-            ? NoContent()
-            : NotFound();
+        return NoContent();
     }
 }

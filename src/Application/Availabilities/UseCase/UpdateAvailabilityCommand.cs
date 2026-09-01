@@ -8,4 +8,4 @@ public sealed record UpdateAvailabilityCommand(
     DayOfWeek DayOfWeek,
     TimeOnly StartTime,
     TimeOnly EndTime,
-    bool IsActive) : IRequest<bool>;
+    bool IsActive) : IRequest;
