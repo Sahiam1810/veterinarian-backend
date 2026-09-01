@@ -1,6 +1,7 @@
 using Api.Availabilities.Dtos;
 using Api.Availabilities.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.Availabilities.UseCase;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ namespace Api.Availabilities.Controllers;
 public sealed class AvailabilitiesController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Citas", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva disponibilidad")]
     [EndpointDescription("Registra una franja horaria recurrente (día de la semana, hora de inicio y fin) en la que un veterinario atiende.")]
     [ProducesResponseType(typeof(CreateAvailabilityResponse), StatusCodes.Status201Created)]
@@ -83,7 +84,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una disponibilidad existente")]
     [EndpointDescription("Modifica el día, horario o estado de una franja de disponibilidad previamente registrada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -104,7 +105,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Citas", PermissionAction.Delete)]
     [EndpointSummary("Elimina una disponibilidad por su ID")]
     [EndpointDescription("Remueve permanentemente una franja de disponibilidad del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

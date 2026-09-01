@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Species.Dtos;
 using Api.Species.Mappings;
 using Application.Species.UseCases;
@@ -14,7 +15,7 @@ namespace Api.Species.Controllers;
 public sealed class SpeciesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las especies")]
     [EndpointDescription("Retorna una lista con todas las especies registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<SpeciesResponseDto>), StatusCodes.Status200OK)]
@@ -29,7 +30,7 @@ public sealed class SpeciesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.View)]
     [EndpointSummary("Obtiene una especie por su ID")]
     [EndpointDescription("Retorna los datos de una especie específica.")]
     [ProducesResponseType(typeof(SpeciesResponseDto), StatusCodes.Status200OK)]
@@ -46,7 +47,7 @@ public sealed class SpeciesController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva especie")]
     [EndpointDescription("Registra una nueva especie en el sistema.")]
     [ProducesResponseType(typeof(SpeciesResponseDto), StatusCodes.Status201Created)]
@@ -71,7 +72,7 @@ public sealed class SpeciesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una especie existente")]
     [EndpointDescription("Modifica los datos de una especie existente mediante su ID.")]
     [ProducesResponseType(typeof(SpeciesResponseDto), StatusCodes.Status200OK)]
@@ -95,7 +96,7 @@ public sealed class SpeciesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.Delete)]
     [EndpointSummary("Elimina una especie")]
     [EndpointDescription("Elimina permanentemente una especie del sistema por su ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.UserTokens.Dtos;
 using Api.UserTokens.Mappings;
 using Application.UserTokens.UseCase;
@@ -11,10 +12,10 @@ namespace Api.UserTokens.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class UserTokensController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Usuarios", PermissionAction.Create)]
     [EndpointSummary("Registra un nuevo token de sesión")]
     [EndpointDescription("Registra un token (refresh, reset_password, etc.) asociado a una cuenta, con su fecha de expiración.")]
     [ProducesResponseType(typeof(CreateUserTokenResponse), StatusCodes.Status201Created)]
@@ -34,6 +35,7 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene un token por su ID")]
     [EndpointDescription("Retorna la información de un token específico por su identificador GUID.")]
     [ProducesResponseType(typeof(UserTokenResponse), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-account/{accountId:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene los tokens de una cuenta")]
     [EndpointDescription("Retorna todos los tokens activos e inactivos asociados a una cuenta de usuario.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<UserTokenResponse>), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.Delete)]
     [EndpointSummary("Revoca un token")]
     [EndpointDescription("Elimina un token (por ejemplo, para cerrar sesión o invalidar un refresh token).")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

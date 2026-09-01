@@ -1,6 +1,7 @@
 using Api.AccountStatements.Dtos;
 using Api.AccountStatements.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.AccountStatements.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ namespace Api.AccountStatements.Controllers;
 public sealed class AccountStatementsController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Cuentas y Pagos", PermissionAction.Create)]
     [EndpointSummary("Registra un nuevo estado de cuenta")]
     [EndpointDescription("Genera un estado de cuenta asociado a una cuenta de usuario, con su fecha de emisión y estado inicial.")]
     [ProducesResponseType(typeof(CreateAccountStatementResponse), StatusCodes.Status201Created)]
@@ -69,7 +70,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Cuentas y Pagos", PermissionAction.Edit)]
     [EndpointSummary("Actualiza el estado de un estado de cuenta")]
     [EndpointDescription("Cambia el estado (por ejemplo, de pendiente a pagado) de un estado de cuenta existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -90,7 +91,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Cuentas y Pagos", PermissionAction.Delete)]
     [EndpointSummary("Elimina un estado de cuenta")]
     [EndpointDescription("Elimina de forma permanente un estado de cuenta existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

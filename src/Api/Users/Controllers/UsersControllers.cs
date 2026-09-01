@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Users.Dtos;
 using Api.Users.Mappings;
 using Application.Users.UseCase;
@@ -11,10 +12,10 @@ namespace Api.Users.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class UsersController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Usuarios", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo usuario")]
     [EndpointDescription("Registra un nuevo usuario del sistema, asignándole un rol existente.")]
     [ProducesResponseType(typeof(CreateUserResponse), StatusCodes.Status201Created)]
@@ -35,6 +36,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los usuarios")]
     [EndpointDescription("Retorna el listado de todos los usuarios registrados, con su rol y estado activo/inactivo.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<UserResponse>), StatusCodes.Status200OK)]
@@ -49,6 +51,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene un usuario por su ID")]
     [EndpointDescription("Retorna la información de un usuario específico por su identificador GUID.")]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.Edit)]
     [EndpointSummary("Actualiza los datos de un usuario")]
     [EndpointDescription("Modifica el nombre completo, correo o rol de un usuario existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -88,6 +92,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/deactivate")]
+    [RequirePermission("Usuarios", PermissionAction.Edit)]
     [EndpointSummary("Desactiva un usuario")]
     [EndpointDescription("Marca a un usuario como inactivo, revocando su acceso al sistema sin eliminarlo.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -106,6 +111,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/activate")]
+    [RequirePermission("Usuarios", PermissionAction.Edit)]
     [EndpointSummary("Activa un usuario")]
     [EndpointDescription("Restaura el acceso de un usuario previamente desactivado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

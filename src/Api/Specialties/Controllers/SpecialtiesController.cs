@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Specialties.Dtos;
 using Api.Specialties.Mappings;
 using Application.Specialties.UseCases;
@@ -13,14 +14,14 @@ namespace Api.Specialties.Controllers;
 public sealed class SpecialtiesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Especialidades", PermissionAction.View)]
     [EndpointSummary("Obtiene las especialidades")]
     [EndpointDescription("Lista todas las especialidades registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<SpecialtyResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<SpecialtyResponseDto>>> GetAll(CancellationToken ct) => Ok((await sender.Send(new GetAllSpecialtiesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Especialidades", PermissionAction.View)]
     [EndpointSummary("Obtiene una especialidad")]
     [EndpointDescription("Busca una especialidad por su identificador.")]
     [ProducesResponseType(typeof(SpecialtyResponseDto), StatusCodes.Status200OK)]
@@ -28,7 +29,7 @@ public sealed class SpecialtiesController(ISender sender) : ControllerBase
     public async Task<ActionResult<SpecialtyResponseDto>> GetById(Guid id, CancellationToken ct) => Ok((await sender.Send(new GetSpecialtyByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especialidades", PermissionAction.Create)]
     [EndpointSummary("Crea una especialidad")]
     [EndpointDescription("Registra una nueva especialidad.")]
     [ProducesResponseType(typeof(SpecialtyResponseDto), StatusCodes.Status201Created)]
@@ -42,7 +43,7 @@ public sealed class SpecialtiesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especialidades", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una especialidad")]
     [EndpointDescription("Actualiza los datos de una especialidad existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -56,7 +57,7 @@ public sealed class SpecialtiesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especialidades", PermissionAction.Delete)]
     [EndpointSummary("Elimina una especialidad")]
     [EndpointDescription("Elimina una especialidad por su identificador.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

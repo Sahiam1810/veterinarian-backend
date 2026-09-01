@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Api.Clients.Dtos;
 using Api.Clients.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.Clients.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -36,7 +37,7 @@ public class ClientsController(ISender sender) : ControllerBase
 
     // GET /api/clients
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Clientes", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los clientes")]
     [EndpointDescription("Retorna una lista de todos los clientes registrados en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ClientResponseDto>), StatusCodes.Status200OK)]
@@ -48,7 +49,7 @@ public class ClientsController(ISender sender) : ControllerBase
 
     // GET /api/clients/{id}
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Clientes", PermissionAction.View)]
     [EndpointSummary("Obtiene un cliente por su ID")]
     [EndpointDescription("Retorna los detalles de un cliente específico buscando por su identificador único.")]
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
@@ -61,7 +62,7 @@ public class ClientsController(ISender sender) : ControllerBase
 
     // POST /api/clients
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
+    [RequirePermission("Clientes", PermissionAction.Create)]
     [EndpointSummary("Registra un nuevo cliente")]
     [EndpointDescription("Crea un nuevo registro de cliente asociándolo a un usuario existente.")]
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status201Created)]
@@ -82,7 +83,7 @@ public class ClientsController(ISender sender) : ControllerBase
 
     // PUT /api/clients/{id}
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
+    [RequirePermission("Clientes", PermissionAction.Edit)]
     [EndpointSummary("Actualiza los datos de un cliente")]
     [EndpointDescription("Modifica los datos de un cliente existente identificado por su ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -103,7 +104,7 @@ public class ClientsController(ISender sender) : ControllerBase
 
     // DELETE /api/clients/{id}
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Clientes", PermissionAction.Delete)]
     [EndpointSummary("Elimina un cliente")]
     [EndpointDescription("Elimina permanentemente el registro de un cliente del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

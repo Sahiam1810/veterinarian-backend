@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.TypeServices.Dtos;
 using Api.TypeServices.Mappings;
 using Application.TypeServices.UseCases;
@@ -14,7 +15,7 @@ namespace Api.TypeServices.Controllers;
 public sealed class TypeServicesController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Servicios", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo tipo de servicio")]
     [EndpointDescription("Registra un nuevo tipo de servicio en el sistema.")]
     [ProducesResponseType(typeof(CreateTypeServiceResponse), StatusCodes.Status201Created)]
@@ -34,7 +35,7 @@ public sealed class TypeServicesController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Servicios", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los tipos de servicios")]
     [EndpointDescription("Retorna el listado completo de todos los tipos de servicios configurados en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<TypeServiceResponse>), StatusCodes.Status200OK)]
@@ -49,7 +50,7 @@ public sealed class TypeServicesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Servicios", PermissionAction.View)]
     [EndpointSummary("Obtiene un tipo de servicio por su ID")]
     [EndpointDescription("Retorna la información detallada de un tipo de servicio específico.")]
     [ProducesResponseType(typeof(TypeServiceResponse), StatusCodes.Status200OK)]
@@ -68,7 +69,7 @@ public sealed class TypeServicesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Servicios", PermissionAction.Edit)]
     [EndpointSummary("Actualiza un tipo de servicio existente")]
     [EndpointDescription("Modifica el nombre y/o descripción de un tipo de servicio previamente registrado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -90,7 +91,7 @@ public sealed class TypeServicesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Servicios", PermissionAction.Delete)]
     [EndpointSummary("Elimina un tipo de servicio por su ID")]
     [EndpointDescription("Remueve permanentemente un tipo de servicio del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

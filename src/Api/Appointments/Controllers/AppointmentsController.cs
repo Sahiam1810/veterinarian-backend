@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Api.Appointments.Dtos;
 using Api.Appointments.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.Appointments.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -35,7 +36,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Citas", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva cita médica")]
     [EndpointDescription("Registra una nueva cita médica veterinaria en el sistema.")]
     [ProducesResponseType(typeof(CreateAppointmentResponse), StatusCodes.Status201Created)]
@@ -88,7 +89,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una cita médica existente")]
     [EndpointDescription("Modifica los datos de una cita médica previamente registrada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -109,7 +110,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrReceptionist)]
+    [RequirePermission("Citas", PermissionAction.Delete)]
     [EndpointSummary("Elimina una cita médica por su ID")]
     [EndpointDescription("Remueve permanentemente una cita médica del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

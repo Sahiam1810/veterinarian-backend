@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Races.Dtos;
 using Api.Races.Mappings;
 using Application.Races.UseCases;
@@ -14,7 +15,7 @@ namespace Api.Races.Controllers;
 public sealed class RacesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las razas")]
     [EndpointDescription("Retorna una lista con todas las razas registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RaceResponseDto>), StatusCodes.Status200OK)]
@@ -29,7 +30,7 @@ public sealed class RacesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.View)]
     [EndpointSummary("Obtiene una raza por su ID")]
     [EndpointDescription("Retorna los datos de una raza específica.")]
     [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status200OK)]
@@ -46,7 +47,7 @@ public sealed class RacesController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva raza")]
     [EndpointDescription("Registra una nueva raza en el sistema.")]
     [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status201Created)]
@@ -71,7 +72,7 @@ public sealed class RacesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una raza existente")]
     [EndpointDescription("Modifica los datos de una raza existente mediante su ID.")]
     [ProducesResponseType(typeof(RaceResponseDto), StatusCodes.Status200OK)]
@@ -95,7 +96,7 @@ public sealed class RacesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Especies y Razas", PermissionAction.Delete)]
     [EndpointSummary("Elimina una raza")]
     [EndpointDescription("Elimina permanentemente una raza del sistema por su ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

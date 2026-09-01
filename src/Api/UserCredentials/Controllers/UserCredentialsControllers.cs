@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.UserCredentials.Dtos;
 using Api.UserCredentials.Mappings;
 using Application.UserCredentials.UseCase;
@@ -11,10 +12,10 @@ namespace Api.UserCredentials.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class UserCredentialsController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Usuarios", PermissionAction.Create)]
     [EndpointSummary("Crea las credenciales de una cuenta")]
     [EndpointDescription("Registra la contraseña inicial (hasheada) de una cuenta de usuario existente. El hash nunca se expone en la respuesta.")]
     [ProducesResponseType(typeof(CreateUserCredentialsResponse), StatusCodes.Status201Created)]
@@ -35,6 +36,7 @@ public sealed class UserCredentialsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene los metadatos de unas credenciales")]
     [EndpointDescription("Retorna la información no sensible de las credenciales (cuenta asociada y fecha del último cambio). Nunca retorna el hash de la contraseña.")]
     [ProducesResponseType(typeof(UserCredentialsResponse), StatusCodes.Status200OK)]
@@ -53,6 +55,7 @@ public sealed class UserCredentialsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-account/{accountId:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene los metadatos de las credenciales de una cuenta")]
     [EndpointDescription("Retorna la información no sensible de las credenciales asociadas a una cuenta de usuario.")]
     [ProducesResponseType(typeof(UserCredentialsResponse), StatusCodes.Status200OK)]
@@ -71,6 +74,7 @@ public sealed class UserCredentialsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/change-password")]
+    [RequirePermission("Usuarios", PermissionAction.Edit)]
     [EndpointSummary("Cambia la contraseña de una cuenta")]
     [EndpointDescription("Valida la contraseña actual y, si es correcta, la reemplaza por la nueva contraseña (hasheada).")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

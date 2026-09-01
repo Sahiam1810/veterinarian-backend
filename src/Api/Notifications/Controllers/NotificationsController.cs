@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Notifications.Dtos;
 using Api.Notifications.Mappings;
 using Application.Notifications.UseCases;
@@ -13,8 +14,11 @@ namespace Api.Notifications.Controllers;
 [Route("api/[controller]")]
 public sealed class NotificationsController(ISender sender) : ControllerBase
 {
+    // La matriz de permisos no le da Crear a ningún rol sobre este módulo a
+    // propósito: las notificaciones las genera el sistema (ver
+    // GenerateUpcomingAppointmentRemindersCommandHandler), no un humano por API.
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Notificaciones", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva notificación")]
     [EndpointDescription("Registra una nueva notificación asociada a un usuario y una cita médica.")]
     [ProducesResponseType(typeof(CreateNotificationResponse), StatusCodes.Status201Created)]
@@ -33,7 +37,7 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Notificaciones", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las notificaciones")]
     [EndpointDescription("Retorna el listado completo de todas las notificaciones registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<NotificationResponse>), StatusCodes.Status200OK)]
@@ -48,7 +52,7 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Notificaciones", PermissionAction.View)]
     [EndpointSummary("Obtiene una notificación por su ID")]
     [EndpointDescription("Retorna la información detallada de una notificación específica.")]
     [ProducesResponseType(typeof(NotificationResponse), StatusCodes.Status200OK)]
@@ -67,7 +71,7 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("user/{userId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Notificaciones", PermissionAction.View)]
     [EndpointSummary("Obtiene las notificaciones de un usuario")]
     [EndpointDescription("Retorna todas las notificaciones pertenecientes a un usuario especificado.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<NotificationResponse>), StatusCodes.Status200OK)]
@@ -83,7 +87,7 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("appointment/{appointmentId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Notificaciones", PermissionAction.View)]
     [EndpointSummary("Obtiene las notificaciones de una cita")]
     [EndpointDescription("Retorna todas las notificaciones asociadas a una cita médica especificada.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<NotificationResponse>), StatusCodes.Status200OK)]
@@ -99,7 +103,7 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Notificaciones", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una notificación existente")]
     [EndpointDescription("Modifica los datos de una notificación previamente registrada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -120,7 +124,7 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Notificaciones", PermissionAction.Delete)]
     [EndpointSummary("Elimina una notificación por su ID")]
     [EndpointDescription("Remueve permanentemente una notificación del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

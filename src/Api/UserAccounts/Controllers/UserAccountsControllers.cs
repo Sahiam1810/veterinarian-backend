@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.UserAccounts.Dtos;
 using Api.UserAccounts.Mappings;
 using Application.UserAccounts.UseCase;
@@ -11,10 +12,10 @@ namespace Api.UserAccounts.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class UserAccountsController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Usuarios", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva cuenta de usuario")]
     [EndpointDescription("Registra las credenciales de acceso (usuario, correo y estado) asociadas a un usuario existente.")]
     [ProducesResponseType(typeof(CreateUserAccountResponse), StatusCodes.Status201Created)]
@@ -35,6 +36,7 @@ public sealed class UserAccountsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las cuentas de usuario")]
     [EndpointDescription("Retorna el listado de todas las cuentas de acceso registradas en la plataforma.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<UserAccountResponse>), StatusCodes.Status200OK)]
@@ -49,6 +51,7 @@ public sealed class UserAccountsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.View)]
     [EndpointSummary("Obtiene una cuenta de usuario por su ID")]
     [EndpointDescription("Retorna la información de una cuenta de usuario específica por su identificador GUID.")]
     [ProducesResponseType(typeof(UserAccountResponse), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class UserAccountsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una cuenta de usuario")]
     [EndpointDescription("Modifica el nombre de usuario, correo o estado de una cuenta existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -88,6 +92,7 @@ public sealed class UserAccountsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("Usuarios", PermissionAction.Delete)]
     [EndpointSummary("Elimina una cuenta de usuario")]
     [EndpointDescription("Remueve la cuenta de acceso de un usuario del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

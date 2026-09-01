@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Services.Dtos;
 using Api.Services.Mappings;
 using Application.Services.UseCases;
@@ -14,7 +15,7 @@ namespace Api.Services.Controllers;
 public sealed class ServicesController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Servicios", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo servicio")]
     [EndpointDescription("Registra un nuevo servicio veterinario en el sistema.")]
     [ProducesResponseType(typeof(CreateServiceResponse), StatusCodes.Status201Created)]
@@ -34,7 +35,7 @@ public sealed class ServicesController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Servicios", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los servicios")]
     [EndpointDescription("Retorna el listado completo de todos los servicios registrados.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ServiceResponse>), StatusCodes.Status200OK)]
@@ -49,7 +50,7 @@ public sealed class ServicesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Servicios", PermissionAction.View)]
     [EndpointSummary("Obtiene un servicio por su ID")]
     [EndpointDescription("Retorna la información detallada de un servicio específico.")]
     [ProducesResponseType(typeof(ServiceResponse), StatusCodes.Status200OK)]
@@ -68,7 +69,7 @@ public sealed class ServicesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Servicios", PermissionAction.Edit)]
     [EndpointSummary("Actualiza un servicio existente")]
     [EndpointDescription("Modifica los datos de un servicio previamente registrado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -90,7 +91,7 @@ public sealed class ServicesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Servicios", PermissionAction.Delete)]
     [EndpointSummary("Elimina un servicio por su ID")]
     [EndpointDescription("Remueve permanentemente un servicio del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

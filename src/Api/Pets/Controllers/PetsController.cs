@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Pets.Dtos;
 using Api.Pets.Mappings;
 using Application.Pets.UseCases;
@@ -68,7 +69,7 @@ public class PetsController : ControllerBase
 
     // POST /api/pets
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
+    [RequirePermission("Mascotas", PermissionAction.Create)]
     [EndpointSummary("Registra una nueva mascota")]
     [EndpointDescription("Crea un nuevo registro de mascota asociándolo a una especie y raza existentes.")]
     [ProducesResponseType(typeof(PetResponseDto), StatusCodes.Status201Created)]
@@ -91,7 +92,7 @@ public class PetsController : ControllerBase
 
     // PUT /api/pets/{id}
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
+    [RequirePermission("Mascotas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza los datos de una mascota")]
     [EndpointDescription("Modifica los datos de una mascota existente identificada por su ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -114,7 +115,7 @@ public class PetsController : ControllerBase
 
     // DELETE /api/pets/{id}
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Mascotas", PermissionAction.Delete)]
     [EndpointSummary("Elimina una mascota")]
     [EndpointDescription("Elimina permanentemente el registro de una mascota del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

@@ -1,6 +1,7 @@
 using Api.ClientsPets.Dtos;
 using Api.ClientsPets.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ClientsPets.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +29,7 @@ public sealed class ClientsPetsController(ISender sender) : ControllerBase
     public async Task<ActionResult<ClientPetResponseDto>> GetById(Guid id, CancellationToken ct) => Ok((await sender.Send(new GetClientPetByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
+    [RequirePermission("Mascotas", PermissionAction.Create)]
     [EndpointSummary("Asocia un cliente a una mascota")]
     [EndpointDescription("Crea una nueva relación entre un cliente y una mascota.")]
     [ProducesResponseType(typeof(ClientPetResponseDto), StatusCodes.Status201Created)]
@@ -43,7 +44,7 @@ public sealed class ClientsPetsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.FrontDeskStaffOnly)]
+    [RequirePermission("Mascotas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una relación cliente-mascota")]
     [EndpointDescription("Actualiza si el cliente es el propietario principal.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -56,7 +57,7 @@ public sealed class ClientsPetsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Mascotas", PermissionAction.Delete)]
     [EndpointSummary("Elimina una relación cliente-mascota")]
     [EndpointDescription("Elimina una asociación entre cliente y mascota.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

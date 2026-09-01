@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.MedicalRecords.Dtos;
 using Api.MedicalRecords.Mappings;
 using Application.MedicalRecords.UseCases;
@@ -14,7 +15,7 @@ namespace Api.MedicalRecords.Controllers;
 public sealed class MedicalRecordsController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo registro de historia médica")]
     [EndpointDescription("Registra una nueva historia médica para la mascota de un cliente. Una vez creada, la historia clínica queda inmutable como parte del historial de la mascota.")]
     [ProducesResponseType(typeof(CreateMedicalRecordResponse), StatusCodes.Status201Created)]
@@ -33,7 +34,7 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las historias médicas")]
     [EndpointDescription("Retorna el listado completo de historias médicas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<MedicalRecordResponse>), StatusCodes.Status200OK)]
@@ -48,7 +49,7 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene una historia médica por su ID")]
     [EndpointDescription("Retorna la información detallada de una historia médica específica.")]
     [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status200OK)]

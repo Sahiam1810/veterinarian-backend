@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Diagnostics.Dtos;
 using Api.Diagnostics.Mappings;
 using Application.Diagnostics.UseCases;
@@ -48,7 +49,7 @@ public sealed class DiagnosticsController(ISender sender) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo diagnóstico")]
     [EndpointDescription("Registra un nuevo diagnóstico clínico (código único, nombre y descripción opcional) en el catálogo. Queda activo por defecto.")]
     [ProducesResponseType(typeof(DiagnosticDto), StatusCodes.Status201Created)]
@@ -70,7 +71,7 @@ public sealed class DiagnosticsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.Edit)]
     [EndpointSummary("Actualiza un diagnóstico existente")]
     [EndpointDescription("Modifica el código, nombre, descripción o estado de un diagnóstico existente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -91,7 +92,7 @@ public sealed class DiagnosticsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.Delete)]
     [EndpointSummary("Elimina (desactiva) un diagnóstico")]
     [EndpointDescription("Realiza una baja lógica del diagnóstico: lo marca como inactivo sin eliminarlo físicamente de la base de datos.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

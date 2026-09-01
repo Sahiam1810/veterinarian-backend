@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Veterinarians.Dtos;
 using Api.Veterinarians.Mappings;
 using Application.Veterinarians.UseCases;
@@ -14,7 +15,7 @@ namespace Api.Veterinarians.Controllers;
 public sealed class VeterinariansController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Veterinarios", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo veterinario")]
     [EndpointDescription("Registra un nuevo veterinario asociando su usuario, especialidad y tarjeta profesional.")]
     [ProducesResponseType(typeof(CreateVeterinarianResponse), StatusCodes.Status201Created)]
@@ -34,7 +35,7 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Veterinarios", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los veterinarios")]
     [EndpointDescription("Retorna el listado completo de todos los veterinarios registrados.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VeterinarianResponse>), StatusCodes.Status200OK)]
@@ -49,7 +50,7 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Veterinarios", PermissionAction.View)]
     [EndpointSummary("Obtiene un veterinario por su ID")]
     [EndpointDescription("Retorna la información detallada de un veterinario específico.")]
     [ProducesResponseType(typeof(VeterinarianResponse), StatusCodes.Status200OK)]
@@ -68,7 +69,7 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Veterinarios", PermissionAction.Edit)]
     [EndpointSummary("Actualiza un veterinario existente")]
     [EndpointDescription("Modifica la información de un veterinario previamente registrado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -90,7 +91,7 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Veterinarios", PermissionAction.Delete)]
     [EndpointSummary("Elimina un veterinario por su ID")]
     [EndpointDescription("Remueve permanentemente un veterinario del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

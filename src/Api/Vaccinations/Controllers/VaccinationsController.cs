@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Vaccinations.Dtos;
 using Api.Vaccinations.Mappings;
 using Application.Vaccinations.UseCases;
@@ -14,7 +15,7 @@ namespace Api.Vaccinations.Controllers;
 public sealed class VaccinationsController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOrVeterinarian)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.Create)]
     [EndpointSummary("Registra una nueva vacunación")]
     [EndpointDescription("Registra una vacuna aplicada a la mascota de un cliente.")]
     [ProducesResponseType(typeof(CreateVaccinationResponse), StatusCodes.Status201Created)]
@@ -33,7 +34,7 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las vacunaciones")]
     [EndpointDescription("Retorna el listado completo de todas las vacunas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VaccinationResponse>), StatusCodes.Status200OK)]
@@ -48,7 +49,7 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.ClinicalHistoryReadOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene un registro de vacunación por su ID")]
     [EndpointDescription("Retorna la información detallada de un registro de vacunación específico.")]
     [ProducesResponseType(typeof(VaccinationResponse), StatusCodes.Status200OK)]
@@ -67,7 +68,7 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.Edit)]
     [EndpointSummary("Actualiza un registro de vacunación existente")]
     [EndpointDescription("Modifica los datos de una vacunación previamente registrada. Solo el administrador puede corregir un registro ya creado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
