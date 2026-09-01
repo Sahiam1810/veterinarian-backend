@@ -3,6 +3,7 @@ namespace Api.Common.Security;
 public static class AuthorizationPolicies
 {
     public const string AdminOnly = "AdminOnly";
+    public const string SuperAdminOnly = "SuperAdminOnly";
     public const string VeterinarianOnly = "VeterinarianOnly";
     public const string ReceptionistOnly = "ReceptionistOnly";
     public const string AssistantOnly = "AssistantOnly";

@@ -71,6 +71,28 @@ public sealed class JwtTokenIssuerTests
             principal.FindFirstValue(JwtRegisteredClaimNames.Sub));
     }
 
+    [Fact]
+    public void IssueForSuperAdmin_creates_token_without_role_claims()
+    {
+        var options = CreateOptions(RsaTestKeys.Create());
+        using var keyMaterial = new JwtRsaKeyMaterial(Options.Create(options));
+        var issuer = new JwtTokenIssuer(
+            Options.Create(options),
+            keyMaterial,
+            new FixedTimeProvider(Now));
+
+        var superAdminId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var issued = issuer.IssueForSuperAdmin(superAdminId, "superadmin@huellitas.test");
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(issued.Token);
+
+        Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
+        Assert.Equal(superAdminId.ToString(), token.Subject);
+        Assert.Equal("true", Claim(token, "super_admin"));
+        Assert.Equal("superadmin@huellitas.test", Claim(token, JwtRegisteredClaimNames.Email));
+        Assert.DoesNotContain(token.Claims, claim => claim.Type is "role_id" or "role");
+        Assert.Equal(Now.AddMinutes(15), issued.ExpiresAt);
+    }
+
     private static string Claim(JwtSecurityToken token, string type) =>
         token.Claims.Single(claim => claim.Type == type).Value;
 

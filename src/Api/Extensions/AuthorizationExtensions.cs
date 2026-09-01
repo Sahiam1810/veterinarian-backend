@@ -22,6 +22,11 @@ public static class AuthorizationExtensions
             options.AddPolicy(
                 AuthorizationPolicies.AdminOnly,
                 policy => policy.RequireRole("Administrador"));
+            // El SuperAdmin no es un rol de la tabla ROLES: se identifica por
+            // el claim "super_admin" que emite JwtTokenIssuer.IssueForSuperAdmin.
+            options.AddPolicy(
+                AuthorizationPolicies.SuperAdminOnly,
+                policy => policy.RequireClaim("super_admin", "true"));
             options.AddPolicy(
                 AuthorizationPolicies.VeterinarianOnly,
                 policy => policy.RequireRole("Veterinario"));

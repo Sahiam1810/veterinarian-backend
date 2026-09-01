@@ -24,19 +24,11 @@ public sealed class JwtTokenIssuer(
             throw new ArgumentOutOfRangeException(nameof(lifetime));
         }
 
-        var now = timeProvider.GetUtcNow();
-
-        var expiresAt = now.Add(lifetime);
-
         var claims = new List<Claim>
         {
             new(
                 JwtRegisteredClaimNames.Sub,
                 identity.UserAccountId.ToString()),
-
-            new(
-                JwtRegisteredClaimNames.Jti,
-                Guid.NewGuid().ToString()),
 
             new(
                 "person_id",
@@ -56,13 +48,47 @@ public sealed class JwtTokenIssuer(
 
             new(
                 JwtRegisteredClaimNames.Email,
-                identity.Email),
+                identity.Email)
+        };
+
+        return BuildToken(claims, lifetime);
+    }
+
+    // El SuperAdmin no es un usuario ni un rol de la tabla ROLES: no lleva
+    // "role_id" ni "role", solo el claim "super_admin" que PermissionAuthorizationHandler
+    // usa para saltarse toda verificación de permisos.
+    public IssuedAccessToken IssueForSuperAdmin(Guid id, string email)
+    {
+        var claims = new List<Claim>
+        {
+            new(
+                JwtRegisteredClaimNames.Sub,
+                id.ToString()),
 
             new(
-                JwtRegisteredClaimNames.Iat,
-                now.ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64)
+                "super_admin",
+                "true"),
+
+            new(
+                JwtRegisteredClaimNames.Email,
+                email)
         };
+
+        return BuildToken(claims, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+    }
+
+    private IssuedAccessToken BuildToken(List<Claim> claims, TimeSpan lifetime)
+    {
+        var now = timeProvider.GetUtcNow();
+        var expiresAt = now.Add(lifetime);
+
+        claims.Add(new(
+            JwtRegisteredClaimNames.Jti,
+            Guid.NewGuid().ToString()));
+        claims.Add(new(
+            JwtRegisteredClaimNames.Iat,
+            now.ToUnixTimeSeconds().ToString(),
+            ClaimValueTypes.Integer64));
 
         var token = new JwtSecurityToken(
             issuer: jwtOptions.Issuer,

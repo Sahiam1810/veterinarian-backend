@@ -30,7 +30,7 @@ public sealed class ModulesController(ISender sender) : ControllerBase
         Ok((await sender.Send(new GetModuleByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Crea un módulo")]
     [EndpointDescription("Registra un nuevo módulo del sistema.")]
     [ProducesResponseType(typeof(ModuleResponseDto), StatusCodes.Status201Created)]
@@ -44,7 +44,7 @@ public sealed class ModulesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Actualiza un módulo")]
     [EndpointDescription("Actualiza el nombre o la descripción de un módulo.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -58,7 +58,7 @@ public sealed class ModulesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Elimina un módulo")]
     [EndpointDescription("Elimina un módulo por su identificador.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

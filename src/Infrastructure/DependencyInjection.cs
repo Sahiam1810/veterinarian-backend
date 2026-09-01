@@ -339,6 +339,11 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateOnStart();
 
+        services.AddSingleton<IValidateOptions<SuperAdminOptions>, SuperAdminOptionsValidator>();
+        services.AddOptions<SuperAdminOptions>()
+            .Bind(configuration.GetSection(SuperAdminOptions.SectionName))
+            .ValidateOnStart();
+
         services.AddSingleton<IValidateOptions<ReminderOptions>, ReminderOptionsValidator>();
         services.AddOptions<ReminderOptions>()
             .Bind(configuration.GetSection(ReminderOptions.SectionName))

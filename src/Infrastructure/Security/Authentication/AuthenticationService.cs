@@ -27,6 +27,7 @@ public sealed class AuthenticationService(
     RefreshTokenProtector refreshTokenProtector,
     IPasswordHasher passwordHasher,
     IOptions<JwtOptions> options,
+    IOptions<SuperAdminOptions> superAdminOptions,
     TimeProvider timeProvider) : IAuthenticationService
 {
     private const string ActiveStatus = "Activo";
@@ -34,6 +35,7 @@ public sealed class AuthenticationService(
     private const string RefreshTokenType = "refresh";
 
     private readonly JwtOptions jwtOptions = options.Value;
+    private readonly SuperAdminOptions superAdmin = superAdminOptions.Value;
 
     public async Task<Result<AuthenticationTokens>> RegisterAsync(
         string fullName,
@@ -53,6 +55,15 @@ public sealed class AuthenticationService(
 
         var normalizedUserName = userName.Trim().ToLowerInvariant();
         var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        // El email del SuperAdmin no tiene fila en Users: si se permitiera
+        // registrar aquí, quedaría una cuenta fantasma que nunca podría
+        // loguearse (LoginAsync siempre intercepta ese email primero).
+        if (IsSuperAdminEmail(normalizedEmail))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.UserAlreadyExists);
+        }
 
         var clientRole = await unitOfWork.RolesRepository.GetByNameAsync(
             ClientRoleName, cancellationToken);
@@ -119,8 +130,17 @@ public sealed class AuthenticationService(
         string password,
         CancellationToken cancellationToken)
     {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        if (IsSuperAdminEmail(normalizedEmail))
+        {
+            return passwordHasher.Verify(password, superAdmin.PasswordHash)
+                ? IssueSuperAdminTokens()
+                : Result<AuthenticationTokens>.Failure(AuthenticationErrors.InvalidCredentials);
+        }
+
         var account = await userAccountRepository.GetByMailAsync(
-            email.Trim().ToLowerInvariant(), cancellationToken);
+            normalizedEmail, cancellationToken);
 
         if (!IsActiveAccount(account))
         {
@@ -230,6 +250,13 @@ public sealed class AuthenticationService(
         Guid userAccountId,
         CancellationToken cancellationToken)
     {
+        // El SuperAdmin no tiene fila en UserAccounts: sin este caso, /me le
+        // devolvería 401 aunque su token sea válido.
+        if (superAdmin.Enabled && userAccountId == superAdmin.Id)
+        {
+            return Result<CurrentProfile>.Success(BuildSuperAdminProfile());
+        }
+
         var account = await userAccountRepository.GetByIdAsync(
             userAccountId, cancellationToken);
 
@@ -244,6 +271,20 @@ public sealed class AuthenticationService(
         return identity is null
             ? Result<CurrentProfile>.Failure(AuthenticationErrors.InvalidCredentials)
             : Result<CurrentProfile>.Success(CurrentProfile.From(identity));
+    }
+
+    // El SuperAdmin no tiene UserAccounts, así que no hay dónde guardar un
+    // refresh token: solo recibe access token, y vuelve a loguearse cuando expire.
+    private Result<AuthenticationTokens> IssueSuperAdminTokens()
+    {
+        var accessToken = jwtTokenIssuer.IssueForSuperAdmin(superAdmin.Id, superAdmin.Email);
+
+        return Result<AuthenticationTokens>.Success(
+            new AuthenticationTokens(
+                accessToken.Token,
+                accessToken.ExpiresAt,
+                string.Empty,
+                accessToken.ExpiresAt));
     }
 
     private async Task<Result<AuthenticationTokens>> IssueTokensAsync(
@@ -308,6 +349,21 @@ public sealed class AuthenticationService(
             account.Mail.Value,
             account.Status);
     }
+
+    private CurrentProfile BuildSuperAdminProfile() =>
+        new(
+            PersonId: superAdmin.Id,
+            UserAccountId: superAdmin.Id,
+            FullName: "Super Administrador",
+            Initials: "SA",
+            UserName: superAdmin.Email,
+            Email: superAdmin.Email,
+            Role: "SuperAdmin",
+            AccountStatus: ActiveStatus);
+
+    private bool IsSuperAdminEmail(string normalizedEmail) =>
+        superAdmin.Enabled &&
+        string.Equals(normalizedEmail, superAdmin.Email.Trim().ToLowerInvariant(), StringComparison.Ordinal);
 
     private static bool IsActiveAccount(UserAccountEntity? account) =>
         account is not null &&

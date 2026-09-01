@@ -13,7 +13,7 @@ namespace Api.RolePermissions.Controllers;
 public sealed class RolePermissionsController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Obtiene los permisos de rol")]
     [EndpointDescription("Lista todos los permisos configurados por rol y módulo.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RolePermissionResponseDto>), StatusCodes.Status200OK)]
@@ -21,7 +21,7 @@ public sealed class RolePermissionsController(ISender sender) : ControllerBase
         Ok((await sender.Send(new GetAllRolePermissionsQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Obtiene un permiso de rol")]
     [EndpointDescription("Busca un permiso por su identificador.")]
     [ProducesResponseType(typeof(RolePermissionResponseDto), StatusCodes.Status200OK)]
@@ -30,7 +30,7 @@ public sealed class RolePermissionsController(ISender sender) : ControllerBase
         Ok((await sender.Send(new GetRolePermissionByIdQuery(id), ct)).ToDto());
 
     [HttpGet("by-role/{roleId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Obtiene permisos de un rol")]
     [EndpointDescription("Lista los permisos asociados a un rol.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RolePermissionResponseDto>), StatusCodes.Status200OK)]
@@ -40,7 +40,7 @@ public sealed class RolePermissionsController(ISender sender) : ControllerBase
         Ok((await sender.Send(new GetRolePermissionsByRoleIdQuery(roleId), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Crea un permiso de rol")]
     [EndpointDescription("Asigna permisos de un rol sobre un módulo.")]
     [ProducesResponseType(typeof(RolePermissionResponseDto), StatusCodes.Status201Created)]
@@ -65,7 +65,7 @@ public sealed class RolePermissionsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Actualiza un permiso de rol")]
     [EndpointDescription("Actualiza los flags CanView/CanCreate/CanEdit/CanDelete.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -85,7 +85,7 @@ public sealed class RolePermissionsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Elimina un permiso de rol")]
     [EndpointDescription("Elimina un permiso por su identificador.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
