@@ -15,6 +15,9 @@ public sealed class CreateMedicalRecordCommandValidator : AbstractValidator<Crea
         RuleFor(x => x.DiagnosticId)
             .NotEmpty().WithMessage("El diagnóstico es requerido.");
 
+        RuleFor(x => x.UserAccountId)
+            .NotEmpty().WithMessage("La cuenta de usuario es requerida.");
+
         RuleFor(x => x.Symptoms)
             .MaximumLength(30).WithMessage("Los síntomas no pueden exceder 30 caracteres.");
 
