@@ -25,6 +25,10 @@ public sealed class ProcessTelegramUpdateHandler(
     ITelegramRuntimeSettings settings,
     TimeProvider timeProvider) : IRequestHandler<ProcessTelegramUpdateCommand>
 {
+    private const string LinkingRequiredReply =
+        "¡Hola! Para proteger tu información, primero debes vincular este chat una sola vez. " +
+        "Envía /vincular para comenzar.";
+
     public async Task Handle(
         ProcessTelegramUpdateCommand request,
         CancellationToken cancellationToken)
@@ -81,7 +85,7 @@ public sealed class ProcessTelegramUpdateHandler(
             {
                 await DeliverAsync(
                     update,
-                    "Debes vincular tu cuenta de Huellitas antes de conversar. Genera el código desde la aplicación.",
+                    LinkingRequiredReply,
                     cancellationToken);
                 return;
             }

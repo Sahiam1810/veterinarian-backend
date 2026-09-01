@@ -7,6 +7,7 @@ namespace Infrastructure.Telegram.Workers;
 
 public sealed class TelegramUpdateWorker(
     IServiceScopeFactory scopeFactory,
+    ITelegramUpdateSignal updateSignal,
     TimeProvider timeProvider,
     ILogger<TelegramUpdateWorker> logger) : BackgroundService
 {
@@ -22,7 +23,7 @@ public sealed class TelegramUpdateWorker(
                 var processed = await pump.RunOnceAsync(stoppingToken);
                 if (!processed)
                 {
-                    await Task.Delay(settings.WorkerPollInterval, timeProvider, stoppingToken);
+                    await updateSignal.WaitAsync(settings.WorkerPollInterval, stoppingToken);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

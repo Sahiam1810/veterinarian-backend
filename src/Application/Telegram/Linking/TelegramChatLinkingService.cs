@@ -207,6 +207,23 @@ public sealed class TelegramChatLinkingService(
             return new TelegramLinkingOutcome(true, reply);
         }
 
+        var activeUserLink = await unitOfWork.UserLinksRepository.GetByTelegramUserIdAsync(
+            update.TelegramUserId,
+            cancellationToken);
+        var activeChatLink = await unitOfWork.UserLinksRepository.GetByTelegramChatIdAsync(
+            update.TelegramChatId,
+            cancellationToken);
+        if ((activeUserLink is not null && activeUserLink.PersonId != session.PersonId.Value) ||
+            (activeChatLink is not null && activeChatLink.PersonId != session.PersonId.Value))
+        {
+            session.Cancel(now.UtcDateTime);
+            await unitOfWork.LinkingSessionsRepository.UpdateAsync(session, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return new TelegramLinkingOutcome(
+                true,
+                "Este chat ya está vinculado a otra cuenta de Huellitas.");
+        }
+
         var personLink = await unitOfWork.UserLinksRepository.GetByPersonIdAsync(
             session.PersonId.Value,
             cancellationToken);

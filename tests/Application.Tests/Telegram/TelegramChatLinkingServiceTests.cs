@@ -116,6 +116,62 @@ public sealed class TelegramChatLinkingServiceTests
     }
 
     [Fact]
+    public async Task Valid_otp_creates_a_new_link_when_the_previous_chat_link_is_revoked()
+    {
+        var fixture = CreateFixture();
+        var session = OtpSession();
+        var update = ProcessingUpdate(49, "123456");
+        var revoked = TelegramUserLink.Create(
+            Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            1001,
+            1001,
+            Now.UtcDateTime.AddMinutes(-2));
+        revoked.Revoke(Now.UtcDateTime.AddMinutes(-1));
+        fixture.Sessions.GetActiveByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Protector.Verify("123456", Hash).Returns(true);
+        fixture.UserLinks.GetByPersonIdAsync(PersonId, default)
+            .Returns((TelegramUserLink?)null);
+        fixture.UserLinks.GetByTelegramChatIdAsync(1001, default)
+            .Returns((TelegramUserLink?)null);
+
+        var outcome = await fixture.Service.HandleAsync(update, default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Equal(TelegramLinkingSessionStatus.Linked, session.Status);
+        await fixture.UserLinks.Received(1).AddAsync(
+            Arg.Is<TelegramUserLink>(link =>
+                link.PersonId == PersonId && link.TelegramChatId == revoked.TelegramChatId),
+            default);
+    }
+
+    [Fact]
+    public async Task Valid_otp_rejects_a_chat_actively_linked_to_another_person()
+    {
+        var fixture = CreateFixture();
+        var session = OtpSession();
+        var update = ProcessingUpdate(50, "123456");
+        var occupied = TelegramUserLink.Create(
+            Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            2002,
+            1001,
+            Now.UtcDateTime.AddMinutes(-1));
+        fixture.Sessions.GetActiveByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Protector.Verify("123456", Hash).Returns(true);
+        fixture.UserLinks.GetByPersonIdAsync(PersonId, default)
+            .Returns((TelegramUserLink?)null);
+        fixture.UserLinks.GetByTelegramChatIdAsync(1001, default).Returns(occupied);
+
+        var outcome = await fixture.Service.HandleAsync(update, default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Contains("vinculad", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(TelegramLinkingSessionStatus.Cancelled, session.Status);
+        await fixture.UserLinks.DidNotReceive().AddAsync(
+            Arg.Any<TelegramUserLink>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Confirmed_unlink_revokes_the_permanent_link()
     {
         var fixture = CreateFixture();

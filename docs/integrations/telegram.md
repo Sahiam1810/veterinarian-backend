@@ -18,7 +18,7 @@ Telegram__BotUsername=<nombre del bot sin @>
 Telegram__WebhookSecret=secreto-aleatorio-con-letras-numeros-guion-o-guion-bajo
 Telegram__PublicWebhookUrl=https://<url-publica-del-tunel>
 Telegram__LinkCodeTtlMinutes=10
-Telegram__WorkerPollMilliseconds=5000
+Telegram__WorkerPollMilliseconds=30000
 Telegram__ProcessingLeaseSeconds=300
 Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5
@@ -35,7 +35,14 @@ Email__Password=<clave SMTP o clave de aplicación>
 Email__FromAddress=no-reply@huellitas.example
 Email__FromName=Huellitas
 Email__UseTls=true
+Serilog__MinimumLevel__Override__Microsoft.EntityFrameworkCore.Database.Command=Warning
 ```
+
+El worker se despierta inmediatamente cuando el webhook guarda un update.
+`Telegram__WorkerPollMilliseconds` es solamente el intervalo de respaldo para
+recuperar trabajo si una señal local se pierde; aumentarlo a 30000 no agrega
+30 segundos a la respuesta normal. El override de Serilog evita imprimir cada
+consulta exitosa de EF Core y conserva visibles las advertencias y errores.
 
 Genere el pepper una sola vez para el ambiente y consérvelo como secreto:
 
@@ -104,6 +111,11 @@ inactivo. El OTP vence en cinco minutos, permite cinco intentos y no se guarda
 en texto claro. Use `/cancelar` para abandonar una verificación. Para quitar
 una vinculación activa, envíe `/desvincular` y después
 `/desvincular confirmar`.
+
+Desvincular conserva el historial, pero libera la persona, el usuario y el
+chat de Telegram para completar una vinculación nueva. Un chat no vinculado no
+envía mensajes al agente: cualquier saludo o `/start` sin código responde con
+la instrucción de usar `/vincular`.
 
 La vinculación es persistente: no vence cada cinco o quince minutos. La
 variable `Telegram__DelegatedTokenMinutes` controla solamente el JWT interno

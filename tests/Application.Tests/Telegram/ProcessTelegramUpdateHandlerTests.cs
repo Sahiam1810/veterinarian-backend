@@ -35,7 +35,30 @@ public sealed class ProcessTelegramUpdateHandlerTests
         Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
         await fixture.Bot.Received(1).SendTextAsync(
             1001,
-            Arg.Is<string>(text => text.Contains("vincular", StringComparison.OrdinalIgnoreCase)),
+            Arg.Is<string>(text => text.Contains("/vincular", StringComparison.OrdinalIgnoreCase)),
+            default);
+        await fixture.Dispatcher.DidNotReceive().DispatchAsync(
+            Arg.Any<AgentMessageDispatchRequest>(),
+            Arg.Any<AgentConversationContext>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Start_without_link_code_invites_the_user_to_link_before_conversing()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(49, "/start");
+        fixture.Updates.GetByIdAsync(49, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default)
+            .Returns((TelegramUserLink?)null);
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(49), default);
+
+        Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            Arg.Is<string>(text => text.Contains("/vincular", StringComparison.OrdinalIgnoreCase)),
             default);
         await fixture.Dispatcher.DidNotReceive().DispatchAsync(
             Arg.Any<AgentMessageDispatchRequest>(),

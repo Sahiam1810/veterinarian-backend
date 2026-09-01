@@ -20,6 +20,7 @@ public enum IngestTelegramUpdateResult
 
 public sealed class IngestTelegramUpdateHandler(
     ITelegramUnitOfWork unitOfWork,
+    ITelegramUpdateSignal updateSignal,
     TimeProvider timeProvider)
     : IRequestHandler<IngestTelegramUpdateCommand, IngestTelegramUpdateResult>
 {
@@ -46,6 +47,7 @@ public sealed class IngestTelegramUpdateHandler(
             update,
             cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        updateSignal.Notify();
         return IngestTelegramUpdateResult.Accepted;
     }
 }
