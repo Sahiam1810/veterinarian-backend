@@ -68,6 +68,71 @@ public sealed class ProcessTelegramUpdateHandlerTests
     }
 
     [Fact]
+    public async Task Unlinked_user_uses_isolated_guest_context_when_public_mode_is_enabled()
+    {
+        var fixture = CreateFixture();
+        var guestId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var update = ProcessingUpdate(50, "¿Cómo cuido a un cachorro?");
+        fixture.Settings.GuestModeEnabled.Returns(true);
+        fixture.Updates.GetByIdAsync(50, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default)
+            .Returns((TelegramUserLink?)null);
+        fixture.Identity.GetGuest(1001)
+            .Returns(new AgentDelegatedIdentity(guestId, "TelegramGuest", "guest-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "guest-token",
+                default)
+            .Returns(Result("Cuidados generales"));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(50), default);
+
+        await fixture.Dispatcher.Received(1).DispatchAsync(
+            Arg.Is<AgentMessageDispatchRequest>(request =>
+                request.PersonId == guestId && request.Role == "TelegramGuest"),
+            Arg.Is<AgentConversationContext>(context =>
+                context.Channel == "telegram" && !context.IsEscalated),
+            "guest-token",
+            default);
+        await fixture.Context.DidNotReceive().ResolveAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid?>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            Arg.Is<string>(text =>
+                text.Contains("Cuidados generales") && text.Contains("/vincular")),
+            default);
+    }
+
+    [Fact]
+    public async Task Guest_start_explains_both_modes_without_calling_the_agent()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(51, "/start");
+        fixture.Settings.GuestModeEnabled.Returns(true);
+        fixture.Updates.GetByIdAsync(51, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default)
+            .Returns((TelegramUserLink?)null);
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(51), default);
+
+        await fixture.Dispatcher.DidNotReceive().DispatchAsync(
+            Arg.Any<AgentMessageDispatchRequest>(),
+            Arg.Any<AgentConversationContext>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            Arg.Is<string>(text =>
+                text.Contains("invitado", StringComparison.OrdinalIgnoreCase) &&
+                text.Contains("/vincular", StringComparison.OrdinalIgnoreCase)),
+            default);
+    }
+
+    [Fact]
     public async Task Linked_user_reuses_open_conversation_and_sends_agent_response()
     {
         var fixture = CreateFixture();
@@ -185,7 +250,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
             identity,
             bot,
             sender,
-            linking);
+            linking,
+            settings);
     }
 
     private static TelegramInboundUpdate ProcessingUpdate(long id, string text)
@@ -209,7 +275,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
         IAgentDelegatedIdentityProvider Identity,
         ITelegramBotClient Bot,
         ISender Sender,
-        ITelegramChatLinkingService Linking);
+        ITelegramChatLinkingService Linking,
+        ITelegramRuntimeSettings Settings);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

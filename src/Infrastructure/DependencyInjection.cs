@@ -272,6 +272,7 @@ public static class DependencyInjection
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
             return new ConfiguredTelegramRuntimeSettings(
+                options.GuestModeEnabled,
                 options.BotUsername,
                 TimeSpan.FromMinutes(options.LinkCodeTtlMinutes),
                 TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),

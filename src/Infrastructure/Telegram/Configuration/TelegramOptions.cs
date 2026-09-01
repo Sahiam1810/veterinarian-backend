@@ -5,6 +5,7 @@ public sealed class TelegramOptions
     public const string SectionName = "Telegram";
 
     public bool Enabled { get; init; }
+    public bool GuestModeEnabled { get; init; }
     public string BotToken { get; init; } = string.Empty;
     public string BotUsername { get; init; } = string.Empty;
     public string WebhookSecret { get; init; } = string.Empty;
