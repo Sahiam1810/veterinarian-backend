@@ -14,7 +14,7 @@ namespace Api.Diagnostics.Controllers;
 public sealed class DiagnosticsController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los diagnósticos")]
     [EndpointDescription("Retorna el listado de diagnósticos del catálogo clínico. Por defecto solo incluye los diagnósticos activos.")]
     [ProducesResponseType(typeof(IEnumerable<DiagnosticDto>), StatusCodes.Status200OK)]
@@ -30,7 +30,7 @@ public sealed class DiagnosticsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene un diagnóstico por su ID")]
     [EndpointDescription("Retorna la información de un diagnóstico específico por su identificador GUID.")]
     [ProducesResponseType(typeof(DiagnosticDto), StatusCodes.Status200OK)]
