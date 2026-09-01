@@ -1,4 +1,8 @@
 -- Matriz inicial de permisos por rol y modulo (ROLE_PERMISSIONS).
+SET DEFINE OFF;
+ALTER SESSION SET NLS_LANGUAGE = 'SPANISH';
+ALTER SESSION SET NLS_TERRITORY = 'SPAIN';
+
 -- Este script se ejecuta directamente contra la base de datos Oracle
 -- (por ejemplo con SQL*Plus o SQL Developer), fuera de la aplicacion .NET,
 -- igual que roles_seed.sql.

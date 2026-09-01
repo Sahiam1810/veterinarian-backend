@@ -16,6 +16,28 @@ public sealed class UpdateVaccinationCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken)
             ?? throw new NotFoundException("Registro de vacunación no encontrado.");
 
+        if (request.UserAccountId.HasValue)
+        {
+            var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
+                request.UserAccountId.Value, cancellationToken)
+                ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
+
+            var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(
+                account.UserId, cancellationToken);
+
+            if (client is not null)
+            {
+                var clientPets = await unitOfWork.ClientPetsRepository.GetByClientIdAsync(
+                    client.Id, cancellationToken);
+
+                var ownsVaccination = clientPets.Any(cp => cp.Id == vaccination.ClientPetId);
+                if (!ownsVaccination)
+                {
+                    throw new NotFoundException("Registro de vacunación no encontrado.");
+                }
+            }
+        }
+
         vaccination.Update(
             request.ClientPetId,
             request.RecordId,

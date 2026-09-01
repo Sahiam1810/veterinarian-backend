@@ -25,8 +25,10 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
         [FromBody] CreateMedicalRecordRequest request,
         CancellationToken cancellationToken)
     {
+        TryGetUserAccountId(out var userAccountId);
+
         var id = await sender.Send(
-            request.ToCommand(),
+            request.ToCommand(userAccountId),
             cancellationToken);
 
         return StatusCode(

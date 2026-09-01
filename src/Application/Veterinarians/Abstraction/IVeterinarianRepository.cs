@@ -11,6 +11,10 @@ public interface IVeterinarianRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<Veterinarian?> GetByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByLicenseNumberAsync(
         string licenseNumber,
         CancellationToken cancellationToken,

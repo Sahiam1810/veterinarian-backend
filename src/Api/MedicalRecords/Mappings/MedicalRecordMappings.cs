@@ -7,7 +7,8 @@ namespace Api.MedicalRecords.Mappings;
 public static class MedicalRecordMappings
 {
     public static CreateMedicalRecordCommand ToCommand(
-        this CreateMedicalRecordRequest request)
+        this CreateMedicalRecordRequest request,
+        Guid? userAccountId = null)
     {
         return new CreateMedicalRecordCommand(
             request.ClientPetId,
@@ -16,7 +17,8 @@ public static class MedicalRecordMappings
             request.Symptoms,
             request.Treatment,
             request.WeightAtVisit,
-            request.Temperature);
+            request.Temperature,
+            userAccountId);
     }
 
     public static MedicalRecordResponse ToResponse(

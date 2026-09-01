@@ -51,6 +51,36 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .OrderByDescending(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<Appointment>> GetByVeterinarianIdAsync(
+        Guid veterinarianId,
+        DateTime? fromUtc = null,
+        DateTime? toUtc = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<Appointment>()
+            .Include(x => x.ClientPet)
+            .Include(x => x.Veterinarian)
+            .Include(x => x.Service)
+            .Include(x => x.Status)
+            .Include(x => x.Availability)
+            .Where(x => x.VeterinarianId == veterinarianId);
+
+        if (fromUtc.HasValue)
+        {
+            query = query.Where(x => x.ScheduledStart >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            query = query.Where(x => x.ScheduledStart <= toUtc.Value);
+        }
+
+        return await query
+            .AsNoTracking()
+            .OrderByDescending(x => x.ScheduledStart)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledBetweenAsync(
         DateTime fromUtc,
         DateTime toUtc,

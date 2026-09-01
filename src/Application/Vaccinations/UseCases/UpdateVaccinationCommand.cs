@@ -9,4 +9,5 @@ public sealed record UpdateVaccinationCommand(
     string VaccineName,
     int DoseNumber,
     DateTime ApplicationDate,
-    DateTime? NextDoseDate) : IRequest;
+    DateTime? NextDoseDate,
+    Guid? UserAccountId = null) : IRequest;

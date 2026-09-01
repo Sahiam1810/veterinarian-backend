@@ -15,10 +15,10 @@ public sealed class GetVaccinationByIdQueryHandler(IUnitOfWork unitOfWork)
         var vaccination = await unitOfWork.VaccinationsRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Registro de vacunación no encontrado.");
 
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken);
-        var client = account is null
-            ? null
-            : await unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
+        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken)
+            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
+
+        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
 
         // Sin perfil de Cliente (personal): ve el registro sin restricción.
         if (client is null)
