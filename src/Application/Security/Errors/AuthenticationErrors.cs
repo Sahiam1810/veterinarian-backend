@@ -13,10 +13,6 @@ public static class AuthenticationErrors
         "Authentication.InvalidRefreshToken",
         GenericDescription);
 
-    public static readonly Error RefreshTokenReuse = new(
-        "Authentication.RefreshTokenReuse",
-        GenericDescription);
-
     public static readonly Error UserAlreadyExists = new(
         "Authentication.UserAlreadyExists",
         GenericDescription
