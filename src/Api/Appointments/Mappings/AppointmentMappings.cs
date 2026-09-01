@@ -1,5 +1,6 @@
 using Api.Appointments.Dtos;
 using Application.Appointments.UseCases;
+using Application.Common.Models;
 using Domain.Appointments.Entities;
 
 namespace Api.Appointments.Mappings;
@@ -60,5 +61,13 @@ public static class AppointmentMappings
         return entities
             .Select(e => e.ToResponse())
             .ToArray();
+    }
+
+    public static PaginatedAppointmentResponse ToResponse(
+        this PaginatedResult<Appointment> result)
+    {
+        return new PaginatedAppointmentResponse(
+            result.Items.ToResponse(),
+            result.Pagination);
     }
 }

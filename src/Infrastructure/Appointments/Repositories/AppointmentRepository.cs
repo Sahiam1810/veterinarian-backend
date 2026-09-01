@@ -1,4 +1,5 @@
 using Application.Appointments.Abstraction;
+using Application.Common.Models;
 using Domain.Appointments.Entities;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +80,47 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .AsNoTracking()
             .OrderByDescending(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PaginatedResult<Appointment>> GetByVeterinarianIdPagedAsync(
+        Guid veterinarianId,
+        DateTime? fromUtc,
+        DateTime? toUtc,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<Appointment>()
+            .Include(x => x.ClientPet)
+            .Include(x => x.Veterinarian)
+            .Include(x => x.Service)
+            .Include(x => x.Status)
+            .Include(x => x.Availability)
+            .Where(x => x.VeterinarianId == veterinarianId);
+
+        if (fromUtc.HasValue)
+        {
+            query = query.Where(x => x.ScheduledStart >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            query = query.Where(x => x.ScheduledStart <= toUtc.Value);
+        }
+
+        var totalItems = await query.CountAsync(cancellationToken);
+        var totalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSize);
+
+        var items = await query
+            .AsNoTracking()
+            .OrderByDescending(x => x.ScheduledStart)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedResult<Appointment>(
+            items,
+            new PaginationMetadata(page, pageSize, totalItems, totalPages));
     }
 
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledBetweenAsync(

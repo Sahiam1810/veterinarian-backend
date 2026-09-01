@@ -8,7 +8,7 @@ public static class MedicalRecordMappings
 {
     public static CreateMedicalRecordCommand ToCommand(
         this CreateMedicalRecordRequest request,
-        Guid? userAccountId = null)
+        Guid userAccountId)
     {
         return new CreateMedicalRecordCommand(
             request.ClientPetId,

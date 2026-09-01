@@ -10,4 +10,4 @@ public sealed record CreateMedicalRecordCommand(
     string? Treatment,
     decimal? WeightAtVisit,
     decimal? Temperature,
-    Guid? UserAccountId = null) : IRequest<Guid>;
+    Guid UserAccountId) : IRequest<Guid>;

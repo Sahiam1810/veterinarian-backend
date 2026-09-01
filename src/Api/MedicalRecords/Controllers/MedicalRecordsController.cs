@@ -21,11 +21,15 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
     [EndpointDescription("Registra una nueva historia médica para la mascota de un cliente. Una vez creada, la historia clínica queda inmutable como parte del historial de la mascota.")]
     [ProducesResponseType(typeof(CreateMedicalRecordResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CreateMedicalRecordResponse>> Create(
         [FromBody] CreateMedicalRecordRequest request,
         CancellationToken cancellationToken)
     {
-        TryGetUserAccountId(out var userAccountId);
+        if (!TryGetUserAccountId(out var userAccountId))
+        {
+            return Unauthorized();
+        }
 
         var id = await sender.Send(
             request.ToCommand(userAccountId),

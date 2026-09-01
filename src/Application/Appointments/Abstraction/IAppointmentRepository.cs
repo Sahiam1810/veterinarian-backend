@@ -1,3 +1,4 @@
+using Application.Common.Models;
 using Domain.Appointments.Entities;
 
 namespace Application.Appointments.Abstraction;
@@ -19,6 +20,14 @@ public interface IAppointmentRepository
         Guid veterinarianId,
         DateTime? fromUtc = null,
         DateTime? toUtc = null,
+        CancellationToken cancellationToken = default);
+
+    Task<PaginatedResult<Appointment>> GetByVeterinarianIdPagedAsync(
+        Guid veterinarianId,
+        DateTime? fromUtc,
+        DateTime? toUtc,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<Appointment>> GetScheduledBetweenAsync(
