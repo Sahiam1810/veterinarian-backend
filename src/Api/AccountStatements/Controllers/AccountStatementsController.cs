@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Api.AccountStatements.Dtos;
 using Api.AccountStatements.Mappings;
 using Api.Common.Security;
@@ -32,6 +33,29 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
         return StatusCode(
             StatusCodes.Status201Created,
             new CreateAccountStatementResponse(statementId));
+    }
+
+    // GET /api/accountstatements/mine
+    [HttpGet("mine")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [EndpointSummary("Obtiene los estados de cuenta del cliente autenticado")]
+    [EndpointDescription("Retorna los estados de cuenta asociados a la cuenta del cliente correspondiente al usuario autenticado actual (portal de dueño).")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<AccountStatementResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyCollection<AccountStatementResponse>>> GetMine(
+        CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var statements = await sender.Send(
+            new GetMyAccountStatementsQuery(userAccountId),
+            cancellationToken);
+
+        return Ok(statements.ToResponse());
     }
 
     [HttpGet("{id:guid}")]
