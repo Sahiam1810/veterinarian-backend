@@ -528,6 +528,7 @@ public sealed class ChatConversationTests
 
         public IRolesRepository RolesRepository => null!;
         public Application.RolePermissions.Abstraction.IRolePermissionsRepository RolePermissionsRepository => null!;
+        public Application.UserPermissions.Abstraction.IUserPermissionsRepository UserPermissionsRepository => null!;
         public Application.Modules.Abstraction.IModulesRepository ModulesRepository => null!;
         public ISpeciesRepository SpeciesRepository => null!;
         public IRaceRepository RacesRepository => null!;

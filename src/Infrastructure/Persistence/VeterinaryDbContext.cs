@@ -39,6 +39,7 @@ using Domain.Vaccinations.Entities;
 using Domain.Notifications.Entities;
 using Domain.Modules.Entities;
 using RolePermissionEntity = Domain.RolePermissions.Entities.RolePermission;
+using UserPermissionEntity = Domain.UserPermissions.Entities.UserPermission;
 
 
 namespace Infrastructure.Persistence;
@@ -109,6 +110,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<ModuleEntity> Modules => Set<ModuleEntity>();
 
     public DbSet<RolePermissionEntity> RolePermissions => Set<RolePermissionEntity>();
+
+    public DbSet<UserPermissionEntity> UserPermissions => Set<UserPermissionEntity>();
 
 
 

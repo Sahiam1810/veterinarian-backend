@@ -1,4 +1,4 @@
-using Application.RolePermissions.UseCases;
+using Application.Permissions.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 
@@ -18,6 +18,13 @@ public sealed class PermissionAuthorizationHandler
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
+        // El SuperAdmin no participa de la matriz de permisos: se salta todo.
+        if (context.User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         var roleIdClaim = context.User.FindFirst("role_id")?.Value;
 
         if (!Guid.TryParse(roleIdClaim, out var roleId))
@@ -25,13 +32,12 @@ public sealed class PermissionAuthorizationHandler
             return;
         }
 
-        var permission = await _sender.Send(
-            new GetRolePermissionQuery(roleId, requirement.ModuleName));
+        // El permiso puntual por usuario (person_id) es opcional: si no viene
+        // o no hay fila para ese usuario, el permiso efectivo queda igual al del rol.
+        Guid.TryParse(context.User.FindFirst("person_id")?.Value, out var userId);
 
-        if (permission is null)
-        {
-            return;
-        }
+        var permission = await _sender.Send(
+            new GetEffectivePermissionQuery(roleId, userId, requirement.ModuleName));
 
         var granted = requirement.Action switch
         {

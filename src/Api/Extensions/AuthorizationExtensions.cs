@@ -21,7 +21,7 @@ public static class AuthorizationExtensions
 
             options.AddPolicy(
                 AuthorizationPolicies.AdminOnly,
-                policy => policy.RequireRole("Administrador"));
+                RoleOrSuperAdmin("Administrador"));
             // El SuperAdmin no es un rol de la tabla ROLES: se identifica por
             // el claim "super_admin" que emite JwtTokenIssuer.IssueForSuperAdmin.
             options.AddPolicy(
@@ -29,19 +29,19 @@ public static class AuthorizationExtensions
                 policy => policy.RequireClaim("super_admin", "true"));
             options.AddPolicy(
                 AuthorizationPolicies.VeterinarianOnly,
-                policy => policy.RequireRole("Veterinario"));
+                RoleOrSuperAdmin("Veterinario"));
             options.AddPolicy(
                 AuthorizationPolicies.ReceptionistOnly,
-                policy => policy.RequireRole("Recepcionista"));
+                RoleOrSuperAdmin("Recepcionista"));
             options.AddPolicy(
                 AuthorizationPolicies.AssistantOnly,
-                policy => policy.RequireRole("Auxiliar"));
+                RoleOrSuperAdmin("Auxiliar"));
             options.AddPolicy(
                 AuthorizationPolicies.ClientOnly,
-                policy => policy.RequireRole("Cliente"));
+                RoleOrSuperAdmin("Cliente"));
             options.AddPolicy(
                 AuthorizationPolicies.StaffOnly,
-                policy => policy.RequireRole(
+                RoleOrSuperAdmin(
                     "Administrador",
                     "Veterinario",
                     "Recepcionista",
@@ -50,25 +50,25 @@ public static class AuthorizationExtensions
             // Políticas combinadas: acciones que corresponden a más de un rol.
             options.AddPolicy(
                 AuthorizationPolicies.AdminOrReceptionist,
-                policy => policy.RequireRole("Administrador", "Recepcionista"));
+                RoleOrSuperAdmin("Administrador", "Recepcionista"));
             options.AddPolicy(
                 AuthorizationPolicies.AdminOrVeterinarian,
-                policy => policy.RequireRole("Administrador", "Veterinario"));
+                RoleOrSuperAdmin("Administrador", "Veterinario"));
             options.AddPolicy(
                 AuthorizationPolicies.ClinicalStaffOnly,
-                policy => policy.RequireRole(
+                RoleOrSuperAdmin(
                     "Administrador",
                     "Veterinario",
                     "Recepcionista"));
             options.AddPolicy(
                 AuthorizationPolicies.FrontDeskStaffOnly,
-                policy => policy.RequireRole(
+                RoleOrSuperAdmin(
                     "Administrador",
                     "Recepcionista",
                     "Auxiliar"));
             options.AddPolicy(
                 AuthorizationPolicies.ClinicalHistoryReadOnly,
-                policy => policy.RequireRole(
+                RoleOrSuperAdmin(
                     "Administrador",
                     "Veterinario",
                     "Recepcionista",
@@ -84,4 +84,12 @@ public static class AuthorizationExtensions
 
         return services;
     }
+
+    // El SuperAdmin no tiene fila en ROLES (no es un rol, es un claim a nivel
+    // de usuario): cualquier policy basada en rol debe dejarlo pasar igual,
+    // sin que cada endpoint tenga que saber de su existencia.
+    private static Action<AuthorizationPolicyBuilder> RoleOrSuperAdmin(params string[] roles) =>
+        policy => policy.RequireAssertion(context =>
+            roles.Any(context.User.IsInRole) ||
+            context.User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"));
 }

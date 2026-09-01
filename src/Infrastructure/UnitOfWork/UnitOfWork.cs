@@ -12,6 +12,7 @@ using Application.Races.Abstraction;
 using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.RolePermissions.Abstraction;
+using Application.UserPermissions.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
 using Application.TypeServices.Abstraction;
@@ -72,6 +73,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IRolesRepository rolesRepository,
         IModulesRepository modulesRepository,
         IRolePermissionsRepository rolePermissionsRepository,
+        IUserPermissionsRepository userPermissionsRepository,
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
         IUsersRepository usersRepository,
@@ -130,6 +132,7 @@ public sealed class UnitOfWork : IUnitOfWork
         RolesRepository = rolesRepository;
         ModulesRepository = modulesRepository;
         RolePermissionsRepository = rolePermissionsRepository;
+        UserPermissionsRepository = userPermissionsRepository;
         SpeciesRepository = speciesRepository;
         RacesRepository = racesRepository;
         PetsRepository = petsRepository;
@@ -191,6 +194,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IRolesRepository RolesRepository { get; }
     public IModulesRepository ModulesRepository { get; }
     public IRolePermissionsRepository RolePermissionsRepository { get; }
+    public IUserPermissionsRepository UserPermissionsRepository { get; }
     public ISpeciesRepository SpeciesRepository { get; }
     public IRaceRepository RacesRepository { get; }
     public IPetRepository PetsRepository { get; }

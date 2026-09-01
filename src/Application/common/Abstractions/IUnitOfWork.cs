@@ -10,6 +10,7 @@ using Application.Races.Abstraction;
 using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.RolePermissions.Abstraction;
+using Application.UserPermissions.Abstraction;
 using Application.Species.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
@@ -73,6 +74,8 @@ public interface IUnitOfWork
     IModulesRepository ModulesRepository { get; }
 
     IRolePermissionsRepository RolePermissionsRepository { get; }
+
+    IUserPermissionsRepository UserPermissionsRepository { get; }
 
     ISpeciesRepository SpeciesRepository { get; }
 

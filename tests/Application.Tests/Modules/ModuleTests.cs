@@ -244,6 +244,7 @@ public sealed class ModuleTests
         public IModulesRepository ModulesRepository { get; }
 
         public IRolePermissionsRepository RolePermissionsRepository => null!;
+        public Application.UserPermissions.Abstraction.IUserPermissionsRepository UserPermissionsRepository => null!;
         public Application.Roles.Abstraction.IRolesRepository RolesRepository => null!;
         public Application.Species.Abstraction.ISpeciesRepository SpeciesRepository => null!;
         public Application.Races.Abstraction.IRaceRepository RacesRepository => null!;
