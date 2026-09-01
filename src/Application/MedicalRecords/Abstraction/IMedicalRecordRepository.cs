@@ -11,6 +11,10 @@ public interface IMedicalRecordRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyCollection<MedicalRecord>> GetByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         MedicalRecord medicalRecord,
         CancellationToken cancellationToken);

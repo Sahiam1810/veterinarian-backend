@@ -3,5 +3,5 @@ using MediatR;
 
 namespace Application.Vaccinations.UseCases;
 
-public sealed record GetAllVaccinationsQuery
+public sealed record GetAllVaccinationsQuery(Guid UserAccountId)
     : IRequest<IReadOnlyCollection<Vaccination>>;

@@ -33,6 +33,18 @@ public sealed class MedicalRecordRepository : IMedicalRecordRepository
             .Include(x => x.Diagnostic)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyCollection<MedicalRecord>> GetByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<MedicalRecord>()
+            .Include(x => x.ClientPet)
+            .Include(x => x.Appointment)
+            .Include(x => x.Diagnostic)
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(
         MedicalRecord medicalRecord,
         CancellationToken cancellationToken = default)

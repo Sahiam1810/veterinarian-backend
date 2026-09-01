@@ -31,6 +31,17 @@ public sealed class VaccinationRepository : IVaccinationRepository
             .Include(x => x.Record)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyCollection<Vaccination>> GetByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Vaccination>()
+            .Include(x => x.ClientPet)
+            .Include(x => x.Record)
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .AsNoTracking()
+            .OrderByDescending(x => x.ApplicationDate)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(
         Vaccination vaccination,
         CancellationToken cancellationToken = default)
