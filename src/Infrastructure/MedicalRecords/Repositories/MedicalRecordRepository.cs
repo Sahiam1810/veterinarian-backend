@@ -50,4 +50,11 @@ public sealed class MedicalRecordRepository : IMedicalRecordRepository
         CancellationToken cancellationToken = default)
         => await _context.Set<MedicalRecord>()
             .AddAsync(medicalRecord, cancellationToken);
+
+    public Task<bool> ExistsByAppointmentIdAsync(
+        Guid appointmentId,
+        CancellationToken cancellationToken = default)
+        => _context.Set<MedicalRecord>()
+            .AsNoTracking()
+            .AnyAsync(x => x.AppointmentId == appointmentId, cancellationToken);
 }

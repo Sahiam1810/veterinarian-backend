@@ -18,4 +18,8 @@ public interface IMedicalRecordRepository
     Task AddAsync(
         MedicalRecord medicalRecord,
         CancellationToken cancellationToken);
+
+    Task<bool> ExistsByAppointmentIdAsync(
+        Guid appointmentId,
+        CancellationToken cancellationToken);
 }

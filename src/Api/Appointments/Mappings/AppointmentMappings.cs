@@ -1,6 +1,7 @@
 using Api.Appointments.Dtos;
 using Application.Appointments.UseCases;
 using Application.Common.Models;
+using Application.MedicalRecords.UseCases;
 using Domain.Appointments.Entities;
 
 namespace Api.Appointments.Mappings;
@@ -19,6 +20,45 @@ public static class AppointmentMappings
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes);
+    }
+
+    public static CreateAppointmentMedicalRecordCommand ToCommand(
+        this CreateAppointmentMedicalRecordRequest request,
+        Guid appointmentId,
+        Guid actorUserAccountId,
+        bool enforceVeterinarianOwnership)
+    {
+        IReadOnlyCollection<CreateAppointmentMedicalRecordVaccinationItem>? vaccinations = null;
+        if (request.Vaccinations is not null)
+        {
+            vaccinations = request.Vaccinations
+                .Select(v => new CreateAppointmentMedicalRecordVaccinationItem(
+                    v.VaccineName,
+                    v.DoseNumber,
+                    v.ApplicationDate,
+                    v.NextDoseDate))
+                .ToArray();
+        }
+
+        return new CreateAppointmentMedicalRecordCommand(
+            appointmentId,
+            request.DiagnosticId,
+            request.Symptoms,
+            request.Treatment,
+            request.WeightAtVisit,
+            request.Temperature,
+            vaccinations,
+            actorUserAccountId,
+            enforceVeterinarianOwnership);
+    }
+
+    public static CreateAppointmentMedicalRecordResponse ToResponse(
+        this CreateAppointmentMedicalRecordResult result)
+    {
+        return new CreateAppointmentMedicalRecordResponse(
+            result.MedicalRecordId,
+            result.AppointmentId,
+            result.VaccinationIds);
     }
 
     public static UpdateAppointmentCommand ToCommand(
