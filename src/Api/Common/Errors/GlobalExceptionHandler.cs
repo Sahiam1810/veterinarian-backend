@@ -96,6 +96,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message, null),
             UnauthorizedException unauthorized => (StatusCodes.Status401Unauthorized, unauthorized.Message, null),
             UnauthorizedAccessException unauthorizedAccess => (StatusCodes.Status401Unauthorized, unauthorizedAccess.Message, null),
+            ForbiddenException forbidden => (StatusCodes.Status403Forbidden, forbidden.Message, null),
             NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, null),

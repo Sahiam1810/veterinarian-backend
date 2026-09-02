@@ -16,6 +16,13 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken)
             ?? throw new NotFoundException("Cita médica no encontrada.");
 
+        await AppointmentVeterinarianOwnership.EnsureAsync(
+            unitOfWork,
+            appointment,
+            request.ActorUserAccountId,
+            request.EnforceVeterinarianOwnership,
+            cancellationToken);
+
         appointment.Update(
             request.ClientPetId,
             request.VeterinarianId,

@@ -101,13 +101,22 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     [EndpointSummary("Obtiene una cita médica por su ID")]
     [EndpointDescription("Retorna la información detallada de una cita médica específica.")]
     [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AppointmentResponse>> GetById(
         Guid id,
         CancellationToken cancellationToken)
     {
+        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        {
+            return Unauthorized();
+        }
+
         var appointment = await sender.Send(
-            new GetAppointmentByIdQuery(id),
+            new GetAppointmentByIdQuery(
+                id,
+                actorUserAccountId,
+                ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
         return Ok(appointment.ToResponse());
@@ -119,6 +128,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     [EndpointDescription("Aplica una transición de estado permitida sobre la cita y registra el historial correspondiente.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateStatus(
@@ -126,8 +136,16 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         [FromBody] UpdateAppointmentStatusRequest request,
         CancellationToken cancellationToken)
     {
+        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        {
+            return Unauthorized();
+        }
+
         await sender.Send(
-            request.ToCommand(appointmentId),
+            request.ToCommand(
+                appointmentId,
+                actorUserAccountId,
+                ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
         return NoContent();
@@ -139,14 +157,23 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     [EndpointDescription("Modifica los datos de una cita médica previamente registrada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateAppointmentRequest request,
         CancellationToken cancellationToken)
     {
+        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        {
+            return Unauthorized();
+        }
+
         await sender.Send(
-            request.ToCommand(id),
+            request.ToCommand(
+                id,
+                actorUserAccountId,
+                ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
         return NoContent();
@@ -167,5 +194,26 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
             cancellationToken);
 
         return NoContent();
+    }
+
+    // Con MapInboundClaims=false el subject queda como "sub" (y RoleClaimType="role").
+    // ClaimTypes.NameIdentifier se mantiene por compatibilidad si algún middleware lo remapea.
+    private bool TryGetActorUserAccountId(out Guid actorUserAccountId)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return Guid.TryParse(subject, out actorUserAccountId);
+    }
+
+    // Solo "Veterinario" aplica ownership. SuperAdmin (claim super_admin=true) y
+    // Administrador/Recepcionista no filtran por veterinario asignado.
+    private bool ShouldEnforceVeterinarianOwnership()
+    {
+        if (User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        {
+            return false;
+        }
+
+        var role = User.FindFirstValue("role");
+        return string.Equals(role, "Veterinario", StringComparison.Ordinal);
     }
 }
