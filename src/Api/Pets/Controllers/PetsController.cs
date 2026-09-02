@@ -42,6 +42,38 @@ public class PetsController : ControllerBase
         return Ok(pets.Select(p => p.ToDto()).ToList());
     }
 
+    [HttpPost("mine")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [EndpointSummary("Registra una mascota para el cliente autenticado")]
+    [EndpointDescription("Crea la mascota y la asociación de propietario principal usando exclusivamente la identidad del JWT.")]
+    [ProducesResponseType(typeof(OwnedPetProfileResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OwnedPetProfileResponseDto>> RegisterMine(
+        [FromBody] CreateOwnedPetDto dto,
+        CancellationToken ct)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var profile = await _mediator.Send(new RegisterMyPetCommand(
+            userAccountId,
+            dto.Name,
+            dto.Age,
+            dto.Gender,
+            dto.Weight,
+            dto.Observations,
+            dto.SpeciesId,
+            dto.RaceId), ct);
+
+        return CreatedAtAction(nameof(GetMine), profile.ToDto());
+    }
+
     [HttpPatch("mine/{petId:guid}")]
     [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
     [EndpointSummary("Actualiza parcialmente una mascota del cliente autenticado")]

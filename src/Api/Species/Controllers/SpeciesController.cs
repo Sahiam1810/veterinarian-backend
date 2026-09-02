@@ -15,7 +15,7 @@ namespace Api.Species.Controllers;
 public sealed class SpeciesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [RequirePermission("Especies y Razas", PermissionAction.View)]
+    [Authorize]
     [EndpointSummary("Obtiene todas las especies")]
     [EndpointDescription("Retorna una lista con todas las especies registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<SpeciesResponseDto>), StatusCodes.Status200OK)]
