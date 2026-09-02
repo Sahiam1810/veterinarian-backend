@@ -243,11 +243,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(100)")
                         .HasColumnName("NOTES");
 
-                    b.Property<string>("RequesterPhoneNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("REQUESTER_PHONE_NUMBER");
-
                     b.Property<DateTime>("ScheduledEnd")
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("SCHEDULED_END");
@@ -955,11 +950,6 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("NVARCHAR2(20)")
                         .HasColumnName("IDENTIFICATION_NUMBER");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("NVARCHAR2(20)")
-                        .HasColumnName("PHONE_NUMBER");
 
                     b.Property<DateTime>("RegistrationDate")
                         .HasColumnType("TIMESTAMP(7)")
@@ -2346,78 +2336,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("RecordId");
 
                     b.ToTable("VACCINATIONS", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Verification.Entities.AppointmentActionVerificationSession", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("ID");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("ACTION");
-
-                    b.Property<string>("ActionPayload")
-                        .HasMaxLength(1000)
-                        .HasColumnType("VARCHAR2(1000)")
-                        .HasColumnName("ACTION_PAYLOAD");
-
-                    b.Property<string>("AppointmentId")
-                        .IsRequired()
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("APPOINTMENT_ID");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("NUMBER(10)")
-                        .HasColumnName("ATTEMPTS");
-
-                    b.Property<string>("Channel")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("CHANNEL");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("DestinationHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("VARCHAR2(64)")
-                        .HasColumnName("DESTINATION_HASH");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("EXPIRES_AT");
-
-                    b.Property<string>("OtpHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("VARCHAR2(64)")
-                        .HasColumnName("OTP_HASH");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("VARCHAR2(20)")
-                        .HasColumnName("STATUS");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TIMESTAMP")
-                        .HasColumnName("UPDATED_AT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DestinationHash")
-                        .HasDatabaseName("IX_APPT_ACTION_VERIF_DEST");
-
-                    b.HasIndex("AppointmentId", "Action", "Status")
-                        .HasDatabaseName("IX_APPT_ACTION_VERIF_ACTIVE");
-
-                    b.ToTable("APPOINTMENT_ACTION_VERIFICATION_SESSIONS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>
