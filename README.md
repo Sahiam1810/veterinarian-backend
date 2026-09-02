@@ -563,6 +563,24 @@ Las variables requeridas están documentadas en `.env.example`. La guía de
 BotFather, túnel HTTPS, `setWebhook` y prueba desde Swagger está en
 [`docs/integrations/telegram.md`](docs/integrations/telegram.md).
 
+Un chat sin vincular puede usar `/registrar` para crear una cuenta de cliente.
+El bot solicita únicamente el correo y lo verifica mediante OTP. Después envía
+un enlace HTTPS de un solo uso donde se diligencian nombre, identificación,
+usuario y contraseña; esos datos no pasan por Telegram ni por el agente Python.
+Al completar el formulario, el backend crea `Users`, `UserAccounts`,
+`UserCredentials`, `Clients` y `TelegramUserLinks` en una transacción.
+
+Para generar la clave local que protege el correo verificado:
+
+```powershell
+[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+Configure el resultado en `Telegram__RegistrationProtectionKeyBase64` y use
+como `Telegram__RegistrationCompletionUrl` la URL pública HTTPS del backend
+seguida de `/telegram/registration/complete`. Cuando exista el frontend
+definitivo, esa URL podrá cambiarse sin mover la lógica de registro de .NET.
+
 Por ahora, los identificadores generados se mantienen en memoria con TTL y
 capacidad limitada. No representan historial canónico y se pierden al reiniciar
 la API. El futuro módulo especializado de conversaciones reemplazará este

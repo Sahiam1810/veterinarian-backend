@@ -6,6 +6,7 @@ using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
 using Application.Telegram.Linking;
 using Application.Telegram.Messages;
+using Application.Telegram.Registration;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
 using MediatR;
@@ -22,6 +23,7 @@ public sealed class ProcessTelegramUpdateHandler(
     IAgentDelegatedIdentityProvider identityProvider,
     ITelegramBotClient botClient,
     ISender sender,
+    ITelegramRegistrationService registrationService,
     ITelegramChatLinkingService linkingService,
     ITelegramRuntimeSettings settings,
     TimeProvider timeProvider,
@@ -29,11 +31,11 @@ public sealed class ProcessTelegramUpdateHandler(
 {
     private const string LinkingRequiredReply =
         "¡Hola! Para proteger tu información, primero debes vincular este chat una sola vez. " +
-        "Envía /vincular para comenzar.";
+        "Envía /vincular si ya tienes cuenta o /registrar si necesitas crearla.";
     private const string GuestStartReply =
         "¡Hola! Puedes hacer preguntas veterinarias generales como invitado. " +
-        "Para consultar tus mascotas o realizar operaciones, envía /vincular; " +
-        "si aún no tienes una cuenta, deberás crearla de forma segura en la aplicación.";
+        "Para consultar tus mascotas o realizar operaciones, envía /vincular si ya tienes cuenta " +
+        "o /registrar para crearla de forma segura.";
 
     public async Task Handle(
         ProcessTelegramUpdateCommand request,
@@ -71,6 +73,16 @@ public sealed class ProcessTelegramUpdateHandler(
             if (messageText.StartsWith("/start ", StringComparison.Ordinal))
             {
                 await ProcessLinkCodeAsync(update, messageText[7..].Trim(), cancellationToken);
+                return;
+            }
+
+            var registrationOutcome = await registrationService.HandleAsync(update, cancellationToken);
+            if (registrationOutcome.Consumed)
+            {
+                await DeliverAsync(
+                    update,
+                    registrationOutcome.Reply ?? "Solicitud procesada.",
+                    cancellationToken);
                 return;
             }
 

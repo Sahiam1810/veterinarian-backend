@@ -19,4 +19,11 @@ public sealed class TelegramOptions
     public int OtpMaximumAttempts { get; init; } = 5;
     public int OtpResendSeconds { get; init; } = 60;
     public string OtpPepperBase64 { get; init; } = string.Empty;
+    public bool RegistrationEnabled { get; init; }
+    public string RegistrationCompletionUrl { get; init; } = string.Empty;
+    public int RegistrationOtpTtlMinutes { get; init; } = 10;
+    public int RegistrationTokenTtlMinutes { get; init; } = 15;
+    public int RegistrationMaxOtpAttempts { get; init; } = 3;
+    public int RegistrationResendSeconds { get; init; } = 60;
+    public string RegistrationProtectionKeyBase64 { get; init; } = string.Empty;
 }

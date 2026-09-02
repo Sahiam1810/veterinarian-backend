@@ -77,6 +77,7 @@ using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Linking;
+using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
 using Infrastructure.ChatConversationAssignments.Repository;
@@ -96,6 +97,7 @@ using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
+using Application.Security.Registration;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
@@ -240,17 +242,28 @@ public static class DependencyInjection
         services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
         services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
+        services.AddScoped<ITelegramRegistrationSessionRepository, TelegramRegistrationSessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
         services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
+        services.AddScoped<ITelegramRegistrationService, TelegramRegistrationService>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
+        services.AddSingleton<ITelegramRegistrationProtector>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
+            var key = options.RegistrationEnabled
+                ? options.RegistrationProtectionKeyBase64
+                : Convert.ToBase64String(new byte[32]);
+            return new TelegramRegistrationProtector(key);
+        });
         services.AddSingleton<ITelegramOtpProtector>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
             return new TelegramOtpProtector(options.OtpPepperBase64);
         });
         services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
+        services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
         services.AddScoped<ITelegramVerificationCodeSender, SmtpTelegramVerificationCodeSender>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
@@ -281,7 +294,13 @@ public static class DependencyInjection
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes),
                 TimeSpan.FromMinutes(options.OtpTtlMinutes),
                 options.OtpMaximumAttempts,
-                TimeSpan.FromSeconds(options.OtpResendSeconds));
+                TimeSpan.FromSeconds(options.OtpResendSeconds),
+                options.RegistrationEnabled,
+                options.RegistrationCompletionUrl,
+                TimeSpan.FromMinutes(options.RegistrationOtpTtlMinutes),
+                TimeSpan.FromMinutes(options.RegistrationTokenTtlMinutes),
+                options.RegistrationMaxOtpAttempts,
+                TimeSpan.FromSeconds(options.RegistrationResendSeconds));
         });
 
         var telegramOptions = configuration
@@ -338,6 +357,7 @@ public static class DependencyInjection
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IClientAccountRegistrationService, ClientAccountRegistrationService>();
 
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()

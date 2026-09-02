@@ -6,4 +6,5 @@ public static class RateLimitPolicies
     public const string Refresh = "Refresh";
     public const string Register = "Register";
     public const string TelegramWebhook = "TelegramWebhook";
+    public const string TelegramRegistration = "TelegramRegistration";
 }

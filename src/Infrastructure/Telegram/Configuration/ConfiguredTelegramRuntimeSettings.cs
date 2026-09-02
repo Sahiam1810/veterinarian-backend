@@ -12,4 +12,10 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     TimeSpan DelegatedTokenLifetime,
     TimeSpan OtpLifetime,
     int OtpMaximumAttempts,
-    TimeSpan OtpResendInterval) : ITelegramRuntimeSettings;
+    TimeSpan OtpResendInterval,
+    bool RegistrationEnabled,
+    string RegistrationCompletionUrl,
+    TimeSpan RegistrationOtpLifetime,
+    TimeSpan RegistrationTokenLifetime,
+    int RegistrationMaximumOtpAttempts,
+    TimeSpan RegistrationResendInterval) : ITelegramRuntimeSettings;
