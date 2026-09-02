@@ -5,4 +5,6 @@ namespace Application.Appointments.UseCases;
 public sealed record UpdateAppointmentStatusCommand(
     Guid AppointmentId,
     Guid StatusId,
-    string? Comment) : IRequest;
+    string? Comment,
+    Guid ActorUserAccountId = default,
+    bool EnforceVeterinarianOwnership = false) : IRequest;

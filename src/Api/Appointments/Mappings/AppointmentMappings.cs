@@ -23,7 +23,9 @@ public static class AppointmentMappings
 
     public static UpdateAppointmentCommand ToCommand(
         this UpdateAppointmentRequest request,
-        Guid id)
+        Guid id,
+        Guid actorUserAccountId,
+        bool enforceVeterinarianOwnership)
     {
         return new UpdateAppointmentCommand(
             id,
@@ -34,17 +36,23 @@ public static class AppointmentMappings
             request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,
-            request.Notes);
+            request.Notes,
+            actorUserAccountId,
+            enforceVeterinarianOwnership);
     }
 
     public static UpdateAppointmentStatusCommand ToCommand(
         this UpdateAppointmentStatusRequest request,
-        Guid appointmentId)
+        Guid appointmentId,
+        Guid actorUserAccountId,
+        bool enforceVeterinarianOwnership)
     {
         return new UpdateAppointmentStatusCommand(
             appointmentId,
             request.StatusId,
-            request.Comment);
+            request.Comment,
+            actorUserAccountId,
+            enforceVeterinarianOwnership);
     }
 
     public static AppointmentResponse ToResponse(

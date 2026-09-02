@@ -12,9 +12,18 @@ public sealed class GetAppointmentByIdQueryHandler(IUnitOfWork unitOfWork)
         GetAppointmentByIdQuery request,
         CancellationToken cancellationToken)
     {
-        return await unitOfWork.AppointmentsRepository.GetByIdAsync(
+        var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(
             request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Cita médica no encontrada.");
+
+        await AppointmentVeterinarianOwnership.EnsureAsync(
+            unitOfWork,
+            appointment,
+            request.ActorUserAccountId,
+            request.EnforceVeterinarianOwnership,
+            cancellationToken);
+
+        return appointment;
     }
 }
