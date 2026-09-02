@@ -1,0 +1,46 @@
+@model CompleteTelegramRegistrationRequest
+@{
+    ViewData["Title"] = "Completar registro";
+}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Completar registro · Huellitas</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f3f7f5; color: #17332a; margin: 0; }
+        main { max-width: 32rem; margin: 3rem auto; background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 8px 30px #17332a18; }
+        label { display: block; margin-top: 1rem; font-weight: 650; }
+        input { box-sizing: border-box; width: 100%; padding: .75rem; margin-top: .35rem; border: 1px solid #a8bbb4; border-radius: .5rem; }
+        button { width: 100%; margin-top: 1.5rem; padding: .8rem; border: 0; border-radius: .5rem; background: #167d5a; color: white; font-weight: 700; }
+        .validation-summary-errors, .field-validation-error { color: #a52626; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Completa tu cuenta</h1>
+    <p>Estos datos se enviarán directamente a Huellitas y no pasarán por Telegram.</p>
+    <form method="post" asp-action="Submit" autocomplete="on">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly"></div>
+        <label asp-for="FullName">Nombre completo</label>
+        <input asp-for="FullName" autocomplete="name" />
+        <span asp-validation-for="FullName"></span>
+        <label asp-for="IdentificationNumber">Número de identificación</label>
+        <input asp-for="IdentificationNumber" autocomplete="off" />
+        <span asp-validation-for="IdentificationNumber"></span>
+        <label asp-for="UserName">Nombre de usuario</label>
+        <input asp-for="UserName" autocomplete="username" />
+        <span asp-validation-for="UserName"></span>
+        <label asp-for="Password">Contraseña</label>
+        <input asp-for="Password" type="password" autocomplete="new-password" />
+        <span asp-validation-for="Password"></span>
+        <label asp-for="PasswordConfirmation">Confirmar contraseña</label>
+        <input asp-for="PasswordConfirmation" type="password" autocomplete="new-password" />
+        <span asp-validation-for="PasswordConfirmation"></span>
+        <button type="submit">Crear cuenta y vincular Telegram</button>
+    </form>
+</main>
+</body>
+</html>
