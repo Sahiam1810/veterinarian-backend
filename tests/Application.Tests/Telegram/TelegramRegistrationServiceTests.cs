@@ -1,8 +1,10 @@
 using Application.Telegram.Abstractions;
 using Application.Telegram.Models;
 using Application.Telegram.Registration;
+using Application.Verification.Abstractions;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
+using Domain.Verification.Enums;
 using NSubstitute;
 using Xunit;
 
@@ -48,6 +50,7 @@ public sealed class TelegramRegistrationServiceTests
         Assert.True(outcome.Consumed);
         Assert.Null(update.MessageText);
         await fixture.Sender.Received(1).SendAsync(
+            VerificationDeliveryChannel.Email,
             "new@huellitas.test", "123456", Now.AddMinutes(10), default);
         Assert.Equal(TelegramRegistrationSessionStatus.AwaitingOtp, session.Status);
     }
@@ -99,9 +102,9 @@ public sealed class TelegramRegistrationServiceTests
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(default));
 
         var accounts = Substitute.For<ITelegramRegistrationAccountLookup>();
-        var sender = Substitute.For<ITelegramVerificationCodeSender>();
-        var otp = Substitute.For<ITelegramOtpProtector>();
-        otp.Create().Returns(new GeneratedTelegramOtp("123456", Hash));
+        var sender = Substitute.For<IVerificationCodeDispatcher>();
+        var otp = Substitute.For<IOtpProtector>();
+        otp.Create().Returns(new GeneratedOtp("123456", Hash));
         otp.HashEmail(Arg.Any<string>()).Returns(Hash);
         var protector = Substitute.For<ITelegramRegistrationProtector>();
         protector.ProtectEmail(Arg.Any<string>()).Returns("protected-email");
@@ -146,8 +149,8 @@ public sealed class TelegramRegistrationServiceTests
         ITelegramRegistrationSessionRepository Sessions,
         ITelegramUserLinkRepository Links,
         ITelegramRegistrationAccountLookup Accounts,
-        ITelegramVerificationCodeSender Sender,
-        ITelegramOtpProtector Otp);
+        IVerificationCodeDispatcher Sender,
+        IOtpProtector Otp);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

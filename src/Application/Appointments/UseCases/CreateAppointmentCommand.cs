@@ -10,4 +10,5 @@ public sealed record CreateAppointmentCommand(
     Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
-    string? Notes) : IRequest<Guid>;
+    string? Notes,
+    string RequesterPhoneNumber) : IRequest<Guid>;

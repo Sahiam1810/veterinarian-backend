@@ -19,7 +19,8 @@ public static class AppointmentMappings
             request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,
-            request.Notes);
+            request.Notes,
+            request.RequesterPhoneNumber);
     }
 
     public static CreateAppointmentMedicalRecordCommand ToCommand(
@@ -110,6 +111,7 @@ public static class AppointmentMappings
             entity.ScheduledStart,
             entity.ScheduledEnd,
             entity.Notes,
+            entity.RequesterPhoneNumber?.Value,
             entity.CreatedAt);
     }
 

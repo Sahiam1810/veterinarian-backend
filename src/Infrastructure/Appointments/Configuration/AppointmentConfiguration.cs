@@ -76,6 +76,17 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
             .HasColumnType("VARCHAR2(100)")
             .HasMaxLength(100);
 
+        builder.Property(x => x.RequesterPhoneNumber)
+            .HasColumnName("REQUESTER_PHONE_NUMBER")
+            .HasColumnType("VARCHAR2(20)")
+            .HasMaxLength(20)
+            .HasConversion(
+                phone => phone == null ? null : phone.Value,
+                value => string.IsNullOrWhiteSpace(value)
+                    ? null
+                    : Domain.Appointments.ValueObjects.RequesterPhoneNumber.Create(value))
+            .IsRequired(false);
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

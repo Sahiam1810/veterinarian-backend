@@ -48,6 +48,14 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => ClientAddress.Create(str))
             .IsRequired(false);
 
+        builder.Property(client => client.PhoneNumber)
+            .HasColumnName("PHONE_NUMBER")
+            .HasMaxLength(ClientPhoneNumber.MaxLength)
+            .HasConversion(
+                phone => phone == null ? null : phone.Value,
+                str => ClientPhoneNumber.CreateOptional(str))
+            .IsRequired(false);
+
         builder.Property(client => client.RegistrationDate)
             .HasColumnName("REGISTRATION_DATE")
             .IsRequired();

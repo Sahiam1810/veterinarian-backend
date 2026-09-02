@@ -1,7 +1,9 @@
 using System.Net.Mail;
 using Application.Telegram.Abstractions;
+using Application.Verification.Abstractions;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
+using Domain.Verification.Enums;
 
 namespace Application.Telegram.Registration;
 
@@ -14,11 +16,12 @@ public interface ITelegramRegistrationService
         CancellationToken cancellationToken);
 }
 
+// Registro Telegram usa el OTP genérico (canal Email).
 public sealed class TelegramRegistrationService(
     ITelegramUnitOfWork unitOfWork,
     ITelegramRegistrationAccountLookup accountLookup,
-    ITelegramVerificationCodeSender verificationCodeSender,
-    ITelegramOtpProtector otpProtector,
+    IVerificationCodeDispatcher verificationCodeDispatcher,
+    IOtpProtector otpProtector,
     ITelegramRegistrationProtector registrationProtector,
     ITelegramRuntimeSettings settings,
     TimeProvider timeProvider) : ITelegramRegistrationService
@@ -141,7 +144,8 @@ public sealed class TelegramRegistrationService(
         var otp = otpProtector.Create();
         try
         {
-            await verificationCodeSender.SendAsync(
+            await verificationCodeDispatcher.SendAsync(
+                VerificationDeliveryChannel.Email,
                 account.NormalizedEmail,
                 otp.Code,
                 now.Add(settings.RegistrationOtpLifetime),

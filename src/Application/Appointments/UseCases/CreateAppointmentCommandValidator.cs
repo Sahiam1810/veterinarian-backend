@@ -33,6 +33,22 @@ public sealed class CreateAppointmentCommandValidator : AbstractValidator<Create
         RuleFor(x => x.Notes)
             .MaximumLength(100).WithMessage("Las notas no pueden exceder 100 caracteres.");
 
+        RuleFor(x => x.RequesterPhoneNumber)
+            .NotEmpty().WithMessage("El teléfono del solicitante es requerido.")
+            .Must(phone =>
+            {
+                try
+                {
+                    _ = Domain.Appointments.ValueObjects.RequesterPhoneNumber.Create(phone);
+                    return true;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+            })
+            .WithMessage("El teléfono del solicitante no es válido.");
+
         RuleFor(x => x)
             .MustAsync(async (command, cancellationToken) =>
                 !await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(

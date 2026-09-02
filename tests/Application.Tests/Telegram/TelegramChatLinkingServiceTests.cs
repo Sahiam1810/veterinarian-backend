@@ -1,8 +1,10 @@
 using Application.Telegram.Abstractions;
 using Application.Telegram.Linking;
 using Application.Telegram.Models;
+using Application.Verification.Abstractions;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
+using Domain.Verification.Enums;
 using NSubstitute;
 using Xunit;
 
@@ -49,6 +51,7 @@ public sealed class TelegramChatLinkingServiceTests
         Assert.Null(update.MessageText);
         Assert.Equal(TelegramLinkingSessionStatus.AwaitingOtp, session.Status);
         await fixture.Sender.Received(1).SendAsync(
+            VerificationDeliveryChannel.Email,
             "cliente@huellitas.test",
             "123456",
             Now.AddMinutes(5),
@@ -202,9 +205,9 @@ public sealed class TelegramChatLinkingServiceTests
                 call.ArgAt<Func<CancellationToken, Task>>(0)(
                     call.ArgAt<CancellationToken>(1)));
         var accounts = Substitute.For<ITelegramAccountLookup>();
-        var sender = Substitute.For<ITelegramVerificationCodeSender>();
-        var protector = Substitute.For<ITelegramOtpProtector>();
-        protector.Create().Returns(new GeneratedTelegramOtp("123456", Hash));
+        var sender = Substitute.For<IVerificationCodeDispatcher>();
+        var protector = Substitute.For<IOtpProtector>();
+        protector.Create().Returns(new GeneratedOtp("123456", Hash));
         protector.HashEmail(Arg.Any<string>()).Returns(Hash);
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.OtpLifetime.Returns(TimeSpan.FromMinutes(5));
@@ -246,8 +249,8 @@ public sealed class TelegramChatLinkingServiceTests
         ITelegramLinkingSessionRepository Sessions,
         ITelegramUserLinkRepository UserLinks,
         ITelegramAccountLookup Accounts,
-        ITelegramVerificationCodeSender Sender,
-        ITelegramOtpProtector Protector);
+        IVerificationCodeDispatcher Sender,
+        IOtpProtector Protector);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

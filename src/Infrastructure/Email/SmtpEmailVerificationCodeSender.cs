@@ -1,15 +1,19 @@
-using Application.Telegram.Abstractions;
+using Application.Verification.Abstractions;
+using Domain.Verification.Enums;
 using Infrastructure.Email.Configuration;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 
 namespace Infrastructure.Email;
 
-public sealed class SmtpTelegramVerificationCodeSender(
+// Canal email del mecanismo genérico de verificación (antes SmtpTelegramVerificationCodeSender).
+public sealed class SmtpEmailVerificationCodeSender(
     IOptions<EmailOptions> options,
-    ISmtpTransport transport) : ITelegramVerificationCodeSender
+    ISmtpTransport transport) : IVerificationCodeSender
 {
     private readonly EmailOptions _options = options.Value;
+
+    public VerificationDeliveryChannel Channel => VerificationDeliveryChannel.Email;
 
     public Task SendAsync(
         string destination,
@@ -28,7 +32,7 @@ public sealed class SmtpTelegramVerificationCodeSender(
             "Código de verificación de Huellitas",
             $"Tu código de verificación es: {code}{Environment.NewLine}{Environment.NewLine}" +
             $"Este código vence a las {expiresAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture)}. " +
-            "Si no solicitaste esta vinculación, ignora este mensaje.");
+            "Si no solicitaste este código, ignora este mensaje.");
         return transport.SendAsync(envelope, cancellationToken);
     }
 }

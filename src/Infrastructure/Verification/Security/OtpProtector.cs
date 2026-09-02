@@ -1,14 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
-using Application.Telegram.Abstractions;
+using Application.Verification.Abstractions;
 
-namespace Infrastructure.Telegram.Security;
+namespace Infrastructure.Verification.Security;
 
-public sealed class TelegramOtpProtector : ITelegramOtpProtector
+// Protector OTP genérico (reemplaza TelegramOtpProtector).
+public sealed class OtpProtector : IOtpProtector
 {
     private readonly byte[] _pepper;
 
-    public TelegramOtpProtector(string pepperBase64)
+    public OtpProtector(string pepperBase64)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pepperBase64);
         try
@@ -31,10 +32,10 @@ public sealed class TelegramOtpProtector : ITelegramOtpProtector
         }
     }
 
-    public GeneratedTelegramOtp Create()
+    public GeneratedOtp Create()
     {
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-        return new GeneratedTelegramOtp(code, Hash("otp", code));
+        return new GeneratedOtp(code, Hash("otp", code));
     }
 
     public bool Verify(string code, string expectedHash)
@@ -63,6 +64,12 @@ public sealed class TelegramOtpProtector : ITelegramOtpProtector
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(normalizedEmail);
         return Hash("email", normalizedEmail.Trim().ToLowerInvariant());
+    }
+
+    public string HashPhone(string normalizedPhone)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(normalizedPhone);
+        return Hash("phone", normalizedPhone.Trim());
     }
 
     private string Hash(string purpose, string value)

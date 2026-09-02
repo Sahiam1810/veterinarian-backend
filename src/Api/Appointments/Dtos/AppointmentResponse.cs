@@ -12,4 +12,5 @@ public sealed record AppointmentResponse(
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes,
+    string? RequesterPhoneNumber,
     DateTime CreatedAt);
