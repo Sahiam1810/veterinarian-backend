@@ -5,6 +5,42 @@ using MediatR;
 
 namespace Application.RolePermissions.UseCases;
 
+internal static class RolePermissionDetailMappings
+{
+    public static RolePermissionDetail ToDetail(
+        this RolePermission permission,
+        string roleName,
+        string moduleName) =>
+        new(
+            permission.Id,
+            permission.RoleId,
+            roleName,
+            permission.ModuleId,
+            moduleName,
+            permission.CanView,
+            permission.CanCreate,
+            permission.CanEdit,
+            permission.CanDelete,
+            permission.CreatedAt,
+            permission.UpdatedAt);
+
+    public static RolePermissionDetail ToDetail(
+        this RolePermission permission,
+        IReadOnlyDictionary<Guid, string> roleNames,
+        IReadOnlyDictionary<Guid, string> moduleNames) =>
+        permission.ToDetail(
+            roleNames.GetValueOrDefault(permission.RoleId, string.Empty),
+            moduleNames.GetValueOrDefault(permission.ModuleId, string.Empty));
+
+    public static RolePermissionDetail ToDetail(
+        this RolePermission permission,
+        string roleName,
+        IReadOnlyDictionary<Guid, string> moduleNames) =>
+        permission.ToDetail(
+            roleName,
+            moduleNames.GetValueOrDefault(permission.ModuleId, string.Empty));
+}
+
 public sealed record CreateRolePermissionCommand(
     Guid RoleId,
     Guid ModuleId,
@@ -13,13 +49,28 @@ public sealed record CreateRolePermissionCommand(
     bool CanEdit,
     bool CanDelete) : IRequest<Guid>;
 
-public sealed record GetAllRolePermissionsQuery
-    : IRequest<IReadOnlyCollection<RolePermission>>;
+// Incluye RoleName/ModuleName resueltos, para que el consumidor (UI de SuperAdmin)
+// no tenga que cruzar cada fila contra GET /api/roles y GET /api/modules a mano.
+public sealed record RolePermissionDetail(
+    Guid Id,
+    Guid RoleId,
+    string RoleName,
+    Guid ModuleId,
+    string ModuleName,
+    bool CanView,
+    bool CanCreate,
+    bool CanEdit,
+    bool CanDelete,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
 
-public sealed record GetRolePermissionByIdQuery(Guid Id) : IRequest<RolePermission>;
+public sealed record GetAllRolePermissionsQuery
+    : IRequest<IReadOnlyCollection<RolePermissionDetail>>;
+
+public sealed record GetRolePermissionByIdQuery(Guid Id) : IRequest<RolePermissionDetail>;
 
 public sealed record GetRolePermissionsByRoleIdQuery(Guid RoleId)
-    : IRequest<IReadOnlyCollection<RolePermission>>;
+    : IRequest<IReadOnlyCollection<RolePermissionDetail>>;
 
 public sealed record UpdateRolePermissionCommand(
     Guid Id,
@@ -66,35 +117,64 @@ public sealed class CreateRolePermissionCommandHandler(IUnitOfWork unitOfWork)
     }
 }
 
-// Lista todos los permisos.
+// Lista todos los permisos, con RoleName/ModuleName resueltos.
 public sealed class GetAllRolePermissionsQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetAllRolePermissionsQuery, IReadOnlyCollection<RolePermission>>
+    : IRequestHandler<GetAllRolePermissionsQuery, IReadOnlyCollection<RolePermissionDetail>>
 {
-    public Task<IReadOnlyCollection<RolePermission>> Handle(
+    public async Task<IReadOnlyCollection<RolePermissionDetail>> Handle(
         GetAllRolePermissionsQuery request,
-        CancellationToken cancellationToken) =>
-        unitOfWork.RolePermissionsRepository.GetAllAsync(cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var permissions = await unitOfWork.RolePermissionsRepository.GetAllAsync(cancellationToken);
+        var roleNames = (await unitOfWork.RolesRepository.GetAllAsync(cancellationToken))
+            .ToDictionary(role => role.Id, role => role.Name.Value);
+        var moduleNames = (await unitOfWork.ModulesRepository.GetAllAsync(cancellationToken))
+            .ToDictionary(module => module.Id, module => module.Name.Value);
+
+        return permissions
+            .Select(permission => permission.ToDetail(roleNames, moduleNames))
+            .ToArray();
+    }
 }
 
-// Obtiene un permiso por id.
+// Obtiene un permiso por id, con RoleName/ModuleName resueltos.
 public sealed class GetRolePermissionByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetRolePermissionByIdQuery, RolePermission>
+    : IRequestHandler<GetRolePermissionByIdQuery, RolePermissionDetail>
 {
-    public async Task<RolePermission> Handle(
+    public async Task<RolePermissionDetail> Handle(
         GetRolePermissionByIdQuery request,
-        CancellationToken cancellationToken) =>
-        await unitOfWork.RolePermissionsRepository.GetByIdAsync(request.Id, cancellationToken)
+        CancellationToken cancellationToken)
+    {
+        var permission = await unitOfWork.RolePermissionsRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Permiso de rol no encontrado.");
+
+        var role = await unitOfWork.RolesRepository.GetByIdAsync(permission.RoleId, cancellationToken);
+        var module = await unitOfWork.ModulesRepository.GetByIdAsync(permission.ModuleId, cancellationToken);
+
+        return permission.ToDetail(role?.Name.Value ?? string.Empty, module?.Name.Value ?? string.Empty);
+    }
 }
 
-// Lista permisos de un rol.
+// Lista permisos de un rol, con RoleName/ModuleName resueltos.
 public sealed class GetRolePermissionsByRoleIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetRolePermissionsByRoleIdQuery, IReadOnlyCollection<RolePermission>>
+    : IRequestHandler<GetRolePermissionsByRoleIdQuery, IReadOnlyCollection<RolePermissionDetail>>
 {
-    public Task<IReadOnlyCollection<RolePermission>> Handle(
+    public async Task<IReadOnlyCollection<RolePermissionDetail>> Handle(
         GetRolePermissionsByRoleIdQuery request,
-        CancellationToken cancellationToken) =>
-        unitOfWork.RolePermissionsRepository.GetByRoleIdAsync(request.RoleId, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var permissions = await unitOfWork.RolePermissionsRepository.GetByRoleIdAsync(
+            request.RoleId,
+            cancellationToken);
+        var role = await unitOfWork.RolesRepository.GetByIdAsync(request.RoleId, cancellationToken);
+        var roleName = role?.Name.Value ?? string.Empty;
+        var moduleNames = (await unitOfWork.ModulesRepository.GetAllAsync(cancellationToken))
+            .ToDictionary(module => module.Id, module => module.Name.Value);
+
+        return permissions
+            .Select(permission => permission.ToDetail(roleName, moduleNames))
+            .ToArray();
+    }
 }
 
 // Actualiza flags de permiso.

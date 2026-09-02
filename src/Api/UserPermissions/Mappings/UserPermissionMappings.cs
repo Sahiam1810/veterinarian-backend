@@ -1,20 +1,23 @@
 using Api.UserPermissions.Dtos;
-using Domain.UserPermissions.Entities;
+using Application.UserPermissions.UseCases;
 
 namespace Api.UserPermissions.Mappings;
 
-// Mapeos de UserPermission a DTO.
+// Mapeos de UserPermissionDetail a DTO.
 public static class UserPermissionMappings
 {
-    public static UserPermissionResponseDto ToDto(this UserPermission entity) =>
+    public static UserPermissionResponseDto ToDto(this UserPermissionDetail detail) =>
         new(
-            entity.Id,
-            entity.UserId,
-            entity.ModuleId,
-            entity.CanView,
-            entity.CanCreate,
-            entity.CanEdit,
-            entity.CanDelete,
-            entity.CreatedAt,
-            entity.UpdatedAt);
+            detail.Id,
+            detail.UserId,
+            detail.UserFullName,
+            detail.UserEmail,
+            detail.ModuleId,
+            detail.ModuleName,
+            detail.CanView,
+            detail.CanCreate,
+            detail.CanEdit,
+            detail.CanDelete,
+            detail.CreatedAt,
+            detail.UpdatedAt);
 }

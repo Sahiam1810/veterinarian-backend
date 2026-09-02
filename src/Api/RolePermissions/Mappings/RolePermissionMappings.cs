@@ -1,20 +1,22 @@
 using Api.RolePermissions.Dtos;
-using Domain.RolePermissions.Entities;
+using Application.RolePermissions.UseCases;
 
 namespace Api.RolePermissions.Mappings;
 
-// Mapeos de RolePermission a DTO.
+// Mapeos de RolePermissionDetail a DTO.
 public static class RolePermissionMappings
 {
-    public static RolePermissionResponseDto ToDto(this RolePermission entity) =>
+    public static RolePermissionResponseDto ToDto(this RolePermissionDetail detail) =>
         new(
-            entity.Id,
-            entity.RoleId,
-            entity.ModuleId,
-            entity.CanView,
-            entity.CanCreate,
-            entity.CanEdit,
-            entity.CanDelete,
-            entity.CreatedAt,
-            entity.UpdatedAt);
+            detail.Id,
+            detail.RoleId,
+            detail.RoleName,
+            detail.ModuleId,
+            detail.ModuleName,
+            detail.CanView,
+            detail.CanCreate,
+            detail.CanEdit,
+            detail.CanDelete,
+            detail.CreatedAt,
+            detail.UpdatedAt);
 }

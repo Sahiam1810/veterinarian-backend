@@ -21,7 +21,9 @@ public sealed record UpdateRolePermissionDto(
 public sealed record RolePermissionResponseDto(
     Guid Id,
     Guid RoleId,
+    string RoleName,
     Guid ModuleId,
+    string ModuleName,
     bool CanView,
     bool CanCreate,
     bool CanEdit,
