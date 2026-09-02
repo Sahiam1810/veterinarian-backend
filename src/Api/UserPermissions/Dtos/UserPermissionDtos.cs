@@ -21,7 +21,10 @@ public sealed record UpdateUserPermissionDto(
 public sealed record UserPermissionResponseDto(
     Guid Id,
     Guid UserId,
+    string UserFullName,
+    string UserEmail,
     Guid ModuleId,
+    string ModuleName,
     bool CanView,
     bool CanCreate,
     bool CanEdit,
