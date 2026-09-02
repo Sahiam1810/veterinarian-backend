@@ -119,8 +119,11 @@ chat de Telegram para completar una vinculación nueva.
 Con `Telegram__GuestModeEnabled=true`, un chat no vinculado puede hacer
 preguntas veterinarias generales o consultar información pública de la
 clínica. `/start` devuelve una bienvenida estática y cada respuesta general
-recuerda que `/vincular` habilita el contexto personal. El backend firma para
-cada llamada una identidad invitada determinística con rol `TelegramGuest`;
+explica una sola vez que `/vincular` habilita el contexto personal. Las
+respuestas generales posteriores no reciben un recordatorio automático; el
+agente orienta a `/vincular` solamente cuando la solicitud actual requiere
+datos u operaciones privadas. El backend firma para cada llamada una identidad
+invitada determinística con rol `TelegramGuest`;
 no crea usuarios, clientes, participantes ni conversaciones invitadas en
 Oracle. El agente bloquea los módulos privados y la publicación global de
 conocimiento para ese rol.
@@ -131,6 +134,11 @@ continúa usando la identidad, conversación y participantes persistentes sin
 cambiar el flujo existente. Con `Telegram__GuestModeEnabled=false`, se conserva
 el modo estricto anterior: un chat no vinculado solo recibe la instrucción de
 usar `/vincular`.
+
+Si la persona todavía no tiene una cuenta, debe crearla de forma segura en la
+aplicación antes de vincular. El bot no solicita contraseñas, identificación ni
+datos de registro dentro de Telegram. Cuando exista una URL pública de
+registro podrá incorporarse como enlace configurable sin cambiar el flujo OTP.
 
 La vinculación es persistente: no vence cada cinco o quince minutos. La
 variable `Telegram__DelegatedTokenMinutes` controla solamente el JWT interno
