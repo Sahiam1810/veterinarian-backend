@@ -241,6 +241,7 @@ public static class DependencyInjection
         services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
         services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
+        services.AddScoped<ITelegramRegistrationSessionRepository, TelegramRegistrationSessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
