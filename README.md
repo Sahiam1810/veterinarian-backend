@@ -321,6 +321,7 @@ autorización indicada.
 |---|---|---|---|
 | POST | `/api/services` | AdminOnly | Crea un servicio veterinario. |
 | GET | `/api/services` | StaffOnly | Lista todos los servicios. |
+| GET | `/api/services/available` | Authenticated | Lista el catálogo público de servicios activos para clientes y el agente. |
 | GET | `/api/services/{id}` | StaffOnly | Obtiene un servicio por ID. |
 | PUT | `/api/services/{id}` | AdminOnly | Actualiza un servicio. |
 | DELETE | `/api/services/{id}` | AdminOnly | Elimina un servicio. |
