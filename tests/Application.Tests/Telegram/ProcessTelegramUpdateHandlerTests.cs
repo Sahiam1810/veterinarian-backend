@@ -68,7 +68,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
     }
 
     [Fact]
-    public async Task Unlinked_user_uses_isolated_guest_context_when_public_mode_is_enabled()
+    public async Task General_guest_response_is_delivered_without_automatic_linking_suffix()
     {
         var fixture = CreateFixture();
         var guestId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -102,8 +102,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
             Arg.Any<CancellationToken>());
         await fixture.Bot.Received(1).SendTextAsync(
             1001,
-            Arg.Is<string>(text =>
-                text.Contains("Cuidados generales") && text.Contains("/vincular")),
+            "Cuidados generales",
             default);
     }
 
