@@ -49,7 +49,7 @@ public sealed class UpdateMyPetProfileCommandHandler
             throw new NotFoundException("Mascota no encontrada.");
 
         var currentVersion = pet.UpdatedAt ?? pet.CreatedAt;
-        if (currentVersion.ToUniversalTime() != request.ExpectedUpdatedAt.ToUniversalTime())
+        if (AsUtc(currentVersion) != AsUtc(request.ExpectedUpdatedAt))
             throw new ConflictException("El perfil de la mascota cambió; consulta sus datos nuevamente.");
 
         var speciesId = request.SpeciesId ?? pet.SpeciesId;
@@ -79,4 +79,11 @@ public sealed class UpdateMyPetProfileCommandHandler
             pet.Observations.Value, pet.SpeciesId, pet.Species.Name.Value,
             pet.RaceId, pet.Race.Name.Value, pet.UpdatedAt ?? pet.CreatedAt);
     }
+
+    private static DateTime AsUtc(DateTime value) => value.Kind switch
+    {
+        DateTimeKind.Utc => value,
+        DateTimeKind.Local => value.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+    };
 }
