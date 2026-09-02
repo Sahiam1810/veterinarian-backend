@@ -252,7 +252,10 @@ public static class DependencyInjection
         services.AddSingleton<ITelegramRegistrationProtector>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
-            return new TelegramRegistrationProtector(options.RegistrationProtectionKeyBase64);
+            var key = options.RegistrationEnabled
+                ? options.RegistrationProtectionKeyBase64
+                : Convert.ToBase64String(new byte[32]);
+            return new TelegramRegistrationProtector(key);
         });
         services.AddSingleton<ITelegramOtpProtector>(provider =>
         {

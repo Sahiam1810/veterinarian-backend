@@ -5,6 +5,7 @@ using Application.Telegram.Abstractions;
 using Application.Telegram.Models;
 using Application.Telegram.Linking;
 using Application.Telegram.Processing;
+using Application.Telegram.Registration;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
 using MediatR;
@@ -129,7 +130,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
             1001,
             Arg.Is<string>(text =>
                 text.Contains("invitado", StringComparison.OrdinalIgnoreCase) &&
-                text.Contains("/vincular", StringComparison.OrdinalIgnoreCase)),
+                text.Contains("/vincular", StringComparison.OrdinalIgnoreCase) &&
+                text.Contains("/registrar", StringComparison.OrdinalIgnoreCase)),
             default);
     }
 
@@ -182,6 +184,26 @@ public sealed class ProcessTelegramUpdateHandlerTests
             1001,
             "Escribe tu correo registrado.",
             default);
+        await fixture.Dispatcher.DidNotReceive().DispatchAsync(
+            Arg.Any<AgentMessageDispatchRequest>(),
+            Arg.Any<AgentConversationContext>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Registration_message_is_consumed_before_linking_guest_or_agent()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(53, "/registrar");
+        fixture.Updates.GetByIdAsync(53, default).Returns(update);
+        fixture.Registration.HandleAsync(update, default)
+            .Returns(new TelegramRegistrationOutcome(true, "Escribe tu correo."));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(53), default);
+
+        await fixture.Bot.Received(1).SendTextAsync(1001, "Escribe tu correo.", default);
+        await fixture.Linking.DidNotReceive().HandleAsync(update, default);
         await fixture.Dispatcher.DidNotReceive().DispatchAsync(
             Arg.Any<AgentMessageDispatchRequest>(),
             Arg.Any<AgentConversationContext>(),
@@ -258,9 +280,12 @@ public sealed class ProcessTelegramUpdateHandlerTests
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.MaxProcessingAttempts.Returns(3);
         var linking = Substitute.For<ITelegramChatLinkingService>();
+        var registration = Substitute.For<ITelegramRegistrationService>();
         var logger = new RecordingLogger<ProcessTelegramUpdateHandler>();
         linking.HandleAsync(Arg.Any<TelegramInboundUpdate>(), Arg.Any<CancellationToken>())
             .Returns(new TelegramLinkingOutcome(false, null));
+        registration.HandleAsync(Arg.Any<TelegramInboundUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(new TelegramRegistrationOutcome(false, null));
 
         return new Fixture(
             new ProcessTelegramUpdateHandler(
@@ -270,6 +295,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 identity,
                 bot,
                 sender,
+                registration,
                 linking,
                 settings,
                 new FixedTimeProvider(currentTime ?? Now),
@@ -282,6 +308,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
             identity,
             bot,
             sender,
+            registration,
             linking,
             settings,
             logger);
@@ -308,6 +335,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         IAgentDelegatedIdentityProvider Identity,
         ITelegramBotClient Bot,
         ISender Sender,
+        ITelegramRegistrationService Registration,
         ITelegramChatLinkingService Linking,
         ITelegramRuntimeSettings Settings,
         RecordingLogger<ProcessTelegramUpdateHandler> Logger);
