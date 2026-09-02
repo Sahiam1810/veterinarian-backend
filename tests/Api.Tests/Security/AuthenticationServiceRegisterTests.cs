@@ -3,6 +3,7 @@ using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
+using Application.Security.Registration;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -91,6 +92,14 @@ public sealed class AuthenticationServiceRegisterTests : IDisposable
             userCredentialRepository,
             userTokenRepository,
             usersRepository,
+            new ClientAccountRegistrationService(
+                userAccountRepository,
+                userCredentialRepository,
+                usersRepository,
+                clientsRepository,
+                rolesRepository,
+                passwordHasher,
+                Options.Create(superAdminOptions)),
             unitOfWork,
             jwtTokenIssuer,
             new RefreshTokenProtector(),

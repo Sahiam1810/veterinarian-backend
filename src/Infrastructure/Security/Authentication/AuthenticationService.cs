@@ -3,6 +3,7 @@ using Application.Common.Results;
 using Application.Security.Abstractions;
 using Application.Security.Errors;
 using Application.Security.Models;
+using Application.Security.Registration;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.UserTokens.Abstraction;
@@ -10,10 +11,7 @@ using Application.Users.Abstraction;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
 using Microsoft.Extensions.Options;
-using ClientEntity = Domain.Clients.Entities.ClientEntity;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialEntity = Domain.UserCredentials.Entities.UserCredentials;
-using UserEntity = Domain.Users.Entities.Users;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Infrastructure.Security.Authentication;
@@ -23,6 +21,7 @@ public sealed class AuthenticationService(
     IUserCredentialsRepository userCredentialRepository,
     IUserTokensRepository userTokenRepository,
     IUsersRepository usersRepository,
+    IClientAccountRegistrationService clientAccountRegistration,
     IUnitOfWork unitOfWork,
     JwtTokenIssuer jwtTokenIssuer,
     RefreshTokenProtector refreshTokenProtector,
@@ -32,7 +31,6 @@ public sealed class AuthenticationService(
     TimeProvider timeProvider) : IAuthenticationService
 {
     private const string ActiveStatus = "Activo";
-    private const string ClientRoleName = "Cliente";
     private const string RefreshTokenType = "refresh";
 
     private readonly JwtOptions jwtOptions = options.Value;
@@ -46,104 +44,47 @@ public sealed class AuthenticationService(
         string identificationNumber,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(fullName) ||
-            string.IsNullOrWhiteSpace(email) ||
-            string.IsNullOrWhiteSpace(userName) ||
-            string.IsNullOrWhiteSpace(password) ||
-            string.IsNullOrWhiteSpace(identificationNumber))
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.InvalidRegistrationData);
-        }
-
-        var normalizedUserName = userName.Trim().ToLowerInvariant();
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-        var trimmedIdentificationNumber = identificationNumber.Trim();
+        Result<AuthenticationTokens>? result = null;
+        Error? registrationError = null;
 
         // El email del SuperAdmin no tiene fila en Users: si se permitiera
         // registrar aquí, quedaría una cuenta fantasma que nunca podría
         // loguearse (LoginAsync siempre intercepta ese email primero).
-        if (IsSuperAdminEmail(normalizedEmail))
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.UserAlreadyExists);
-        }
-
-        var clientRole = await unitOfWork.RolesRepository.GetByNameAsync(
-            ClientRoleName, cancellationToken);
-
-        if (clientRole is null)
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.InvalidRegistrationData);
-        }
-
-        if (await usersRepository.ExistsByEmailAsync(normalizedEmail, cancellationToken) ||
-            await userAccountRepository.ExistsByUsernameAsync(normalizedUserName, cancellationToken) ||
-            await userAccountRepository.GetByMailAsync(normalizedEmail, cancellationToken) is not null)
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.UserAlreadyExists);
-        }
-
-        if (await unitOfWork.ClientsRepository.ExistsByIdentificationNumberAsync(
-            trimmedIdentificationNumber, cancellationToken))
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.IdentificationNumberAlreadyExists);
-        }
-
-        Result<AuthenticationTokens>? result = null;
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
-            var passwordHash = passwordHasher.Hash(password);
-
-            var user = new UserEntity(
-                fullName.Trim(),
-                normalizedEmail,
-                passwordHash,
-                clientRole.Id);
-
-            await usersRepository.AddAsync(user, transactionToken);
-
-            var account = new UserAccountEntity(
-                user.Id,
-                normalizedUserName,
-                normalizedEmail,
-                ActiveStatus);
-
-            await userAccountRepository.AddAsync(account, transactionToken);
-
-            var credential = new UserCredentialEntity(
-                account.Id,
-                passwordHash);
-
-            await userCredentialRepository.AddAsync(credential, transactionToken);
+            var registration = await clientAccountRegistration.StageAsync(
+                new ClientAccountRegistrationRequest(
+                    fullName,
+                    email,
+                    userName,
+                    password,
+                    identificationNumber),
+                transactionToken);
+            if (registration.IsFailure)
+            {
+                registrationError = registration.Error;
+                return;
+            }
 
             // El registro público solo alimenta el rol "Cliente": sin esto, la
             // cuenta queda funcional pero sin perfil de Client, y /clients/me,
             // /pets/mine y /appointments/mine devuelven 404 para siempre.
-            var client = new ClientEntity(
-                user.Id,
-                trimmedIdentificationNumber,
-                address: null);
-
-            await unitOfWork.ClientsRepository.AddAsync(client, transactionToken);
-
             var identity = new AuthenticatedIdentity(
-                account.Id,
-                user.Id,
-                clientRole.Id,
-                clientRole.Name.Value,
-                user.FullName,
-                account.Username.Value,
-                account.Mail.Value,
-                account.Status);
+                registration.Value.UserAccountId,
+                registration.Value.PersonId,
+                registration.Value.RoleId,
+                registration.Value.RoleName,
+                registration.Value.FullName,
+                registration.Value.UserName,
+                registration.Value.Email,
+                registration.Value.Status);
 
             result = await IssueTokensAsync(identity, transactionToken);
         }, cancellationToken);
 
-        return result!;
+        return registrationError is not null
+            ? Result<AuthenticationTokens>.Failure(registrationError)
+            : result!;
     }
 
     public async Task<Result<AuthenticationTokens>> LoginAsync(

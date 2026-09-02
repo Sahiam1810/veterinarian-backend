@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Api.Tests.Support;
 using Application.Common.Abstractions;
 using Application.Security.Errors;
+using Application.Security.Registration;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -32,6 +33,8 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IPasswordHasher passwordHasher = Substitute.For<IPasswordHasher>();
+    private readonly IClientAccountRegistrationService registration =
+        Substitute.For<IClientAccountRegistrationService>();
     private readonly JwtRsaKeyMaterial keyMaterial;
     private readonly AuthenticationService sut;
 
@@ -60,12 +63,23 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
             Email = SuperAdminEmail,
             PasswordHash = SuperAdminPasswordHash
         };
+        unitOfWork.ExecuteInTransactionAsync(
+                Arg.Any<Func<CancellationToken, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(CancellationToken.None));
+        registration.StageAsync(
+                Arg.Is<ClientAccountRegistrationRequest>(request =>
+                    request.Email.Equals(SuperAdminEmail, StringComparison.OrdinalIgnoreCase)),
+                Arg.Any<CancellationToken>())
+            .Returns(Application.Common.Results.Result<RegisteredClientAccount>.Failure(
+                AuthenticationErrors.UserAlreadyExists));
 
         sut = new AuthenticationService(
             userAccountRepository,
             userCredentialRepository,
             userTokenRepository,
             usersRepository,
+            registration,
             unitOfWork,
             jwtTokenIssuer,
             new RefreshTokenProtector(),
