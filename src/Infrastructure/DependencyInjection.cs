@@ -152,6 +152,13 @@ using Infrastructure.Telegram.Workers;
 using Infrastructure.Telegram.Identity;
 using Infrastructure.Email;
 using Infrastructure.Email.Configuration;
+using Infrastructure.Messaging;
+using Infrastructure.Messaging.Configuration;
+using Application.Verification.Abstractions;
+using Infrastructure.Verification;
+using Infrastructure.Verification.Configuration;
+using Infrastructure.Verification.Repositories;
+using Infrastructure.Verification.Security;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -257,15 +264,34 @@ public static class DependencyInjection
                 : Convert.ToBase64String(new byte[32]);
             return new TelegramRegistrationProtector(key);
         });
-        services.AddSingleton<ITelegramOtpProtector>(provider =>
+        services.AddSingleton<IOtpProtector>(provider =>
         {
-            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
-            return new TelegramOtpProtector(options.OtpPepperBase64);
+            var appointmentOptions = provider.GetRequiredService<IOptions<AppointmentVerificationOptions>>().Value;
+            if (!string.IsNullOrWhiteSpace(appointmentOptions.OtpPepperBase64))
+            {
+                return new OtpProtector(appointmentOptions.OtpPepperBase64);
+            }
+
+            var telegramOptions = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
+            if (!string.IsNullOrWhiteSpace(telegramOptions.OtpPepperBase64))
+            {
+                return new OtpProtector(telegramOptions.OtpPepperBase64);
+            }
+
+            // Pepper de desarrollo cuando Telegram y AppointmentVerification están apagados.
+            return new OtpProtector(Convert.ToBase64String(new byte[32]));
         });
         services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
         services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
-        services.AddScoped<ITelegramVerificationCodeSender, SmtpTelegramVerificationCodeSender>();
+        services.AddScoped<IVerificationCodeSender, SmtpEmailVerificationCodeSender>();
+        services.AddScoped<IVerificationCodeSender, TwilioSmsVerificationCodeSender>();
+        services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();
+        services.AddScoped<IVerificationCodeDispatcher, VerificationCodeDispatcher>();
+        services.AddScoped<IAppointmentActionVerificationSessionRepository, AppointmentActionVerificationSessionRepository>();
+        services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
+        services.AddHttpClient(nameof(TwilioSmsVerificationCodeSender));
+        services.AddHttpClient(nameof(TwilioWhatsAppVerificationCodeSender));
         services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
         services.AddHttpClient<ITelegramBotClient, TelegramBotHttpClient>(client =>
         {
@@ -281,6 +307,12 @@ public static class DependencyInjection
         services.AddOptions<EmailOptions>()
             .Bind(configuration.GetSection(EmailOptions.SectionName))
             .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<TwilioOptions>, TwilioOptionsValidator>();
+        services.AddOptions<TwilioOptions>()
+            .Bind(configuration.GetSection(TwilioOptions.SectionName))
+            .ValidateOnStart();
+        services.AddOptions<AppointmentVerificationOptions>()
+            .Bind(configuration.GetSection(AppointmentVerificationOptions.SectionName));
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;

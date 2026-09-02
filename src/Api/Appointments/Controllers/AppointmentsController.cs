@@ -212,9 +212,9 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [RequirePermission("Citas", PermissionAction.Delete)]
-    [EndpointSummary("Elimina una cita médica por su ID")]
-    [EndpointDescription("Remueve permanentemente una cita médica del sistema.")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
+    [EndpointSummary("Elimina una cita médica por su ID (solo SuperAdmin)")]
+    [EndpointDescription("Borrado físico restringido. El flujo de cliente debe usar soft-cancel por cambio de estado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(

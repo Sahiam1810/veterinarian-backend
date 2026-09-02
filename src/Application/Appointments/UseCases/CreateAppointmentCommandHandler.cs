@@ -19,7 +19,8 @@ public sealed class CreateAppointmentCommandHandler(IUnitOfWork unitOfWork)
             request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,
-            request.Notes);
+            request.Notes,
+            request.RequesterPhoneNumber);
 
         await unitOfWork.AppointmentsRepository.AddAsync(
             appointment,

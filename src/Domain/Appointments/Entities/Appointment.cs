@@ -1,3 +1,4 @@
+using Domain.Appointments.ValueObjects;
 using Domain.Availabilities.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Common;
@@ -21,7 +22,8 @@ public sealed class Appointment : BaseEntity<Guid>
         Guid availabilityId,
         DateTime scheduledStart,
         DateTime scheduledEnd,
-        string? notes)
+        string? notes,
+        string? requesterPhoneNumber = null)
     {
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;
@@ -32,6 +34,11 @@ public sealed class Appointment : BaseEntity<Guid>
         ScheduledStart = scheduledStart;
         ScheduledEnd = scheduledEnd;
         Notes = notes;
+        // Se fija al crear; no se altera en Update (auditoría de origen).
+        // Nullable solo para citas legacy anteriores a la columna.
+        RequesterPhoneNumber = string.IsNullOrWhiteSpace(requesterPhoneNumber)
+            ? null
+            : RequesterPhoneNumber.Create(requesterPhoneNumber);
     }
 
     public Guid ClientPetId { get; private set; }
@@ -53,6 +60,8 @@ public sealed class Appointment : BaseEntity<Guid>
     public DateTime ScheduledEnd { get; private set; }
     public string? Notes { get; private set; }
 
+    public RequesterPhoneNumber? RequesterPhoneNumber { get; private set; }
+
     public void Update(
         Guid clientPetId,
         Guid veterinarianId,
@@ -71,6 +80,24 @@ public sealed class Appointment : BaseEntity<Guid>
         ScheduledStart = scheduledStart;
         ScheduledEnd = scheduledEnd;
         Notes = notes;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    // Reagendado por autoservicio del cliente (tras OTP).
+    public void Reschedule(
+        Guid availabilityId,
+        DateTime scheduledStart,
+        DateTime scheduledEnd,
+        string? notes)
+    {
+        AvailabilityId = availabilityId;
+        ScheduledStart = scheduledStart;
+        ScheduledEnd = scheduledEnd;
+        if (notes is not null)
+        {
+            Notes = notes;
+        }
+
         UpdatedAt = DateTime.UtcNow;
     }
 }

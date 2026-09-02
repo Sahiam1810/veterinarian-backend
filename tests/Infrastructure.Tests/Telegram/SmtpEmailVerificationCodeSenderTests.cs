@@ -1,5 +1,6 @@
 using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
+using Domain.Verification.Enums;
 using Infrastructure.Email;
 using Infrastructure.Email.Configuration;
 using Infrastructure.Telegram.Identity;
@@ -11,16 +12,17 @@ using UserEntity = Domain.Users.Entities.Users;
 
 namespace Infrastructure.Tests.Telegram;
 
-public sealed class SmtpTelegramVerificationCodeSenderTests
+public sealed class SmtpEmailVerificationCodeSenderTests
 {
     [Fact]
     public async Task Sender_builds_neutral_verification_email()
     {
         var transport = Substitute.For<ISmtpTransport>();
         var options = Options.Create(ValidOptions());
-        var sender = new SmtpTelegramVerificationCodeSender(options, transport);
+        var sender = new SmtpEmailVerificationCodeSender(options, transport);
         var expiration = new DateTimeOffset(2026, 8, 31, 20, 5, 0, TimeSpan.Zero);
 
+        Assert.Equal(VerificationDeliveryChannel.Email, sender.Channel);
         await sender.SendAsync("cliente@huellitas.test", "123456", expiration, default);
 
         await transport.Received(1).SendAsync(

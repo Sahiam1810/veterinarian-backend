@@ -40,6 +40,21 @@ public static class RateLimitingExtensions
                 CreatePartition(GetPartitionKey(context), settings.TelegramWebhookPermitLimit, settings.TelegramWebhookWindowSeconds));
             options.AddPolicy(RateLimitPolicies.TelegramRegistration, context =>
                 CreatePartition(GetPartitionKey(context), settings.RegisterPermitLimit, settings.RegisterWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.ClientIdentificationLookup, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.ClientIdentificationLookupPermitLimit,
+                    settings.ClientIdentificationLookupWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.AppointmentOtpRequest, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.AppointmentOtpRequestPermitLimit,
+                    settings.AppointmentOtpRequestWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.AppointmentOtpConfirm, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.AppointmentOtpConfirmPermitLimit,
+                    settings.AppointmentOtpConfirmWindowSeconds));
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = async (context, cancellationToken) =>
             {

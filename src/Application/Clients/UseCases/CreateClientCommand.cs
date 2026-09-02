@@ -9,7 +9,8 @@ public sealed record CreateClientCommand(
     Guid UserId,
     string IdentificationNumber,
     string? Address,
-    DateTime? RegistrationDate = null) : IRequest<Guid>;
+    DateTime? RegistrationDate = null,
+    string? PhoneNumber = null) : IRequest<Guid>;
 
 public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCommand, Guid>
 {
@@ -41,7 +42,8 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
             request.UserId,
             request.IdentificationNumber,
             request.Address,
-            request.RegistrationDate);
+            request.RegistrationDate,
+            request.PhoneNumber);
 
         await _uow.ClientsRepository.AddAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

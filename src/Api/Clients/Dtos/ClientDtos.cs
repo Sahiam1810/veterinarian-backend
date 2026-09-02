@@ -13,7 +13,10 @@ public record CreateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null
+    DateTime? RegistrationDate = null,
+
+    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
+    string? PhoneNumber = null
 );
 
 public record UpdateClientDto(
@@ -27,7 +30,10 @@ public record UpdateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null
+    DateTime? RegistrationDate = null,
+
+    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
+    string? PhoneNumber = null
 );
 
 public record ClientResponseDto(
@@ -35,6 +41,7 @@ public record ClientResponseDto(
     Guid UserId,
     string IdentificationNumber,
     string? Address,
+    string? PhoneNumber,
     DateTime RegistrationDate,
     DateTime CreatedAt,
     DateTime? UpdatedAt

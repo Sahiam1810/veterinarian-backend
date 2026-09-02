@@ -7,4 +7,7 @@ public static class RateLimitPolicies
     public const string Register = "Register";
     public const string TelegramWebhook = "TelegramWebhook";
     public const string TelegramRegistration = "TelegramRegistration";
+    public const string ClientIdentificationLookup = "ClientIdentificationLookup";
+    public const string AppointmentOtpRequest = "AppointmentOtpRequest";
+    public const string AppointmentOtpConfirm = "AppointmentOtpConfirm";
 }

@@ -8,4 +8,5 @@ public sealed record CreateAppointmentRequest(
     Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
-    string? Notes);
+    string? Notes,
+    string RequesterPhoneNumber);

@@ -1,6 +1,8 @@
 using Application.Telegram.Abstractions;
+using Application.Verification.Abstractions;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
+using Domain.Verification.Enums;
 
 namespace Application.Telegram.Linking;
 
@@ -13,11 +15,12 @@ public interface ITelegramChatLinkingService
         CancellationToken cancellationToken);
 }
 
+// Vinculación Telegram usa el OTP genérico (canal Email).
 public sealed class TelegramChatLinkingService(
     ITelegramUnitOfWork unitOfWork,
     ITelegramAccountLookup accountLookup,
-    ITelegramVerificationCodeSender verificationCodeSender,
-    ITelegramOtpProtector otpProtector,
+    IVerificationCodeDispatcher verificationCodeDispatcher,
+    IOtpProtector otpProtector,
     ITelegramRuntimeSettings settings,
     TimeProvider timeProvider) : ITelegramChatLinkingService
 {
@@ -151,7 +154,8 @@ public sealed class TelegramChatLinkingService(
         {
             try
             {
-                await verificationCodeSender.SendAsync(
+                await verificationCodeDispatcher.SendAsync(
+                    VerificationDeliveryChannel.Email,
                     account.Email,
                     otp.Code,
                     now.Add(settings.OtpLifetime),

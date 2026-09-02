@@ -8,6 +8,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Api.Clients.Controllers;
 
@@ -32,6 +33,23 @@ public class ClientsController(ISender sender) : ControllerBase
         }
 
         var client = await sender.Send(new GetMyClientQuery(userAccountId), ct);
+        return Ok(client.ToDto());
+    }
+
+    // GET /api/clients/by-identification/{identificationNumber}
+    [HttpGet("by-identification/{identificationNumber}")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.ClientIdentificationLookup)]
+    [EndpointSummary("Resuelve un cliente por número de identificación")]
+    [EndpointDescription("Permite al chatbot ubicar al cliente antes de un JWT tradicional. Rate-limited.")]
+    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ClientResponseDto>> GetByIdentification(
+        string identificationNumber,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientByIdentificationQuery(identificationNumber), ct);
         return Ok(client.ToDto());
     }
 
@@ -75,7 +93,8 @@ public class ClientsController(ISender sender) : ControllerBase
             dto.UserId,
             dto.IdentificationNumber,
             dto.Address,
-            dto.RegistrationDate), ct);
+            dto.RegistrationDate,
+            dto.PhoneNumber), ct);
 
         var client = await sender.Send(new GetClientByIdQuery(id), ct);
         return CreatedAtAction(nameof(GetById), new { id }, client.ToDto());
@@ -97,7 +116,8 @@ public class ClientsController(ISender sender) : ControllerBase
             dto.UserId,
             dto.IdentificationNumber,
             dto.Address,
-            dto.RegistrationDate), ct);
+            dto.RegistrationDate,
+            dto.PhoneNumber), ct);
 
         return NoContent();
     }

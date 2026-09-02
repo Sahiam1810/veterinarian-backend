@@ -12,6 +12,7 @@ public static class ClientMappingsExtensions
             entity.UserId,
             entity.IdentificationNumber.Value,
             entity.Address?.Value,
+            entity.PhoneNumber?.Value,
             entity.RegistrationDate,
             entity.CreatedAt,
             entity.UpdatedAt
