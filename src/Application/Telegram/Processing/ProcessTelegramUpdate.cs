@@ -30,9 +30,8 @@ public sealed class ProcessTelegramUpdateHandler(
         "Envía /vincular para comenzar.";
     private const string GuestStartReply =
         "¡Hola! Puedes hacer preguntas veterinarias generales como invitado. " +
-        "Para consultar tus mascotas o realizar operaciones, envía /vincular; solo debes hacerlo una vez.";
-    private const string GuestLinkingHint =
-        "\n\nPara usar información de tus mascotas o realizar operaciones, envía /vincular.";
+        "Para consultar tus mascotas o realizar operaciones, envía /vincular; " +
+        "si aún no tienes una cuenta, deberás crearla de forma segura en la aplicación.";
 
     public async Task Handle(
         ProcessTelegramUpdateCommand request,
@@ -166,7 +165,7 @@ public sealed class ProcessTelegramUpdateHandler(
             cancellationToken);
         var response = string.IsNullOrWhiteSpace(result.Message)
             ? GuestStartReply
-            : result.Message + GuestLinkingHint;
+            : result.Message;
         await DeliverAsync(update, response, cancellationToken);
     }
 
