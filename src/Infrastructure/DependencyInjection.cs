@@ -77,6 +77,7 @@ using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Linking;
+using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.AiModels.Repository;
 using Infrastructure.ChatConversationAssignments.Repository;
@@ -246,6 +247,7 @@ public static class DependencyInjection
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
         services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
+        services.AddScoped<ITelegramRegistrationService, TelegramRegistrationService>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
         services.AddSingleton<ITelegramRegistrationProtector>(provider =>
         {
@@ -258,6 +260,7 @@ public static class DependencyInjection
             return new TelegramOtpProtector(options.OtpPepperBase64);
         });
         services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
+        services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
         services.AddScoped<ITelegramVerificationCodeSender, SmtpTelegramVerificationCodeSender>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddScoped<IAgentDelegatedIdentityProvider, AgentDelegatedIdentityProvider>();
