@@ -7,6 +7,9 @@ public interface IServiceRepository
     Task<IReadOnlyCollection<Service>> GetAllAsync(
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyCollection<Service>> GetAvailableAsync(
+        CancellationToken cancellationToken);
+
     Task<Service?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken);

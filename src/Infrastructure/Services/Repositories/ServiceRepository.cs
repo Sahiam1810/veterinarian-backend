@@ -22,6 +22,15 @@ public sealed class ServiceRepository : IServiceRepository
             .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<Service>> GetAvailableAsync(
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Service>()
+            .Include(x => x.TypeService)
+            .AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+
     public Task<Service?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default)

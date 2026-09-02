@@ -49,6 +49,22 @@ public sealed class ServicesController(ISender sender) : ControllerBase
         return Ok(services.ToResponse());
     }
 
+    [HttpGet("available")]
+    [Authorize]
+    [EndpointSummary("Obtiene el catálogo público de servicios activos")]
+    [EndpointDescription("Retorna únicamente servicios veterinarios activos para consumidores autenticados, incluido el canal invitado de Telegram.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<ServiceResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyCollection<ServiceResponse>>> GetAvailable(
+        CancellationToken cancellationToken)
+    {
+        var services = await sender.Send(
+            new GetAvailableServicesQuery(),
+            cancellationToken);
+
+        return Ok(services.ToResponse());
+    }
+
     [HttpGet("{id:guid}")]
     [RequirePermission("Servicios", PermissionAction.View)]
     [EndpointSummary("Obtiene un servicio por su ID")]
