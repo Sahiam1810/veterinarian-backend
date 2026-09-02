@@ -15,7 +15,7 @@ namespace Api.Races.Controllers;
 public sealed class RacesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [RequirePermission("Especies y Razas", PermissionAction.View)]
+    [Authorize]
     [EndpointSummary("Obtiene todas las razas")]
     [EndpointDescription("Retorna una lista con todas las razas registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RaceResponseDto>), StatusCodes.Status200OK)]
