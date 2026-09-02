@@ -1,0 +1,46 @@
+-- Catálogo canónico de estados de cita médica.
+-- Ejecute este script después de aplicar las migraciones que crean STATUS_APPOINTMENTS.
+-- Es idempotente por NAME: si el nombre ya existe, se conserva su GUID/PK;
+-- solo inserta los nombres faltantes con los identificadores fijos del catálogo.
+
+MERGE INTO STATUS_APPOINTMENTS target
+USING (
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000001' AS ID, 'AGENDADA' AS NAME
+    FROM DUAL
+) source
+ON (UPPER(target.NAME) = UPPER(source.NAME))
+WHEN NOT MATCHED THEN
+    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
+    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+MERGE INTO STATUS_APPOINTMENTS target
+USING (
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000002' AS ID, 'ATENDIDA' AS NAME
+    FROM DUAL
+) source
+ON (UPPER(target.NAME) = UPPER(source.NAME))
+WHEN NOT MATCHED THEN
+    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
+    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+MERGE INTO STATUS_APPOINTMENTS target
+USING (
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000003' AS ID, 'CANCELADA' AS NAME
+    FROM DUAL
+) source
+ON (UPPER(target.NAME) = UPPER(source.NAME))
+WHEN NOT MATCHED THEN
+    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
+    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+MERGE INTO STATUS_APPOINTMENTS target
+USING (
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000004' AS ID, 'NO_ASISTIO' AS NAME
+    FROM DUAL
+) source
+ON (UPPER(target.NAME) = UPPER(source.NAME))
+WHEN NOT MATCHED THEN
+    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
+    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+COMMIT;

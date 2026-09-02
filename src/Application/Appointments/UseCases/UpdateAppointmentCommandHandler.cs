@@ -20,7 +20,7 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
             request.ClientPetId,
             request.VeterinarianId,
             request.ServiceId,
-            request.StatusId,
+            appointment.StatusId,
             request.AvailabilityId,
             request.ScheduledStart,
             request.ScheduledEnd,

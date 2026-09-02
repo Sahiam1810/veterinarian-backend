@@ -37,6 +37,16 @@ public static class AppointmentMappings
             request.Notes);
     }
 
+    public static UpdateAppointmentStatusCommand ToCommand(
+        this UpdateAppointmentStatusRequest request,
+        Guid appointmentId)
+    {
+        return new UpdateAppointmentStatusCommand(
+            appointmentId,
+            request.StatusId,
+            request.Comment);
+    }
+
     public static AppointmentResponse ToResponse(
         this Appointment entity)
     {
