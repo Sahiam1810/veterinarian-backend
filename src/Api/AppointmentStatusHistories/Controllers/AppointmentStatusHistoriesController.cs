@@ -14,11 +14,8 @@ namespace Api.AppointmentStatusHistories.Controllers;
 [Route("api/[controller]")]
 public sealed class AppointmentStatusHistoriesController(ISender sender) : ControllerBase
 {
-    // Cambiar el estado de una cita (ej. marcarla como atendida) se modela como
-    // "Editar" sobre el módulo Citas, no como "Crear" — así el Veterinario (que
-    // solo tiene Ver+Editar en Citas, sin Crear) puede marcar la atención.
     [HttpPost]
-    [RequirePermission("Citas", PermissionAction.Edit)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crea un nuevo historial de estado de cita")]
     [EndpointDescription("Registra un nuevo historial de cambio de estado para una cita médica.")]
     [ProducesResponseType(typeof(CreateAppointmentStatusHistoryResponse), StatusCodes.Status201Created)]
@@ -69,7 +66,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpPut("{id:guid}")]
-    [RequirePermission("Citas", PermissionAction.Edit)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualiza un historial de estado de cita existente")]
     [EndpointDescription("Modifica los datos de un historial de estado previamente registrado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -88,7 +85,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpDelete("{id:guid}")]
-    [RequirePermission("Citas", PermissionAction.Delete)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Elimina un historial de estado de cita por su ID")]
     [EndpointDescription("Remueve permanentemente un historial de estado del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

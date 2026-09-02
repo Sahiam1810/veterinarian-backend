@@ -113,6 +113,26 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return Ok(appointment.ToResponse());
     }
 
+    [HttpPatch("{appointmentId:guid}/status")]
+    [RequirePermission("Citas", PermissionAction.Edit)]
+    [EndpointSummary("Actualiza el estado de una cita médica")]
+    [EndpointDescription("Aplica una transición de estado permitida sobre la cita y registra el historial correspondiente.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateStatus(
+        Guid appointmentId,
+        [FromBody] UpdateAppointmentStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(
+            request.ToCommand(appointmentId),
+            cancellationToken);
+
+        return NoContent();
+    }
+
     [HttpPut("{id:guid}")]
     [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una cita médica existente")]
