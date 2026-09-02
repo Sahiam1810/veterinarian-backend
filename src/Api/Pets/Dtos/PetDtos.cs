@@ -75,3 +75,14 @@ public sealed record OwnedPetProfileResponseDto(
     Guid RaceId,
     string RaceName,
     DateTime UpdatedAt);
+
+public sealed record UpdateOwnedPetProfileDto(
+    string? Name,
+    int? Age,
+    string? Gender,
+    decimal? Weight,
+    string? Observations,
+    bool ChangeObservations,
+    Guid? SpeciesId,
+    Guid? RaceId,
+    DateTime ExpectedUpdatedAt);
