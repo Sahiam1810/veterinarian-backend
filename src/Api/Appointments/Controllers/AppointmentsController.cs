@@ -151,6 +151,38 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{appointmentId:guid}/medical-record")]
+    [RequirePermission("Historiales Clínicos", PermissionAction.Create)]
+    [EndpointSummary("Crea la historia clínica de una cita")]
+    [EndpointDescription("Registra la historia clínica de la cita indicada y, opcionalmente, vacunas asociadas en la misma operación atómica.")]
+    [ProducesResponseType(typeof(CreateAppointmentMedicalRecordResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CreateAppointmentMedicalRecordResponse>> CreateMedicalRecord(
+        Guid appointmentId,
+        [FromBody] CreateAppointmentMedicalRecordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await sender.Send(
+            request.ToCommand(
+                appointmentId,
+                actorUserAccountId,
+                ShouldEnforceVeterinarianOwnership()),
+            cancellationToken);
+
+        return StatusCode(
+            StatusCodes.Status201Created,
+            result.ToResponse());
+    }
+
     [HttpPut("{id:guid}")]
     [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una cita médica existente")]
