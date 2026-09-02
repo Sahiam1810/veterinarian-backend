@@ -1,5 +1,6 @@
 using Api.Pets.Dtos;
 using Domain.Pets.Entities;
+using Application.Pets.Models;
 
 namespace Api.Pets.Mappings;
 
@@ -18,4 +19,17 @@ public static class PetMappings
             entity.RaceId
         );
     }
+
+    public static OwnedPetProfileResponseDto ToDto(this OwnedPetProfile profile) => new(
+        profile.Id,
+        profile.Name,
+        profile.Age,
+        profile.Gender,
+        profile.Weight,
+        profile.Observations,
+        profile.SpeciesId,
+        profile.SpeciesName,
+        profile.RaceId,
+        profile.RaceName,
+        profile.UpdatedAt);
 }

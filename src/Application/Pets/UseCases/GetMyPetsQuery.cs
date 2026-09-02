@@ -1,13 +1,14 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Domain.Pets.Entities;
+using Application.Pets.Models;
 using MediatR;
 
 namespace Application.Pets.UseCases;
 
-public sealed record GetMyPetsQuery(Guid UserAccountId) : IRequest<IReadOnlyCollection<PetEntity>>;
+public sealed record GetMyPetsQuery(Guid UserAccountId) : IRequest<IReadOnlyCollection<OwnedPetProfile>>;
 
-public sealed class GetMyPetsQueryHandler : IRequestHandler<GetMyPetsQuery, IReadOnlyCollection<PetEntity>>
+public sealed class GetMyPetsQueryHandler : IRequestHandler<GetMyPetsQuery, IReadOnlyCollection<OwnedPetProfile>>
 {
     private readonly IUnitOfWork _uow;
 
@@ -16,7 +17,7 @@ public sealed class GetMyPetsQueryHandler : IRequestHandler<GetMyPetsQuery, IRea
         _uow = uow;
     }
 
-    public async Task<IReadOnlyCollection<PetEntity>> Handle(GetMyPetsQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<OwnedPetProfile>> Handle(GetMyPetsQuery request, CancellationToken cancellationToken)
     {
         var account = await _uow.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken);
         if (account is null)
@@ -33,10 +34,22 @@ public sealed class GetMyPetsQueryHandler : IRequestHandler<GetMyPetsQuery, IRea
         var clientPets = await _uow.ClientPetsRepository.GetByClientIdAsync(client.Id, cancellationToken);
         if (clientPets.Count == 0)
         {
-            return Array.Empty<PetEntity>();
+            return Array.Empty<OwnedPetProfile>();
         }
 
         var petIds = clientPets.Select(cp => cp.PetId).ToArray();
-        return await _uow.PetsRepository.GetByIdsAsync(petIds, cancellationToken);
+        var pets = await _uow.PetsRepository.GetByIdsAsync(petIds, cancellationToken);
+        return pets.Select(pet => new OwnedPetProfile(
+            pet.Id,
+            pet.Name.Value,
+            pet.Age,
+            pet.Gender.Value,
+            pet.Weight.Value,
+            pet.Observations.Value,
+            pet.SpeciesId,
+            pet.Species.Name.Value,
+            pet.RaceId,
+            pet.Race.Name.Value,
+            pet.UpdatedAt ?? pet.CreatedAt)).ToArray();
     }
 }
