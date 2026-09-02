@@ -21,4 +21,16 @@ public interface ITelegramRuntimeSettings
     int OtpMaximumAttempts { get; }
 
     TimeSpan OtpResendInterval { get; }
+
+    bool RegistrationEnabled { get; }
+
+    string RegistrationCompletionUrl { get; }
+
+    TimeSpan RegistrationOtpLifetime { get; }
+
+    TimeSpan RegistrationTokenLifetime { get; }
+
+    int RegistrationMaximumOtpAttempts { get; }
+
+    TimeSpan RegistrationResendInterval { get; }
 }

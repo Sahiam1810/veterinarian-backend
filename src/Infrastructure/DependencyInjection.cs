@@ -247,6 +247,11 @@ public static class DependencyInjection
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
         services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
+        services.AddSingleton<ITelegramRegistrationProtector>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
+            return new TelegramRegistrationProtector(options.RegistrationProtectionKeyBase64);
+        });
         services.AddSingleton<ITelegramOtpProtector>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
@@ -283,7 +288,13 @@ public static class DependencyInjection
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes),
                 TimeSpan.FromMinutes(options.OtpTtlMinutes),
                 options.OtpMaximumAttempts,
-                TimeSpan.FromSeconds(options.OtpResendSeconds));
+                TimeSpan.FromSeconds(options.OtpResendSeconds),
+                options.RegistrationEnabled,
+                options.RegistrationCompletionUrl,
+                TimeSpan.FromMinutes(options.RegistrationOtpTtlMinutes),
+                TimeSpan.FromMinutes(options.RegistrationTokenTtlMinutes),
+                options.RegistrationMaxOtpAttempts,
+                TimeSpan.FromSeconds(options.RegistrationResendSeconds));
         });
 
         var telegramOptions = configuration

@@ -35,6 +35,28 @@ public sealed class TelegramOptionsStartupTests
         Assert.Contains(exception.Failures, failure => failure.Contains("Telegram:PublicWebhookUrl"));
     }
 
+    [Fact]
+    public void Enabled_registration_rejects_insecure_url_and_missing_protection_key()
+    {
+        var options = new TelegramOptions
+        {
+            Enabled = true,
+            BotToken = "token",
+            BotUsername = "bot",
+            WebhookSecret = "secret",
+            PublicWebhookUrl = "https://telegram.example.test",
+            OtpPepperBase64 = Convert.ToBase64String(new byte[32]),
+            RegistrationEnabled = true,
+            RegistrationCompletionUrl = "http://registration.example.test"
+        };
+
+        var result = new TelegramOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Failed);
+        Assert.Contains(result.Failures, failure => failure.Contains("RegistrationCompletionUrl"));
+        Assert.Contains(result.Failures, failure => failure.Contains("RegistrationProtectionKeyBase64"));
+    }
+
     private static ServiceProvider BuildProvider(Dictionary<string, string?> values)
     {
         var configuration = new ConfigurationBuilder()
