@@ -9,6 +9,7 @@ using Application.Telegram.Messages;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Telegram.Processing;
 
@@ -23,7 +24,8 @@ public sealed class ProcessTelegramUpdateHandler(
     ISender sender,
     ITelegramChatLinkingService linkingService,
     ITelegramRuntimeSettings settings,
-    TimeProvider timeProvider) : IRequestHandler<ProcessTelegramUpdateCommand>
+    TimeProvider timeProvider,
+    ILogger<ProcessTelegramUpdateHandler> logger) : IRequestHandler<ProcessTelegramUpdateCommand>
 {
     private const string LinkingRequiredReply =
         "¡Hola! Para proteger tu información, primero debes vincular este chat una sola vez. " +
@@ -130,9 +132,15 @@ public sealed class ProcessTelegramUpdateHandler(
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             var now = timeProvider.GetUtcNow().UtcDateTime;
+            var errorCode = SafeErrorCode(exception);
+            logger.LogWarning(
+                exception,
+                "Telegram update processing failed with code {ErrorCode} on attempt {Attempt}.",
+                errorCode,
+                update.Attempts);
             update.ScheduleRetry(
                 now.AddSeconds(Math.Pow(2, Math.Max(0, update.Attempts - 1))),
-                SafeErrorCode(exception),
+                errorCode,
                 settings.MaxProcessingAttempts,
                 now);
             await unitOfWork.InboundUpdatesRepository.UpdateAsync(update, cancellationToken);

@@ -1,4 +1,5 @@
 using Application.Agent.Abstractions;
+using Application.Agent.Errors;
 using Application.Agent.Messages;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Models;
@@ -7,6 +8,7 @@ using Application.Telegram.Processing;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 
@@ -210,6 +212,35 @@ public sealed class ProcessTelegramUpdateHandlerTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Agent_failure_is_logged_without_request_content()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(52, "contenido sensible");
+        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
+        fixture.Updates.GetByIdAsync(52, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
+        fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
+            .Returns(new TelegramConversationBinding(ConversationId, false));
+        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-52", default)
+            .Returns(new AgentConversationContext(ConversationId, "web", false));
+        fixture.Identity.GetAsync(PersonId, default)
+            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "delegated-token",
+                default)
+            .Returns<Task<AgentMessageResult>>(_ => throw new AgentUnavailableException(
+                new HttpRequestException("Connection refused")));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(52), default);
+
+        Assert.IsType<AgentUnavailableException>(fixture.Logger.Exception);
+        Assert.DoesNotContain("contenido sensible", fixture.Logger.Message, StringComparison.Ordinal);
+        Assert.Contains("agent_request_failed", fixture.Logger.Message, StringComparison.Ordinal);
+    }
+
     private static Fixture CreateFixture(DateTimeOffset? currentTime = null)
     {
         var unitOfWork = Substitute.For<ITelegramUnitOfWork>();
@@ -227,6 +258,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.MaxProcessingAttempts.Returns(3);
         var linking = Substitute.For<ITelegramChatLinkingService>();
+        var logger = new RecordingLogger<ProcessTelegramUpdateHandler>();
         linking.HandleAsync(Arg.Any<TelegramInboundUpdate>(), Arg.Any<CancellationToken>())
             .Returns(new TelegramLinkingOutcome(false, null));
 
@@ -240,7 +272,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 sender,
                 linking,
                 settings,
-                new FixedTimeProvider(currentTime ?? Now)),
+                new FixedTimeProvider(currentTime ?? Now),
+                logger),
             updates,
             userLinks,
             conversationLinks,
@@ -250,7 +283,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
             bot,
             sender,
             linking,
-            settings);
+            settings,
+            logger);
     }
 
     private static TelegramInboundUpdate ProcessingUpdate(long id, string text)
@@ -275,7 +309,30 @@ public sealed class ProcessTelegramUpdateHandlerTests
         ITelegramBotClient Bot,
         ISender Sender,
         ITelegramChatLinkingService Linking,
-        ITelegramRuntimeSettings Settings);
+        ITelegramRuntimeSettings Settings,
+        RecordingLogger<ProcessTelegramUpdateHandler> Logger);
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public Exception? Exception { get; private set; }
+
+        public string Message { get; private set; } = string.Empty;
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Exception = exception;
+            Message = formatter(state, exception);
+        }
+    }
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {
