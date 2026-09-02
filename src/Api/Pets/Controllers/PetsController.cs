@@ -27,10 +27,10 @@ public class PetsController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
     [EndpointSummary("Obtiene las mascotas del cliente autenticado")]
     [EndpointDescription("Retorna las mascotas asociadas al cliente correspondiente al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<PetResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<OwnedPetProfileResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyCollection<PetResponseDto>>> GetMine(CancellationToken ct)
+    public async Task<ActionResult<IReadOnlyCollection<OwnedPetProfileResponseDto>>> GetMine(CancellationToken ct)
     {
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         if (!Guid.TryParse(subject, out var userAccountId))

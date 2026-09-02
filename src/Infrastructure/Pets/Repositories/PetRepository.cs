@@ -28,6 +28,8 @@ public sealed class PetRepository : IPetRepository
     public async Task<IReadOnlyCollection<PetEntity>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
     {
         return await _context.Set<PetEntity>()
+            .Include(p => p.Species)
+            .Include(p => p.Race)
             .Where(p => ids.Contains(p.Id))
             .ToListAsync(cancellationToken);
     }

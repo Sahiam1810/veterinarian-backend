@@ -62,3 +62,16 @@ public record PetResponseDto(
     Guid SpeciesId,
     Guid RaceId
 );
+
+public sealed record OwnedPetProfileResponseDto(
+    Guid Id,
+    string Name,
+    int Age,
+    string Gender,
+    decimal Weight,
+    string? Observations,
+    Guid SpeciesId,
+    string SpeciesName,
+    Guid RaceId,
+    string RaceName,
+    DateTime UpdatedAt);

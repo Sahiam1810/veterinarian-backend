@@ -26,6 +26,8 @@ public sealed class PetEntity : BaseEntity<Guid>
         Gender = PetGender.Create(gender);
         Weight = PetWeight.Create(weight);
         Observations = PetObservations.Create(observations);
+        Species = speciesEntity;
+        Race = raceEntity;
         SpeciesId = speciesEntity.Id;
         RaceId = raceEntity.Id;
     }
@@ -56,6 +58,8 @@ public sealed class PetEntity : BaseEntity<Guid>
         Gender = PetGender.Create(gender);
         Weight = PetWeight.Create(weight);
         Observations = PetObservations.Create(observations);
+        Species = speciesEntity;
+        Race = raceEntity;
         SpeciesId = speciesEntity.Id;
         RaceId = raceEntity.Id;
         UpdatedAt = DateTime.UtcNow;
