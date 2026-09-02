@@ -21,7 +21,9 @@ namespace Application.Tests.Appointments;
 public sealed class GetMyAppointmentsQueryHandlerTests
 {
     private static readonly Guid UserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid OtherUserAccountId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid UserId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+    private static readonly Guid OtherUserId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
 
     private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
     private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
@@ -40,7 +42,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_returns_only_appointments_for_client_pets_when_profile_exists()
+    public async Task Handle_SEC_01_T01_client_with_profile_returns_only_own_appointments()
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(UserId, "1234567890", "Calle 1");
@@ -80,7 +82,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_throws_NotFoundException_when_account_has_no_client_profile()
+    public async Task Handle_SEC_01_T02_no_client_profile_returns_empty_collection()
     {
         var account = new UserAccountEntity(UserId, "vet", "vet@test.com", "Active");
 
@@ -89,11 +91,110 @@ public sealed class GetMyAppointmentsQueryHandlerTests
         clientsRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
             .Returns((ClientEntity?)null);
 
-        var exception = await Assert.ThrowsAsync<NotFoundException>(
-            () => sut.Handle(new GetMyAppointmentsQuery(UserAccountId), CancellationToken.None));
+        var result = await sut.Handle(new GetMyAppointmentsQuery(UserAccountId), CancellationToken.None);
 
-        Assert.Contains("perfil de cliente", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task Handle_SEC_01_T03_no_client_does_not_call_appointments_get_all_async()
+    {
+        var account = new UserAccountEntity(UserId, "vet", "vet@test.com", "Active");
+
+        userAccountsRepository.GetByIdAsync(UserAccountId, Arg.Any<CancellationToken>())
+            .Returns(account);
+        clientsRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns((ClientEntity?)null);
+
+        var result = await sut.Handle(new GetMyAppointmentsQuery(UserAccountId), CancellationToken.None);
+
+        Assert.Empty(result);
         await appointmentsRepository.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
+        await appointmentsRepository.DidNotReceive()
+            .GetByClientPetIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>());
+        await clientPetsRepository.DidNotReceive()
+            .GetByClientIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_SEC_01_T04_no_client_does_not_receive_other_client_appointments()
+    {
+        var account = new UserAccountEntity(UserId, "vet", "vet@test.com", "Active");
+        var otherClient = new ClientEntity(OtherUserId, "0987654321", "Calle 2");
+        var species = new SpeciesEntity("Canino");
+        var race = new RaceEntity("Mestizo");
+        var pet = new PetEntity("Otro", 2, "F", 8m, null, species, race);
+        var otherClientPet = new ClientPetEntity(otherClient, pet, true);
+        var otherClientAppointments = new[]
+        {
+            new Appointment(
+                otherClientPet.Id,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                DateTime.UtcNow,
+                DateTime.UtcNow.AddHours(1),
+                null)
+        };
+
+        userAccountsRepository.GetByIdAsync(UserAccountId, Arg.Any<CancellationToken>())
+            .Returns(account);
+        clientsRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns((ClientEntity?)null);
+        appointmentsRepository.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(otherClientAppointments);
+
+        var result = await sut.Handle(new GetMyAppointmentsQuery(UserAccountId), CancellationToken.None);
+
+        Assert.Empty(result);
+        await appointmentsRepository.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_SEC_01_T05_propagates_cancellation_token()
+    {
+        using var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
+        var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
+        var client = new ClientEntity(UserId, "1234567890", "Calle 1");
+        var species = new SpeciesEntity("Canino");
+        var race = new RaceEntity("Mestizo");
+        var pet = new PetEntity("Firulais", 3, "M", 10m, null, species, race);
+        var clientPet = new ClientPetEntity(client, pet, true);
+        var expectedAppointments = new[]
+        {
+            new Appointment(
+                clientPet.Id,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                DateTime.UtcNow,
+                DateTime.UtcNow.AddHours(1),
+                null)
+        };
+
+        userAccountsRepository.GetByIdAsync(UserAccountId, cancellationToken)
+            .Returns(account);
+        clientsRepository.GetByUserIdAsync(UserId, cancellationToken)
+            .Returns(client);
+        clientPetsRepository.GetByClientIdAsync(client.Id, cancellationToken)
+            .Returns(new[] { clientPet });
+        appointmentsRepository.GetByClientPetIdsAsync(
+                Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Single() == clientPet.Id),
+                cancellationToken)
+            .Returns(expectedAppointments);
+
+        var result = await sut.Handle(new GetMyAppointmentsQuery(UserAccountId), cancellationToken);
+
+        Assert.Single(result);
+        await userAccountsRepository.Received(1).GetByIdAsync(UserAccountId, cancellationToken);
+        await clientsRepository.Received(1).GetByUserIdAsync(UserId, cancellationToken);
+        await clientPetsRepository.Received(1).GetByClientIdAsync(client.Id, cancellationToken);
+        await appointmentsRepository.Received(1).GetByClientPetIdsAsync(
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Single() == clientPet.Id),
+            cancellationToken);
     }
 
     [Fact]
