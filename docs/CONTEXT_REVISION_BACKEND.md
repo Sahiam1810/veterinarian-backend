@@ -8,6 +8,19 @@
 
 ---
 
+## 0. Alcance de producto y estado del frontend (leer primero, actualizado 2026-09-03)
+
+**El Cliente nunca tiene interfaz propia ni login.** Se había planeado en algún momento un panel de cliente (self-service web/app con JWT, viendo sus citas/mascotas/etc.) — **esa idea se descartó**, indicación explícita de la líder: el Cliente **solo** interactúa con el sistema a través del chatbot (Telegram por ahora). Todo lo que el cliente necesita — agendar cita, cancelar, reprogramar, consultar sus mascotas — pasa por el chatbot, no por un frontend propio del cliente.
+
+**Qué implica esto para el backend:**
+- Todo el trabajo ya hecho para Cliente (`ClientOnly`, `/clients/me`, `/pets/mine`, `/appointments/mine`, el flujo OTP de auto-servicio de citas sin JWT, etc.) **se deja tal cual está, quieto** — no se retira ni se completa activamente. Queda catalogado como **mejora futura**, no como pendiente de esta ronda. No reportar como "hallazgo" el hecho de que el panel de Cliente esté incompleto o inconsistente con el resto — es simplemente un camino que no se va a seguir desarrollando por ahora.
+- **No tocar nada de lo que es exclusivamente de Cliente** (rutas `ClientOnly`, controllers `/mine`) salvo que el hallazgo sea de seguridad real explotable por otro rol, o que se pida explícitamente.
+- El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es, en cambio, el canal real y activo del Cliente — ahí sí aplica todo el peso de la revisión y corrección.
+
+**Estado del frontend (para contexto, no accionable desde el backend):** SuperAdmin, Veterinario y Auxiliar ya están **100% conectados** al frontend real (no es solo backend con Swagger — hay UI consumiéndolos en producción/staging). Tenerlo en cuenta al estimar impacto de un cambio: romper un contrato de esos tres roles es visible para usuarios reales ahora mismo, no solo teórico.
+
+---
+
 ## 1. Arquitectura y patrones establecidos
 
 No propongas nada distinto a esto sin discutirlo antes — son decisiones ya tomadas y aplicadas en la mayoría del código.
@@ -157,13 +170,8 @@ Re-verificado 2026-09-03: **los 8 ítems ya están resueltos**, aparentemente v�
 
 Quitar todo VET-01 a VET-08 de cualquier lista de pendientes.
 
-### 🆕 Nuevo — Historias clínicas: dos rutas de creación con validación divergente
-Descubierto 2026-09-03 al re-verificar VET-05/06. Hay dos endpoints POST que crean una `MedicalRecord` para una cita, con distinta cobertura de validación:
-- `POST /api/appointments/{appointmentId}/medical-record` (`CreateAppointmentMedicalRecordCommandHandler`, nuevo): valida ownership del veterinario, **rechaza si ya existe una historia clínica para esa cita** (`ExistsByAppointmentIdAsync`), y **rechaza si el diagnóstico no está activo**.
-- `POST /api/medicalrecords` (`CreateMedicalRecordCommandHandler`, el original, sigue montado en `MedicalRecordsController`): valida ownership del veterinario (de forma distinta: solo si el `UserAccountId` resuelve a un perfil de Veterinario; si no, cualquiera con `Historiales Clínicos:Create` pasa sin chequeo — downstream de Admin/Recepcionista, consistente con el diseño de "solo Veterinario tiene ownership"), pero **no** verifica si ya existe una historia clínica para esa cita, ni si el diagnóstico está activo.
-- **Comportamiento esperado vs. real:** el modelo de negocio asume "historia clínica inmutable, una por cita" (así lo dice el propio Swagger de `MedicalRecordsController`) — pero hoy se puede crear una segunda historia clínica duplicada para la misma cita, o adjuntar un diagnóstico retirado/inactivo, simplemente usando el endpoint viejo en vez del nuevo.
-- **Severidad:** P1 medio (integridad de datos, no hueco de seguridad — ambos endpoints exigen el mismo permiso).
-- **Recomendación:** unificar en un solo handler, o al menos portar las dos validaciones que le faltan a `CreateMedicalRecordCommandHandler`.
+### ✅ Ya no está pendiente: Historias clínicas — dos rutas de creación con validación divergente
+Corregido 2026-09-03. Decisión: eliminar el endpoint viejo en vez de portarle las validaciones que le faltaban, ya que `POST /api/appointments/{appointmentId}/medical-record` cubre el mismo caso de uso completo. Se borró `POST /api/medicalrecords` (`MedicalRecordsController.Create`) y todo lo que quedaba huérfano detrás: `CreateMedicalRecordCommand`/`CreateMedicalRecordCommandHandler`/`CreateMedicalRecordCommandValidator`, los DTOs `CreateMedicalRecordRequest`/`CreateMedicalRecordResponse`, el mapeo `ToCommand`, y sus tests (`CreateMedicalRecordCommandHandlerTests`, 2 tests). `MedicalRecordsController` ahora es de solo lectura (`GetAll`/`GetById`), consistente con el propio Swagger que ya decía "historia clínica inmutable". `MedicalRecordResponse`/`ToResponse` (usados por `GetAll`/`GetById`) no se tocaron. `dotnet build` limpio, `dotnet test`: 684/684 (459 Application + 69 Infrastructure + 156 Api; baja de 686 por los 2 tests borrados junto con el handler que probaban).
 
 ### Pendientes reales que siguen abiertos (previos a esta ronda, re-verificados 2026-09-03)
 - **PII en `GET /api/clients/by-identification/{identificationNumber}`**: sigue anónimo (`[AllowAnonymous]`, solo protegido por rate limiting) y sigue devolviendo `ClientResponseDto` completo (`Address`, `PhoneNumber`, `UserId`, `RegistrationDate`) a cualquiera que conozca/adivine un número de identificación válido. Es una decisión de diseño ya discutida (necesaria para que el chatbot identifique clientes sin JWT), pero el nivel de exposición de PII no se ha reconsiderado. P1 medio.
