@@ -69,6 +69,20 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_replay_does_not_depend_on_a_later_profile_phone_change()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        var existing = fixture.MatchingAppointment(phone: "3119876543");
+        fixture.Appointments.GetByBookingRequestKeyHashAsync(
+                Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(existing);
+
+        var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
+
+        Assert.Same(existing, result);
+    }
+
+    [Fact]
     public async Task Handle_rechecks_idempotency_after_waiting_for_availability_lock()
     {
         var fixture = new Fixture(withClientPhone: true);
@@ -212,10 +226,10 @@ public sealed class CreateMyAppointmentCommandHandlerTests
                 UnitOfWork, new Settings(), new FixedTimeProvider(Now));
         }
 
-        public Appointment MatchingAppointment() => new(
+        public Appointment MatchingAppointment(string phone = "3001234567") => new(
             ClientPet.Id, Veterinarian.Id, Service.Id, Status.Id, Availability.Id,
             Command.ScheduledStartUtc, Command.ScheduledStartUtc.AddMinutes(30),
-            Command.Notes, "3001234567", new string('A', 64));
+            Command.Notes, phone, new string('A', 64));
 
         public Appointment DifferentAppointment() => new(
             ClientPet.Id, Veterinarian.Id, Service.Id, Status.Id, Availability.Id,

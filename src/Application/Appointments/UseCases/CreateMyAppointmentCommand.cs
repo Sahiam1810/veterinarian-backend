@@ -82,7 +82,7 @@ public sealed class CreateMyAppointmentCommandHandler(
                 .GetByBookingRequestKeyHashAsync(hash, transactionCancellationToken);
             if (existing is not null)
             {
-                EnsureEquivalent(existing, clientPet.Id, request, endUtc, notes, phone);
+                EnsureEquivalent(existing, clientPet.Id, request, endUtc, notes);
                 result = existing;
                 return;
             }
@@ -95,7 +95,7 @@ public sealed class CreateMyAppointmentCommandHandler(
                 .GetByBookingRequestKeyHashAsync(hash, transactionCancellationToken);
             if (existing is not null)
             {
-                EnsureEquivalent(existing, clientPet.Id, request, endUtc, notes, phone);
+                EnsureEquivalent(existing, clientPet.Id, request, endUtc, notes);
                 result = existing;
                 return;
             }
@@ -224,16 +224,17 @@ public sealed class CreateMyAppointmentCommandHandler(
         Guid clientPetId,
         CreateMyAppointmentCommand request,
         DateTime endUtc,
-        string? notes,
-        string phone)
+        string? notes)
     {
+        var requestPhoneMatches = string.IsNullOrWhiteSpace(request.RequesterPhoneNumber)
+            || existing.RequesterPhoneNumber?.Matches(request.RequesterPhoneNumber) == true;
         if (existing.ClientPetId != clientPetId
             || existing.VeterinarianId != request.VeterinarianId
             || existing.ServiceId != request.ServiceId
             || existing.ScheduledStart != request.ScheduledStartUtc
             || existing.ScheduledEnd != endUtc
             || !string.Equals(existing.Notes, notes, StringComparison.Ordinal)
-            || existing.RequesterPhoneNumber?.Matches(phone) != true)
+            || !requestPhoneMatches)
         {
             throw new ConflictException("La clave de idempotencia ya se usó con otros datos.");
         }
