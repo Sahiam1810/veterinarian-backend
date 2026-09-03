@@ -1,0 +1,198 @@
+-- =============================================================================
+-- CONSULTA Y VERIFICACIÓN DE DATOS DE PRUEBA OPERACIONALES
+-- Base de datos: Oracle Database
+-- 
+-- Permite inspeccionar rápidamente todos los registros creados e interconectados
+-- por el seeder de pruebas, incluyendo joins útiles para validar relaciones.
+-- =============================================================================
+
+SET DEFINE OFF;
+SET LINESIZE 250;
+SET PAGESIZE 50;
+
+PROMPT =========================================================================;
+PROMPT 1. RESUMEN DE CONTEO EN TABLAS MODIFICADAS
+PROMPT =========================================================================;
+SELECT 'SPECIALTIES' AS TABLA, COUNT(*) AS TOTAL FROM SPECIALTIES UNION ALL
+SELECT 'SPECIES', COUNT(*) FROM SPECIES UNION ALL
+SELECT 'RACES', COUNT(*) FROM RACES UNION ALL
+SELECT 'USERS (Prueba)', COUNT(*) FROM USERS WHERE USER_ID LIKE 'bbbb0004-%' UNION ALL
+SELECT 'VETERINARIANS', COUNT(*) FROM VETERINARIANS WHERE VETERINARIAN_ID LIKE 'bbbb0005-%' UNION ALL
+SELECT 'CLIENTS', COUNT(*) FROM CLIENTS WHERE CLIENT_ID LIKE 'bbbb0006-%' UNION ALL
+SELECT 'PETS', COUNT(*) FROM PETS WHERE PET_ID LIKE 'bbbb0007-%' UNION ALL
+SELECT 'CLIENTS_PETS', COUNT(*) FROM CLIENTS_PETS WHERE CLIENT_PET_ID LIKE 'bbbb0008-%' UNION ALL
+SELECT 'TYPE_SERVICES', COUNT(*) FROM TYPE_SERVICES WHERE TYPE_SERVICE_ID LIKE 'bbbb0009-%' UNION ALL
+SELECT 'SERVICES', COUNT(*) FROM SERVICES WHERE SERVICE_ID LIKE 'bbbb0010-%' UNION ALL
+SELECT 'DIAGNOSTICS', COUNT(*) FROM DIAGNOSTICS WHERE ID LIKE 'bbbb0011-%' UNION ALL
+SELECT 'AVAILABILITIES', COUNT(*) FROM AVAILABILITIES WHERE AVAILABILITY_ID LIKE 'bbbb0012-%' UNION ALL
+SELECT 'APPOINTMENTS', COUNT(*) FROM APPOINTMENTS WHERE APPOINTMENT_ID LIKE 'bbbb0013-%' UNION ALL
+SELECT 'MEDICAL_RECORDS', COUNT(*) FROM MEDICAL_RECORDS WHERE RECORD_ID LIKE 'bbbb0014-%' UNION ALL
+SELECT 'VACCINATIONS', COUNT(*) FROM VACCINATIONS WHERE VACCINATION_ID LIKE 'bbbb0015-%';
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 2. ESPECIALIDADES (SPECIALTIES)
+PROMPT =========================================================================;
+SELECT SPECIALTY_ID, NAME, DESCRIPTION, CREATED_AT 
+FROM SPECIALTIES 
+WHERE SPECIALTY_ID LIKE 'bbbb0001-%'
+ORDER BY NAME;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 3. ESPECIES Y RAZAS (SPECIES & RACES)
+PROMPT =========================================================================;
+SELECT s.SPECIES_ID, s.NAME AS ESPECIE, r.RACE_ID, r.NAME AS RAZA
+FROM SPECIES s
+LEFT JOIN PETS p ON p.SPECIES_ID = s.SPECIES_ID
+LEFT JOIN RACES r ON r.RACE_ID = p.RACE_ID
+WHERE s.SPECIES_ID LIKE 'bbbb0002-%'
+ORDER BY s.NAME, r.NAME;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 4. VETERINARIOS Y SU ESPECIALIDAD (VETERINARIANS + USERS + SPECIALTIES)
+PROMPT =========================================================================;
+SELECT v.VETERINARIAN_ID,
+       u.FULL_NAME AS VETERINARIO,
+       u.EMAIL,
+       s.NAME AS ESPECIALIDAD,
+       v.LICENSE_NUMBER AS NUM_LICENCIA
+FROM VETERINARIANS v
+JOIN USERS u ON u.USER_ID = v.USER_ID
+JOIN SPECIALTIES s ON s.SPECIALTY_ID = v.SPECIALTY_ID
+WHERE v.VETERINARIAN_ID LIKE 'bbbb0005-%'
+ORDER BY u.FULL_NAME;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 5. HORARIOS DE ATENCIÓN SEMANAL (AVAILABILITIES + VETERINARIANS)
+PROMPT =========================================================================;
+SELECT a.AVAILABILITY_ID,
+       u.FULL_NAME AS VETERINARIO,
+       CASE a.DAY_OF_WEEK
+           WHEN 1 THEN 'Lunes'
+           WHEN 2 THEN 'Martes'
+           WHEN 3 THEN 'Miércoles'
+           WHEN 4 THEN 'Jueves'
+           WHEN 5 THEN 'Viernes'
+           WHEN 6 THEN 'Sábado'
+           WHEN 7 THEN 'Domingo'
+       END AS DIA,
+       a.START_TIME AS INICIO,
+       a.END_TIME AS FIN,
+       a.IS_ACTIVE AS ACTIVO
+FROM AVAILABILITIES a
+JOIN VETERINARIANS v ON v.VETERINARIAN_ID = a.VETERINARIAN_ID
+JOIN USERS u ON u.USER_ID = v.USER_ID
+WHERE a.AVAILABILITY_ID LIKE 'bbbb0012-%'
+ORDER BY u.FULL_NAME, a.DAY_OF_WEEK;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 6. CLIENTES Y SUS MASCOTAS (CLIENTS + CLIENTS_PETS + PETS + RACES + SPECIES)
+PROMPT =========================================================================;
+SELECT c.CLIENT_ID,
+       u.FULL_NAME AS CLIENTE,
+       c.IDENTIFICATION_NUMBER AS CEDULA,
+       c.PHONE_NUMBER AS TELEFONO,
+       p.PET_ID,
+       p.NAME AS MASCOTA,
+       sp.NAME AS ESPECIE,
+       r.NAME AS RAZA,
+       p.AGE AS EDAD_ANIOS,
+       p.GENDER AS GENERO,
+       p.WEIGHT AS PESO_KG,
+       cp.IS_PRIMARY_OWNER AS ES_DUENO_PRINCIPAL
+FROM CLIENTS c
+JOIN USERS u ON u.USER_ID = c.USER_ID
+JOIN CLIENTS_PETS cp ON cp.CLIENT_ID = c.CLIENT_ID
+JOIN PETS p ON p.PET_ID = cp.PET_ID
+JOIN SPECIES sp ON sp.SPECIES_ID = p.SPECIES_ID
+JOIN RACES r ON r.RACE_ID = p.RACE_ID
+WHERE c.CLIENT_ID LIKE 'bbbb0006-%'
+ORDER BY u.FULL_NAME, p.NAME;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 7. SERVICIOS OFRECIDOS (SERVICES + TYPE_SERVICES)
+PROMPT =========================================================================;
+SELECT s.SERVICE_ID,
+       ts.NAME AS TIPO_SERVICIO,
+       s.NAME AS SERVICIO,
+       s.DURATION_MINUTES || ' min' AS DURACION,
+       '$' || TO_CHAR(s.PRICE, '999,999') AS PRECIO,
+       s.IS_ACTIVE AS DISPONIBLE
+FROM SERVICES s
+JOIN TYPE_SERVICES ts ON ts.TYPE_SERVICE_ID = s.TYPE_SERVICE_ID
+WHERE s.SERVICE_ID LIKE 'bbbb0010-%'
+ORDER BY ts.NAME, s.NAME;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 8. DIAGNÓSTICOS REGISTRADOS (DIAGNOSTICS)
+PROMPT =========================================================================;
+SELECT ID AS DIAGNOSTIC_ID, CODE AS CODIGO, NAME AS NOMBRE, DESCRIPTION AS DESCRIPCION, IS_ACTIVE AS ACTIVO
+FROM DIAGNOSTICS
+WHERE ID LIKE 'bbbb0011-%'
+ORDER BY CODE;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 9. CITAS MÉDICAS Y SU ESTADO (APPOINTMENTS + VETS + SERVICES + STATUS)
+PROMPT =========================================================================;
+SELECT ap.APPOINTMENT_ID,
+       p.NAME AS MASCOTA,
+       uc.FULL_NAME AS CLIENTE,
+       uv.FULL_NAME AS VETERINARIO,
+       srv.NAME AS SERVICIO,
+       st.NAME AS ESTADO_CITA,
+       TO_CHAR(ap.SCHEDULED_START, 'YYYY-MM-DD HH24:MI') AS FECHA_HORA_INICIO,
+       TO_CHAR(ap.SCHEDULED_END, 'HH24:MI') AS HORA_FIN,
+       ap.NOTES AS MOTIVO_NOTAS
+FROM APPOINTMENTS ap
+JOIN CLIENTS_PETS cp ON cp.CLIENT_PET_ID = ap.CLIENT_PET_ID
+JOIN PETS p ON p.PET_ID = cp.PET_ID
+JOIN CLIENTS c ON c.CLIENT_ID = cp.CLIENT_ID
+JOIN USERS uc ON uc.USER_ID = c.USER_ID
+JOIN VETERINARIANS v ON v.VETERINARIAN_ID = ap.VETERINARIAN_ID
+JOIN USERS uv ON uv.USER_ID = v.USER_ID
+JOIN SERVICES srv ON srv.SERVICE_ID = ap.SERVICE_ID
+JOIN STATUS_APPOINTMENTS st ON st.STATUS_APPOINTMENT_ID = ap.STATUS_ID
+WHERE ap.APPOINTMENT_ID LIKE 'bbbb0013-%'
+ORDER BY ap.SCHEDULED_START;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 10. HISTORIAS CLÍNICAS (MEDICAL_RECORDS + DIAGNOSTICS + APPOINTMENTS)
+PROMPT =========================================================================;
+SELECT mr.RECORD_ID,
+       p.NAME AS PACIENTE_MASCOTA,
+       d.NAME AS DIAGNOSTICO,
+       mr.SYMPTOMS AS SINTOMAS,
+       mr.TREATMENT AS TRATAMIENTO,
+       mr.WEIGHT_AT_VISIT AS PESO_REGISTRADO,
+       mr.TEMPERATURE || ' °C' AS TEMPERATURA,
+       TO_CHAR(mr.CREATED_AT, 'YYYY-MM-DD HH24:MI') AS FECHA_CONSULTA
+FROM MEDICAL_RECORDS mr
+JOIN CLIENTS_PETS cp ON cp.CLIENT_PET_ID = mr.CLIENT_PET_ID
+JOIN PETS p ON p.PET_ID = cp.PET_ID
+JOIN DIAGNOSTICS d ON d.ID = mr.DIAGNOSTIC_ID
+WHERE mr.RECORD_ID LIKE 'bbbb0014-%'
+ORDER BY mr.CREATED_AT;
+
+PROMPT ;
+PROMPT =========================================================================;
+PROMPT 11. REGISTRO DE VACUNACIONES (VACCINATIONS)
+PROMPT =========================================================================;
+SELECT vac.VACCINATION_ID,
+       p.NAME AS MASCOTA,
+       vac.VACCINE_NAME AS VACUNA,
+       vac.DOSE_NUMBER AS DOSIS,
+       TO_CHAR(vac.APPLICATION_DATE, 'YYYY-MM-DD') AS FECHA_APLICACION,
+       TO_CHAR(vac.NEXT_DOSE_DATE, 'YYYY-MM-DD') AS PROXIMA_DOSIS
+FROM VACCINATIONS vac
+JOIN CLIENTS_PETS cp ON cp.CLIENT_PET_ID = vac.CLIENT_PET_ID
+JOIN PETS p ON p.PET_ID = cp.PET_ID
+WHERE vac.VACCINATION_ID LIKE 'bbbb0015-%'
+ORDER BY vac.APPLICATION_DATE;
