@@ -123,8 +123,8 @@ Todo lo anterior está en `develop`, **excepto la fila de Auditoría de Users** 
 
 Lista original ajustada: varios ítems que se daban por pendientes **ya están resueltos**.
 
-### SEC-01 — confirmado, activo hoy
-Ver commit `9fc66ff` en §3. `GET /api/appointments/mine` devuelve todas las citas a cualquier Admin/Vet/Recepcionista que la llame (están en `ClinicalHistoryReadOnly`, que los incluye). El fix es una línea: volver a `Array.Empty<Appointment>()` en vez de `GetAllAsync()` cuando `client is null` — pero antes de revertirlo, confirmar con quien lo cambió (Ksanti-monsalve) si había una razón de negocio detrás, porque el mensaje del commit sugiere que fue intencional ("Enhanced logic to allow Admin or Staff users...").
+### ✅ Ya no está pendiente: SEC-01
+Re-verificado 2026-09-03 contra el código actual: `GetMyAppointmentsQueryHandler` ya vuelve a `Array.Empty<Appointment>()` cuando `client is null`, y además ahora filtra explícitamente por `ClientPetIds` del cliente (`GetByClientPetIdsAsync`) en vez de `GetAllAsync()`. Resuelto en algún commit posterior a PR #85/#86/#87 (no identificado con exactitud cuál). Quitar de cualquier lista de pendientes.
 
 ### ✅ Ya no está pendiente: SEC-02
 `PATCH /api/usercredentials/{id}/change-password` ya valida por diseño: quedó exclusivo de `SuperAdminOnly` (ya no `RequirePermission("Usuarios", Edit)`, el Administrador normal perdió el acceso). Nuevo `PATCH /api/auth/me/password` como autoservicio para cualquier rol autenticado, resolviendo las credenciales por el `sub` del propio JWT. Implementado hoy, ver §3. Quitar de cualquier lista de pendientes.
@@ -147,17 +147,62 @@ Módulo "Roles" creado (fila 17 en `MODULES`, vía `POST /api/modules` como Supe
 ### ✅ Ya no está pendiente: VET-04/05 — `AppointmentStatusHistoriesController` sin reglas de transición
 Corregido 2026-09-03, ver §3. La sincronización de `Appointment.StatusId` en `Create` ya estaba implementada (el reporte original estaba desactualizado); lo que faltaba y se cerró hoy era la validación de transición (compartida ahora vía `AppointmentStatusTransitionRules`), la restricción de `Update` a solo `Comment`, y el bloqueo de `Delete` sobre la entrada vigente. Quitar de cualquier lista de pendientes.
 
-### Pendientes reales que siguen abiertos (de los informes de VET-01 a VET-08, ver conversación previa con la líder sobre el "Plan de correcciones backend — Perfil y operación veterinaria")
-- VET-01: `IVeterinarianRepository` sigue sin `GetByUserIdAsync`.
-- VET-02/03: no existe `GET /api/veterinarians/me`.
-- VET-03/04: no existe `GET /api/appointments/me` (agenda propia del veterinario, con filtros/paginación).
-- VET-05/06: `CreateMedicalRecordCommandHandler` sigue sin validar que la cita pertenezca al veterinario autenticado, ni ninguna otra validación.
-- VET-08: `PaginatedResult`/`PaginationMetadata` existen en `Application/Common/Models/` pero cero controllers los usan — infraestructura sin conectar.
-- Todo esto sigue pendiente de aprobación formal de la líder según el documento que ella está revisando — no empiecen a implementarlo sin ese visto bueno explícito.
+### ✅ Ya no está pendiente: VET-01 a VET-08 (completo)
+Re-verificado 2026-09-03: **los 8 ítems ya están resueltos**, aparentemente vía PR #80 (`feat/veterinarian-appointment-ownership`), #82 (tests), #83 (pets), #84 (`feat/appointment-medical-record`) y #86/#87 — ninguno mencionado explícitamente como "cierre de VET-0X" en su mensaje de commit, así que quedó disperso sin traza directa a los ítems originales, pero el código actual los cubre:
+- VET-01: `IVeterinarianRepository.GetByUserIdAsync` existe y se usa (`GetMyVeterinarianQuery`, `GetMyAppointmentsAsVeterinarianQuery`, `CreateAppointmentMedicalRecordCommandHandler` vía `AppointmentVeterinarianOwnership`).
+- VET-02/03: `GET /api/veterinarians/me` existe (`VeterinariansController.GetMe`, `RequirePermission("Veterinarios", View)`).
+- VET-03/04: `GET /api/appointments/me` existe (`AppointmentsController.GetMe`), paginado, con filtros `from`/`to`, usando `AppointmentVeterinarianOwnership`/`ShouldEnforceVeterinarianOwnership` para que un Veterinario solo vea lo suyo (Admin/Recepcionista/SuperAdmin no filtran).
+- VET-05/06: `CreateAppointmentMedicalRecordCommandHandler` (nuevo, vía `POST /api/appointments/{id}/medical-record`) valida ownership del veterinario (`AppointmentVeterinarianOwnership.EnsureAsync`), que no exista ya una historia clínica para esa cita, y que el diagnóstico esté activo. **Pero ver el hallazgo nuevo de hoy más abajo** — el endpoint viejo `POST /api/medicalrecords` sigue vivo en paralelo y no tiene las mismas dos últimas validaciones.
+- VET-08: `PaginatedResult`/`PaginationMetadata` ya están conectados — los usa `GetMyAppointmentsAsVeterinarianQuery`/`AppointmentsController.GetMe`.
+
+Quitar todo VET-01 a VET-08 de cualquier lista de pendientes.
+
+### 🆕 Nuevo — Historias clínicas: dos rutas de creación con validación divergente
+Descubierto 2026-09-03 al re-verificar VET-05/06. Hay dos endpoints POST que crean una `MedicalRecord` para una cita, con distinta cobertura de validación:
+- `POST /api/appointments/{appointmentId}/medical-record` (`CreateAppointmentMedicalRecordCommandHandler`, nuevo): valida ownership del veterinario, **rechaza si ya existe una historia clínica para esa cita** (`ExistsByAppointmentIdAsync`), y **rechaza si el diagnóstico no está activo**.
+- `POST /api/medicalrecords` (`CreateMedicalRecordCommandHandler`, el original, sigue montado en `MedicalRecordsController`): valida ownership del veterinario (de forma distinta: solo si el `UserAccountId` resuelve a un perfil de Veterinario; si no, cualquiera con `Historiales Clínicos:Create` pasa sin chequeo — downstream de Admin/Recepcionista, consistente con el diseño de "solo Veterinario tiene ownership"), pero **no** verifica si ya existe una historia clínica para esa cita, ni si el diagnóstico está activo.
+- **Comportamiento esperado vs. real:** el modelo de negocio asume "historia clínica inmutable, una por cita" (así lo dice el propio Swagger de `MedicalRecordsController`) — pero hoy se puede crear una segunda historia clínica duplicada para la misma cita, o adjuntar un diagnóstico retirado/inactivo, simplemente usando el endpoint viejo en vez del nuevo.
+- **Severidad:** P1 medio (integridad de datos, no hueco de seguridad — ambos endpoints exigen el mismo permiso).
+- **Recomendación:** unificar en un solo handler, o al menos portar las dos validaciones que le faltan a `CreateMedicalRecordCommandHandler`.
+
+### Pendientes reales que siguen abiertos (previos a esta ronda, re-verificados 2026-09-03)
+- **PII en `GET /api/clients/by-identification/{identificationNumber}`**: sigue anónimo (`[AllowAnonymous]`, solo protegido por rate limiting) y sigue devolviendo `ClientResponseDto` completo (`Address`, `PhoneNumber`, `UserId`, `RegistrationDate`) a cualquiera que conozca/adivine un número de identificación válido. Es una decisión de diseño ya discutida (necesaria para que el chatbot identifique clientes sin JWT), pero el nivel de exposición de PII no se ha reconsiderado. P1 medio.
+- **`Api/Common/Errors/ApiErrorResultFilter.cs` sigue sin registrarse** como filtro global de MVC (confirmado de nuevo hoy, `grep` no encuentra ninguna referencia de registro). Los DTOs que usan `DataAnnotations` en vez de FluentValidation devuelven el `ValidationProblemDetails` de ASP.NET en vez del `ApiErrorResponse` canónico ante un 400 de validación automática. Además de los módulos ya reportados (Clients, Pets, ClientsPets, Specialties, Modules, RolePermissions, UserPermissions), la ronda de hoy sumó: `ConversationStatuses`, `MessageTypes`, `SenderTypes`, `EscalationStatuses`, `Priorities`. P2 bajo (sistémico, requiere una decisión de arquitectura: registrar el filtro, o migrar todos esos DTOs a FluentValidation).
+- **Sin validación de existencia de FK antes de guardar** en `CreateVeterinarianCommandHandler`/`UpdateVeterinarianCommandHandler` (`UserId`, `SpecialtyId`) y `CreateServiceCommandHandler` (`TypeServiceId`) — re-verificado hoy: si el Guid no existe, la FK real en Oracle (`HasForeignKey`, confirmada en `VeterinarianConfiguration`/`ServiceConfiguration`) rechaza el insert y `GlobalExceptionHandler` lo traduce a 409 genérico, así que **no hay riesgo de integridad** (downgradeado de la severidad original) — es una molestia de UX/API (un 409 genérico en vez de un 404 puntual con mensaje claro). P2 bajo.
+- **Sin índice único en BD para `Veterinarians.UserId` ni `Clients.UserId`** (re-verificado hoy: solo `LicenseNumber`/`IdentificationNumber` son únicos) y sin chequeo a nivel de aplicación tampoco (`CreateClientCommandHandler`/`CreateVeterinarianCommandHandler` no verifican si el `UserId` ya tiene un perfil). Un mismo `User` podría terminar con dos filas de `Client` (o de `Veterinarian`), y como `GetByUserIdAsync` usa `FirstOrDefaultAsync` sin orden explícito, el comportamiento de `/clients/me`, `/pets/mine`, `/appointments/mine`, `/veterinarians/me` sería no determinístico en ese caso. P1 medio.
+- Todo esto sigue pendiente de aprobación formal antes de implementarse — no empiecen a corregirlo sin visto bueno explícito.
 
 ---
 
-## 5. Convención de reporte de hallazgos
+## 6. Auditoría del subsistema chatbot (Chat / Escalamientos / IA-Agente / Telegram) — 2026-09-03
+
+Estos ~28 controllers **nunca habían sido auditados** contra este documento (§2 cubre explícitamente solo los "26 controllers no-chatbot"). Revisión completa por 4 sub-auditorías en paralelo, Domain+Application+Infrastructure+Api. **Cero hallazgos P0 en las 4.** Resumen — el detalle completo de cada hallazgo vive en la conversación que generó esta ronda, no transcrito aquí para no duplicar contenido; pedir el reporte completo si hace falta el detalle línea por línea.
+
+**Patrón transversal más repetido (no es un hueco de seguridad):** casi todo el subsistema chatbot (Chat, Escalamientos, IA y Agente, Catálogos del Chat — los 4 módulos que sí existen como filas en `MODULES`) sigue protegido con `[Authorize(Policy = AuthorizationPolicies.AdminOnly)]` en vez de `[RequirePermission]`. Es **deliberado y está documentado** en el propio `database/seeds/role_permissions_seed.sql` ("no incluye los módulos del chatbot — quedan pendientes hasta que se retome esa parte del proyecto"). Efecto colateral funcional, no de seguridad: Veterinario/Recepcionista/Auxiliar no pueden operar como agentes humanos de chat vía esta API todavía, solo Administrador/SuperAdmin.
+
+### Chat en vivo (`ChatConversations`, `ChatMessages`, `ChatParticipants`, `ChatAttachments`, `ChatUserProfiles`, `ConversationStatuses`, `MessageTypes`, `SenderTypes`)
+Mejor implementado: `ChatUserProfileController` (value objects con validación completa) y `CreateChatMessageCommandHandler` (valida pertenencia real del participante a la conversación). Hallazgos P1 medio: `ChatConversation.Close` acepta un `ClosedBy` arbitrario del body sin derivarlo del JWT ni validar que exista; `ChatParticipant.AiModelId` no tiene FK en EF ni se valida su existencia (a diferencia de `ChatUserProfileId`/`AgentHumanId`, que sí). P2 bajo: 5 controllers con el patrón viejo `is null ? NotFound()` sin migrar (straggler del refactor `6cd7068`); `ChatMessage.Content` sin límite de longitud; `ChatAttachment.FileUrl`/`FileType` sin validar formato.
+
+### Escalamientos (`ChatEscalations`, `ChatEscalationAssignments`, `ChatEscalationResolutions`, `ChatEscalationStatusHistories`, `EscalationStatuses`, `Priorities`)
+**Hallazgo más importante de toda la ronda** — es la misma clase de bug que motivó el fix de hoy en `AppointmentStatusHistoriesController` (VET-04/05), pero acá nunca se corrigió: `ChatEscalationStatusHistory` no tiene ninguna regla de transición (ni el equivalente a `AppointmentStatusTransitionRules`), `Update`/`Delete` de una entrada de historial no tienen ninguna restricción (se puede reescribir o borrar la entrada vigente libremente), y **no hay ninguna sincronización** entre el historial y `ChatEscalation.EscalationStatusId` — son dos fuentes de verdad completamente desacopladas. Además, `ChatEscalationResolution.ResolvedBy` no tiene FK ni validación de identidad real (cualquier Guid es aceptado), no hay unicidad por escalamiento (se pueden crear N resoluciones para el mismo), y crear una resolución no marca el escalamiento como resuelto. Todo P1 medio (gateado por rol Administrador, es integridad de datos/auditoría, no un hueco de autorización). Recomendado: aplicar el mismo patrón de fix que `AppointmentStatusHistoriesController` (reglas de transición compartidas, `Update` restringido a campos no identitarios, `Delete` bloqueado sobre la entrada vigente, sync explícito con el estado del padre).
+
+### IA / Agente conversacional (`Agent`, `AgentHumans`, `AiModels`, `AiRunStatuses`, `ChatAiRuns`, `ChatAiRunErrors`, `ChatAiRunMetrics`, `ChatConversationAiSettings`, `ChatConversationAssignments`, `ProviderModelsAi`)
+Se buscó explícitamente exposición de API keys/credenciales de proveedores LLM — **no se encontró ninguna**; el backend .NET no llama directo al proveedor, reenvía a un microservicio interno separado sin secretos en esta base. `AgentMessagesController` (el endpoint que dispara llamadas a LLM) no tiene ownership/IDOR (`PersistentConversationContextProvider` valida pertenencia real a la conversación) pero **no tiene rate limiting dedicado** — solo el límite global genérico (300/60s), insuficiente como control de costo/abuso para un endpoint que factura por token. P1 medio también: `CreateAgentHumanCommandHandler` no valida que el `UserId` tenga un rol de staff antes de habilitarlo como agente elegible para asignación. `ChatConversationAssignmentController` está bien protegido contra doble asignación incluso bajo concurrencia (PK 1:1 real en BD). `AiRunStatusesController` es el único controller de todo el backend-chatbot ya alineado 100% al patrón canónico de excepciones.
+
+### Telegram (webhook, vinculación por código, registro conversacional, formulario de completar registro)
+**El subsistema mejor construido en materia de seguridad de toda la ronda.** Secreto de webhook validado en tiempo constante (`CryptographicOperations.FixedTimeEquals`) y correctamente wireado; códigos de vinculación y tokens de registro con 192-256 bits de entropía, hasheados en reposo, de un solo uso y expirables; sin enumeración de cuentas en las respuestas del bot; idempotencia robusta por `update_id` de Telegram con claim atómico anti-doble-procesamiento; sin SSRF/inyección en el cliente HTTP saliente; sin secretos comiteados en `appsettings`. Único P1 medio: `TELEGRAM_USER_LINKS` no tiene índice único en BD para `PersonId`/`TelegramUserId` — la invariante "un solo vínculo activo" depende solo de un chequeo a nivel de aplicación (check-then-act), frágil ante concurrencia futura si el worker se escala a más de una instancia. P2 bajo: `TelegramLinkCodesController.Create` sin rate limit dedicado (bajo impacto, el código ya es imposible de adivinar); posible side-channel de timing en la vinculación por OTP de email; el flujo `/start <code>` no redacta el texto del mensaje tan rápido como los flujos de OTP.
+
+### Resumen total de la ronda (solo hallazgos nuevos de esta auditoría — no recuenta lo ya documentado en §4)
+
+| Severidad | Chat en vivo | Escalamientos | IA/Agente | Telegram | Total |
+|---|---|---|---|---|---|
+| P0 | 0 | 0 | 0 | 0 | **0** |
+| P1 medio | 9 | 7 | 2 | 1 | **19** |
+| P2 bajo | 9 | 3 | 5 | 3 | **20** |
+
+---
+
+## 7. Convención de reporte de hallazgos
 
 Si encuentras algo nuevo durante tu revisión:
 
