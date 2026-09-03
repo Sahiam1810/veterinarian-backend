@@ -190,6 +190,20 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             throw new BadRequestException("La franja horaria de reagendado no es válida.");
         }
 
+        var hasOverlap = await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
+            appointment.ClientPetId,
+            appointment.VeterinarianId,
+            payload.ScheduledStart,
+            payload.ScheduledEnd,
+            excludeAppointmentId: appointment.Id,
+            cancellationToken: cancellationToken);
+
+        if (hasOverlap)
+        {
+            throw new ConflictException(
+                "Ya existe otra cita agendada para la mascota o el veterinario en el horario seleccionado.");
+        }
+
         appointment.Reschedule(
             availability.Id,
             payload.ScheduledStart,
