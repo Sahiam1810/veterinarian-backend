@@ -1,6 +1,7 @@
 using Application.Appointments.Abstraction;
 using Application.Common.Models;
 using Domain.Appointments.Entities;
+using Domain.Appointments.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -141,6 +142,51 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .AsNoTracking()
             .OrderBy(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
+        Guid veterinarianId,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken)
+        => await _context.Set<Appointment>()
+            .Include(x => x.Status)
+            .Where(x => x.VeterinarianId == veterinarianId
+                && x.Status!.Name == "AGENDADA"
+                && x.ScheduledStart < toUtc
+                && x.ScheduledEnd > fromUtc)
+            .AsNoTracking()
+            .OrderBy(x => x.ScheduledStart)
+            .ToListAsync(cancellationToken);
+
+    public Task<Appointment?> GetByBookingRequestKeyHashAsync(
+        string bookingRequestKeyHash,
+        CancellationToken cancellationToken)
+    {
+        var hash = BookingRequestKeyHash.Create(bookingRequestKeyHash);
+        return _context.Set<Appointment>()
+            .Include(x => x.ClientPet)
+                .ThenInclude(x => x!.Pet)
+            .Include(x => x.Veterinarian)
+                .ThenInclude(x => x!.User)
+            .Include(x => x.Service)
+            .Include(x => x.Status)
+            .Include(x => x.Availability)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.BookingRequestKeyHash == hash, cancellationToken);
+    }
+
+    public Task<bool> HasScheduledOverlapAsync(
+        Guid clientPetId,
+        Guid veterinarianId,
+        DateTime startUtc,
+        DateTime endUtc,
+        CancellationToken cancellationToken)
+        => _context.Set<Appointment>()
+            .AnyAsync(x => x.Status!.Name == "AGENDADA"
+                && (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
+                && x.ScheduledStart < endUtc
+                && x.ScheduledEnd > startUtc,
+                cancellationToken);
 
     public async Task<bool> HasOverlappingAppointmentAsync(
         Guid clientPetId,
