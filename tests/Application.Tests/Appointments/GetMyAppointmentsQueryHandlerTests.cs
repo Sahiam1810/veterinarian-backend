@@ -11,6 +11,7 @@ using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
+using Domain.StatusAppointments.Entities;
 using Domain.UserAccounts.Entities;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using NSubstitute;
@@ -24,6 +25,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
     private static readonly Guid OtherUserAccountId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly Guid UserId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
     private static readonly Guid OtherUserId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+    private static readonly DateTimeOffset Now = new(2026, 9, 2, 15, 0, 0, TimeSpan.Zero);
 
     private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
     private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
@@ -38,7 +40,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
         unitOfWork.ClientsRepository.Returns(clientsRepository);
         unitOfWork.ClientPetsRepository.Returns(clientPetsRepository);
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
-        sut = new GetMyAppointmentsQueryHandler(unitOfWork);
+        sut = new GetMyAppointmentsQueryHandler(unitOfWork, new FixedTimeProvider(Now));
     }
 
     [Fact]
@@ -207,5 +209,87 @@ public sealed class GetMyAppointmentsQueryHandlerTests
             () => sut.Handle(new GetMyAppointmentsQuery(UserAccountId), CancellationToken.None));
 
         await clientsRepository.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_upcoming_returns_only_future_scheduled_appointments()
+    {
+        var appointments = ArrangeOwnedAppointments(
+            CreateAppointment("AGENDADA", Now.AddHours(1), Now.AddHours(2)),
+            CreateAppointment("AGENDADA", Now.AddHours(-2), Now.AddHours(-1)),
+            CreateAppointment("CANCELADA", Now.AddHours(3), Now.AddHours(4)));
+
+        var result = await sut.Handle(
+            new GetMyAppointmentsQuery(UserAccountId, AppointmentQueryScope.Upcoming),
+            CancellationToken.None);
+
+        var appointment = Assert.Single(result);
+        Assert.Equal(appointments[0].Id, appointment.Id);
+    }
+
+    [Fact]
+    public async Task Handle_history_returns_finished_or_non_scheduled_appointments()
+    {
+        var appointments = ArrangeOwnedAppointments(
+            CreateAppointment("AGENDADA", Now.AddHours(1), Now.AddHours(2)),
+            CreateAppointment("AGENDADA", Now.AddHours(-2), Now.AddHours(-1)),
+            CreateAppointment("ATENDIDA", Now.AddHours(-3), Now.AddHours(-2)));
+
+        var result = await sut.Handle(
+            new GetMyAppointmentsQuery(UserAccountId, AppointmentQueryScope.History),
+            CancellationToken.None);
+
+        Assert.Equal(new[] { appointments[1].Id, appointments[2].Id }, result.Select(x => x.Id));
+    }
+
+    private Appointment[] ArrangeOwnedAppointments(params Appointment[] appointments)
+    {
+        var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
+        var client = new ClientEntity(UserId, "1234567890", "Calle 1");
+        var pet = new PetEntity(
+            "Firulais",
+            3,
+            "M",
+            10m,
+            null,
+            new SpeciesEntity("Canino"),
+            new RaceEntity("Mestizo"));
+        var clientPet = new ClientPetEntity(client, pet, true);
+
+        userAccountsRepository.GetByIdAsync(UserAccountId, Arg.Any<CancellationToken>())
+            .Returns(account);
+        clientsRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns(client);
+        clientPetsRepository.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
+            .Returns(new[] { clientPet });
+        appointmentsRepository.GetByClientPetIdsAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(appointments);
+        return appointments;
+    }
+
+    private static Appointment CreateAppointment(
+        string statusName,
+        DateTimeOffset scheduledStart,
+        DateTimeOffset scheduledEnd)
+    {
+        var status = new StatusAppointment(statusName, null);
+        var appointment = new Appointment(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            status.Id,
+            Guid.NewGuid(),
+            scheduledStart.UtcDateTime,
+            scheduledEnd.UtcDateTime,
+            null);
+        typeof(Appointment).GetProperty(nameof(Appointment.Status))!.SetValue(appointment, status);
+        return appointment;
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }

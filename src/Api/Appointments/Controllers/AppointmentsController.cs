@@ -23,7 +23,9 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyCollection<AppointmentResponse>>> GetMine(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyCollection<AppointmentResponse>>> GetMine(
+        [FromQuery] AppointmentQueryScope scope = AppointmentQueryScope.All,
+        CancellationToken cancellationToken = default)
     {
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         if (!Guid.TryParse(subject, out var userAccountId))
@@ -31,8 +33,33 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
             return Unauthorized();
         }
 
-        var appointments = await sender.Send(new GetMyAppointmentsQuery(userAccountId), cancellationToken);
+        var appointments = await sender.Send(new GetMyAppointmentsQuery(userAccountId, scope), cancellationToken);
         return Ok(appointments.ToResponse());
+    }
+
+    // GET /api/appointments/mine/{appointmentId}
+    [HttpGet("mine/{appointmentId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [EndpointSummary("Obtiene una cita del cliente autenticado")]
+    [EndpointDescription("Retorna el detalle de una cita que pertenece a una mascota del cliente autenticado.")]
+    [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AppointmentResponse>> GetMineById(
+        Guid appointmentId,
+        CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var appointment = await sender.Send(
+            new GetMyAppointmentByIdQuery(appointmentId, userAccountId),
+            cancellationToken);
+
+        return Ok(appointment.ToResponse());
     }
 
     [HttpGet("me")]

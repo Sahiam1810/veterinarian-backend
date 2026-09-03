@@ -102,17 +102,26 @@ public static class AppointmentMappings
         return new AppointmentResponse(
             entity.Id,
             entity.ClientPetId,
+            entity.ClientPet?.Pet?.Name?.Value,
             entity.VeterinarianId,
+            entity.Veterinarian?.User?.FullName,
             entity.ServiceId,
             entity.Service?.Name,
             entity.StatusId,
             entity.Status?.Name,
             entity.AvailabilityId,
-            entity.ScheduledStart,
-            entity.ScheduledEnd,
+            AsUtc(entity.ScheduledStart),
+            AsUtc(entity.ScheduledEnd),
             entity.Notes,
             entity.RequesterPhoneNumber?.Value,
             entity.CreatedAt);
+    }
+
+    private static DateTime AsUtc(DateTime value)
+    {
+        return value.Kind == DateTimeKind.Utc
+            ? value
+            : DateTime.SpecifyKind(value, DateTimeKind.Utc);
     }
 
     public static IReadOnlyCollection<AppointmentResponse> ToResponse(
