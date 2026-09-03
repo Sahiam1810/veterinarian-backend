@@ -119,6 +119,8 @@ citas creadas manualmente y citas creadas por el agente.
      `http://localhost:5173` con Vite).
    - Variables `Agent__*` si va a probar la integración con el agente
      conversacional (ver sección [Gateway del agente conversacional](#gateway-del-agente-conversacional)).
+   - `AppointmentBooking__TimeZoneId`, `AppointmentBooking__MinimumLeadMinutes` y
+     `AppointmentBooking__MaximumAdvanceDays` para controlar el cálculo de horarios ofrecidos.
    - **Los secretos viven únicamente en `.env`; ese archivo no debe subirse al
      repositorio.**
 
@@ -381,6 +383,9 @@ autorización indicada.
 |---|---|---|---|
 | GET | `/api/appointments/mine?scope=upcoming\|history\|all` | ClientOnly | Citas propias del cliente autenticado; sin `scope` conserva `all`. |
 | GET | `/api/appointments/mine/{appointmentId}` | ClientOnly | Detalle de una cita propia; una cita ajena se trata como no encontrada. |
+| GET | `/api/appointments/booking/options` | ClientOnly | Mascotas propias, servicios y veterinarios activos para agendamiento. |
+| GET | `/api/appointments/booking/slots?veterinarianId&serviceId&date` | ClientOnly | Horarios UTC libres calculados con duración, agenda, zona y anticipación oficiales. |
+| POST | `/api/appointments/mine` | ClientOnly | Agenda una cita propia; exige `Idempotency-Key` y deriva propiedad, estado, disponibilidad y hora final en el servidor. |
 | POST | `/api/appointments` | AdminOrReceptionist | Crea una cita médica. |
 | GET | `/api/appointments` | StaffOnly | Lista todas las citas. |
 | GET | `/api/appointments/{id}` | StaffOnly | Obtiene una cita por ID. |
