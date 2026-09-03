@@ -46,3 +46,14 @@ public record ClientResponseDto(
     DateTime CreatedAt,
     DateTime? UpdatedAt
 );
+
+// Respuesta acotada para el lookup anónimo por cédula: sin Address/PhoneNumber.
+// Ese endpoint solo existe para que el chatbot ubique al cliente antes de
+// tener JWT -- no requiere devolver PII de contacto, y cualquiera que
+// conozca un número de identificación válido puede llamarlo.
+public record ClientIdentificationLookupResponseDto(
+    Guid Id,
+    Guid UserId,
+    string IdentificationNumber,
+    DateTime RegistrationDate
+);

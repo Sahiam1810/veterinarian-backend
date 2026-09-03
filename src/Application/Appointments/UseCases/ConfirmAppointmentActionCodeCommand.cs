@@ -188,12 +188,21 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
         await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
             unitOfWork,
             payload.AvailabilityId,
+        var hasOverlap = await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
             appointment.ClientPetId,
             appointment.VeterinarianId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
             appointment.Id,
             cancellationToken);
+            excludeAppointmentId: appointment.Id,
+            cancellationToken: cancellationToken);
+
+        if (hasOverlap)
+        {
+            throw new ConflictException(
+                "Ya existe otra cita agendada para la mascota o el veterinario en el horario seleccionado.");
+        }
 
         appointment.Reschedule(
             payload.AvailabilityId,

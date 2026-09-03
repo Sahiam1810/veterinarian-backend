@@ -15,31 +15,6 @@ namespace Api.MedicalRecords.Controllers;
 [Route("api/[controller]")]
 public sealed class MedicalRecordsController(ISender sender) : ControllerBase
 {
-    [HttpPost]
-    [RequirePermission("Historiales Clínicos", PermissionAction.Create)]
-    [EndpointSummary("Crea un nuevo registro de historia médica")]
-    [EndpointDescription("Registra una nueva historia médica para la mascota de un cliente. Una vez creada, la historia clínica queda inmutable como parte del historial de la mascota.")]
-    [ProducesResponseType(typeof(CreateMedicalRecordResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<CreateMedicalRecordResponse>> Create(
-        [FromBody] CreateMedicalRecordRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (!TryGetUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var id = await sender.Send(
-            request.ToCommand(userAccountId),
-            cancellationToken);
-
-        return StatusCode(
-            StatusCodes.Status201Created,
-            new CreateMedicalRecordResponse(id));
-    }
-
     [HttpGet]
     [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las historias médicas")]

@@ -18,4 +18,14 @@ public static class ClientMappingsExtensions
             entity.UpdatedAt
         );
     }
+
+    public static ClientIdentificationLookupResponseDto ToIdentificationLookupResponse(this ClientEntity entity)
+    {
+        return new ClientIdentificationLookupResponseDto(
+            entity.Id,
+            entity.UserId,
+            entity.IdentificationNumber.Value,
+            entity.RegistrationDate
+        );
+    }
 }

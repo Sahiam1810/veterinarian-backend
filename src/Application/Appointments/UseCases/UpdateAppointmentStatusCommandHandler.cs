@@ -8,23 +8,6 @@ namespace Application.Appointments.UseCases;
 public sealed class UpdateAppointmentStatusCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateAppointmentStatusCommand>
 {
-    private const string Agendada = "AGENDADA";
-
-    private static readonly HashSet<string> AllowedTargetsFromAgendada =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            "ATENDIDA",
-            "CANCELADA",
-            "NO_ASISTIO"
-        };
-
-    private static readonly HashSet<string> CommentRequiredTargets =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            "CANCELADA",
-            "NO_ASISTIO"
-        };
-
     public async Task Handle(
         UpdateAppointmentStatusCommand request,
         CancellationToken cancellationToken)
@@ -51,17 +34,10 @@ public sealed class UpdateAppointmentStatusCommandHandler(IUnitOfWork unitOfWork
             cancellationToken)
             ?? throw new NotFoundException("Estado de cita no encontrado.");
 
-        if (!string.Equals(currentStatus.Name, Agendada, StringComparison.OrdinalIgnoreCase)
-            || !AllowedTargetsFromAgendada.Contains(targetStatus.Name))
-        {
-            throw new ConflictException("La transición de estado solicitada no está permitida.");
-        }
-
-        if (CommentRequiredTargets.Contains(targetStatus.Name)
-            && string.IsNullOrWhiteSpace(request.Comment))
-        {
-            throw new BadRequestException("El comentario es requerido para este estado.");
-        }
+        AppointmentStatusTransitionRules.EnsureValidTransition(
+            currentStatus.Name,
+            targetStatus.Name,
+            request.Comment);
 
         var history = new AppointmentStatusHistory(
             request.AppointmentId,
