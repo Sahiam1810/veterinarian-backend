@@ -40,6 +40,11 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
         builder.HasIndex(client => client.IdentificationNumber)
             .IsUnique();
 
+        // Un usuario no puede tener dos perfiles de cliente -- si no, /clients/me
+        // (GetByUserIdAsync + FirstOrDefault) sería no determinístico.
+        builder.HasIndex(client => client.UserId)
+            .IsUnique();
+
         builder.Property(client => client.Address)
             .HasColumnName("ADDRESS")
             .HasMaxLength(ClientAddress.MaxLength)

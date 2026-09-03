@@ -46,6 +46,16 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
             throw new ConflictException("Ya existe otro cliente con ese número de identificación.");
         }
 
+        var userAlreadyHasClient = await _uow.ClientsRepository.ExistsByUserIdAsync(
+            request.UserId,
+            cancellationToken,
+            request.Id);
+
+        if (userAlreadyHasClient)
+        {
+            throw new ConflictException("Ese usuario ya tiene otro perfil de cliente asociado.");
+        }
+
         client.Update(
             request.UserId,
             request.IdentificationNumber,

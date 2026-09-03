@@ -11,7 +11,10 @@ public sealed class UpdateVeterinarianCommandValidator : AbstractValidator<Updat
             .NotEmpty().WithMessage("El id del veterinario es requerido.");
 
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("El usuario es requerido.");
+            .NotEmpty().WithMessage("El usuario es requerido.")
+            .MustAsync(async (command, userId, cancellationToken) =>
+                !await unitOfWork.VeterinariansRepository.ExistsByUserIdAsync(userId, cancellationToken, command.Id))
+            .WithMessage("Ese usuario ya tiene otro perfil de veterinario asociado.");
 
         RuleFor(x => x.SpecialtyId)
             .NotEmpty().WithMessage("La especialidad es requerida.");

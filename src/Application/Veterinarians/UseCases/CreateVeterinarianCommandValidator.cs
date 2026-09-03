@@ -8,7 +8,10 @@ public sealed class CreateVeterinarianCommandValidator : AbstractValidator<Creat
     public CreateVeterinarianCommandValidator(IUnitOfWork unitOfWork)
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("El usuario es requerido.");
+            .NotEmpty().WithMessage("El usuario es requerido.")
+            .MustAsync(async (userId, cancellationToken) =>
+                !await unitOfWork.VeterinariansRepository.ExistsByUserIdAsync(userId, cancellationToken))
+            .WithMessage("Ese usuario ya tiene un perfil de veterinario asociado.");
 
         RuleFor(x => x.SpecialtyId)
             .NotEmpty().WithMessage("La especialidad es requerida.");

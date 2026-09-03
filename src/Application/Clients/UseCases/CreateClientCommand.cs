@@ -38,6 +38,15 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
             throw new ConflictException("Ya existe un cliente con ese número de identificación.");
         }
 
+        var userAlreadyHasClient = await _uow.ClientsRepository.ExistsByUserIdAsync(
+            request.UserId,
+            cancellationToken);
+
+        if (userAlreadyHasClient)
+        {
+            throw new ConflictException("Ese usuario ya tiene un perfil de cliente asociado.");
+        }
+
         var client = new ClientEntity(
             request.UserId,
             request.IdentificationNumber,

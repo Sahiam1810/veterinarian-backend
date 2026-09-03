@@ -62,6 +62,19 @@ public sealed class ClientRepository : IClientRepository
         return await query.AnyAsync(cancellationToken);
     }
 
+    public async Task<bool> ExistsByUserIdAsync(Guid userId, CancellationToken cancellationToken, Guid? excludedId = null)
+    {
+        var query = _context.Set<ClientEntity>()
+            .Where(c => c.UserId == userId);
+
+        if (excludedId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludedId.Value);
+        }
+
+        return await query.AnyAsync(cancellationToken);
+    }
+
     public async Task AddAsync(ClientEntity client, CancellationToken cancellationToken)
     {
         await _context.Set<ClientEntity>().AddAsync(client, cancellationToken);

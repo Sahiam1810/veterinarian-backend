@@ -64,5 +64,10 @@ public sealed class VeterinarianConfiguration : IEntityTypeConfiguration<Veterin
 
         builder.HasIndex(x => x.LicenseNumber)
             .IsUnique();
+
+        // Un usuario no puede tener dos perfiles de veterinario -- si no, /me
+        // (GetByUserIdAsync + FirstOrDefault) sería no determinístico.
+        builder.HasIndex(x => x.UserId)
+            .IsUnique();
     }
 }

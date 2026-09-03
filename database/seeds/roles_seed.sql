@@ -28,9 +28,4 @@ VALUES ('66666666-6666-6666-6666-666666666666', 'Auxiliar',
         'Apoya el registro y la preparación de la atención, según permisos asignados',
         SYSTIMESTAMP);
 
-INSERT INTO ROLES (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
-VALUES ('77777777-7777-7777-7777-777777777777', 'Cliente',
-        'Portal para ver sus mascotas y sus citas',
-        SYSTIMESTAMP);
-
 COMMIT;

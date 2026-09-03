@@ -50,6 +50,16 @@ public sealed class VeterinarianRepository : IVeterinarianRepository
                     && (!excludedId.HasValue || x.Id != excludedId.Value),
                 cancellationToken);
 
+    public Task<bool> ExistsByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default,
+        Guid? excludedId = null)
+        => _context.Set<Veterinarian>()
+            .AnyAsync(
+                x => x.UserId == userId
+                    && (!excludedId.HasValue || x.Id != excludedId.Value),
+                cancellationToken);
+
     public async Task AddAsync(
         Veterinarian veterinarian,
         CancellationToken cancellationToken = default)

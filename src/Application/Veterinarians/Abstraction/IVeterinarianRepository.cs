@@ -20,6 +20,11 @@ public interface IVeterinarianRepository
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 
+    Task<bool> ExistsByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null);
+
     Task AddAsync(
         Veterinarian veterinarian,
         CancellationToken cancellationToken);

@@ -24,6 +24,11 @@ public interface IClientRepository
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 
+    Task<bool> ExistsByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null);
+
     Task AddAsync(
         ClientEntity client,
         CancellationToken cancellationToken);
