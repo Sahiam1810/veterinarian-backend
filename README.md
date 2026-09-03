@@ -379,7 +379,8 @@ autorización indicada.
 
 | Método | Ruta | Autorización | Descripción |
 |---|---|---|---|
-| GET | `/api/appointments/mine` | ClientOnly | Citas propias del cliente autenticado. |
+| GET | `/api/appointments/mine?scope=upcoming\|history\|all` | ClientOnly | Citas propias del cliente autenticado; sin `scope` conserva `all`. |
+| GET | `/api/appointments/mine/{appointmentId}` | ClientOnly | Detalle de una cita propia; una cita ajena se trata como no encontrada. |
 | POST | `/api/appointments` | AdminOrReceptionist | Crea una cita médica. |
 | GET | `/api/appointments` | StaffOnly | Lista todas las citas. |
 | GET | `/api/appointments/{id}` | StaffOnly | Obtiene una cita por ID. |
