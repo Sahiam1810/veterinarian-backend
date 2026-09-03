@@ -47,6 +47,7 @@ public sealed class GetAppointmentBookingSlotsQueryTests
                 new DateTime(2026, 9, 3, 16, 30, 0, DateTimeKind.Utc),
             },
             result.Select(slot => slot.ScheduledStartUtc));
+        Assert.All(result, slot => Assert.Equal(fixture.Availability.Id, slot.AvailabilityId));
     }
 
     [Theory]

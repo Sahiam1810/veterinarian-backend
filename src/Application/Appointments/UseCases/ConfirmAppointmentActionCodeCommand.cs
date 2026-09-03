@@ -187,9 +187,9 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
 
         await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
             unitOfWork,
+            payload.AvailabilityId,
             appointment.ClientPetId,
             appointment.VeterinarianId,
-            payload.AvailabilityId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
             appointment.Id,

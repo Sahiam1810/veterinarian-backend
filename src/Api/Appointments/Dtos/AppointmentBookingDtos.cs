@@ -19,6 +19,7 @@ public sealed record AppointmentBookingOptionsResponse(
     bool RequiresRequesterPhoneNumber);
 
 public sealed record AppointmentBookingSlotResponse(
+    Guid AvailabilityId,
     DateTime ScheduledStartUtc,
     DateTime ScheduledEndUtc);
 

@@ -24,6 +24,7 @@ public static class AppointmentMappings
         this IReadOnlyCollection<AppointmentBookingSlot> slots)
     {
         return slots.Select(slot => new AppointmentBookingSlotResponse(
+            slot.AvailabilityId,
             slot.ScheduledStartUtc,
             slot.ScheduledEndUtc)).ToArray();
     }

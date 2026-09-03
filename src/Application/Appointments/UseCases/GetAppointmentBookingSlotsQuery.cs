@@ -6,6 +6,7 @@ using MediatR;
 namespace Application.Appointments.UseCases;
 
 public sealed record AppointmentBookingSlot(
+    Guid AvailabilityId,
     DateTime ScheduledStartUtc,
     DateTime ScheduledEndUtc);
 
@@ -76,7 +77,7 @@ public sealed class GetAppointmentBookingSlotsQueryHandler(
                     && occupied.All(item =>
                         item.ScheduledStart >= endUtc || item.ScheduledEnd <= startUtc))
                 {
-                    slots.Add(new AppointmentBookingSlot(startUtc, endUtc));
+                    slots.Add(new AppointmentBookingSlot(availability.Id, startUtc, endUtc));
                 }
                 cursor = cursor.AddMinutes(service.DurationMinutes);
             }
