@@ -180,21 +180,21 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             throw new ConflictException("Solo se puede reagendar una cita en estado AGENDADA.");
         }
 
-        var availability = await unitOfWork.AvailabilitiesRepository.GetByIdAsync(
-            payload.AvailabilityId,
-            cancellationToken)
-            ?? throw new NotFoundException("Disponibilidad no encontrada.");
-
         if (payload.ScheduledEnd <= payload.ScheduledStart)
         {
             throw new BadRequestException("La franja horaria de reagendado no es válida.");
         }
 
+        await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
+            unitOfWork,
+            payload.AvailabilityId,
         var hasOverlap = await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
             appointment.ClientPetId,
             appointment.VeterinarianId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
+            appointment.Id,
+            cancellationToken);
             excludeAppointmentId: appointment.Id,
             cancellationToken: cancellationToken);
 
@@ -205,7 +205,7 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
         }
 
         appointment.Reschedule(
-            availability.Id,
+            payload.AvailabilityId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
             payload.Notes);

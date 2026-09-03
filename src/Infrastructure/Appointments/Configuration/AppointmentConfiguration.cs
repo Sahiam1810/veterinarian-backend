@@ -87,6 +87,21 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
                     : Domain.Appointments.ValueObjects.RequesterPhoneNumber.Create(value))
             .IsRequired(false);
 
+        builder.Property(x => x.BookingRequestKeyHash)
+            .HasColumnName("BOOKING_REQUEST_KEY_HASH")
+            .HasColumnType("VARCHAR2(64)")
+            .HasMaxLength(Domain.Appointments.ValueObjects.BookingRequestKeyHash.Length)
+            .HasConversion(
+                hash => hash == null ? null : hash.Value,
+                value => string.IsNullOrWhiteSpace(value)
+                    ? null
+                    : Domain.Appointments.ValueObjects.BookingRequestKeyHash.Create(value))
+            .IsRequired(false);
+
+        builder.HasIndex(x => x.BookingRequestKeyHash)
+            .IsUnique()
+            .HasDatabaseName("UX_APPTS_BOOKING_REQ_HASH");
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

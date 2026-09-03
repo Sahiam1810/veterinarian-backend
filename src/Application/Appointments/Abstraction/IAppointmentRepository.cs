@@ -35,6 +35,23 @@ public interface IAppointmentRepository
         DateTime toUtc,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
+        Guid veterinarianId,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken);
+
+    Task<Appointment?> GetByBookingRequestKeyHashAsync(
+        string bookingRequestKeyHash,
+        CancellationToken cancellationToken);
+
+    Task<bool> HasScheduledOverlapAsync(
+        Guid clientPetId,
+        Guid veterinarianId,
+        DateTime startUtc,
+        DateTime endUtc,
+        CancellationToken cancellationToken);
+
     Task<bool> HasOverlappingAppointmentAsync(
         Guid clientPetId,
         Guid veterinarianId,

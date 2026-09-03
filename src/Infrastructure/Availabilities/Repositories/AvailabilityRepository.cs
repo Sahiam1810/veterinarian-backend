@@ -2,6 +2,7 @@ using Application.Availabilities.Abstraction;
 using Domain.Availabilities.Entities;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Infrastructure.Availabilities.Repositories;
 
@@ -29,6 +30,40 @@ public sealed class AvailabilityRepository : IAvailabilityRepository
         => _context.Set<Availability>()
             .Include(x => x.Veterinarian)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<Availability?> LockByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (!_context.Database.IsRelational())
+        {
+            return await _context.Set<Availability>()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        var transaction = _context.Database.CurrentTransaction
+            ?? throw new InvalidOperationException(
+                "La disponibilidad solo puede bloquearse dentro de una transacciÃ³n.");
+        var connection = _context.Database.GetDbConnection();
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction.GetDbTransaction();
+        command.CommandText =
+            "SELECT AVAILABILITY_ID FROM AVAILABILITIES "
+            + "WHERE AVAILABILITY_ID = :availabilityId FOR UPDATE";
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "availabilityId";
+        parameter.Value = id.ToString();
+        command.Parameters.Add(parameter);
+
+        var lockedId = await command.ExecuteScalarAsync(cancellationToken);
+        if (lockedId is null || lockedId is DBNull)
+        {
+            return null;
+        }
+
+        return await _context.Set<Availability>()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
 
     public async Task<IReadOnlyCollection<Availability>> GetAllByVeterinarianIdAsync(
         Guid veterinarianId,

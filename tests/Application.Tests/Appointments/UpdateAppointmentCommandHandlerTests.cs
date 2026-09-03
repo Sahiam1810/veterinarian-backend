@@ -3,6 +3,7 @@ using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Domain.Appointments.Entities;
+using Domain.Availabilities.Entities;
 using NSubstitute;
 using Xunit;
 
@@ -20,11 +21,24 @@ public sealed class UpdateAppointmentCommandHandlerTests
 
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
+    private readonly Application.Availabilities.Abstraction.IAvailabilityRepository availabilitiesRepository
+        = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
     private readonly UpdateAppointmentCommandHandler sut;
 
     public UpdateAppointmentCommandHandlerTests()
     {
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
+        unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
+        availabilitiesRepository.LockByIdAsync(AvailabilityId, Arg.Any<CancellationToken>())
+            .Returns(new Availability(
+                VeterinarianId,
+                DayOfWeek.Monday,
+                new TimeOnly(8, 0),
+                new TimeOnly(18, 0)));
+        unitOfWork.ExecuteInTransactionAsync(
+                Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
+                call.ArgAt<CancellationToken>(1)));
         sut = new UpdateAppointmentCommandHandler(unitOfWork);
     }
 
@@ -60,7 +74,15 @@ public sealed class UpdateAppointmentCommandHandlerTests
         Assert.Equal(OriginalStatusId, appointment.StatusId);
         Assert.Equal("actualizado", appointment.Notes);
         await appointmentsRepository.Received(1).UpdateAsync(appointment, Arg.Any<CancellationToken>());
-        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await availabilitiesRepository.Received(1)
+            .LockByIdAsync(AvailabilityId, Arg.Any<CancellationToken>());
+        await appointmentsRepository.Received(1).HasOverlappingAppointmentAsync(
+            ClientPetId,
+            VeterinarianId,
+            command.ScheduledStart,
+            command.ScheduledEnd,
+            AppointmentId,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
