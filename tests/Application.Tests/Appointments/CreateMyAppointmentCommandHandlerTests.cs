@@ -83,13 +83,41 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_replays_before_mutable_catalog_and_availability_validation()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        var existing = fixture.MatchingAppointment();
+        fixture.Appointments.GetByBookingRequestKeyHashAsync(
+                Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(existing);
+        fixture.Service.Update(
+            fixture.Service.TypeServiceId,
+            fixture.Service.Name,
+            60,
+            fixture.Service.Price,
+            false);
+        fixture.Availability.Update(
+            fixture.Veterinarian.Id,
+            DayOfWeek.Thursday,
+            new TimeOnly(9, 0),
+            new TimeOnly(12, 0),
+            false);
+
+        var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
+
+        Assert.Same(existing, result);
+        await fixture.UnitOfWork.UserAccountsRepository.DidNotReceive()
+            .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_rechecks_idempotency_after_waiting_for_availability_lock()
     {
         var fixture = new Fixture(withClientPhone: true);
         var existing = fixture.MatchingAppointment();
         fixture.Appointments.GetByBookingRequestKeyHashAsync(
                 Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns((Appointment?)null, existing);
+            .Returns((Appointment?)null, (Appointment?)null, existing);
 
         var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
 
@@ -226,10 +254,16 @@ public sealed class CreateMyAppointmentCommandHandlerTests
                 UnitOfWork, new Settings(), new FixedTimeProvider(Now));
         }
 
-        public Appointment MatchingAppointment(string phone = "3001234567") => new(
-            ClientPet.Id, Veterinarian.Id, Service.Id, Status.Id, Availability.Id,
-            Command.ScheduledStartUtc, Command.ScheduledStartUtc.AddMinutes(30),
-            Command.Notes, phone, new string('A', 64));
+        public Appointment MatchingAppointment(string phone = "3001234567")
+        {
+            var appointment = new Appointment(
+                ClientPet.Id, Veterinarian.Id, Service.Id, Status.Id, Availability.Id,
+                Command.ScheduledStartUtc, Command.ScheduledStartUtc.AddMinutes(30),
+                Command.Notes, phone, new string('A', 64));
+            typeof(Appointment).GetProperty(nameof(Appointment.ClientPet))!
+                .SetValue(appointment, ClientPet);
+            return appointment;
+        }
 
         public Appointment DifferentAppointment() => new(
             ClientPet.Id, Veterinarian.Id, Service.Id, Status.Id, Availability.Id,

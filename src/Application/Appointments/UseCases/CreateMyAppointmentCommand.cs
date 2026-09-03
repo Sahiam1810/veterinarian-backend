@@ -29,6 +29,16 @@ public sealed class CreateMyAppointmentCommandHandler(
         CreateMyAppointmentCommand request,
         CancellationToken cancellationToken)
     {
+        var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+        var hash = HashKey(request.UserAccountId, request.IdempotencyKey.Trim());
+        var existing = await unitOfWork.AppointmentsRepository
+            .GetByBookingRequestKeyHashAsync(hash, cancellationToken);
+        if (existing is not null)
+        {
+            EnsureEquivalent(existing, request, notes);
+            return existing;
+        }
+
         var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
             request.UserAccountId,
             cancellationToken)
@@ -64,8 +74,6 @@ public sealed class CreateMyAppointmentCommandHandler(
         {
             throw new BadRequestException("El teléfono del solicitante es requerido.");
         }
-        var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
-        var hash = HashKey(request.UserAccountId, request.IdempotencyKey.Trim());
         var endUtc = request.ScheduledStartUtc.AddMinutes(service.DurationMinutes);
         var availability = await ResolveAvailabilityAsync(
             request.VeterinarianId,
@@ -78,11 +86,11 @@ public sealed class CreateMyAppointmentCommandHandler(
         Appointment? result = null;
         await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            var existing = await unitOfWork.AppointmentsRepository
+            existing = await unitOfWork.AppointmentsRepository
                 .GetByBookingRequestKeyHashAsync(hash, transactionCancellationToken);
             if (existing is not null)
             {
-                EnsureEquivalent(existing, clientPet.Id, request, endUtc, notes);
+                EnsureEquivalent(existing, request, notes);
                 result = existing;
                 return;
             }
@@ -95,7 +103,7 @@ public sealed class CreateMyAppointmentCommandHandler(
                 .GetByBookingRequestKeyHashAsync(hash, transactionCancellationToken);
             if (existing is not null)
             {
-                EnsureEquivalent(existing, clientPet.Id, request, endUtc, notes);
+                EnsureEquivalent(existing, request, notes);
                 result = existing;
                 return;
             }
@@ -221,18 +229,15 @@ public sealed class CreateMyAppointmentCommandHandler(
 
     private static void EnsureEquivalent(
         Appointment existing,
-        Guid clientPetId,
         CreateMyAppointmentCommand request,
-        DateTime endUtc,
         string? notes)
     {
         var requestPhoneMatches = string.IsNullOrWhiteSpace(request.RequesterPhoneNumber)
             || existing.RequesterPhoneNumber?.Matches(request.RequesterPhoneNumber) == true;
-        if (existing.ClientPetId != clientPetId
+        if (existing.ClientPet?.PetId != request.PetId
             || existing.VeterinarianId != request.VeterinarianId
             || existing.ServiceId != request.ServiceId
             || existing.ScheduledStart != request.ScheduledStartUtc
-            || existing.ScheduledEnd != endUtc
             || !string.Equals(existing.Notes, notes, StringComparison.Ordinal)
             || !requestPhoneMatches)
         {

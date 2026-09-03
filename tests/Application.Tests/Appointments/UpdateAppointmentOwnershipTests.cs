@@ -5,6 +5,7 @@ using Application.Common.Exceptions;
 using Application.UserAccounts.Abstraction;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
+using Domain.Availabilities.Entities;
 using Domain.Common;
 using Domain.Veterinarians.Entities;
 using NSubstitute;
@@ -29,6 +30,8 @@ public sealed class UpdateAppointmentOwnershipTests
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
     private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
     private readonly IVeterinarianRepository veterinariansRepository = Substitute.For<IVeterinarianRepository>();
+    private readonly Application.Availabilities.Abstraction.IAvailabilityRepository availabilitiesRepository
+        = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
     private readonly UpdateAppointmentCommandHandler sut;
 
     public UpdateAppointmentOwnershipTests()
@@ -36,6 +39,17 @@ public sealed class UpdateAppointmentOwnershipTests
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
         unitOfWork.UserAccountsRepository.Returns(userAccountsRepository);
         unitOfWork.VeterinariansRepository.Returns(veterinariansRepository);
+        unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
+        availabilitiesRepository.LockByIdAsync(AvailabilityId, Arg.Any<CancellationToken>())
+            .Returns(new Availability(
+                OwnVeterinarianId,
+                DayOfWeek.Monday,
+                new TimeOnly(8, 0),
+                new TimeOnly(18, 0)));
+        unitOfWork.ExecuteInTransactionAsync(
+                Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
+                call.ArgAt<CancellationToken>(1)));
         sut = new UpdateAppointmentCommandHandler(unitOfWork);
     }
 
@@ -51,7 +65,8 @@ public sealed class UpdateAppointmentOwnershipTests
 
         Assert.Equal("actualizado", appointment.Notes);
         await appointmentsRepository.Received(1).UpdateAsync(appointment, Arg.Any<CancellationToken>());
-        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await unitOfWork.Received(1).ExecuteInTransactionAsync(
+            Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -102,7 +117,8 @@ public sealed class UpdateAppointmentOwnershipTests
         await userAccountsRepository.DidNotReceive().GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await veterinariansRepository.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await appointmentsRepository.Received(1).UpdateAsync(appointment, Arg.Any<CancellationToken>());
-        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await unitOfWork.Received(1).ExecuteInTransactionAsync(
+            Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>());
     }
 
     private UpdateAppointmentCommand CreateCommand(bool enforce) =>

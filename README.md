@@ -400,6 +400,11 @@ autorización indicada.
 | GET | `/api/medicalrecords` | ClinicalHistoryReadOnly | Lista los registros clínicos. |
 | GET | `/api/medicalrecords/{id}` | ClinicalHistoryReadOnly | Obtiene un registro clínico por ID. |
 
+Las altas, actualizaciones y reprogramaciones bloquean la fila de disponibilidad correspondiente y
+revalidan solapamientos dentro de la misma transacción. Los reintentos de
+`POST /api/appointments/mine` consultan primero la clave idempotente y comparan el pedido original, por lo
+que cambios posteriores en catálogos o perfiles no invalidan una respuesta ya comprometida.
+
 ### Notificaciones y estados de cuenta
 
 | Método | Ruta | Autorización | Descripción |
