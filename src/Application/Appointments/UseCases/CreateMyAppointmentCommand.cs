@@ -186,6 +186,10 @@ public sealed class CreateMyAppointmentCommandHandler(
         var zone = TimeZoneInfo.FindSystemTimeZoneById(settings.TimeZoneId);
         var localStart = TimeZoneInfo.ConvertTimeFromUtc(startUtc, zone);
         var localEnd = TimeZoneInfo.ConvertTimeFromUtc(endUtc, zone);
+        if (localStart.Date != localEnd.Date)
+        {
+            return false;
+        }
         var startTime = TimeOnly.FromDateTime(localStart);
         var endTime = TimeOnly.FromDateTime(localEnd);
         var offset = localStart - localStart.Date.Add(availability.StartTime.ToTimeSpan());

@@ -117,6 +117,25 @@ public sealed class CreateMyAppointmentCommandHandlerTests
             .LockByIdAsync(fixture.Availability.Id, Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Handle_rejects_a_slot_that_crosses_the_local_calendar_day()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        fixture.Availability.Update(
+            fixture.Veterinarian.Id,
+            DayOfWeek.Thursday,
+            new TimeOnly(23, 15),
+            new TimeOnly(23, 59),
+            true);
+        var command = fixture.Command with
+        {
+            ScheduledStartUtc = new DateTime(2026, 9, 4, 4, 45, 0, DateTimeKind.Utc),
+        };
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            fixture.Sut.Handle(command, CancellationToken.None));
+    }
+
     private sealed class Fixture
     {
         public IUnitOfWork UnitOfWork { get; } = Substitute.For<IUnitOfWork>();
