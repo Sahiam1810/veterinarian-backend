@@ -91,6 +91,15 @@ public sealed class CreateMyAppointmentCommandHandler(
                 availability.Id,
                 transactionCancellationToken)
                 ?? throw new ConflictException("La disponibilidad seleccionada ya no existe.");
+            existing = await unitOfWork.AppointmentsRepository
+                .GetByBookingRequestKeyHashAsync(hash, transactionCancellationToken);
+            if (existing is not null)
+            {
+                EnsureEquivalent(existing, clientPet.Id, request, endUtc, notes, phone);
+                result = existing;
+                return;
+            }
+
             EnsureAvailabilityMatches(
                 locked,
                 request.VeterinarianId,

@@ -69,6 +69,24 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_rechecks_idempotency_after_waiting_for_availability_lock()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        var existing = fixture.MatchingAppointment();
+        fixture.Appointments.GetByBookingRequestKeyHashAsync(
+                Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns((Appointment?)null, existing);
+
+        var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
+
+        Assert.Same(existing, result);
+        await fixture.Availabilities.Received(1)
+            .LockByIdAsync(fixture.Availability.Id, Arg.Any<CancellationToken>());
+        await fixture.Appointments.DidNotReceive()
+            .AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_rejects_reused_key_with_different_payload()
     {
         var fixture = new Fixture(withClientPhone: true);
