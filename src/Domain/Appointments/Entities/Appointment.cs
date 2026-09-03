@@ -23,7 +23,8 @@ public sealed class Appointment : BaseEntity<Guid>
         DateTime scheduledStart,
         DateTime scheduledEnd,
         string? notes,
-        string? requesterPhoneNumber = null)
+        string? requesterPhoneNumber = null,
+        string? bookingRequestKeyHash = null)
     {
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;
@@ -39,6 +40,9 @@ public sealed class Appointment : BaseEntity<Guid>
         RequesterPhoneNumber = string.IsNullOrWhiteSpace(requesterPhoneNumber)
             ? null
             : RequesterPhoneNumber.Create(requesterPhoneNumber);
+        BookingRequestKeyHash = string.IsNullOrWhiteSpace(bookingRequestKeyHash)
+            ? null
+            : BookingRequestKeyHash.Create(bookingRequestKeyHash);
     }
 
     public Guid ClientPetId { get; private set; }
@@ -61,6 +65,8 @@ public sealed class Appointment : BaseEntity<Guid>
     public string? Notes { get; private set; }
 
     public RequesterPhoneNumber? RequesterPhoneNumber { get; private set; }
+
+    public BookingRequestKeyHash? BookingRequestKeyHash { get; private set; }
 
     public void Update(
         Guid clientPetId,
