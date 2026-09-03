@@ -20,6 +20,11 @@ Todos los usuarios tienen la misma contraseña simple para facilitar las pruebas
 | **Recepcionista** | Maria Recepcion | `recepcionista` | `recepcionista@veterinaria.com` | `Password123!` |
 | **Auxiliar** | Pedro Auxiliar | `auxiliar` | `auxiliar@veterinaria.com` | `Password123!` |
 | **Cliente** | Ana Gomez | `cliente` | `cliente@veterinaria.com` | `Password123!` |
+| **Cliente** | Roberto Carlos | `roberto` | `roberto@gmail.com` | `Password123!` |
+| **Cliente** | Sofia Vergara | `sofia` | `sofia@gmail.com` | `Password123!` |
+| **Cliente** | Luis Miguel | `luismiguel` | `luis@gmail.com` | `Password123!` |
+| **Cliente** | Shakira Mebarak | `shakira` | `shakira@gmail.com` | `Password123!` |
+| **Cliente** | Lionel Messi | `lionel` | `lionel@gmail.com` | `Password123!` |
 
 ---
 
@@ -50,8 +55,7 @@ Todos los usuarios tienen la misma contraseña simple para facilitar las pruebas
 4. `USERS`
 5. `USER_ACCOUNTS`
 6. `USER_CREDENTIALS`
-7. `USER_PERMISSIONS`
-8. `USER_TOKENS`
+7. `USER_TOKENS`
 9. `VETERINARIANS`
 10. `CLIENTS`
 11. `PETS`
