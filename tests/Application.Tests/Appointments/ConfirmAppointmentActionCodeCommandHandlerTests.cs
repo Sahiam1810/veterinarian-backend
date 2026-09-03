@@ -17,12 +17,14 @@ using Xunit;
 
 namespace Application.Tests.Appointments;
 
-// P1 corregido: el reagendado por OTP (canal sin JWT para el chatbot) no
-// validaba choques de horario -- CreateAppointmentCommandHandler y
-// UpdateAppointmentCommandHandler sí lo hacen vía HasOverlappingAppointmentAsync,
-// pero RescheduleAppointmentAsync reasignaba la franja directo. Un cliente podía
-// reagendar su cita OTP a un horario ya ocupado por otra cita del mismo
-// veterinario (o de su otra mascota) sin ningún rechazo.
+// P0: RescheduleAppointmentAsync pasaba ClientPetId / VeterinarianId / AvailabilityId
+// en ese orden a LockAndEnsureAvailableAsync, cuya firma es (availabilityId, clientPetId,
+// veterinarianId, ...). El lock buscaba la disponibilidad con el ID de la mascota y
+// respondía 409 "La disponibilidad seleccionada ya no existe" (el chatbot lo mostraba
+// como OTP inválido).
+//
+// P1 previo: el reagendado por OTP no validaba choques de horario -- Create/Update sí
+// lo hacen vía HasOverlappingAppointmentAsync; Reschedule reasignaba la franja directo.
 public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
 {
     private const string Phone = "3001234567";
@@ -93,7 +95,7 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
                 appointment.Id, AppointmentVerificationAction.Reschedule, Arg.Any<CancellationToken>())
             .Returns(session);
         statusRepository.GetByIdAsync(appointment.StatusId, Arg.Any<CancellationToken>()).Returns(agendada);
-        availabilitiesRepository.GetByIdAsync(newAvailability.Id, Arg.Any<CancellationToken>())
+        availabilitiesRepository.LockByIdAsync(newAvailability.Id, Arg.Any<CancellationToken>())
             .Returns(newAvailability);
         appointmentsRepository.HasOverlappingAppointmentAsync(
                 appointment.ClientPetId, appointment.VeterinarianId, newStart, newEnd,
@@ -137,7 +139,7 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
                 appointment.Id, AppointmentVerificationAction.Reschedule, Arg.Any<CancellationToken>())
             .Returns(session);
         statusRepository.GetByIdAsync(appointment.StatusId, Arg.Any<CancellationToken>()).Returns(agendada);
-        availabilitiesRepository.GetByIdAsync(newAvailability.Id, Arg.Any<CancellationToken>())
+        availabilitiesRepository.LockByIdAsync(newAvailability.Id, Arg.Any<CancellationToken>())
             .Returns(newAvailability);
         appointmentsRepository.HasOverlappingAppointmentAsync(
                 appointment.ClientPetId, appointment.VeterinarianId, newStart, newEnd,
@@ -149,6 +151,10 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
 
         await sut.Handle(command, CancellationToken.None);
 
+        await availabilitiesRepository.Received(1).LockByIdAsync(
+            newAvailability.Id, Arg.Any<CancellationToken>());
+        await availabilitiesRepository.DidNotReceive().LockByIdAsync(
+            appointment.ClientPetId, Arg.Any<CancellationToken>());
         Assert.Equal(newStart, appointment.ScheduledStart);
         Assert.Equal(newEnd, appointment.ScheduledEnd);
         Assert.Equal(VerificationSessionStatus.Completed, session.Status);
