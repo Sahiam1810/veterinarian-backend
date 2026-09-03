@@ -6,9 +6,10 @@
 --   1. SPECIALTIES (Especialidades veterinarias)
 --   2. SPECIES (Especies)
 --   3. RACES (Razas asociadas a especies)
---   4. USERS (1 Usuario por cada Rol canónico: Admin, Vet, Recep, Aux, Cliente)
---   5. USER_ACCOUNTS (Cuentas para login con username y mail)
---   6. USER_CREDENTIALS (Credenciales de acceso con Password123!)
+--   4. USERS (1 Usuario por cada Rol canónico: Admin, Vet, Recep, Aux, Cliente
+--      -- Cliente sin contraseña: nunca se loguea, solo interactúa vía chatbot)
+--   5. USER_ACCOUNTS (Cuentas de login solo para staff: Admin/Vet/Recep/Aux)
+--   6. USER_CREDENTIALS (Credenciales de acceso con Password123!, solo staff)
 --   7. VETERINARIANS (Dr. Veterinario vinculado al rol Veterinario)
 --   8. CLIENTS (Cliente Ana Gomez vinculada al rol Cliente)
 --   9. PETS (Mascotas de prueba)
@@ -21,7 +22,8 @@
 --  16. MEDICAL_RECORDS (Historias clínicas)
 --  17. VACCINATIONS (Registro de vacunación)
 --
--- Contraseña para todos los usuarios: Password123!
+-- Contraseña para el staff (Admin/Vet/Recep/Aux): Password123!
+-- Cliente NO tiene contraseña ni cuenta de login (ver punto 4).
 -- =============================================================================
 
 SET DEFINE OFF;
@@ -77,8 +79,10 @@ WHEN NOT MATCHED THEN
 
 -- =============================================================================
 -- 4. USERS (1 Usuario por cada Rol canónico)
--- Contraseña general para todos: Password123!
+-- Contraseña general para el staff: Password123!
 -- Hash compatible: 100000.E10ADC3949BA59ABBE56E057F20F883E.4Q8L... (PBKDF2/Bcrypt)
+-- Cliente NO lleva contraseña: nunca se loguea, su única interfaz es el
+-- chatbot (identificado por teléfono/cédula, no por credenciales).
 -- =============================================================================
 MERGE INTO USERS target
 USING (
@@ -98,6 +102,25 @@ USING (
     SELECT 'bbbb0004-0000-0000-0000-000000000004' AS ID, 'Pedro Auxiliar' AS FULL_NAME, 'auxiliar@veterinaria.com' AS EMAIL,
            '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH,
            '66666666-6666-6666-6666-666666666666' AS ROLE_ID, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    -- 5. Rol Cliente ('77777777-7777-7777-7777-777777777777') -- sin PASSWORD_HASH
+    SELECT 'bbbb0004-0000-0000-0000-000000000005' AS ID, 'Ana Gomez' AS FULL_NAME, 'cliente@veterinaria.com' AS EMAIL,
+           CAST(NULL AS VARCHAR2(255)) AS PASSWORD_HASH,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT 'bbbb0004-0000-0000-0000-000000000006' AS ID, 'Roberto Carlos' AS FULL_NAME, 'roberto@gmail.com' AS EMAIL,
+           CAST(NULL AS VARCHAR2(255)) AS PASSWORD_HASH,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT 'bbbb0004-0000-0000-0000-000000000007' AS ID, 'Sofia Vergara' AS FULL_NAME, 'sofia@gmail.com' AS EMAIL,
+           CAST(NULL AS VARCHAR2(255)) AS PASSWORD_HASH,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT 'bbbb0004-0000-0000-0000-000000000008' AS ID, 'Luis Miguel' AS FULL_NAME, 'luis@gmail.com' AS EMAIL,
+           CAST(NULL AS VARCHAR2(255)) AS PASSWORD_HASH,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT 'bbbb0004-0000-0000-0000-000000000009' AS ID, 'Shakira Mebarak' AS FULL_NAME, 'shakira@gmail.com' AS EMAIL,
+           CAST(NULL AS VARCHAR2(255)) AS PASSWORD_HASH,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT 'bbbb0004-0000-0000-0000-000000000010' AS ID, 'Lionel Messi' AS FULL_NAME, 'lionel@gmail.com' AS EMAIL,
+           CAST(NULL AS VARCHAR2(255)) AS PASSWORD_HASH,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID, 1 AS IS_ACTIVE FROM DUAL
 ) source
 ON (target.EMAIL = source.EMAIL)
 WHEN MATCHED THEN
@@ -112,19 +135,16 @@ WHEN NOT MATCHED THEN
 
 -- =============================================================================
 -- 5. USER_ACCOUNTS (Cuentas de usuario para login por username o email)
+-- Solo staff: Cliente nunca se loguea, así que no recibe cuenta ni
+-- credencial -- eso es lo que realmente impide su acceso (LoginAsync falla
+-- si no hay USER_ACCOUNTS/USER_CREDENTIALS, sin importar USERS.PASSWORD_HASH).
 -- =============================================================================
 MERGE INTO USER_ACCOUNTS target
 USING (
     SELECT 'bbbb0040-0000-0000-0000-000000000001' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000001' AS USER_ID, 'admin' AS USERNAME, 'admin@veterinaria.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
     SELECT 'bbbb0040-0000-0000-0000-000000000002' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000002' AS USER_ID, 'veterinario' AS USERNAME, 'veterinario@veterinaria.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
     SELECT 'bbbb0040-0000-0000-0000-000000000003' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000003' AS USER_ID, 'recepcionista' AS USERNAME, 'recepcionista@veterinaria.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
-    SELECT 'bbbb0040-0000-0000-0000-000000000004' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000004' AS USER_ID, 'auxiliar' AS USERNAME, 'auxiliar@veterinaria.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
-    SELECT 'bbbb0040-0000-0000-0000-000000000005' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000005' AS USER_ID, 'cliente' AS USERNAME, 'cliente@veterinaria.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
-    SELECT 'bbbb0040-0000-0000-0000-000000000006' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000006' AS USER_ID, 'roberto' AS USERNAME, 'roberto@gmail.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
-    SELECT 'bbbb0040-0000-0000-0000-000000000007' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000007' AS USER_ID, 'sofia' AS USERNAME, 'sofia@gmail.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
-    SELECT 'bbbb0040-0000-0000-0000-000000000008' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000008' AS USER_ID, 'luismiguel' AS USERNAME, 'luis@gmail.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
-    SELECT 'bbbb0040-0000-0000-0000-000000000009' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000009' AS USER_ID, 'shakira' AS USERNAME, 'shakira@gmail.com' AS MAIL, 'Active' AS STATUS FROM DUAL UNION ALL
-    SELECT 'bbbb0040-0000-0000-0000-000000000010' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000010' AS USER_ID, 'lionel' AS USERNAME, 'lionel@gmail.com' AS MAIL, 'Active' AS STATUS FROM DUAL
+    SELECT 'bbbb0040-0000-0000-0000-000000000004' AS ACCOUNT_ID, 'bbbb0004-0000-0000-0000-000000000004' AS USER_ID, 'auxiliar' AS USERNAME, 'auxiliar@veterinaria.com' AS MAIL, 'Active' AS STATUS FROM DUAL
 ) source
 ON (target.USERNAME = source.USERNAME)
 WHEN MATCHED THEN
@@ -137,16 +157,14 @@ WHEN NOT MATCHED THEN
     VALUES (source.ACCOUNT_ID, source.USER_ID, source.USERNAME, source.MAIL, source.STATUS, SYSTIMESTAMP);
 
 -- =============================================================================
--- 6. USER_CREDENTIALS (Credenciales de cuenta)
+-- 6. USER_CREDENTIALS (Credenciales de cuenta) -- solo staff, mismo motivo que arriba
 -- =============================================================================
 MERGE INTO USER_CREDENTIALS target
 USING (
     SELECT 'bbbb0050-0000-0000-0000-000000000001' AS CREDENTIAL_ID, 'bbbb0040-0000-0000-0000-000000000001' AS ACCOUNT_ID, '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH FROM DUAL UNION ALL
     SELECT 'bbbb0050-0000-0000-0000-000000000002' AS CREDENTIAL_ID, 'bbbb0040-0000-0000-0000-000000000002' AS ACCOUNT_ID, '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH FROM DUAL UNION ALL
     SELECT 'bbbb0050-0000-0000-0000-000000000003' AS CREDENTIAL_ID, 'bbbb0040-0000-0000-0000-000000000003' AS ACCOUNT_ID, '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH FROM DUAL UNION ALL
-    SELECT 'bbbb0050-0000-0000-0000-000000000004' AS CREDENTIAL_ID, 'bbbb0040-0000-0000-0000-000000000004' AS ACCOUNT_ID, '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH FROM DUAL UNION ALL
-    SELECT 'bbbb0050-0000-0000-0000-000000000005' AS CREDENTIAL_ID, 'bbbb0040-0000-0000-0000-000000000005' AS ACCOUNT_ID, '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH FROM DUAL UNION ALL
-    SELECT 'bbbb0050-0000-0000-0000-000000000006' AS CREDENTIAL_ID, 'bbbb0040-0000-0000-0000-000000000006' AS ACCOUNT_ID, '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH FROM DUAL UNION ALL
+    SELECT 'bbbb0050-0000-0000-0000-000000000004' AS CREDENTIAL_ID, 'bbbb0040-0000-0000-0000-000000000004' AS ACCOUNT_ID, '$2a$11$eN7xN61c6iX2y7r2Gk4rAeK2o7k4f4W8l3x1Z9c0B2m5n8v7a1s3.' AS PASSWORD_HASH FROM DUAL
 ) source
 ON (target.ACCOUNT_ID = source.ACCOUNT_ID)
 WHEN MATCHED THEN
@@ -178,7 +196,7 @@ WHEN NOT MATCHED THEN
 MERGE INTO CLIENTS target
 USING (
     SELECT 'bbbb0006-0000-0000-0000-000000000001' AS ID,
-           NULL AS USER_ID,
+           'bbbb0004-0000-0000-0000-000000000005' AS USER_ID,
            '1032456789' AS IDENTIFICATION_NUMBER,
            'Calle 45 #12-34' AS ADDRESS,
            '3101234567' AS PHONE_NUMBER,

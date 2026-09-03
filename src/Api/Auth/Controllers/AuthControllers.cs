@@ -1,11 +1,9 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Api.Auth.Dtos;
-using Api.Common.Errors;
 using Api.UserCredentials.Dtos;
 using Microsoft.AspNetCore.Http;
 using Application.Security.Models;
-using Application.Security.Register;
 using Application.Security.Login;
 using Application.Security.Refresh;
 using Application.Security.Revoke;
@@ -41,48 +39,10 @@ public sealed class AuthController(ISender sender) : ControllerBase
         })
     };
 
-    [AllowAnonymous]
-    [EnableRateLimiting(RateLimitPolicies.Register)]
-    [HttpPost("register")]
-    [EndpointSummary("Registra un nuevo usuario en la plataforma")]
-    [EndpointDescription("Crea la cuenta de usuario con credenciales hash y asigna los tokens JWT de autenticación iniciales.")]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Register(
-        [FromBody] RegisterRequest request,
-        CancellationToken cancellationToken)
-    {
-        var result = await sender.Send(
-            new RegisterCommand(
-                request.FullName,
-                request.Email,
-                request.UserName,
-                request.Password,
-                request.IdentificationNumber),
-            cancellationToken);
-
-        if (result.IsFailure)
-        {
-            if (result.Error.Code is "Authentication.UserAlreadyExists"
-                or "Authentication.IdentificationNumberAlreadyExists")
-            {
-                return Conflict(ApiErrorResponseFactory.Create(
-                    HttpContext,
-                    StatusCodes.Status409Conflict,
-                    result.Error.Description,
-                    error: result.Error.Code));
-            }
-
-            return BadRequest(ApiErrorResponseFactory.Create(
-                HttpContext,
-                StatusCodes.Status400BadRequest,
-                result.Error.Description,
-                error: result.Error.Code));
-        }
-
-        return Ok(AuthenticationResponse.From(result.Value));
-    }
+    // Registro público eliminado: el Cliente nunca se loguea (solo
+    // interactúa vía chatbot), así que no existe un flujo de auto-registro
+    // con contraseña. La vinculación por Telegram sigue su propio flujo
+    // (TelegramRegistrationController), que no depende de este endpoint.
 
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.Login)]
