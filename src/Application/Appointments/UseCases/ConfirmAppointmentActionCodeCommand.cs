@@ -187,7 +187,14 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
 
         await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
             unitOfWork,
+            appointment.ClientPetId,
+            appointment.VeterinarianId,
             payload.AvailabilityId,
+            payload.ScheduledStart,
+            payload.ScheduledEnd,
+            appointment.Id,
+            cancellationToken);
+
         var hasOverlap = await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
             appointment.ClientPetId,
             appointment.VeterinarianId,
@@ -195,8 +202,6 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             payload.ScheduledEnd,
             appointment.Id,
             cancellationToken);
-            excludeAppointmentId: appointment.Id,
-            cancellationToken: cancellationToken);
 
         if (hasOverlap)
         {
