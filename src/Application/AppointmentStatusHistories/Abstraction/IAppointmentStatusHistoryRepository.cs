@@ -11,6 +11,11 @@ public interface IAppointmentStatusHistoryRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    // Ordenado por CreatedAt descendente: el primero es el vigente de la cita.
+    Task<IReadOnlyCollection<AppointmentStatusHistory>> GetByAppointmentIdAsync(
+        Guid appointmentId,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         AppointmentStatusHistory appointmentStatusHistory,
         CancellationToken cancellationToken);

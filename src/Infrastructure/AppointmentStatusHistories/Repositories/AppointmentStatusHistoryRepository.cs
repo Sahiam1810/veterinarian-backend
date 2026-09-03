@@ -33,6 +33,15 @@ public sealed class AppointmentStatusHistoryRepository : IAppointmentStatusHisto
             .Include(x => x.ClientPet)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyCollection<AppointmentStatusHistory>> GetByAppointmentIdAsync(
+        Guid appointmentId,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<AppointmentStatusHistory>()
+            .AsNoTracking()
+            .Where(x => x.AppointmentId == appointmentId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(
         AppointmentStatusHistory appointmentStatusHistory,
         CancellationToken cancellationToken = default)
