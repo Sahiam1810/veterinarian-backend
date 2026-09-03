@@ -9,9 +9,10 @@ Este directorio contiene scripts SQL para poblar, verificar y vaciar los datos d
 
 ## 🔑 Usuarios de Prueba para el Frontend
 
-Todos los usuarios tienen la misma contraseña simple para facilitar las pruebas locales:
+Solo el staff (Admin/Veterinario/Recepcionista/Auxiliar) tiene cuenta de login. El Cliente **nunca se loguea** —
+su única interfaz es el chatbot, no tiene `USER_ACCOUNTS`/`USER_CREDENTIALS` ni contraseña.
 
-- **Contraseña universal:** `Password123!`
+- **Contraseña universal (staff):** `Password123!`
 
 | Rol | Nombre | Username | Email | Contraseña |
 |---|---|---|---|---|
@@ -19,12 +20,9 @@ Todos los usuarios tienen la misma contraseña simple para facilitar las pruebas
 | **Veterinario** | Dr. Carlos Mendoza | `veterinario` | `veterinario@veterinaria.com` | `Password123!` |
 | **Recepcionista** | Maria Recepcion | `recepcionista` | `recepcionista@veterinaria.com` | `Password123!` |
 | **Auxiliar** | Pedro Auxiliar | `auxiliar` | `auxiliar@veterinaria.com` | `Password123!` |
-| **Cliente** | Ana Gomez | `cliente` | `cliente@veterinaria.com` | `Password123!` |
-| **Cliente** | Roberto Carlos | `roberto` | `roberto@gmail.com` | `Password123!` |
-| **Cliente** | Sofia Vergara | `sofia` | `sofia@gmail.com` | `Password123!` |
-| **Cliente** | Luis Miguel | `luismiguel` | `luis@gmail.com` | `Password123!` |
-| **Cliente** | Shakira Mebarak | `shakira` | `shakira@gmail.com` | `Password123!` |
-| **Cliente** | Lionel Messi | `lionel` | `lionel@gmail.com` | `Password123!` |
+
+Clientes de prueba (sin login, solo para probar `CLIENTS`/`PETS`/`APPOINTMENTS` desde el staff): Ana Gomez, Roberto Carlos,
+Sofia Vergara, Luis Miguel, Shakira Mebarak, Lionel Messi.
 
 ---
 

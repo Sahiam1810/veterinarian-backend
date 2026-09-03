@@ -43,7 +43,9 @@ public sealed class CreateUserCommandHandler
                 "Ya existe un usuario con ese correo electrónico.");
         }
 
-        var passwordHash = _passwordHasher.Hash(request.Password);
+        // Cliente nunca se loguea (solo interactúa vía chatbot): sin contraseña.
+        var isClientRole = string.Equals(role.Name.Value, "Cliente", StringComparison.Ordinal);
+        var passwordHash = isClientRole ? null : _passwordHasher.Hash(request.Password!);
 
         var user = new UserEntity(
             request.FullName,

@@ -113,15 +113,6 @@ public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
         private static InvalidOperationException UnexpectedCall() =>
             new("Validation must stop the request before authentication or Oracle access.");
 
-        public Task<Result<AuthenticationTokens>> RegisterAsync(
-            string fullName,
-            string email,
-            string userName,
-            string password,
-            string identificationNumber,
-            CancellationToken cancellationToken) =>
-            throw UnexpectedCall();
-
         public Task<Result<AuthenticationTokens>> LoginAsync(
             string email,
             string password,

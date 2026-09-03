@@ -3,7 +3,6 @@ using Application.Common.Results;
 using Application.Security.Abstractions;
 using Application.Security.Errors;
 using Application.Security.Models;
-using Application.Security.Registration;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.UserTokens.Abstraction;
@@ -21,7 +20,6 @@ public sealed class AuthenticationService(
     IUserCredentialsRepository userCredentialRepository,
     IUserTokensRepository userTokenRepository,
     IUsersRepository usersRepository,
-    IClientAccountRegistrationService clientAccountRegistration,
     IUnitOfWork unitOfWork,
     JwtTokenIssuer jwtTokenIssuer,
     RefreshTokenProtector refreshTokenProtector,
@@ -35,57 +33,6 @@ public sealed class AuthenticationService(
 
     private readonly JwtOptions jwtOptions = options.Value;
     private readonly SuperAdminOptions superAdmin = superAdminOptions.Value;
-
-    public async Task<Result<AuthenticationTokens>> RegisterAsync(
-        string fullName,
-        string email,
-        string userName,
-        string password,
-        string identificationNumber,
-        CancellationToken cancellationToken)
-    {
-        Result<AuthenticationTokens>? result = null;
-        Error? registrationError = null;
-
-        // El email del SuperAdmin no tiene fila en Users: si se permitiera
-        // registrar aquí, quedaría una cuenta fantasma que nunca podría
-        // loguearse (LoginAsync siempre intercepta ese email primero).
-        await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
-        {
-            var registration = await clientAccountRegistration.StageAsync(
-                new ClientAccountRegistrationRequest(
-                    fullName,
-                    email,
-                    userName,
-                    password,
-                    identificationNumber),
-                transactionToken);
-            if (registration.IsFailure)
-            {
-                registrationError = registration.Error;
-                return;
-            }
-
-            // El registro público solo alimenta el rol "Cliente": sin esto, la
-            // cuenta queda funcional pero sin perfil de Client, y /clients/me,
-            // /pets/mine y /appointments/mine devuelven 404 para siempre.
-            var identity = new AuthenticatedIdentity(
-                registration.Value.UserAccountId,
-                registration.Value.PersonId,
-                registration.Value.RoleId,
-                registration.Value.RoleName,
-                registration.Value.FullName,
-                registration.Value.UserName,
-                registration.Value.Email,
-                registration.Value.Status);
-
-            result = await IssueTokensAsync(identity, transactionToken);
-        }, cancellationToken);
-
-        return registrationError is not null
-            ? Result<AuthenticationTokens>.Failure(registrationError)
-            : result!;
-    }
 
     public async Task<Result<AuthenticationTokens>> LoginAsync(
         string email,
