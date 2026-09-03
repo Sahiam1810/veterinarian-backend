@@ -41,16 +41,16 @@ public class ClientsController(ISender sender) : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.ClientIdentificationLookup)]
     [EndpointSummary("Resuelve un cliente por número de identificación")]
-    [EndpointDescription("Permite al chatbot ubicar al cliente antes de un JWT tradicional. Rate-limited.")]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
+    [EndpointDescription("Permite al chatbot ubicar al cliente antes de un JWT tradicional. Respuesta acotada (sin dirección ni teléfono) porque es anónimo y rate-limited.")]
+    [ProducesResponseType(typeof(ClientIdentificationLookupResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-    public async Task<ActionResult<ClientResponseDto>> GetByIdentification(
+    public async Task<ActionResult<ClientIdentificationLookupResponseDto>> GetByIdentification(
         string identificationNumber,
         CancellationToken ct)
     {
         var client = await sender.Send(new GetClientByIdentificationQuery(identificationNumber), ct);
-        return Ok(client.ToDto());
+        return Ok(client.ToIdentificationLookupResponse());
     }
 
     // GET /api/clients
