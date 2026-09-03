@@ -11,6 +11,10 @@ public interface IAvailabilityRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<Availability?> LockByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlyCollection<Availability>> GetAllByVeterinarianIdAsync(
         Guid veterinarianId,
         CancellationToken cancellationToken);
