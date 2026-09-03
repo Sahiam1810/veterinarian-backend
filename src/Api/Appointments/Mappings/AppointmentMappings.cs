@@ -8,6 +8,42 @@ namespace Api.Appointments.Mappings;
 
 public static class AppointmentMappings
 {
+    public static AppointmentBookingOptionsResponse ToResponse(
+        this AppointmentBookingOptionsResult result)
+    {
+        return new AppointmentBookingOptionsResponse(
+            result.Pets.Select(item => new AppointmentBookingPetResponse(item.Id, item.Name)).ToArray(),
+            result.Services.Select(item => new AppointmentBookingServiceResponse(
+                item.Id, item.Name, item.DurationMinutes)).ToArray(),
+            result.Veterinarians.Select(item => new AppointmentBookingVeterinarianResponse(
+                item.Id, item.FullName, item.SpecialtyName)).ToArray(),
+            result.RequiresRequesterPhoneNumber);
+    }
+
+    public static IReadOnlyCollection<AppointmentBookingSlotResponse> ToResponse(
+        this IReadOnlyCollection<AppointmentBookingSlot> slots)
+    {
+        return slots.Select(slot => new AppointmentBookingSlotResponse(
+            slot.ScheduledStartUtc,
+            slot.ScheduledEndUtc)).ToArray();
+    }
+
+    public static CreateMyAppointmentCommand ToCommand(
+        this CreateMyAppointmentRequest request,
+        Guid userAccountId,
+        string idempotencyKey)
+    {
+        return new CreateMyAppointmentCommand(
+            userAccountId,
+            request.PetId,
+            request.VeterinarianId,
+            request.ServiceId,
+            request.ScheduledStartUtc,
+            request.Notes,
+            request.RequesterPhoneNumber,
+            idempotencyKey);
+    }
+
     public static CreateAppointmentCommand ToCommand(
         this CreateAppointmentRequest request)
     {

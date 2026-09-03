@@ -62,6 +62,84 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return Ok(appointment.ToResponse());
     }
 
+    [HttpGet("booking/options")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [EndpointSummary("Obtiene opciones para agendar una cita propia")]
+    [EndpointDescription("Retorna mascotas propias, servicios activos, veterinarios disponibles y si se debe solicitar telÃ©fono.")]
+    [ProducesResponseType(typeof(AppointmentBookingOptionsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AppointmentBookingOptionsResponse>> GetBookingOptions(
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserAccountId(out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await sender.Send(
+            new GetAppointmentBookingOptionsQuery(userAccountId),
+            cancellationToken);
+        return Ok(result.ToResponse());
+    }
+
+    [HttpGet("booking/slots")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [EndpointSummary("Calcula horarios disponibles para agendamiento")]
+    [EndpointDescription("Calcula en la zona horaria de la veterinaria y retorna intervalos UTC libres para el servicio elegido.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentBookingSlotResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<AppointmentBookingSlotResponse>>> GetBookingSlots(
+        [FromQuery] Guid veterinarianId,
+        [FromQuery] Guid serviceId,
+        [FromQuery] DateOnly date,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserAccountId(out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var slots = await sender.Send(
+            new GetAppointmentBookingSlotsQuery(
+                userAccountId, veterinarianId, serviceId, date),
+            cancellationToken);
+        return Ok(slots.ToResponse());
+    }
+
+    [HttpPost("mine")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [EndpointSummary("Agenda una cita para el cliente autenticado")]
+    [EndpointDescription("La identidad, propiedad de la mascota, duraciÃ³n, disponibilidad y estado se validan en el servidor. Idempotency-Key es obligatorio.")]
+    [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AppointmentResponse>> CreateMine(
+        [FromBody] CreateMyAppointmentRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserAccountId(out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        var appointment = await sender.Send(
+            request.ToCommand(userAccountId, idempotencyKey),
+            cancellationToken);
+        return CreatedAtAction(
+            nameof(GetMineById),
+            new { appointmentId = appointment.Id },
+            appointment.ToResponse());
+    }
+
     [HttpGet("me")]
     [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene las citas del veterinario autenticado")]

@@ -11,23 +11,36 @@ public sealed class CreateAppointmentCommandHandler(IUnitOfWork unitOfWork)
         CreateAppointmentCommand request,
         CancellationToken cancellationToken)
     {
-        var appointment = new Appointment(
-            request.ClientPetId,
-            request.VeterinarianId,
-            request.ServiceId,
-            request.StatusId,
-            request.AvailabilityId,
-            request.ScheduledStart,
-            request.ScheduledEnd,
-            request.Notes,
-            request.RequesterPhoneNumber);
+        Guid appointmentId = default;
+        await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+        {
+            await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
+                unitOfWork,
+                request.AvailabilityId,
+                request.ClientPetId,
+                request.VeterinarianId,
+                request.ScheduledStart,
+                request.ScheduledEnd,
+                excludeAppointmentId: null,
+                transactionCancellationToken);
 
-        await unitOfWork.AppointmentsRepository.AddAsync(
-            appointment,
-            cancellationToken);
+            var appointment = new Appointment(
+                request.ClientPetId,
+                request.VeterinarianId,
+                request.ServiceId,
+                request.StatusId,
+                request.AvailabilityId,
+                request.ScheduledStart,
+                request.ScheduledEnd,
+                request.Notes,
+                request.RequesterPhoneNumber);
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWork.AppointmentsRepository.AddAsync(
+                appointment,
+                transactionCancellationToken);
+            appointmentId = appointment.Id;
+        }, cancellationToken);
 
-        return appointment.Id;
+        return appointmentId;
     }
 }

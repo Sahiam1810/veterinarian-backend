@@ -21,6 +21,54 @@ namespace Infrastructure.Tests.Appointments;
 public sealed class AppointmentRepositoryDetailsTests
 {
     [Fact]
+    public void Appointment_mapping_has_nullable_unique_booking_request_hash()
+    {
+        using var context = CreateContext();
+        var entityType = context.Model.FindEntityType(typeof(Appointment));
+        var property = entityType!.FindProperty(nameof(Appointment.BookingRequestKeyHash));
+
+        Assert.NotNull(property);
+        Assert.True(property.IsNullable);
+        Assert.Equal(64, property.GetMaxLength());
+        Assert.Contains(entityType.GetIndexes(), index =>
+            index.IsUnique && index.Properties.SequenceEqual(new[] { property }));
+    }
+
+    [Fact]
+    public async Task GetByBookingRequestKeyHashAsync_returns_matching_appointment()
+    {
+        await using var context = CreateContext();
+        var hash = new string('A', 64);
+        var (appointment, _) = AddAppointmentGraph(context, hash);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var loaded = await new AppointmentRepository(context)
+            .GetByBookingRequestKeyHashAsync(hash, CancellationToken.None);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(appointment.Id, loaded.Id);
+    }
+
+    [Fact]
+    public async Task HasScheduledOverlapAsync_detects_pet_or_veterinarian_conflicts()
+    {
+        await using var context = CreateContext();
+        var (appointment, clientPet) = AddAppointmentGraph(context);
+        await context.SaveChangesAsync();
+
+        var repository = new AppointmentRepository(context);
+        var overlaps = await repository.HasScheduledOverlapAsync(
+            clientPet.Id,
+            Guid.NewGuid(),
+            appointment.ScheduledStart.AddMinutes(10),
+            appointment.ScheduledEnd.AddMinutes(10),
+            CancellationToken.None);
+
+        Assert.True(overlaps);
+    }
+
+    [Fact]
     public async Task GetByClientPetIdsAsync_loads_pet_and_veterinarian_names()
     {
         await using var context = CreateContext();
@@ -56,7 +104,8 @@ public sealed class AppointmentRepositoryDetailsTests
     }
 
     private static (Appointment Appointment, ClientPetEntity ClientPet) AddAppointmentGraph(
-        VeterinaryDbContext context)
+        VeterinaryDbContext context,
+        string? bookingRequestKeyHash = null)
     {
         var clientUser = new UserEntity("Samuel Calderón", "samuel@example.com", "hash", Guid.NewGuid());
         var veterinarianUser = new UserEntity(
@@ -91,7 +140,8 @@ public sealed class AppointmentRepositoryDetailsTests
             availability.Id,
             new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 9, 3, 15, 30, 0, DateTimeKind.Utc),
-            null);
+            null,
+            bookingRequestKeyHash: bookingRequestKeyHash);
 
         context.AddRange(
             clientUser,

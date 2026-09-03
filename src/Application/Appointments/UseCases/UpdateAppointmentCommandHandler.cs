@@ -23,20 +23,31 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
             request.EnforceVeterinarianOwnership,
             cancellationToken);
 
-        appointment.Update(
-            request.ClientPetId,
-            request.VeterinarianId,
-            request.ServiceId,
-            appointment.StatusId,
-            request.AvailabilityId,
-            request.ScheduledStart,
-            request.ScheduledEnd,
-            request.Notes);
+        await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+        {
+            await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
+                unitOfWork,
+                request.AvailabilityId,
+                request.ClientPetId,
+                request.VeterinarianId,
+                request.ScheduledStart,
+                request.ScheduledEnd,
+                request.Id,
+                transactionCancellationToken);
 
-        await unitOfWork.AppointmentsRepository.UpdateAsync(
-            appointment,
-            cancellationToken);
+            appointment.Update(
+                request.ClientPetId,
+                request.VeterinarianId,
+                request.ServiceId,
+                appointment.StatusId,
+                request.AvailabilityId,
+                request.ScheduledStart,
+                request.ScheduledEnd,
+                request.Notes);
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWork.AppointmentsRepository.UpdateAsync(
+                appointment,
+                transactionCancellationToken);
+        }, cancellationToken);
     }
 }

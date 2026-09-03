@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260903132203_AlignAppointmentProfileAndVerificationSchema")]
+    partial class AlignAppointmentProfileAndVerificationSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -229,11 +232,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("AVAILABILITY_ID");
 
-                    b.Property<string>("BookingRequestKeyHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("VARCHAR2(64)")
-                        .HasColumnName("BOOKING_REQUEST_KEY_HASH");
-
                     b.Property<string>("ClientPetId")
                         .IsRequired()
                         .HasColumnType("VARCHAR2(36)")
@@ -283,11 +281,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AvailabilityId");
-
-                    b.HasIndex("BookingRequestKeyHash")
-                        .IsUnique()
-                        .HasDatabaseName("UX_APPTS_BOOKING_REQ_HASH")
-                        .HasFilter("\"BOOKING_REQUEST_KEY_HASH\" IS NOT NULL");
 
                     b.HasIndex("ClientPetId");
 

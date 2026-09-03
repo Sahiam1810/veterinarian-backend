@@ -223,6 +223,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<IAppointmentBookingSettings, ConfiguredAppointmentBookingSettings>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
         services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
         services.AddScoped<IVaccinationRepository, VaccinationRepository>();
@@ -404,6 +405,10 @@ public static class DependencyInjection
         services.AddSingleton<IValidateOptions<ReminderOptions>, ReminderOptionsValidator>();
         services.AddOptions<ReminderOptions>()
             .Bind(configuration.GetSection(ReminderOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<AppointmentBookingOptions>, AppointmentBookingOptionsValidator>();
+        services.AddOptions<AppointmentBookingOptions>()
+            .Bind(configuration.GetSection(AppointmentBookingOptions.SectionName))
             .ValidateOnStart();
         services.AddHostedService<AppointmentReminderBackgroundService>();
 

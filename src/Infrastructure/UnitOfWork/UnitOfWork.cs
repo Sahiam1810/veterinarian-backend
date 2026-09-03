@@ -61,6 +61,7 @@ using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.UnitOfWork;
 
@@ -263,7 +264,25 @@ public sealed class UnitOfWork : IUnitOfWork
         Func<CancellationToken, Task> action,
         CancellationToken cancellationToken = default)
     {
-        await action(cancellationToken);
-        await SaveChangesAsync(cancellationToken);
+        if (!_context.Database.IsRelational() || _context.Database.CurrentTransaction is not null)
+        {
+            await action(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            cancellationToken);
+        try
+        {
+            await action(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 }
