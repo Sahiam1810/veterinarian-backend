@@ -61,13 +61,11 @@ public sealed class ClientRepository : IClientRepository
             query = query.Where(c => c.IdentificationNumber == idVo);
         }
 
+        // Teléfono obligatorio en este filtro: Create (no Optional) tras el validator.
         if (!string.IsNullOrWhiteSpace(phoneNumber))
         {
-            var phoneVo = ClientPhoneNumber.CreateOptional(phoneNumber);
-            if (phoneVo is not null)
-            {
-                query = query.Where(c => c.PhoneNumber == phoneVo);
-            }
+            var phoneVo = ClientPhoneNumber.Create(phoneNumber);
+            query = query.Where(c => c.PhoneNumber == phoneVo);
         }
 
         return await query.FirstOrDefaultAsync(cancellationToken);

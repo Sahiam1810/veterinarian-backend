@@ -47,4 +47,24 @@ public sealed class GetClientLookupQueryValidatorTests
 
         result.ShouldNotHaveAnyValidationErrors();
     }
+
+    [Fact]
+    public void Should_have_error_when_phone_has_too_few_digits()
+    {
+        var query = new GetClientLookupQuery(null, "123");
+
+        var result = validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.PhoneNumber);
+    }
+
+    [Fact]
+    public void Should_have_error_when_identification_exceeds_max_length()
+    {
+        var query = new GetClientLookupQuery(new string('1', 21), null);
+
+        var result = validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.IdentificationNumber);
+    }
 }

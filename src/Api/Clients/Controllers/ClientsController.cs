@@ -57,7 +57,8 @@ public class ClientsController(ISender sender) : ControllerBase
     [HttpGet("lookup")]
     [RequirePermission("Clientes", PermissionAction.View)]
     [EndpointSummary("Busca un cliente por cédula y/o teléfono (Staff)")]
-    [EndpointDescription("Retorna la información operativa completa de un cliente buscando por cédula, teléfono o ambos (lógica AND). Requiere al menos un parámetro.")]
+    // Semántica: match exacto (VO normalizado); si vienen identification y phone → AND; sin fila → 404.
+    [EndpointDescription("Lookup staff autenticado (Clientes View). Match exacto por cédula y/o teléfono; si ambos params vienen aplica AND. Sin coincidencia → 404. DTO operativo (no el acotado anónimo).")]
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
