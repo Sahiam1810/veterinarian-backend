@@ -133,14 +133,6 @@ public sealed class RateLimitedApiFactory : WebApplicationFactory<AuthController
             Guid userAccountId,
             CancellationToken cancellationToken) => throw new InvalidOperationException("Unexpected call.");
 
-        public Task<Result<AuthenticationTokens>> RegisterAsync(
-            string fullName,
-            string email,
-            string userName,
-            string password,
-            string identificationNumber,
-            CancellationToken cancellationToken) => throw new InvalidOperationException("Unexpected call.");
-
         public Task<Result<AuthenticationTokens>> LoginAsync(
             string email,
             string password,

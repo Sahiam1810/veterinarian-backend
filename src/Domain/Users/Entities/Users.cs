@@ -9,7 +9,10 @@ public sealed class Users : BaseEntity<Guid>
     {
     }
 
-    public Users(string fullName, string email, string passwordHash, Guid roleId)
+    // PasswordHash es opcional: los usuarios con rol Cliente nunca se loguean
+    // (su única interfaz es el chatbot, identificado por teléfono/cédula, no
+    // por credenciales) y por lo tanto no tienen contraseña.
+    public Users(string fullName, string email, string? passwordHash, Guid roleId)
     {
         Id = Guid.NewGuid();
         FullName = fullName;
@@ -23,7 +26,7 @@ public sealed class Users : BaseEntity<Guid>
 
     public UserEmail Email { get; private set; } = null!;
 
-    public string PasswordHash { get; private set; } = null!;
+    public string? PasswordHash { get; private set; }
 
     public Guid RoleId { get; private set; }
 

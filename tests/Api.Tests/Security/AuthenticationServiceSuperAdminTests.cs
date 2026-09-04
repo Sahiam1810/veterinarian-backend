@@ -2,7 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 using Api.Tests.Support;
 using Application.Common.Abstractions;
 using Application.Security.Errors;
-using Application.Security.Registration;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -33,8 +32,6 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IPasswordHasher passwordHasher = Substitute.For<IPasswordHasher>();
-    private readonly IClientAccountRegistrationService registration =
-        Substitute.For<IClientAccountRegistrationService>();
     private readonly JwtRsaKeyMaterial keyMaterial;
     private readonly AuthenticationService sut;
 
@@ -67,19 +64,12 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
                 Arg.Any<Func<CancellationToken, Task>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(CancellationToken.None));
-        registration.StageAsync(
-                Arg.Is<ClientAccountRegistrationRequest>(request =>
-                    request.Email.Equals(SuperAdminEmail, StringComparison.OrdinalIgnoreCase)),
-                Arg.Any<CancellationToken>())
-            .Returns(Application.Common.Results.Result<RegisteredClientAccount>.Failure(
-                AuthenticationErrors.UserAlreadyExists));
 
         sut = new AuthenticationService(
             userAccountRepository,
             userCredentialRepository,
             userTokenRepository,
             usersRepository,
-            registration,
             unitOfWork,
             jwtTokenIssuer,
             new RefreshTokenProtector(),
@@ -138,26 +128,6 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
 
         await userAccountRepository.Received(1)
             .GetByMailAsync("regular.user@huellitas.test", Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task RegisterAsync_with_superadmin_email_fails_without_creating_a_shadow_account()
-    {
-        var result = await sut.RegisterAsync(
-            "Someone",
-            SuperAdminEmail.ToUpperInvariant(),
-            "someone",
-            "Password123!",
-            "1234567890",
-            CancellationToken.None);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal(AuthenticationErrors.UserAlreadyExists, result.Error);
-
-        await usersRepository.DidNotReceive().ExistsByEmailAsync(
-            Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>());
-        await usersRepository.DidNotReceive().AddAsync(
-            Arg.Any<Domain.Users.Entities.Users>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

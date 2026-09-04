@@ -275,14 +275,6 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
                 "Cliente",
                 "Activo")));
 
-        public Task<Result<AuthenticationTokens>> RegisterAsync(
-            string fullName,
-            string email,
-            string userName,
-            string password,
-            string identificationNumber,
-            CancellationToken cancellationToken) => throw UnexpectedCall();
-
         public Task<Result<AuthenticationTokens>> LoginAsync(
             string email,
             string password,
