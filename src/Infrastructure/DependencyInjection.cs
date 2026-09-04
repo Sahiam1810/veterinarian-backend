@@ -76,6 +76,7 @@ using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
+using Application.Telegram.Identity;
 using Application.Telegram.Linking;
 using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
@@ -251,20 +252,26 @@ public static class DependencyInjection
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
         services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
         services.AddScoped<ITelegramRegistrationSessionRepository, TelegramRegistrationSessionRepository>();
+        services.AddScoped<ITelegramIdentitySessionRepository, TelegramIdentitySessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
         services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
         services.AddScoped<ITelegramRegistrationService, TelegramRegistrationService>();
+        services.AddScoped<ITelegramIdentityAccessService, TelegramIdentityAccessService>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
-        services.AddSingleton<ITelegramRegistrationProtector>(provider =>
+        services.AddSingleton<TelegramRegistrationProtector>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
-            var key = options.RegistrationEnabled
+            var key = !string.IsNullOrWhiteSpace(options.RegistrationProtectionKeyBase64)
                 ? options.RegistrationProtectionKeyBase64
                 : Convert.ToBase64String(new byte[32]);
             return new TelegramRegistrationProtector(key);
         });
+        services.AddSingleton<ITelegramRegistrationProtector>(provider =>
+            provider.GetRequiredService<TelegramRegistrationProtector>());
+        services.AddSingleton<ITelegramIdentityDataProtector>(provider =>
+            provider.GetRequiredService<TelegramRegistrationProtector>());
         services.AddSingleton<IOtpProtector>(provider =>
         {
             var appointmentOptions = provider.GetRequiredService<IOptions<AppointmentVerificationOptions>>().Value;
@@ -284,6 +291,7 @@ public static class DependencyInjection
         });
         services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
         services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
+        services.AddScoped<ITelegramClientIdentityGateway, TelegramClientIdentityGateway>();
         services.AddScoped<IVerificationCodeSender, SmtpEmailVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioSmsVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();
@@ -328,6 +336,8 @@ public static class DependencyInjection
                 TimeSpan.FromMinutes(options.OtpTtlMinutes),
                 options.OtpMaximumAttempts,
                 TimeSpan.FromSeconds(options.OtpResendSeconds),
+                TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours),
+                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes),
                 options.RegistrationEnabled,
                 options.RegistrationCompletionUrl,
                 TimeSpan.FromMinutes(options.RegistrationOtpTtlMinutes),
@@ -395,11 +405,6 @@ public static class DependencyInjection
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateOnStart();
-
-        services.AddSingleton<IValidateOptions<SuperAdminOptions>, SuperAdminOptionsValidator>();
-        services.AddOptions<SuperAdminOptions>()
-            .Bind(configuration.GetSection(SuperAdminOptions.SectionName))
             .ValidateOnStart();
 
         services.AddSingleton<IValidateOptions<ReminderOptions>, ReminderOptionsValidator>();

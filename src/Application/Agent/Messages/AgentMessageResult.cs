@@ -1,5 +1,11 @@
 namespace Application.Agent.Messages;
 
+public enum AgentAccessRequirement
+{
+    None,
+    IdentityVerification
+}
+
 public sealed record AgentMessageResult(
     string? Message,
     Guid ConversationId,
@@ -9,4 +15,5 @@ public sealed record AgentMessageResult(
     string? Model,
     AgentTokenUsage? Usage,
     string? Module,
-    AgentRagResult Rag);
+    AgentRagResult Rag,
+    AgentAccessRequirement AccessRequirement = AgentAccessRequirement.None);

@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Api.Tests.Support;
 using Application.Security.Models;
+using Domain.Roles;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
 using Microsoft.Extensions.Options;
@@ -72,7 +73,7 @@ public sealed class JwtTokenIssuerTests
     }
 
     [Fact]
-    public void IssueForSuperAdmin_creates_token_without_role_claims()
+    public void Issue_for_persisted_SuperAdmin_creates_normal_role_claims()
     {
         var options = CreateOptions(RsaTestKeys.Create());
         using var keyMaterial = new JwtRsaKeyMaterial(Options.Create(options));
@@ -81,15 +82,24 @@ public sealed class JwtTokenIssuerTests
             keyMaterial,
             new FixedTimeProvider(Now));
 
-        var superAdminId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-        var issued = issuer.IssueForSuperAdmin(superAdminId, "superadmin@huellitas.test");
+        var identity = new AuthenticatedIdentity(
+            Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            SystemRoles.SuperAdminId,
+            SystemRoles.SuperAdminName,
+            "Super Administrador",
+            "superadmin",
+            "superadmin@huellitas.test",
+            "Activo");
+        var issued = issuer.Issue(identity);
         var token = new JwtSecurityTokenHandler().ReadJwtToken(issued.Token);
 
         Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
-        Assert.Equal(superAdminId.ToString(), token.Subject);
-        Assert.Equal("true", Claim(token, "super_admin"));
+        Assert.Equal(identity.UserAccountId.ToString(), token.Subject);
+        Assert.Equal(SystemRoles.SuperAdminId.ToString(), Claim(token, "role_id"));
+        Assert.Equal(SystemRoles.SuperAdminName, Claim(token, "role"));
         Assert.Equal("superadmin@huellitas.test", Claim(token, JwtRegisteredClaimNames.Email));
-        Assert.DoesNotContain(token.Claims, claim => claim.Type is "role_id" or "role");
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "super_admin");
         Assert.Equal(Now.AddMinutes(15), issued.ExpiresAt);
     }
 

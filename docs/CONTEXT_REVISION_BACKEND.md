@@ -36,13 +36,13 @@ La forma correcta de proteger un endpoint hoy es:
 ```
 
 - `RequirePermission` (`Api/Common/Security/Permissions/RequirePermissionAttribute.cs`) arma una policy dinámica `"perm:{módulo}:{acción}"`, resuelta al vuelo por `PermissionPolicyProvider` (no hay que registrar una policy por combinación).
-- `PermissionAuthorizationHandler` (`Api/Common/Security/Permissions/PermissionAuthorizationHandler.cs`) es quien decide: primero revisa el claim `super_admin=true` del JWT (si está, aprueba sin consultar nada más — el SuperAdmin se salta *todo* el sistema de permisos). Si no es SuperAdmin, lee `role_id` y `person_id` del JWT y llama `GetEffectivePermissionQuery`.
+- `PermissionAuthorizationHandler` (`Api/Common/Security/Permissions/PermissionAuthorizationHandler.cs`) reconoce al SuperAdmin únicamente cuando el claim `role_id` coincide con el identificador canónico persistido de `SystemRoles.SuperAdminId`. Ese rol se salta la matriz de permisos. Los claims heredados `super_admin=true` ya no conceden acceso. Para los demás roles, lee `role_id` y `person_id` y llama `GetEffectivePermissionQuery`.
 - `GetEffectivePermissionQueryHandler` (`Application/Permissions/UseCases/`) combina **`RolePermission`** (permiso del rol) **OR `UserPermission`** (permiso puntual del usuario) por cada acción — es **aditivo**: `UserPermission` solo puede sumar, nunca quitar lo que ya da el rol. Si `USER_PERMISSIONS` está vacía, el sistema se comporta exactamente como si solo existiera `RolePermission` (verificado con tests unitarios en `GetEffectivePermissionQueryHandlerTests`).
 - El nombre del módulo en el atributo debe **coincidir exactamente** (case-sensitive, con tildes) con una fila en la tabla `MODULES`. Si no existe esa fila, el endpoint queda inaccesible para todo el mundo excepto SuperAdmin — así se rompió `RolesController` hasta hoy (ver §3, ya corregido).
 - El propio usuario autenticado puede ver sus permisos efectivos vía `GET /api/auth/permissions` (agregado hoy, ver sección 3).
-- **Catálogo actual de módulos** (17 filas en `MODULES`, verificado en vivo): Clientes, Mascotas, Especies y Razas, Especialidades, Veterinarios, Citas, Historiales Clínicos, Servicios, Estados de Cita, Cuentas y Pagos, Notificaciones, Usuarios, **Roles** (agregado hoy, ver §3), Chat, Escalamientos, IA y Agente, Catálogos del Chat. **"Roles y Permisos" sigue sin existir como módulo propio** — la gestión de permisos (`RolePermissionsController`/`UserPermissionsController`/escritura de `ModulesController`) es intencionalmente `SuperAdminOnly` y no pasa por `RequirePermission`, así que no necesita una fila en `MODULES`.
-- Los 3 controllers de gestión de permisos (`ModulesController` escritura, `RolePermissionsController` completo, `UserPermissionsController` completo) están protegidos con `[Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]` (`RequireClaim("super_admin","true")`) — **no** pasan por `RequirePermission`, es intencional: la gestión de roles/permisos es exclusiva de SuperAdmin y no se puede delegar ni siquiera vía `UserPermission`.
-- `GET /api/auth/permissions` refleja el mismo bypass: si el JWT trae `super_admin=true` (no tiene `role_id`), el endpoint no consulta la matriz — devuelve los 4 flags en `true` para todos los módulos de `MODULES` directamente (antes daba 401 porque intentaba parsear un `role_id` que el SuperAdmin no tiene).
+- **Catálogo canónico de módulos** (20 filas mínimas en `MODULES`): Clientes, Mascotas, Especies y Razas, Especialidades, Veterinarios, Citas, Historiales Clínicos, Servicios, Estados de Cita, Cuentas y Pagos, Notificaciones, Usuarios, Roles, Disponibilidades, Relación Clientes-Mascotas, Permisos, Chat, Escalamientos, IA y Agente y Catálogos del Chat.
+- Los 3 controllers de gestión de permisos (`ModulesController` escritura, `RolePermissionsController` completo, `UserPermissionsController` completo) están protegidos con `[Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]`. La policy valida el `role_id` canónico persistido; **no** pasan por `RequirePermission`, de forma intencional, porque la gestión de roles y permisos no se puede delegar mediante `UserPermission`.
+- `GET /api/auth/permissions` usa el mismo criterio: el SuperAdmin persistido recibe los cuatro flags en `true` para todos los módulos; los demás usuarios se resuelven mediante la matriz efectiva.
 
 ### Rate limiting
 Login/Register/Refresh/TelegramWebhook usan `[EnableRateLimiting(RateLimitPolicies.<Policy>)]` + la policy correspondiente registrada por `AddApiRateLimiting` (`Api/Extensions/RateLimitingExtensions.cs`), particionada por claim `sub` si hay usuario autenticado o por IP si no. Los límites (permit limit + ventana en segundos, más un `GlobalPermitLimit` que aplica a toda la API) viven en la sección `"RateLimiting"` de `appsettings.json`, con `RateLimitOptionsValidator` exigiendo que todos sean positivos (`ValidateOnStart`). **Hasta el 2026-09-01 esta implementación existía en el código pero `Program.cs` nunca la invocaba** — usaba en su lugar un bloque `AddRateLimiter`/`AddFixedWindowLimiter` hardcodeado y **sin partición** (un único contador compartido por todos los clientes de la API para cada policy), lo que además de ser más débil contra fuerza bruta permitía que cualquiera agotara el login de todo el mundo con 10 requests. Ya está corregido y conectado — no lo reporten de nuevo.
@@ -61,6 +61,28 @@ Toda excepción no controlada la captura `GlobalExceptionHandler` (`Api/Common/E
 | Cualquier otra | 500 |
 
 **Patrón correcto**: el *handler* de Application lanza la excepción (`?? throw new NotFoundException(...)`); el *controller* nunca hace `is null ? NotFound() : Ok()` a mano — simplemente llama `sender.Send(...)` y envuelve el resultado en `Ok(...)`/`NoContent()`. Un refactor grande el 2026-09-01 (commit `6cd7068`) migró 18 controllers de un patrón viejo (`Handler` devolvía `bool`/`T?`, controller decidía 404 a mano) a este patrón nuevo — si ves un controller con `is null ? NotFound() : Ok(...)` o un `Handler` que retorna `bool`, es candidato a limpieza con este mismo patrón, pero **repórtalo, no lo cambies tú si el módulo no es tuyo** (ver sección 5).
+
+### Contrato de errores auth (`application/problem+json`)
+El front **solo traduce por `code`** (no por `title` ni por `Description` del `Error` de Application). Fuente de verdad: `Application/Security/Errors/AuthenticationErrors.cs`.
+
+Forma de la respuesta (login/refresh/revoke fallidos, JWT challenge/forbidden):
+
+```json
+{ "type": "https://httpstatuses.com/401", "title": "Unauthorized", "status": 401, "code": "Authentication.InvalidCredentials" }
+```
+
+| Code estable | HTTP típico | Cuándo |
+|---|---|---|
+| `Authentication.InvalidCredentials` | 401 | Login fallido (`AuthController` → `AuthProblem`) |
+| `Authentication.InvalidRefreshToken` | 401 | Refresh/revoke con token inválido |
+| `Authentication.Unauthorized` | 401 | JWT ausente/inválido (`JwtResponseEvents.OnChallenge`) o `/me` sin identidad usable |
+| `Authentication.Forbidden` | 403 | Autenticado pero policy deniega (`JwtResponseEvents.OnForbidden`) |
+| `Authentication.PlatformAccessDenied` | 403 | Denegación de acceso a la plataforma (catálogo; usar cuando el caso de negocio lo emita) |
+| `Authentication.UserAlreadyExists` | conflicto registro | Correo/usuario ya registrado |
+| `Authentication.IdentificationNumberAlreadyExists` | conflicto registro | Cédula ya registrada |
+| `Authentication.InvalidRegistrationData` | 400 | Datos de registro inválidos |
+
+No hardcodear mensajes de UX distintos por endpoint en español: el `Description` del `Error` es respaldo genérico en inglés; la copia visible la resuelve el front con el `code`.
 
 ### Patrón "ver solo lo propio" (`/mine`)
 Ya existen `GET /api/clients/me`, `GET /api/pets/mine`, `GET /api/appointments/mine` — todos resuelven la identidad desde el JWT (`sub`/`NameIdentifier` → `UserAccountsRepository` → `ClientsRepository.GetByUserIdAsync` → `ClientPetsRepository.GetByClientIdAsync`) y devuelven solo lo del cliente autenticado.
@@ -113,7 +135,8 @@ No las reporten de nuevo. Orden cronológico, con autor real de `git log` (no as
 
 | Fecha | Commit | Qué se hizo | Autor |
 |---|---|---|---|
-| 2026-08-31 | `8c280ea` | SuperAdmin: policy `SuperAdminOnly`, `SuperAdminOptions` (config, no fila en DB), login especial, `/me` sintético | Sahiam1810 |
+| 2026-08-31 | `8c280ea` | Implementación histórica de SuperAdmin por configuración; reemplazada el 2026-09-04 por identidad persistida | Sahiam1810 |
+| 2026-09-04 | `c48dfa4`–`8bef71d` | SuperAdmin persistido: rol canónico, flujo normal de autenticación y refresh, ciclo de vida protegido y autorización por `role_id`; se retiró el claim heredado `super_admin=true` | Codex |
 | 2026-08-31/09-01 | `894d110` | Tabla `USER_PERMISSIONS`, `UserPermissionsRepository`, tests de `PermissionAuthorizationHandler` y `GetEffectivePermissionQueryHandler` | Sahiam1810 |
 | 2026-09-01 | `02afedd` | Migración masiva a `RequirePermission` de Species/StatusAppointments/TypeServices/UserAccounts/UserCredentials/UserTokens/Users/Vaccinations/Veterinarians + seed inicial de `ROLE_PERMISSIONS` (47 filas, 5 roles × 12 módulos) | Sahiam1810 |
 | 2026-09-01 | `7c0225c` | MedicalRecords/Vaccinations: filtrado por dueño en `GetAll`/`GetById` cuando el usuario tiene perfil de Cliente | Sahiam1810 |

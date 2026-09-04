@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentValidation;
 using Application.Agent.Errors;
 using Application.Common.Exceptions;
@@ -14,6 +15,24 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
+        // ForbiddenException con Code → problem+json estable (sin Message interno).
+        if (exception is ForbiddenException { Code: { Length: > 0 } code })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status403Forbidden}",
+                    title = "Forbidden",
+                    status = StatusCodes.Status403Forbidden,
+                    code
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
         var (status, message, agentError) = Map(exception);
         var violations = exception is ValidationException validationException
             ? validationException.Errors
@@ -99,7 +118,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ForbiddenException forbidden => (StatusCodes.Status403Forbidden, forbidden.Message, null),
             NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
-            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, null),
+            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, conflict.Code),
             DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation", null),
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error", null)
         };

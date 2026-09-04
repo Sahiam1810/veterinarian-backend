@@ -39,11 +39,46 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.IdentificationNumber == idVo, cancellationToken);
     }
 
+    // Match exacto por VO normalizado (solo dígitos). Sin unicidad en BD aún: FirstOrDefault.
+    public async Task<ClientEntity?> GetByPhoneAsync(string phoneNumber, CancellationToken cancellationToken)
+    {
+        var phoneVo = ClientPhoneNumber.Create(phoneNumber);
+
+        return await _context.Set<ClientEntity>()
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.PhoneNumber == phoneVo, cancellationToken);
+    }
+
     public async Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await _context.Set<ClientEntity>()
             .Include(c => c.User)
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
+    }
+
+    public async Task<ClientEntity?> GetByLookupAsync(
+        string? identificationNumber,
+        string? phoneNumber,
+        CancellationToken cancellationToken)
+    {
+        var query = _context.Set<ClientEntity>()
+            .Include(c => c.User)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(identificationNumber))
+        {
+            var idVo = ClientIdentificationNumber.Create(identificationNumber);
+            query = query.Where(c => c.IdentificationNumber == idVo);
+        }
+
+        // Teléfono obligatorio en este filtro: Create (no Optional) tras el validator.
+        if (!string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            var phoneVo = ClientPhoneNumber.Create(phoneNumber);
+            query = query.Where(c => c.PhoneNumber == phoneVo);
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     // 👈 3. CORREGIDO: Compara contra el Value Object sin usar '.Value'
@@ -53,6 +88,24 @@ public sealed class ClientRepository : IClientRepository
 
         var query = _context.Set<ClientEntity>()
             .Where(c => c.IdentificationNumber == idVo);
+
+        if (excludedId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludedId.Value);
+        }
+
+        return await query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsByPhoneAsync(
+        string phoneNumber,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null)
+    {
+        var phoneVo = ClientPhoneNumber.Create(phoneNumber);
+
+        var query = _context.Set<ClientEntity>()
+            .Where(c => c.PhoneNumber == phoneVo);
 
         if (excludedId.HasValue)
         {

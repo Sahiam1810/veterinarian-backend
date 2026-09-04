@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Api.Common.Security.Permissions;
 using Application.Permissions.UseCases;
+using Domain.Roles;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
@@ -26,7 +27,7 @@ public sealed class PermissionAuthorizationHandlerTests
     {
         var context = CreateContext(
             requirement: new PermissionRequirement("Citas", PermissionAction.Delete),
-            claims: [new Claim("super_admin", "true")]);
+            claims: [new Claim("role_id", SystemRoles.SuperAdminId.ToString())]);
 
         await sut.HandleAsync(context);
 

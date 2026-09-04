@@ -341,11 +341,11 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return Guid.TryParse(subject, out actorUserAccountId);
     }
 
-    // Solo "Veterinario" aplica ownership. SuperAdmin (claim super_admin=true) y
+    // Solo "Veterinario" aplica ownership. SuperAdmin y
     // Administrador/Recepcionista no filtran por veterinario asignado.
     private bool ShouldEnforceVeterinarianOwnership()
     {
-        if (User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        if (User.IsSuperAdmin())
         {
             return false;
         }

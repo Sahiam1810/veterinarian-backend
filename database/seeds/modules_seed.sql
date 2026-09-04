@@ -145,4 +145,36 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Permisos', 'Gestión de permisos por rol y por usuario', SYSTIMESTAMP);
 
+-- 17. Chat
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000017' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Chat'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Chat', 'Gestión de conversaciones, participantes y mensajes', SYSTIMESTAMP);
+
+-- 18. Escalamientos
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000018' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Escalamientos'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Escalamientos', 'Gestión y seguimiento de conversaciones escaladas', SYSTIMESTAMP);
+
+-- 19. IA y Agente
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000019' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('IA y Agente'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'IA y Agente', 'Ejecuciones, modelos y configuración del agente conversacional', SYSTIMESTAMP);
+
+-- 20. Catálogos del Chat
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000020' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Catálogos del Chat'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Catálogos del Chat', 'Estados, tipos y prioridades del subsistema conversacional', SYSTIMESTAMP);
+
 COMMIT;

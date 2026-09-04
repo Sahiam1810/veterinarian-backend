@@ -1,6 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Domain.Clients.Entities;
+using Application.Clients.Errors;
+using Domain.Clients.ValueObjects;
 using MediatR;
 
 namespace Application.Clients.UseCases;
@@ -54,6 +55,22 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
         if (userAlreadyHasClient)
         {
             throw new ConflictException("Ese usuario ya tiene otro perfil de cliente asociado.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var normalized = ClientPhoneNumber.Create(request.PhoneNumber).Value;
+            var phoneInUse = await _uow.ClientsRepository.ExistsByPhoneAsync(
+                normalized,
+                cancellationToken,
+                request.Id);
+
+            if (phoneInUse)
+            {
+                throw new ConflictException(
+                    "Ya existe un cliente con ese número de teléfono.",
+                    ClientErrorCodes.PhoneAlreadyInUse);
+            }
         }
 
         client.Update(

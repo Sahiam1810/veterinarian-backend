@@ -7,8 +7,6 @@ using Application.Security.Registration;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
-using Infrastructure.Security.Options;
-using Microsoft.Extensions.Options;
 using ClientEntity = Domain.Clients.Entities.ClientEntity;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserCredentialEntity = Domain.UserCredentials.Entities.UserCredentials;
@@ -22,13 +20,10 @@ public sealed class ClientAccountRegistrationService(
     IUsersRepository users,
     IClientRepository clients,
     IRolesRepository roles,
-    IPasswordHasher passwordHasher,
-    IOptions<SuperAdminOptions> superAdminOptions) : IClientAccountRegistrationService
+    IPasswordHasher passwordHasher) : IClientAccountRegistrationService
 {
     private const string ActiveStatus = "Activo";
     private const string ClientRoleName = "Cliente";
-    private readonly SuperAdminOptions superAdmin = superAdminOptions.Value;
-
     public async Task<Result<RegisteredClientAccount>> StageAsync(
         ClientAccountRegistrationRequest request,
         CancellationToken cancellationToken)
@@ -45,14 +40,6 @@ public sealed class ClientAccountRegistrationService(
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         var normalizedUserName = request.UserName.Trim().ToLowerInvariant();
         var identificationNumber = request.IdentificationNumber.Trim();
-
-        if (superAdmin.Enabled && string.Equals(
-                normalizedEmail,
-                superAdmin.Email.Trim().ToLowerInvariant(),
-                StringComparison.Ordinal))
-        {
-            return Result<RegisteredClientAccount>.Failure(AuthenticationErrors.UserAlreadyExists);
-        }
 
         var clientRole = await roles.GetByNameAsync(ClientRoleName, cancellationToken);
         if (clientRole is null)

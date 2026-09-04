@@ -15,12 +15,28 @@ public interface IClientRepository
         string identificationNumber,
         CancellationToken cancellationToken);
 
+    // Lookup por teléfono normalizado (solo dígitos).
+    Task<ClientEntity?> GetByPhoneAsync(
+        string phoneNumber,
+        CancellationToken cancellationToken);
+
     Task<ClientEntity?> GetByUserIdAsync(
         Guid userId,
         CancellationToken cancellationToken);
 
+    Task<ClientEntity?> GetByLookupAsync(
+        string? identificationNumber,
+        string? phoneNumber,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByIdentificationNumberAsync(
         string identificationNumber,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null);
+
+    // Unicidad operativa de teléfono (null/vacío no cuenta como duplicado).
+    Task<bool> ExistsByPhoneAsync(
+        string phoneNumber,
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 

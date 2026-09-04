@@ -27,6 +27,9 @@ Telegram__OtpTtlMinutes=5
 Telegram__OtpMaximumAttempts=5
 Telegram__OtpResendSeconds=60
 Telegram__OtpPepperBase64=<32 bytes aleatorios codificados en Base64>
+Telegram__PrivateAccessAbsoluteTtlHours=24
+Telegram__PrivateAccessIdleTtlMinutes=30
+Telegram__RegistrationProtectionKeyBase64=<32 bytes aleatorios codificados en Base64>
 
 Email__Enabled=true
 Email__Host=<servidor SMTP>
@@ -67,6 +70,38 @@ dotnet ef database update --project src/Infrastructure --startup-project src/Api
 
 ## 2. Registrar el webhook
 
+### Opción recomendada para pruebas locales: Cloudflare Quick Tunnel
+
+Desde la raíz del backend, ejecute el siguiente comando en una terminal y déjela
+abierta durante toda la prueba:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\start-telegram-cloudflare-tunnel.ps1
+```
+
+El script no inicia el backend. Comprueba `cloudflared` y los secretos existentes,
+crea una URL temporal `trycloudflare.com`, actualiza únicamente
+`Telegram__PublicWebhookUrl` en el `.env` privado y registra el webhook. Después de
+ver la confirmación, abra otra terminal e inicie manualmente la API:
+
+```powershell
+dotnet run --project src/Api/Api.csproj --launch-profile http
+```
+
+El túnel apunta de forma predeterminada a `http://localhost:5233`. Si el backend usa
+otro puerto, páselo explícitamente:
+
+```powershell
+.\scripts\start-telegram-cloudflare-tunnel.ps1 `
+  -BackendUrl http://localhost:PUERTO
+```
+
+Cada ejecución genera una URL nueva y vuelve a registrar Telegram. Use `Ctrl+C` en
+la terminal del script para detener el túnel.
+
+### Opción manual
+
 Estos comandos leen los secretos desde variables de proceso y no los imprimen.
 Ejecute PowerShell en la misma sesión donde asignó los valores:
 
@@ -100,49 +135,40 @@ $webhookInfo.result | Select-Object url, pending_update_count, last_error_messag
 
 Si cambia la URL del túnel debe ejecutar `setWebhook` otra vez.
 
-## 3. Vincular desde Telegram mediante correo y OTP
+## 3. Verificación condicional mediante cédula y OTP
 
-1. Envíe `/vincular` en un chat privado con el bot.
-2. Escriba el correo registrado en la cuenta activa de Huellitas.
-3. Revise ese correo y escriba en Telegram el OTP recibido.
-4. Espere la confirmación y envíe un mensaje veterinario normal.
+Con `Telegram__GuestModeEnabled=true`, cualquier chat privado puede hacer
+preguntas veterinarias generales. El backend usa una identidad técnica
+`TelegramGuest`; no crea conversaciones ni participantes para esa identidad y
+el agente no permite que ejecute módulos privados.
 
-El bot devuelve la misma respuesta cuando el correo no existe o está
-inactivo. El OTP vence en cinco minutos, permite cinco intentos y no se guarda
-en texto claro. Use `/cancelar` para abandonar una verificación. Para quitar
-una vinculación activa, envíe `/desvincular` y después
-`/desvincular confirmar`.
+La verificación comienza automáticamente, sin `/vincular`, cuando el agente
+indica que la consulta requiere datos u operaciones privadas:
 
-Desvincular conserva el historial, pero libera la persona, el usuario y el
-chat de Telegram para completar una vinculación nueva.
+1. El backend conserva cifrada la consulta pendiente y solicita la cédula.
+2. Si existe un cliente activo, envía un OTP al correo registrado.
+3. Si no existe, solicita confirmación, nombre y correo, y envía el OTP a ese
+   correo para crear un perfil de cliente sin contraseña.
+4. Al validar el OTP, enlaza permanentemente el chat con la persona y reanuda
+   una sola vez la consulta original.
 
-Con `Telegram__GuestModeEnabled=true`, un chat no vinculado puede hacer
-preguntas veterinarias generales o consultar información pública de la
-clínica. `/start` devuelve una bienvenida estática y cada respuesta general
-explica una sola vez que `/vincular` habilita el contexto personal. Las
-respuestas generales posteriores no reciben un recordatorio automático; el
-agente orienta a `/vincular` solamente cuando la solicitud actual requiere
-datos u operaciones privadas. El backend firma para cada llamada una identidad
-invitada determinística con rol `TelegramGuest`;
-no crea usuarios, clientes, participantes ni conversaciones invitadas en
-Oracle. El agente bloquea los módulos privados y la publicación global de
-conocimiento para ese rol.
+La cédula, el nombre, el correo y la consulta pendiente se cifran con
+`Telegram__RegistrationProtectionKeyBase64`; el OTP solo se guarda como hash.
+Los mensajes entrantes que contienen datos sensibles se redactan del inbox. El
+agente Python nunca recibe cédula, correo ni OTP.
 
-Los datos de mascotas, citas, vacunas, historias clínicas y cualquier
-operación siguen requiriendo una vinculación OTP. Una vez vinculado, el chat
-continúa usando la identidad, conversación y participantes persistentes sin
-cambiar el flujo existente. Con `Telegram__GuestModeEnabled=false`, se conserva
-el modo estricto anterior: un chat no vinculado solo recibe la instrucción de
-usar `/vincular`.
+El enlace del chat es persistente, pero la autorización privada es temporal.
+Dura como máximo `Telegram__PrivateAccessAbsoluteTtlHours` y se invalida tras
+`Telegram__PrivateAccessIdleTtlMinutes` sin actividad. Durante una sesión
+vigente no vuelve a pedir OTP. Al vencer, las preguntas generales siguen
+funcionando y solo una nueva solicitud privada activa otra verificación.
 
-Si la persona todavía no tiene una cuenta, debe crearla de forma segura en la
-aplicación antes de vincular. El bot no solicita contraseñas, identificación ni
-datos de registro dentro de Telegram. Cuando exista una URL pública de
-registro podrá incorporarse como enlace configurable sin cambiar el flujo OTP.
+Use `/cancelar` para abandonar un flujo activo. Para liberar el enlace envíe
+`/desvincular confirmar`. Los comandos antiguos `/vincular` y `/registrar` ya
+no inician procesos distintos; el bot explica que la verificación es automática.
 
-La vinculación es persistente: no vence cada cinco o quince minutos. La
-variable `Telegram__DelegatedTokenMinutes` controla solamente el JWT interno
-que el backend genera automáticamente para cada llamada al agente.
+`Telegram__DelegatedTokenMinutes` controla únicamente el JWT interno que .NET
+genera para llamar al agente; no representa la duración de la sesión privada.
 
 ## 4. Vinculación alternativa desde la aplicación
 

@@ -54,29 +54,6 @@ public sealed class JwtTokenIssuer(
         return BuildToken(claims, lifetime);
     }
 
-    // El SuperAdmin no es un usuario ni un rol de la tabla ROLES: no lleva
-    // "role_id" ni "role", solo el claim "super_admin" que PermissionAuthorizationHandler
-    // usa para saltarse toda verificación de permisos.
-    public IssuedAccessToken IssueForSuperAdmin(Guid id, string email)
-    {
-        var claims = new List<Claim>
-        {
-            new(
-                JwtRegisteredClaimNames.Sub,
-                id.ToString()),
-
-            new(
-                "super_admin",
-                "true"),
-
-            new(
-                JwtRegisteredClaimNames.Email,
-                email)
-        };
-
-        return BuildToken(claims, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
-    }
-
     private IssuedAccessToken BuildToken(List<Claim> claims, TimeSpan lifetime)
     {
         var now = timeProvider.GetUtcNow();

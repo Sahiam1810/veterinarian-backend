@@ -53,6 +53,43 @@ public class ClientsController(ISender sender) : ControllerBase
         return Ok(client.ToIdentificationLookupResponse());
     }
 
+    // GET /api/clients/by-phone/{phone}
+    [HttpGet("by-phone/{phone}")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.ClientPhoneLookup)]
+    [EndpointSummary("Resuelve un cliente por teléfono")]
+    [EndpointDescription("Equivalente anónimo a by-identification para el chatbot: ubica al cliente por teléfono normalizado (solo dígitos). Respuesta acotada (sin dirección ni teléfono) y rate-limited. Sin JWT.")]
+    [ProducesResponseType(typeof(ClientPhoneLookupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ClientPhoneLookupResponseDto>> GetByPhone(
+        string phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientByPhoneQuery(phone), ct);
+        return Ok(client.ToPhoneLookupResponse());
+    }
+
+    // GET /api/clients/lookup
+    [HttpGet("lookup")]
+    [RequirePermission("Clientes", PermissionAction.View)]
+    [EndpointSummary("Busca un cliente por cédula y/o teléfono (Staff)")]
+    // Semántica: match exacto (VO normalizado); si vienen identification y phone → AND; sin fila → 404.
+    [EndpointDescription("Lookup staff autenticado (Clientes View). Match exacto por cédula y/o teléfono; si ambos params vienen aplica AND. Sin coincidencia → 404. DTO operativo (no el acotado anónimo).")]
+    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClientResponseDto>> Lookup(
+        [FromQuery] string? identification,
+        [FromQuery] string? phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientLookupQuery(identification, phone), ct);
+        return Ok(client.ToDto());
+    }
+
     // GET /api/clients
     [HttpGet]
     [RequirePermission("Clientes", PermissionAction.View)]

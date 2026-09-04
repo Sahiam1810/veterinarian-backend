@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Roles;
 using MediatR;
 using RoleEntity = Domain.Roles.Entities.Roles;
 
@@ -19,6 +20,12 @@ public sealed class CreateRoleCommandHandler
         CreateRoleCommand request,
         CancellationToken cancellationToken)
     {
+        if (SystemRoles.IsReservedName(request.Name))
+        {
+            throw new ForbiddenException(
+                "El rol SuperAdmin es administrado mediante el proceso seguro de aprovisionamiento.");
+        }
+
         var roleExists = await _uow.RolesRepository.ExistsByNameAsync(
             request.Name,
             cancellationToken);

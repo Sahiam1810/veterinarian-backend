@@ -14,6 +14,8 @@ public sealed class RateLimitOptions
     public int TelegramWebhookWindowSeconds { get; init; }
     public int ClientIdentificationLookupPermitLimit { get; init; } = 20;
     public int ClientIdentificationLookupWindowSeconds { get; init; } = 60;
+    public int ClientPhoneLookupPermitLimit { get; init; } = 20;
+    public int ClientPhoneLookupWindowSeconds { get; init; } = 60;
     public int AppointmentOtpRequestPermitLimit { get; init; } = 5;
     public int AppointmentOtpRequestWindowSeconds { get; init; } = 60;
     public int AppointmentOtpConfirmPermitLimit { get; init; } = 10;
