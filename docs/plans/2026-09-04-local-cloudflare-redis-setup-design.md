@@ -14,7 +14,7 @@ Docker Compose continúa siendo dueño del contenedor Redis, su volumen AOF y la
 interna; no se añade autenticación porque el puerto está limitado a localhost y esta
 configuración es solo de desarrollo.
 
-El backend incorpora un script PowerShell explícito. El script inicia `cloudflared` en
+El entorno local incorpora un script PowerShell explícito e ignorado por Git. El script inicia `cloudflared` en
 segundo plano apuntando a `http://localhost:5233`, espera la URL HTTPS temporal,
 actualiza únicamente `Telegram__PublicWebhookUrl` en el `.env` privado y registra el
 webhook con los secretos que ya existen allí. El script no inicia el backend y permanece
@@ -31,6 +31,8 @@ ejecutándose para mantener vivo el túnel; al cerrarlo también termina `cloudf
 ## Seguridad y errores
 
 - El token del bot y el secreto del webhook nunca se imprimen.
+- El script operativo y su prueba auxiliar quedan ignorados por Git y solo existen en
+  la estación local del desarrollador.
 - El `.env` continúa ignorado por Git.
 - Una URL no obtenida, un ejecutable ausente o una respuesta fallida de Telegram detienen
   el script con un mensaje accionable y cierran el proceso del túnel.

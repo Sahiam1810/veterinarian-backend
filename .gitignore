@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# Local-only Telegram tunnel helpers
+/scripts/start-telegram-cloudflare-tunnel.ps1
+/tests/scripts/StartTelegramCloudflareTunnel.Tests.ps1
+
 # User-specific files
 *.rsuser
 *.suo

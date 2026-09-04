@@ -13,6 +13,7 @@
 - Trabajar directamente en la rama actual, sin worktree.
 - No iniciar el backend.
 - No imprimir ni versionar secretos o archivos `.env`.
+- Mantener el script del túnel y su prueba auxiliar como archivos locales ignorados.
 - No modificar la arquitectura de puertos y adaptadores del agente.
 - Ejecutar solamente verificaciones enfocadas.
 
@@ -35,7 +36,8 @@
 ### Task 2: Automatizar el Quick Tunnel y el webhook
 
 **Files:**
-- Create: `scripts/start-telegram-cloudflare-tunnel.ps1`
+- Create (ignored, local only): `scripts/start-telegram-cloudflare-tunnel.ps1`
+- Create (ignored, local only): `tests/scripts/StartTelegramCloudflareTunnel.Tests.ps1`
 - Modify: `docs/integrations/telegram.md`
 
 **Interfaces:**
