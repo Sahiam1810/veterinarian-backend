@@ -29,7 +29,7 @@ El ejecutor nunca llama `cleanup_seeds.sql` ni scripts de `database/test_seeds`.
 | Catálogo | Cantidad canónica mínima |
 |---|---:|
 | Roles | 6 |
-| Modules | 16 |
+| Modules | 20 |
 | Role permissions | 44 |
 | Appointment statuses | 6 |
 | Conversation statuses | 4 |
