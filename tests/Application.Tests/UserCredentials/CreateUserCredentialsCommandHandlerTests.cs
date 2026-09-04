@@ -1,9 +1,9 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Roles.Abstraction;
+using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
-using Application.UserCredentials.Errors;
 using Application.UserCredentials.UseCase;
 using Application.Users.Abstraction;
 using NSubstitute;
@@ -35,7 +35,7 @@ public sealed class CreateUserCredentialsCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_throws_conflict_with_stable_code_when_account_user_is_Cliente()
+    public async Task Handle_throws_forbidden_with_PlatformAccessDenied_when_account_user_is_Cliente()
     {
         var clientRole = new RoleEntity("Cliente", null);
         var user = new UserEntity("Cliente Ana", "cliente@huellitas.test", null, clientRole.Id);
@@ -47,10 +47,10 @@ public sealed class CreateUserCredentialsCommandHandlerTests
 
         var command = new CreateUserCredentialsCommand(account.Id, "Password123!");
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
             () => sut.Handle(command, CancellationToken.None));
 
-        Assert.Equal(UserCredentialErrorCodes.ClientCannotHaveLogin, ex.Code);
+        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
         await userCredentialsRepository.DidNotReceive().AddAsync(
             Arg.Any<Domain.UserCredentials.Entities.UserCredentials>(), Arg.Any<CancellationToken>());
         await userCredentialsRepository.DidNotReceive().ExistsByAccountIdAsync(

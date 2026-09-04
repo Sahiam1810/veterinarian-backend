@@ -1,6 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.UserCredentials.Errors;
+using Application.Security.Errors;
 using MediatR;
 using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
 
@@ -59,9 +59,7 @@ public sealed class CreateUserCredentialsCommandHandler
         // 1.4: Cliente no tiene login de plataforma; no crear USER_CREDENTIALS.
         if (string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal))
         {
-            throw new ConflictException(
-                "Un usuario con rol Cliente no puede tener credenciales de acceso.",
-                UserCredentialErrorCodes.ClientCannotHaveLogin);
+            throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
         }
 
         var credentialsExist = await _uow.UserCredentialsRepository.ExistsByAccountIdAsync(

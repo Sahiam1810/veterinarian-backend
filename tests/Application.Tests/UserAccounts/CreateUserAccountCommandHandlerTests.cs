@@ -1,8 +1,8 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Roles.Abstraction;
+using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
-using Application.UserAccounts.Errors;
 using Application.UserAccounts.UseCase;
 using Application.Users.Abstraction;
 using NSubstitute;
@@ -81,7 +81,7 @@ public sealed class CreateUserAccountCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_throws_conflict_with_stable_code_when_user_role_is_Cliente()
+    public async Task Handle_throws_forbidden_with_PlatformAccessDenied_when_user_role_is_Cliente()
     {
         // Cliente sin password: no debe poder asociar USER_ACCOUNTS.
         var clientRole = new RoleEntity("Cliente", null);
@@ -92,9 +92,9 @@ public sealed class CreateUserAccountCommandHandlerTests
 
         var command = new CreateUserAccountCommand(user.Id, "cliente", "cliente@huellitas.test", "Activo");
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() => sut.Handle(command, CancellationToken.None));
 
-        Assert.Equal(UserAccountErrorCodes.ClientCannotHaveLogin, ex.Code);
+        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
         await userAccountsRepository.DidNotReceive().AddAsync(
             Arg.Any<Domain.UserAccounts.Entities.UserAccounts>(), Arg.Any<CancellationToken>());
         await userAccountsRepository.DidNotReceive().ExistsByUserIdAsync(
