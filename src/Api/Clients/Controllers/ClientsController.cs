@@ -89,12 +89,7 @@ public class ClientsController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ClientResponseDto>> Create([FromBody] CreateClientDto dto, CancellationToken ct)
     {
-        var id = await sender.Send(new CreateClientCommand(
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.RegistrationDate,
-            dto.PhoneNumber), ct);
+        var id = await sender.Send(dto.ToCommand(), ct);
 
         var client = await sender.Send(new GetClientByIdQuery(id), ct);
         return CreatedAtAction(nameof(GetById), new { id }, client.ToDto());
@@ -111,13 +106,7 @@ public class ClientsController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientDto dto, CancellationToken ct)
     {
-        await sender.Send(new UpdateClientCommand(
-            id,
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.RegistrationDate,
-            dto.PhoneNumber), ct);
+        await sender.Send(dto.ToCommand(id), ct);
 
         return NoContent();
     }

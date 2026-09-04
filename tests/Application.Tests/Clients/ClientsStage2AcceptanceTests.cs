@@ -5,9 +5,8 @@
 // implementados hoy y requieren esquema y flujos explícitos).
 //
 // A Create con phone normalizado -> CUBIERTA. El handler real
-//   (CreateClientCommandHandler) pasa el PhoneNumber crudo del request a
-//   ClientEntity, que lo normaliza vía ClientPhoneNumber.CreateOptional
-//   (solo dígitos). Test real:
+//   (CreateClientCommandHandler) pasa el PhoneNumber por
+//   ClientPhoneNumber.Create (solo dígitos) antes de persistir. Test real:
 //   Application.Tests.Clients.CreateClientCommandHandlerTests
 //     .Handle_persists_the_client_with_a_normalized_phone_number
 //   No se duplica aquí para no probar dos veces el mismo contrato.

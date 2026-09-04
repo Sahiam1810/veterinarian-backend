@@ -1,6 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Domain.Clients.Entities;
+using Domain.Clients.ValueObjects;
 using MediatR;
 
 namespace Application.Clients.UseCases;
@@ -56,12 +57,13 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
             throw new ConflictException("Ese usuario ya tiene otro perfil de cliente asociado.");
         }
 
+        var phoneNumber = ClientPhoneNumber.Create(request.PhoneNumber);
         client.Update(
             request.UserId,
             request.IdentificationNumber,
             request.Address,
             request.RegistrationDate,
-            request.PhoneNumber);
+            phoneNumber.Value);
 
         await _uow.ClientsRepository.UpdateAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

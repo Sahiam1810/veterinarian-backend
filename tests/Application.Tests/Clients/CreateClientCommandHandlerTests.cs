@@ -37,7 +37,8 @@ public sealed class CreateClientCommandHandlerTests
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(true);
 
-        var command = new CreateClientCommand(user.Id, "1234567890", "Calle Falsa 123");
+        var command = new CreateClientCommand(
+            user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
 
@@ -54,7 +55,8 @@ public sealed class CreateClientCommandHandlerTests
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
 
-        var command = new CreateClientCommand(user.Id, "1234567890", "Calle Falsa 123");
+        var command = new CreateClientCommand(
+            user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         var id = await sut.Handle(command, CancellationToken.None);
 
@@ -63,10 +65,8 @@ public sealed class CreateClientCommandHandlerTests
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
-    // Etapa 2 / tarea 2.5 -- escenario "create con phone normalizado": el handler
-    // pasa el string crudo del request a ClientEntity, que lo normaliza vía
-    // ClientPhoneNumber.CreateOptional (solo dígitos, ver Domain.Clients.ValueObjects.ClientPhoneNumber).
-    // No hay validación de duplicado de phone -- ese chequeo no existe hoy (ver ClientsStage2AcceptanceTests).
+    // Etapa 2 / tarea 2.4 -- el handler no persiste el string crudo: pasa por
+    // ClientPhoneNumber.Create (solo dígitos) antes de construir ClientEntity.
     [Fact]
     public async Task Handle_persists_the_client_with_a_normalized_phone_number()
     {

@@ -36,7 +36,8 @@ public sealed class UpdateClientCommandHandlerTests
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(newUser.Id, Arg.Any<CancellationToken>(), client.Id).Returns(true);
 
-        var command = new UpdateClientCommand(client.Id, newUser.Id, "1234567890", "Calle Falsa 123");
+        var command = new UpdateClientCommand(
+            client.Id, newUser.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
 
@@ -57,12 +58,34 @@ public sealed class UpdateClientCommandHandlerTests
         clientsRepository.ExistsByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
 
-        var command = new UpdateClientCommand(client.Id, user.Id, "1234567890", "Calle Falsa 123");
+        var command = new UpdateClientCommand(
+            client.Id, user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         await sut.Handle(command, CancellationToken.None);
 
         await clientsRepository.Received(1).ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), client.Id);
         await clientsRepository.Received(1).UpdateAsync(client, Arg.Any<CancellationToken>());
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_persists_the_updated_client_with_a_normalized_phone_number()
+    {
+        var client = new ClientEntity(Guid.NewGuid(), "1234567890", "Calle Falsa 123", phoneNumber: "3001234567");
+        var user = new UserEntity("Ana Cliente", "ana@huellitas.test", "hash", Guid.NewGuid());
+
+        clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
+        usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        clientsRepository.ExistsByIdentificationNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
+        clientsRepository.ExistsByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
+
+        var command = new UpdateClientCommand(
+            client.Id, user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "+57 (301) 555-0000");
+
+        await sut.Handle(command, CancellationToken.None);
+
+        Assert.Equal("573015550000", client.PhoneNumber?.Value);
     }
 }
