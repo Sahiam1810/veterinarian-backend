@@ -22,6 +22,10 @@ public interface ITelegramRuntimeSettings
 
     TimeSpan OtpResendInterval { get; }
 
+    TimeSpan PrivateAccessAbsoluteLifetime { get; }
+
+    TimeSpan PrivateAccessIdleLifetime { get; }
+
     bool RegistrationEnabled { get; }
 
     string RegistrationCompletionUrl { get; }

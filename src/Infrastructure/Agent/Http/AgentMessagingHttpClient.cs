@@ -41,6 +41,7 @@ public sealed class AgentMessagingHttpClient(
             if (payload.ConversationId != message.ConversationId ||
                 payload.CorrelationId != message.CorrelationId ||
                 string.IsNullOrWhiteSpace(payload.ResponseType) ||
+                string.IsNullOrWhiteSpace(payload.AccessRequirement) ||
                 payload.Rag is null ||
                 string.IsNullOrWhiteSpace(payload.Rag.Status) ||
                 string.IsNullOrWhiteSpace(payload.Rag.Route))
@@ -68,7 +69,8 @@ public sealed class AgentMessagingHttpClient(
                     payload.Rag.GlobalMatches,
                     payload.Rag.ConversationMatches,
                     payload.Rag.MemoryStored,
-                    payload.Rag.KnowledgePublished));
+                    payload.Rag.KnowledgePublished),
+                ParseAccessRequirement(payload.AccessRequirement));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -156,4 +158,11 @@ public sealed class AgentMessagingHttpClient(
             _ => new AgentContractException()
         };
     }
+
+    private static AgentAccessRequirement ParseAccessRequirement(string value) => value switch
+    {
+        "none" => AgentAccessRequirement.None,
+        "identity_verification" => AgentAccessRequirement.IdentityVerification,
+        _ => throw new AgentContractException()
+    };
 }
