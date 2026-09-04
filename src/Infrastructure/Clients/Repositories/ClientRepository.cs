@@ -46,6 +46,33 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
 
+    public async Task<ClientEntity?> GetByLookupAsync(
+        string? identificationNumber,
+        string? phoneNumber,
+        CancellationToken cancellationToken)
+    {
+        var query = _context.Set<ClientEntity>()
+            .Include(c => c.User)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(identificationNumber))
+        {
+            var idVo = ClientIdentificationNumber.Create(identificationNumber);
+            query = query.Where(c => c.IdentificationNumber == idVo);
+        }
+
+        if (!string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            var phoneVo = ClientPhoneNumber.CreateOptional(phoneNumber);
+            if (phoneVo is not null)
+            {
+                query = query.Where(c => c.PhoneNumber == phoneVo);
+            }
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
     // 👈 3. CORREGIDO: Compara contra el Value Object sin usar '.Value'
     public async Task<bool> ExistsByIdentificationNumberAsync(string identificationNumber, CancellationToken cancellationToken, Guid? excludedId = null)
     {

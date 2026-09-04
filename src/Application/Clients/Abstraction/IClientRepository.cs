@@ -19,6 +19,11 @@ public interface IClientRepository
         Guid userId,
         CancellationToken cancellationToken);
 
+    Task<ClientEntity?> GetByLookupAsync(
+        string? identificationNumber,
+        string? phoneNumber,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByIdentificationNumberAsync(
         string identificationNumber,
         CancellationToken cancellationToken,
