@@ -1,33 +1,45 @@
 using Application.Common.Results;
 
 namespace Application.Security.Errors;
+
+// Catálogo de códigos estables de auth. El front traduce por `code`, no por Description.
+// Description es texto neutro de respaldo (mismo mensaje genérico); no hardcodear UX por endpoint.
 public static class AuthenticationErrors
 {
+    private const string GenericDescription = "Authentication failed.";
+
     public static readonly Error InvalidCredentials = new(
         "Authentication.InvalidCredentials",
-        "Las credenciales proporcionadas son inválidas.");
+        GenericDescription);
 
     public static readonly Error InvalidRefreshToken = new(
         "Authentication.InvalidRefreshToken",
-        "El token de actualización es inválido o ha expirado.");
+        GenericDescription);
 
     public static readonly Error UserAlreadyExists = new(
         "Authentication.UserAlreadyExists",
-        "El correo electrónico o nombre de usuario ya se encuentra registrado."
-    );
+        GenericDescription);
 
     public static readonly Error IdentificationNumberAlreadyExists = new(
         "Authentication.IdentificationNumberAlreadyExists",
-        "El número de identificación ya se encuentra registrado."
-    );
+        GenericDescription);
 
     public static readonly Error InvalidRegistrationData = new(
         "Authentication.InvalidRegistrationData",
-        "Los datos proporcionados para el registro son inválidos o están incompletos."
-    );
+        GenericDescription);
 
+    // 401 JWT: token ausente/inválido (JwtBearer OnChallenge).
+    public static readonly Error Unauthorized = new(
+        "Authentication.Unauthorized",
+        GenericDescription);
+
+    // 403 JWT/policy: autenticado pero sin permiso de recurso.
+    public static readonly Error Forbidden = new(
+        "Authentication.Forbidden",
+        GenericDescription);
+
+    // Denegación de acceso a la plataforma (p. ej. rol no admitido en ese front).
     public static readonly Error PlatformAccessDenied = new(
         "Authentication.PlatformAccessDenied",
-        "No tienes permisos para acceder a esta plataforma."
-    );
+        GenericDescription);
 }
