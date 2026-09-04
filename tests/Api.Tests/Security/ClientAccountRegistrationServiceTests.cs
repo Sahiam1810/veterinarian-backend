@@ -8,8 +8,6 @@ using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Security.Authentication;
-using Infrastructure.Security.Options;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 using ClientEntity = Domain.Clients.Entities.ClientEntity;
@@ -58,14 +56,7 @@ public sealed class ClientAccountRegistrationServiceTests
             users,
             clients,
             roles,
-            passwordHasher,
-            Options.Create(new SuperAdminOptions
-            {
-                Enabled = true,
-                Id = Guid.Parse("99999999-9999-9999-9999-999999999999"),
-                Email = "superadmin@huellitas.test",
-                PasswordHash = "stored-hash"
-            }));
+            passwordHasher);
     }
 
     [Fact]

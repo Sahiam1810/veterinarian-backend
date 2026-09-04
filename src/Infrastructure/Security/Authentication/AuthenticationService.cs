@@ -25,7 +25,6 @@ public sealed class AuthenticationService(
     RefreshTokenProtector refreshTokenProtector,
     IPasswordHasher passwordHasher,
     IOptions<JwtOptions> options,
-    IOptions<SuperAdminOptions> superAdminOptions,
     TimeProvider timeProvider) : IAuthenticationService
 {
     private const string ActiveStatus = "Activo";
@@ -34,21 +33,12 @@ public sealed class AuthenticationService(
     private const string ClientRoleName = "Cliente";
 
     private readonly JwtOptions jwtOptions = options.Value;
-    private readonly SuperAdminOptions superAdmin = superAdminOptions.Value;
-
     public async Task<Result<AuthenticationTokens>> LoginAsync(
         string email,
         string password,
         CancellationToken cancellationToken)
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
-
-        if (IsSuperAdminEmail(normalizedEmail))
-        {
-            return passwordHasher.Verify(password, superAdmin.PasswordHash)
-                ? IssueSuperAdminTokens()
-                : Result<AuthenticationTokens>.Failure(AuthenticationErrors.InvalidCredentials);
-        }
 
         var account = await userAccountRepository.GetByMailAsync(
             normalizedEmail, cancellationToken);
@@ -175,13 +165,6 @@ public sealed class AuthenticationService(
         Guid userAccountId,
         CancellationToken cancellationToken)
     {
-        // El SuperAdmin no tiene fila en UserAccounts: sin este caso, /me le
-        // devolvería 401 aunque su token sea válido.
-        if (superAdmin.Enabled && userAccountId == superAdmin.Id)
-        {
-            return Result<CurrentProfile>.Success(BuildSuperAdminProfile());
-        }
-
         var account = await userAccountRepository.GetByIdAsync(
             userAccountId, cancellationToken);
 
@@ -196,20 +179,6 @@ public sealed class AuthenticationService(
         return identity is null
             ? Result<CurrentProfile>.Failure(AuthenticationErrors.InvalidCredentials)
             : Result<CurrentProfile>.Success(CurrentProfile.From(identity));
-    }
-
-    // El SuperAdmin no tiene UserAccounts, así que no hay dónde guardar un
-    // refresh token: solo recibe access token, y vuelve a loguearse cuando expire.
-    private Result<AuthenticationTokens> IssueSuperAdminTokens()
-    {
-        var accessToken = jwtTokenIssuer.IssueForSuperAdmin(superAdmin.Id, superAdmin.Email);
-
-        return Result<AuthenticationTokens>.Success(
-            new AuthenticationTokens(
-                accessToken.Token,
-                accessToken.ExpiresAt,
-                string.Empty,
-                accessToken.ExpiresAt));
     }
 
     private async Task<Result<AuthenticationTokens>> IssueTokensAsync(
@@ -274,21 +243,6 @@ public sealed class AuthenticationService(
             account.Mail.Value,
             account.Status);
     }
-
-    private CurrentProfile BuildSuperAdminProfile() =>
-        new(
-            PersonId: superAdmin.Id,
-            UserAccountId: superAdmin.Id,
-            FullName: "Super Administrador",
-            Initials: "SA",
-            UserName: superAdmin.Email,
-            Email: superAdmin.Email,
-            Role: "SuperAdmin",
-            AccountStatus: ActiveStatus);
-
-    private bool IsSuperAdminEmail(string normalizedEmail) =>
-        superAdmin.Enabled &&
-        string.Equals(normalizedEmail, superAdmin.Email.Trim().ToLowerInvariant(), StringComparison.Ordinal);
 
     private static bool IsActiveAccount(UserAccountEntity? account) =>
         account is not null &&
