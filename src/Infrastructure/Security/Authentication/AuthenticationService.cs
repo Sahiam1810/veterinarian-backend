@@ -43,20 +43,27 @@ public sealed class AuthenticationService(
         var account = await userAccountRepository.GetByMailAsync(
             normalizedEmail, cancellationToken);
 
-        if (!IsActiveAccount(account))
+        if (account is null)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidCredentials);
         }
 
         var credential = await userCredentialRepository.GetByAccountIdAsync(
-            account!.Id, cancellationToken);
+            account.Id, cancellationToken);
 
         if (credential is null ||
             !passwordHasher.Verify(password, credential.PasswordHash))
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidCredentials);
+        }
+
+        // Solo tras password válida: no filtrar inactiva como InvalidCredentials.
+        if (!IsActiveAccount(account))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.PlatformAccessDenied);
         }
 
         var identity = await BuildIdentityAsync(account, cancellationToken);
@@ -101,13 +108,20 @@ public sealed class AuthenticationService(
         var account = await userAccountRepository.GetByIdAsync(
             currentToken.AccountId, cancellationToken);
 
-        if (!IsActiveAccount(account))
+        if (account is null)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidRefreshToken);
         }
 
-        var identity = await BuildIdentityAsync(account!, cancellationToken);
+        // Antes de rotar/borrar: cuenta inactiva no renueva sesión.
+        if (!IsActiveAccount(account))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.PlatformAccessDenied);
+        }
+
+        var identity = await BuildIdentityAsync(account, cancellationToken);
 
         if (identity is null)
         {

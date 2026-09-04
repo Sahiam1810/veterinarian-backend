@@ -6,8 +6,8 @@
 // B Staff Admin OK
 // C Cliente con creds legacy → Authentication.PlatformAccessDenied (sin tokens)
 // D Email inexistente → Authentication.InvalidCredentials
-// E CreateUserAccount Cliente → UserAccounts.ClientCannotHaveLogin
-// F CreateUserCredentials Cliente → UserCredentials.ClientCannotHaveLogin
+// E CreateUserAccount Cliente → Authentication.PlatformAccessDenied
+// F CreateUserCredentials Cliente → Authentication.PlatformAccessDenied
 //
 // Run: dotnet test --filter FullyQualifiedName~SecurityStage1
 
@@ -18,10 +18,8 @@ using Application.Common.Exceptions;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
-using Application.UserAccounts.Errors;
 using Application.UserAccounts.UseCase;
 using Application.UserCredentials.Abstraction;
-using Application.UserCredentials.Errors;
 using Application.UserCredentials.UseCase;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
@@ -221,10 +219,10 @@ public sealed class SecurityStage1Tests : IDisposable
         var command = new CreateUserAccountCommand(
             clientUser.Id, "clienteuser", "cliente.account@huellitas.test", "Activo");
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
             () => handler.Handle(command, CancellationToken.None));
 
-        Assert.Equal(UserAccountErrorCodes.ClientCannotHaveLogin, ex.Code);
+        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
         await _userAccountRepository.DidNotReceive().AddAsync(
             Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
     }
@@ -248,10 +246,10 @@ public sealed class SecurityStage1Tests : IDisposable
         var handler = new CreateUserCredentialsCommandHandler(_unitOfWork, _passwordHasher);
         var command = new CreateUserCredentialsCommand(clientAccount.Id, "Password123!");
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
             () => handler.Handle(command, CancellationToken.None));
 
-        Assert.Equal(UserCredentialErrorCodes.ClientCannotHaveLogin, ex.Code);
+        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
         await _userCredentialRepository.DidNotReceive().AddAsync(
             Arg.Any<UserCredentialEntity>(), Arg.Any<CancellationToken>());
     }
