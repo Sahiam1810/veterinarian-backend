@@ -11,7 +11,22 @@ ALTER SESSION SET NLS_TERRITORY = 'SPAIN';
 -- RolesMigration + RemoveRolesCodeSeed ya aplicadas).
 --
 -- Es idempotente: usa MERGE para no duplicar filas si se ejecuta más de una vez.
--- Los ROLE_ID son fijos para garantizar consistencia con role_permissions_seed.sql.
+-- Los ROLE_ID son fijos para garantizar consistencia con la autorización y permisos.
+
+-- 0. SuperAdmin: rol de sistema protegido por el backend.
+MERGE INTO ROLES target
+USING (
+    SELECT '99999999-9999-9999-9999-999999999999' AS ID,
+           'SuperAdmin' AS NAME,
+           'Rol de sistema con autoridad no delegable para seguridad y permisos' AS DESCRIPTION
+    FROM DUAL
+) source
+ON (target.ROLE_ID = source.ID)
+WHEN MATCHED THEN
+    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
+WHEN NOT MATCHED THEN
+    INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
 
 -- 1. Administrador
 MERGE INTO ROLES target
@@ -90,5 +105,5 @@ WHEN NOT MATCHED THEN
 
 COMMIT;
 
--- Verificar en DB limpia: SELECT COUNT(*) FROM ROLES; -- esperado: 5
+-- Verificar en DB limpia: SELECT COUNT(*) FROM ROLES; -- esperado: 6
 -- Luego role_permissions_seed.sql no debe fallar por FK a ROLE_ID.
