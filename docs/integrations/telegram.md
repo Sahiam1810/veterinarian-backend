@@ -70,6 +70,38 @@ dotnet ef database update --project src/Infrastructure --startup-project src/Api
 
 ## 2. Registrar el webhook
 
+### Opción recomendada para pruebas locales: Cloudflare Quick Tunnel
+
+Desde la raíz del backend, ejecute el siguiente comando en una terminal y déjela
+abierta durante toda la prueba:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\start-telegram-cloudflare-tunnel.ps1
+```
+
+El script no inicia el backend. Comprueba `cloudflared` y los secretos existentes,
+crea una URL temporal `trycloudflare.com`, actualiza únicamente
+`Telegram__PublicWebhookUrl` en el `.env` privado y registra el webhook. Después de
+ver la confirmación, abra otra terminal e inicie manualmente la API:
+
+```powershell
+dotnet run --project src/Api/Api.csproj --launch-profile http
+```
+
+El túnel apunta de forma predeterminada a `http://localhost:5233`. Si el backend usa
+otro puerto, páselo explícitamente:
+
+```powershell
+.\scripts\start-telegram-cloudflare-tunnel.ps1 `
+  -BackendUrl http://localhost:PUERTO
+```
+
+Cada ejecución genera una URL nueva y vuelve a registrar Telegram. Use `Ctrl+C` en
+la terminal del script para detener el túnel.
+
+### Opción manual
+
 Estos comandos leen los secretos desde variables de proceso y no los imprimen.
 Ejecute PowerShell en la misma sesión donde asignó los valores:
 
