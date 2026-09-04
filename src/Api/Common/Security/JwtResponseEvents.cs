@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Application.Security.Errors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace Api.Common.Security;
@@ -27,11 +28,12 @@ public static class JwtResponseEvents
             context.HandleResponse();
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "application/problem+json";
+            // Code estable desde AuthenticationErrors (el front traduce por code).
             await WriteProblemAsync(
                 context.Response,
                 StatusCodes.Status401Unauthorized,
                 "Unauthorized",
-                "Authentication.Unauthorized",
+                AuthenticationErrors.Unauthorized.Code,
                 context.HttpContext.RequestAborted);
         },
         OnForbidden = async context =>
@@ -42,7 +44,7 @@ public static class JwtResponseEvents
                 context.Response,
                 StatusCodes.Status403Forbidden,
                 "Forbidden",
-                "Authentication.Forbidden",
+                AuthenticationErrors.Forbidden.Code,
                 context.HttpContext.RequestAborted);
         }
     };
