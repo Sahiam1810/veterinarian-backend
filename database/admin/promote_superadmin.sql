@@ -2,6 +2,7 @@
 -- Uso SQL*Plus: @database/admin/promote_superadmin.sql correo@dominio.com
 -- No crea usuarios ni credenciales y revoca los refresh tokens existentes.
 WHENEVER SQLERROR EXIT SQL.SQLCODE ROLLBACK;
+SET DEFINE ON;
 SET VERIFY OFF;
 DEFINE target_email = '&1';
 

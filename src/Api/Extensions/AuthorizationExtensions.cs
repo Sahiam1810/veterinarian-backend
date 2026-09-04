@@ -84,9 +84,8 @@ public static class AuthorizationExtensions
         return services;
     }
 
-    // El SuperAdmin no tiene fila en ROLES (no es un rol, es un claim a nivel
-    // de usuario): cualquier policy basada en rol debe dejarlo pasar igual,
-    // sin que cada endpoint tenga que saber de su existencia.
+    // El SuperAdmin es un rol persistido. Se reconoce por su role_id canónico
+    // para que las policies no dependan del nombre mutable del rol.
     private static Action<AuthorizationPolicyBuilder> RoleOrSuperAdmin(params string[] roles) =>
         policy => policy.RequireAssertion(context =>
             roles.Any(context.User.IsInRole) ||
