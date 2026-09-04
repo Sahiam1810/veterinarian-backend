@@ -57,3 +57,12 @@ public record ClientIdentificationLookupResponseDto(
     string IdentificationNumber,
     DateTime RegistrationDate
 );
+
+// Mismo contrato acotado que by-identification (sin Address ni PhoneNumber).
+// El caller ya conoce el teléfono; no se reexpone PII de contacto.
+public record ClientPhoneLookupResponseDto(
+    Guid Id,
+    Guid UserId,
+    string IdentificationNumber,
+    DateTime RegistrationDate
+);

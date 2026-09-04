@@ -53,6 +53,23 @@ public class ClientsController(ISender sender) : ControllerBase
         return Ok(client.ToIdentificationLookupResponse());
     }
 
+    // GET /api/clients/by-phone/{phone}
+    [HttpGet("by-phone/{phone}")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.ClientPhoneLookup)]
+    [EndpointSummary("Resuelve un cliente por teléfono")]
+    [EndpointDescription("Equivalente anónimo a by-identification para el chatbot: ubica al cliente por teléfono normalizado (solo dígitos). Respuesta acotada (sin dirección ni teléfono) y rate-limited. Sin JWT.")]
+    [ProducesResponseType(typeof(ClientPhoneLookupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ClientPhoneLookupResponseDto>> GetByPhone(
+        string phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientByPhoneQuery(phone), ct);
+        return Ok(client.ToPhoneLookupResponse());
+    }
+
     // GET /api/clients
     [HttpGet]
     [RequirePermission("Clientes", PermissionAction.View)]

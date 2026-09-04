@@ -18,11 +18,11 @@
 //   (CreateClientCommandValidator) ni el repositorio (IClientRepository).
 //   Pendiente de implementación 2.x -- no se agrega aquí para no inventar
 //   el contrato de rechazo (código de error, excepción) que todavía no existe.
-// C Búsqueda by-phone -> BLOQUEADA. IClientRepository no expone
-//   GetByPhoneAsync/ExistsByPhoneAsync y ClientsController solo expone
-//   GET /api/clients/by-identification/{identificationNumber} (por número
-//   de identificación, no por teléfono). No hay endpoint ni query
-//   equivalente por teléfono que probar.
+// C Búsqueda by-phone -> CUBIERTA (tarea 2.2). Contratos reales:
+//   Application.Tests.Clients.GetClientByPhoneQueryHandlerTests
+//   Api.Tests.Clients.ClientPhoneLookupHttpTests (200/404)
+//   Api.Tests.Clients.ClientPhoneLookupRateLimitHttpTests (429)
+//   No se duplica aquí para no probar dos veces el mismo contrato.
 // D Lookup de staff -> BLOQUEADA. No existe un concepto de dominio "Staff"
 //   en el proyecto: "StaffOnly"/"ClinicalStaffOnly"/"FrontDeskStaffOnly" son
 //   nombres de políticas de autorización (AuthorizationPolicies), no una
@@ -32,8 +32,8 @@
 //
 // Run (solo los casos bloqueados documentados en este archivo):
 //   dotnet test --filter FullyQualifiedName~ClientsStage2AcceptanceTests
-// Run (matriz completa de Etapa 2, incluyendo el caso A real):
-//   dotnet test --filter "FullyQualifiedName~ClientsStage2AcceptanceTests|FullyQualifiedName~CreateClientCommandHandlerTests"
+// Run (matriz completa de Etapa 2, incluyendo el caso A real y by-phone 2.2):
+//   dotnet test --filter "FullyQualifiedName~ClientsStage2AcceptanceTests|FullyQualifiedName~CreateClientCommandHandlerTests|FullyQualifiedName~GetClientByPhoneQueryHandlerTests|FullyQualifiedName~ClientPhoneLookup"
 
 using Xunit;
 
@@ -53,14 +53,6 @@ public sealed class ClientsStage2AcceptanceTests
         // Intencionalmente vacío: no hay ExistsByPhoneAsync ni chequeo de
         // unicidad de PhoneNumber en CreateClientCommandHandler/IClientRepository
         // contra el cual escribir una aserción real sin inventar el contrato.
-    }
-
-    // Caso C
-    [Fact(Skip = BlockedReason)]
-    public void Busqueda_by_phone_debe_localizar_el_cliente_esperado()
-    {
-        // Intencionalmente vacío: IClientRepository no expone GetByPhoneAsync
-        // y ClientsController no expone un endpoint por teléfono.
     }
 
     // Caso D

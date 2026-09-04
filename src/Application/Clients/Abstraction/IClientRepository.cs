@@ -15,6 +15,11 @@ public interface IClientRepository
         string identificationNumber,
         CancellationToken cancellationToken);
 
+    // Lookup por teléfono normalizado (solo dígitos); sin índice único aún (2.1).
+    Task<ClientEntity?> GetByPhoneAsync(
+        string phoneNumber,
+        CancellationToken cancellationToken);
+
     Task<ClientEntity?> GetByUserIdAsync(
         Guid userId,
         CancellationToken cancellationToken);

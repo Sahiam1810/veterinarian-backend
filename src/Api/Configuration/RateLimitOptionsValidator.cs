@@ -21,6 +21,8 @@ public sealed class RateLimitOptionsValidator
             options.TelegramWebhookWindowSeconds,
             options.ClientIdentificationLookupPermitLimit,
             options.ClientIdentificationLookupWindowSeconds,
+            options.ClientPhoneLookupPermitLimit,
+            options.ClientPhoneLookupWindowSeconds,
             options.AppointmentOtpRequestPermitLimit,
             options.AppointmentOtpRequestWindowSeconds,
             options.AppointmentOtpConfirmPermitLimit,
