@@ -1,24 +1,24 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
+    // No-op: el esquema PHONE_NUMBER / OTP ya lo crea AddAppointmentClientOtpSelfService.
+    // Mantener el Id en el historial evita ORA-01430 en database update (columna/tabla duplicada).
     public partial class AlignAppointmentProfileAndVerificationSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Intentionally empty. The immediately preceding migration
-            // AddAppointmentClientOtpSelfService owns this schema change.
+            // Intencionalmente vacío: dueña = 20260903030852_AddAppointmentClientOtpSelfService.
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // No-op migration; there is nothing to revert here.
+            // Intencionalmente vacío: no revertir lo creado por AddAppointmentClientOtpSelfService.
         }
     }
 }
