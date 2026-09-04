@@ -22,11 +22,10 @@ public static class AuthorizationExtensions
             options.AddPolicy(
                 AuthorizationPolicies.AdminOnly,
                 RoleOrSuperAdmin("Administrador"));
-            // El SuperAdmin no es un rol de la tabla ROLES: se identifica por
-            // el claim "super_admin" que emite JwtTokenIssuer.IssueForSuperAdmin.
+            // SuperAdmin es un rol persistido identificado por su role_id canónico.
             options.AddPolicy(
                 AuthorizationPolicies.SuperAdminOnly,
-                policy => policy.RequireClaim("super_admin", "true"));
+                policy => policy.RequireAssertion(context => context.User.IsSuperAdmin()));
             options.AddPolicy(
                 AuthorizationPolicies.VeterinarianOnly,
                 RoleOrSuperAdmin("Veterinario"));
@@ -91,5 +90,5 @@ public static class AuthorizationExtensions
     private static Action<AuthorizationPolicyBuilder> RoleOrSuperAdmin(params string[] roles) =>
         policy => policy.RequireAssertion(context =>
             roles.Any(context.User.IsInRole) ||
-            context.User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"));
+            context.User.IsSuperAdmin());
 }

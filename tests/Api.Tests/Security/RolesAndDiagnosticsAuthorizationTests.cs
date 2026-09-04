@@ -4,6 +4,7 @@ using Api.Common.Security.Permissions;
 using Api.Diagnostics.Controllers;
 using Api.Roles.Controllers;
 using Application.Permissions.UseCases;
+using Domain.Roles;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
@@ -77,7 +78,7 @@ public sealed class RolesAndDiagnosticsAuthorizationTests
         var requirement = new PermissionRequirement("Roles", PermissionAction.View);
         var context = CreateContext(
             requirement,
-            claims: [new Claim("super_admin", "true")]);
+            claims: [new Claim("role_id", SystemRoles.SuperAdminId.ToString())]);
 
         await handler.HandleAsync(context);
 

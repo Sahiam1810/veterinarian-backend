@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Api.Common.Security;
 using Api.Extensions;
+using Domain.Roles;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,9 +32,9 @@ public sealed class AuthorizationPoliciesTests
     [InlineData(AuthorizationPolicies.StaffOnly)]
     [InlineData(AuthorizationPolicies.ClientOnly)]
     [InlineData(AuthorizationPolicies.ClinicalHistoryReadOnly)]
-    public async Task Role_based_policies_allow_a_super_admin_with_no_role_claim(string policy)
+    public async Task Role_based_policies_allow_the_persisted_SuperAdmin_role(string policy)
     {
-        var superAdmin = PrincipalWithClaims(new Claim("super_admin", "true"));
+        var superAdmin = PersistedSuperAdmin();
 
         var result = await authorizationService.AuthorizeAsync(superAdmin, policy);
 
@@ -41,7 +42,7 @@ public sealed class AuthorizationPoliciesTests
     }
 
     [Fact]
-    public async Task StaffOnly_still_denies_a_user_with_no_role_and_no_super_admin_claim()
+    public async Task StaffOnly_still_denies_a_user_with_no_role()
     {
         var anonymous = PrincipalWithClaims();
 
@@ -71,9 +72,9 @@ public sealed class AuthorizationPoliciesTests
     }
 
     [Fact]
-    public async Task SuperAdminOnly_allows_the_super_admin_claim()
+    public async Task SuperAdminOnly_allows_the_canonical_role_id()
     {
-        var superAdmin = PrincipalWithClaims(new Claim("super_admin", "true"));
+        var superAdmin = PersistedSuperAdmin();
 
         var result = await authorizationService.AuthorizeAsync(superAdmin, AuthorizationPolicies.SuperAdminOnly);
 
@@ -81,7 +82,7 @@ public sealed class AuthorizationPoliciesTests
     }
 
     [Fact]
-    public async Task SuperAdminOnly_still_rejects_a_regular_role_without_the_claim()
+    public async Task SuperAdminOnly_still_rejects_a_regular_role()
     {
         var administrator = PrincipalWithClaims(new Claim(ClaimTypes.Role, "Administrador"));
 
@@ -89,6 +90,23 @@ public sealed class AuthorizationPoliciesTests
 
         Assert.False(result.Succeeded);
     }
+
+    [Fact]
+    public async Task SuperAdminOnly_rejects_the_obsolete_forgeable_claim()
+    {
+        var legacyClaim = PrincipalWithClaims(new Claim("super_admin", "true"));
+
+        var result = await authorizationService.AuthorizeAsync(
+            legacyClaim,
+            AuthorizationPolicies.SuperAdminOnly);
+
+        Assert.False(result.Succeeded);
+    }
+
+    private static ClaimsPrincipal PersistedSuperAdmin() =>
+        PrincipalWithClaims(
+            new Claim("role_id", SystemRoles.SuperAdminId.ToString()),
+            new Claim(ClaimTypes.Role, SystemRoles.SuperAdminName));
 
     private static ClaimsPrincipal PrincipalWithClaims(params Claim[] claims) =>
         new(new ClaimsIdentity(claims, authenticationType: "TestAuth"));

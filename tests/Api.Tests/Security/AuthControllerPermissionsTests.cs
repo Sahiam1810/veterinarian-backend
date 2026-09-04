@@ -3,6 +3,7 @@ using Api.Auth.Controllers;
 using Api.Auth.Dtos;
 using Application.Modules.UseCases;
 using Application.Permissions.UseCases;
+using Domain.Roles;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,8 @@ public sealed class AuthControllerPermissionsTests
                 new ModuleEntity("Citas", null)
             });
 
-        var controller = CreateController(claims: [new Claim("super_admin", "true")]);
+        var controller = CreateController(
+            claims: [new Claim("role_id", SystemRoles.SuperAdminId.ToString())]);
 
         var result = await controller.Permissions(CancellationToken.None);
 

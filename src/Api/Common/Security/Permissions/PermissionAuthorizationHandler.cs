@@ -1,4 +1,5 @@
 using Application.Permissions.UseCases;
+using Api.Common.Security;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 
@@ -19,7 +20,7 @@ public sealed class PermissionAuthorizationHandler
         PermissionRequirement requirement)
     {
         // El SuperAdmin no participa de la matriz de permisos: se salta todo.
-        if (context.User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        if (context.User.IsSuperAdmin())
         {
             context.Succeed(requirement);
             return;
