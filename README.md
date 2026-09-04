@@ -572,21 +572,22 @@ utiliza los catálogos indicados por `Agent__InitialConversationStatusId` y
 
 ## Canal Telegram
 
-El backend expone un webhook técnico y un endpoint autenticado para generar
-códigos de vinculación. Al habilitar el canal, un worker procesa el inbox de
-Oracle, reutiliza el dispatcher del agente y devuelve texto al chat privado.
-La primera fase no escribe historial en `CHAT_MESSAGES`.
+El backend expone un webhook técnico. Al habilitar el canal, un worker procesa
+el inbox de Oracle, reutiliza el dispatcher del agente y devuelve texto al chat
+privado. Las consultas generales funcionan como invitado. Cuando el agente
+clasifica una solicitud como privada, .NET solicita cédula y OTP, conserva
+cifrada la consulta pendiente y la reanuda al verificar la identidad.
 
 Las variables requeridas están documentadas en `.env.example`. La guía de
 BotFather, túnel HTTPS, `setWebhook` y prueba desde Swagger está en
 [`docs/integrations/telegram.md`](docs/integrations/telegram.md).
 
-Un chat sin vincular puede usar `/registrar` para crear una cuenta de cliente.
-El bot solicita únicamente el correo y lo verifica mediante OTP. Después envía
-un enlace HTTPS de un solo uso donde se diligencian nombre, identificación,
-usuario y contraseña; esos datos no pasan por Telegram ni por el agente Python.
-Al completar el formulario, el backend crea `Users`, `UserAccounts`,
-`UserCredentials`, `Clients` y `TelegramUserLinks` en una transacción.
+Si la cédula corresponde a un cliente activo, el OTP se envía al correo que ya
+existe en Huellitas. Si no existe, el chat solicita confirmación, nombre y
+correo; después del OTP crea un perfil de cliente sin contraseña y enlaza
+Telegram. El agente Python nunca recibe cédula, correo ni OTP. El enlace queda
+persistente, pero el acceso privado vence por tiempo absoluto o inactividad y
+vuelve a exigir OTP solo ante otra operación privada.
 
 Para generar la clave local que protege el correo verificado:
 
@@ -594,10 +595,11 @@ Para generar la clave local que protege el correo verificado:
 [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
 ```
 
-Configure el resultado en `Telegram__RegistrationProtectionKeyBase64` y use
-como `Telegram__RegistrationCompletionUrl` la URL pública HTTPS del backend
-seguida de `/telegram/registration/complete`. Cuando exista el frontend
-definitivo, esa URL podrá cambiarse sin mover la lógica de registro de .NET.
+Configure el resultado en `Telegram__RegistrationProtectionKeyBase64`; esta
+clave también cifra temporalmente la cédula, el nombre, el correo y la consulta
+pendiente. Es obligatoria cuando Telegram está habilitado. Ajuste la sesión con
+`Telegram__PrivateAccessAbsoluteTtlHours` y
+`Telegram__PrivateAccessIdleTtlMinutes`.
 
 Por ahora, los identificadores generados se mantienen en memoria con TTL y
 capacidad limitada. No representan historial canónico y se pierden al reiniciar
