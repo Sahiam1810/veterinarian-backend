@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Roles;
 using MediatR;
 using UserEntity = Domain.Users.Entities.Users;
 
@@ -23,6 +24,12 @@ public sealed class CreateUserCommandHandler
         CreateUserCommand request,
         CancellationToken cancellationToken)
     {
+        if (SystemRoles.IsSuperAdmin(request.RoleId))
+        {
+            throw new ForbiddenException(
+                "El rol SuperAdmin solo se asigna mediante el proceso seguro de aprovisionamiento.");
+        }
+
         var role = await _uow.RolesRepository.GetByIdAsync(
             request.RoleId,
             cancellationToken);

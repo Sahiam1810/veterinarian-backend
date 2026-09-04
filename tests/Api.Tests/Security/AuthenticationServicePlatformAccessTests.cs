@@ -22,12 +22,9 @@ namespace Api.Tests.Security;
 public sealed class AuthenticationServicePlatformAccessTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 4, 12, 0, 0, TimeSpan.Zero);
-    private static readonly Guid SuperAdminId = Guid.Parse("99999999-9999-9999-9999-999999999999");
     private static readonly Guid StaffRoleId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ClientRoleId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
-    private const string SuperAdminEmail = "superadmin@huellitas.test";
-    private const string SuperAdminPasswordHash = "super-hash";
     private const string Password = "CorrectPassword1!";
     private const string PasswordHash = "stored-hash";
 
@@ -75,13 +72,6 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
             new RefreshTokenProtector(),
             passwordHasher,
             Options.Create(jwtOptions),
-            Options.Create(new SuperAdminOptions
-            {
-                Enabled = true,
-                Id = SuperAdminId,
-                Email = SuperAdminEmail,
-                PasswordHash = SuperAdminPasswordHash
-            }),
             new FixedTimeProvider(Now));
     }
 

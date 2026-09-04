@@ -1,6 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Domain.UserAccounts.ValueObjects;
+using Domain.Roles;
 using MediatR;
 
 namespace Application.Users.UseCase;
@@ -23,6 +24,12 @@ public sealed class DeactivateUserCommandHandler
             request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Usuario no encontrado.");
+
+        if (SystemRoles.IsSuperAdmin(user.RoleId))
+        {
+            throw new ForbiddenException(
+                "El usuario SuperAdmin no se puede desactivar desde la administración de usuarios.");
+        }
 
         user.Deactivate();
 

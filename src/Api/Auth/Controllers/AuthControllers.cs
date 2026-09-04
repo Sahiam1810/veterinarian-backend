@@ -146,7 +146,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Permissions(CancellationToken cancellationToken)
     {
-        if (User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        if (User.IsSuperAdmin())
         {
             var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
 

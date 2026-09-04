@@ -124,17 +124,61 @@ citas creadas manualmente y citas creadas por el agente.
    - **Los secretos viven únicamente en `.env`; ese archivo no debe subirse al
      repositorio.**
 
-4. Aplique las migraciones de Entity Framework Core sobre Oracle:
+4. Aplique las migraciones y todos los seeds de producción desde PowerShell,
+   ubicado en la raíz del backend:
 
    ```powershell
-   dotnet ef database update --project src/Infrastructure --startup-project src/Api
+   dotnet tool restore
+
+   dotnet ef database update `
+     --project .\src\Infrastructure\Infrastructure.csproj `
+     --startup-project .\src\Api\Api.csproj `
+     --context VeterinaryDbContext
+
+   if ($LASTEXITCODE -ne 0) {
+       throw "Falló la aplicación de migraciones"
+   }
+
+   $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
+   $sqlplus = 'C:\app\LENOVO\product\26ai\dbhomeFree\bin\sqlplus.exe'
+
+   & $sqlplus `
+     'VET_APP@//localhost:1521/FREEPDB1' `
+     '@database\seeds\apply_all.sql'
+
+   if ($LASTEXITCODE -ne 0) {
+       throw "Falló la aplicación de seeds"
+   }
    ```
 
-5. (Opcional) Cargue el catálogo inicial de roles ejecutando
-   `database/seeds/roles_seed.sql` directamente contra Oracle (SQL*Plus o SQL
-   Developer). Los roles no quedan fijos en código: el administrador puede
-   crear, editar o eliminar roles adicionales desde la propia aplicación una
-   vez desplegada.
+   SQL*Plus solicitará la contraseña de `VET_APP`; no la escriba en el comando
+   ni la guarde en el repositorio. Si Oracle está instalado en otra ubicación,
+   ajuste únicamente el valor de `$sqlplus`. Los seeds son idempotentes y se
+   pueden volver a ejecutar sin duplicar los catálogos. El detalle del orden y
+   las cantidades esperadas está en
+   [`database/seeds/README.md`](database/seeds/README.md).
+
+### Aprovisionar la primera cuenta SuperAdmin
+
+El seed crea el rol protegido `SuperAdmin`, pero no crea una cuenta ni incluye
+credenciales. Cuando ya exista una cuenta interna activa, promuévala desde la
+raíz del backend con:
+
+```powershell
+$env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
+$sqlplus = 'C:\app\LENOVO\product\26ai\dbhomeFree\bin\sqlplus.exe'
+
+& $sqlplus `
+  'VET_APP@//localhost:1521/FREEPDB1' `
+  '@database\admin\promote_superadmin.sql' `
+  'correo-real-de-la-cuenta@dominio.com'
+```
+
+SQL*Plus solicitará la contraseña de `VET_APP`. El script asigna el rol
+canónico, revoca los refresh tokens anteriores y obliga a iniciar sesión
+nuevamente para obtener un JWT actualizado. Consulte el procedimiento completo
+y sus verificaciones en
+[`docs/SUPERADMIN_PROVISIONING.md`](docs/SUPERADMIN_PROVISIONING.md).
 
 ## Ejecución
 

@@ -1,3 +1,5 @@
+using Domain.Roles;
+
 namespace Application.Security;
 
 /// <summary>
@@ -11,6 +13,7 @@ public static class WebPlatformAccess
     private static readonly HashSet<string> AllowedRoleNames =
         new(StringComparer.Ordinal)
         {
+            SystemRoles.SuperAdminName,
             "Administrador",
             "Veterinario",
             "Recepcionista",

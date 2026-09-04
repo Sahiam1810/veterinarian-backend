@@ -23,6 +23,7 @@ using Application.UserCredentials.Abstraction;
 using Application.UserCredentials.UseCase;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
+using Domain.Roles;
 using Infrastructure.Security;
 using Infrastructure.Security.Authentication;
 using Infrastructure.Security.Options;
@@ -73,14 +74,6 @@ public sealed class SecurityStage1Tests : IDisposable
         var jwtTokenIssuer = new JwtTokenIssuer(
             Options.Create(jwtOptions), _keyMaterial, new FixedTimeProvider(Now));
 
-        var superAdminOptions = new SuperAdminOptions
-        {
-            Enabled = true,
-            Id = SuperAdminId,
-            Email = SuperAdminEmail,
-            PasswordHash = _passwordHasher.Hash(SuperAdminPassword)
-        };
-
         _unitOfWork.RolesRepository.Returns(_rolesRepository);
         _unitOfWork.UsersRepository.Returns(_usersRepository);
         _unitOfWork.UserAccountsRepository.Returns(_userAccountRepository);
@@ -102,7 +95,6 @@ public sealed class SecurityStage1Tests : IDisposable
             new RefreshTokenProtector(),
             _passwordHasher,
             Options.Create(jwtOptions),
-            Options.Create(superAdminOptions),
             new FixedTimeProvider(Now));
     }
 
@@ -112,14 +104,34 @@ public sealed class SecurityStage1Tests : IDisposable
     [Fact]
     public async Task Login_SuperAdmin_WithValidCredentials_ReturnsSuccessAndIssuesTokens()
     {
+        var role = new RoleEntity(SystemRoles.SuperAdminName, "Rol de sistema");
+        var user = new UserEntity(
+            "Super Administrador",
+            SuperAdminEmail,
+            null,
+            SystemRoles.SuperAdminId);
+        var account = new UserAccountEntity(user.Id, "superadmin", SuperAdminEmail, "Activo");
+        var credentials = new UserCredentialEntity(
+            account.Id,
+            _passwordHasher.Hash(SuperAdminPassword));
+        _userAccountRepository.GetByMailAsync(SuperAdminEmail, Arg.Any<CancellationToken>())
+            .Returns(account);
+        _userCredentialRepository.GetByAccountIdAsync(account.Id, Arg.Any<CancellationToken>())
+            .Returns(credentials);
+        _usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        _rolesRepository.GetByIdAsync(SystemRoles.SuperAdminId, Arg.Any<CancellationToken>()).Returns(role);
+
         var result = await _authService.LoginAsync(
             SuperAdminEmail, SuperAdminPassword, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.False(string.IsNullOrWhiteSpace(result.Value.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.RefreshToken));
 
         var token = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
-        Assert.Equal("true", token.Claims.Single(c => c.Type == "super_admin").Value);
+        Assert.Equal(SystemRoles.SuperAdminId.ToString(), token.Claims.Single(c => c.Type == "role_id").Value);
+        Assert.Equal(SystemRoles.SuperAdminName, token.Claims.Single(c => c.Type == "role").Value);
+        Assert.DoesNotContain(token.Claims, c => c.Type == "super_admin");
     }
 
     // Caso B
