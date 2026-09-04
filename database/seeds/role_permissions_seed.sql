@@ -9,11 +9,17 @@ ALTER SESSION SET NLS_TERRITORY = 'SPAIN';
 --
 -- Requisitos antes de correr esto:
 --   1. Migracion AddUserPermissions (y las anteriores de Modules/RolePermissions) aplicadas.
---   2. roles_seed.sql ya ejecutado (se referencian los 5 ROLE_ID fijos de ahi).
+--   2. roles_seed.sql ya ejecutado (se referencian los 5 ROLE_ID fijos de ahi,
+--      incluido Cliente = 77777777-7777-7777-7777-777777777777).
 --   3. Los 17 modulos del catalogo ya creados via POST /api/modules (logueado
 --      como SuperAdmin). El MODULE_ID se resuelve por NAME con una subquery,
 --      no por GUID fijo, porque los modulos se crean con Guid.NewGuid() y su ID
 --      puede variar entre el entorno de cada integrante.
+--
+-- Verificar tras roles_seed + este script:
+--   SELECT COUNT(*) FROM ROLES; -- 5
+--   SELECT NAME FROM ROLES ORDER BY NAME; -- debe incluir Cliente
+--   (sin ORA-02291 al insertar ROLE_PERMISSIONS del rol Cliente)
 --
 -- Esto es SOLO el seed inicial (matriz aprobada con el equipo). El SuperAdmin puede
 -- modificar cualquier permiso despues, via POST/PUT /api/role-permissions.
@@ -201,37 +207,95 @@ VALUES ('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-6666-6666666
         1, 0, 0, 0, SYSTIMESTAMP);
 
 -- ===== Cliente =====
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('f0c1f642-fe85-4381-a129-56e7ce82ab1d', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Mascotas'),
-        1, 0, 0, 0, SYSTIMESTAMP);
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('8c927de7-928d-45d2-8a59-8c969897e534', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Especies y Razas'),
-        1, 0, 0, 0, SYSTIMESTAMP);
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('110787dc-d500-424b-b116-4f367ab5b744', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Especialidades'),
-        1, 0, 0, 0, SYSTIMESTAMP);
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('e6edabdd-754f-4d35-86ac-3123cb9c4dc6', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Veterinarios'),
-        1, 0, 0, 0, SYSTIMESTAMP);
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('390421e3-3ad7-4eaa-90a3-20a9715b2e2f', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Citas'),
-        1, 0, 0, 0, SYSTIMESTAMP);
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('c6882d60-a8fd-4886-a5f9-bfd1a9d3cf4a', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Historiales Clínicos'),
-        1, 0, 0, 0, SYSTIMESTAMP);
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('8373cd49-c84f-4f10-bbc3-b4e69625184b', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Servicios'),
-        1, 0, 0, 0, SYSTIMESTAMP);
-INSERT INTO ROLE_PERMISSIONS (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-VALUES ('9443cc5f-b613-44c9-8788-984c4472dc39', '77777777-7777-7777-7777-777777777777',
-        (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Cuentas y Pagos'),
-        1, 0, 0, 0, SYSTIMESTAMP);
+-- Mínimos: solo View de lo propio (Cliente no tiene login/password; canal = chatbot).
+-- Se quitan Views de catálogos staff (Especies, Especialidades, Veterinarios,
+-- Servicios, Cuentas y Pagos) que no son necesarios para el rol Cliente.
+-- Idempotente: limpia filas previas del rol y hace MERGE de la matriz mínima.
+DELETE FROM ROLE_PERMISSIONS
+WHERE ROLE_ID = '77777777-7777-7777-7777-777777777777';
+
+MERGE INTO ROLE_PERMISSIONS target
+USING (
+    SELECT 'c7e2a91b-4d3f-4a8e-9b1c-2f6d8e0a5c47' AS ID,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID,
+           (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Clientes') AS MODULE_ID,
+           1 AS CAN_VIEW, 0 AS CAN_CREATE, 0 AS CAN_EDIT, 0 AS CAN_DELETE
+    FROM DUAL
+) source
+ON (target.ROLE_PERMISSION_ID = source.ID)
+WHEN MATCHED THEN
+    UPDATE SET target.ROLE_ID = source.ROLE_ID,
+               target.MODULE_ID = source.MODULE_ID,
+               target.CAN_VIEW = source.CAN_VIEW,
+               target.CAN_CREATE = source.CAN_CREATE,
+               target.CAN_EDIT = source.CAN_EDIT,
+               target.CAN_DELETE = source.CAN_DELETE
+WHEN NOT MATCHED THEN
+    INSERT (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
+    VALUES (source.ID, source.ROLE_ID, source.MODULE_ID,
+            source.CAN_VIEW, source.CAN_CREATE, source.CAN_EDIT, source.CAN_DELETE, SYSTIMESTAMP);
+
+MERGE INTO ROLE_PERMISSIONS target
+USING (
+    SELECT 'f0c1f642-fe85-4381-a129-56e7ce82ab1d' AS ID,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID,
+           (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Mascotas') AS MODULE_ID,
+           1 AS CAN_VIEW, 0 AS CAN_CREATE, 0 AS CAN_EDIT, 0 AS CAN_DELETE
+    FROM DUAL
+) source
+ON (target.ROLE_PERMISSION_ID = source.ID)
+WHEN MATCHED THEN
+    UPDATE SET target.ROLE_ID = source.ROLE_ID,
+               target.MODULE_ID = source.MODULE_ID,
+               target.CAN_VIEW = source.CAN_VIEW,
+               target.CAN_CREATE = source.CAN_CREATE,
+               target.CAN_EDIT = source.CAN_EDIT,
+               target.CAN_DELETE = source.CAN_DELETE
+WHEN NOT MATCHED THEN
+    INSERT (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
+    VALUES (source.ID, source.ROLE_ID, source.MODULE_ID,
+            source.CAN_VIEW, source.CAN_CREATE, source.CAN_EDIT, source.CAN_DELETE, SYSTIMESTAMP);
+
+MERGE INTO ROLE_PERMISSIONS target
+USING (
+    SELECT '390421e3-3ad7-4eaa-90a3-20a9715b2e2f' AS ID,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID,
+           (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Citas') AS MODULE_ID,
+           1 AS CAN_VIEW, 0 AS CAN_CREATE, 0 AS CAN_EDIT, 0 AS CAN_DELETE
+    FROM DUAL
+) source
+ON (target.ROLE_PERMISSION_ID = source.ID)
+WHEN MATCHED THEN
+    UPDATE SET target.ROLE_ID = source.ROLE_ID,
+               target.MODULE_ID = source.MODULE_ID,
+               target.CAN_VIEW = source.CAN_VIEW,
+               target.CAN_CREATE = source.CAN_CREATE,
+               target.CAN_EDIT = source.CAN_EDIT,
+               target.CAN_DELETE = source.CAN_DELETE
+WHEN NOT MATCHED THEN
+    INSERT (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
+    VALUES (source.ID, source.ROLE_ID, source.MODULE_ID,
+            source.CAN_VIEW, source.CAN_CREATE, source.CAN_EDIT, source.CAN_DELETE, SYSTIMESTAMP);
+
+MERGE INTO ROLE_PERMISSIONS target
+USING (
+    SELECT 'c6882d60-a8fd-4886-a5f9-bfd1a9d3cf4a' AS ID,
+           '77777777-7777-7777-7777-777777777777' AS ROLE_ID,
+           (SELECT MODULE_ID FROM MODULES WHERE NAME = 'Historiales Clínicos') AS MODULE_ID,
+           1 AS CAN_VIEW, 0 AS CAN_CREATE, 0 AS CAN_EDIT, 0 AS CAN_DELETE
+    FROM DUAL
+) source
+ON (target.ROLE_PERMISSION_ID = source.ID)
+WHEN MATCHED THEN
+    UPDATE SET target.ROLE_ID = source.ROLE_ID,
+               target.MODULE_ID = source.MODULE_ID,
+               target.CAN_VIEW = source.CAN_VIEW,
+               target.CAN_CREATE = source.CAN_CREATE,
+               target.CAN_EDIT = source.CAN_EDIT,
+               target.CAN_DELETE = source.CAN_DELETE
+WHEN NOT MATCHED THEN
+    INSERT (ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID, CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
+    VALUES (source.ID, source.ROLE_ID, source.MODULE_ID,
+            source.CAN_VIEW, source.CAN_CREATE, source.CAN_EDIT, source.CAN_DELETE, SYSTIMESTAMP);
 
 COMMIT;
