@@ -1,6 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.UserAccounts.Errors;
+using Domain.Roles;
 using MediatR;
 
 namespace Application.UserAccounts.UseCase;
@@ -36,6 +37,12 @@ public sealed class UpdateUserAccountCommandHandler
         {
             throw new NotFoundException(
                 "El usuario asociado a la cuenta no existe.");
+        }
+
+        if (SystemRoles.IsSuperAdmin(user.RoleId))
+        {
+            throw new ForbiddenException(
+                "La cuenta SuperAdmin no se puede modificar desde la administración de cuentas.");
         }
 
         var role = await _uow.RolesRepository.GetByIdAsync(
