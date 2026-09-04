@@ -89,10 +89,13 @@ public sealed class TelegramIdentitySessionTests
     public void Verified_session_re_consumes_pending_update_only_once()
     {
         var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
+        session.CapturePendingMessage("protected-private-message", Now);
         session.BeginKnownClientOtp(PersonId, OtpHash, Now.AddMinutes(5), Now);
         session.Verify(PersonId, Now.AddHours(24), Now.AddMinutes(30), Now.AddMinutes(1));
 
+        Assert.Equal("protected-private-message", session.ProtectedPendingMessage);
         Assert.Equal(42, session.TakePendingInboundUpdate(Now.AddMinutes(2)));
+        Assert.Null(session.ProtectedPendingMessage);
         Assert.Null(session.TakePendingInboundUpdate(Now.AddMinutes(3)));
     }
 }

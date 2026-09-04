@@ -62,6 +62,10 @@ public sealed class TelegramPersistenceTests
             "NUMBER(19)",
             identitySession.FindProperty(
                 nameof(TelegramIdentitySession.PendingInboundUpdateId))!.GetColumnType());
+        Assert.Equal(
+            "CLOB",
+            identitySession.FindProperty(
+                nameof(TelegramIdentitySession.ProtectedPendingMessage))!.GetColumnType());
         Assert.Contains(identitySession.GetIndexes(), index =>
             index.IsUnique &&
             index.Properties.Single().Name ==

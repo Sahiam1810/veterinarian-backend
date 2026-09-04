@@ -28,6 +28,8 @@ public sealed class TelegramIdentitySessionConfiguration
             .HasColumnType("VARCHAR2(1024)").HasMaxLength(1024);
         builder.Property(session => session.ProtectedEmail).HasColumnName("PROTECTED_EMAIL")
             .HasColumnType("VARCHAR2(1024)").HasMaxLength(1024);
+        builder.Property(session => session.ProtectedPendingMessage).HasColumnName("PROTECTED_PENDING_MESSAGE")
+            .HasColumnType("CLOB");
         builder.Property(session => session.OtpHash).HasColumnName("OTP_HASH")
             .HasColumnType("VARCHAR2(64)").HasMaxLength(64);
         builder.Property(session => session.Status).HasColumnName("STATUS")

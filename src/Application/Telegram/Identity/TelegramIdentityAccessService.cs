@@ -42,6 +42,7 @@ public sealed class TelegramIdentityAccessService(
     private const string IdentificationPurpose = "identification";
     private const string FullNamePurpose = "full-name";
     private const string EmailPurpose = "email";
+    private const string PendingMessagePurpose = "pending-message";
 
     public async Task<TelegramIdentityAccessOutcome> BeginPrivateAccessAsync(
         TelegramInboundUpdate update,
@@ -64,6 +65,9 @@ public sealed class TelegramIdentityAccessService(
             update.TelegramUserId,
             update.TelegramChatId,
             update.Id,
+            now.UtcDateTime);
+        session.CapturePendingMessage(
+            dataProtector.Protect(PendingMessagePurpose, update.MessageText!),
             now.UtcDateTime);
         var link = await unitOfWork.UserLinksRepository.GetByTelegramUserIdAsync(
             update.TelegramUserId,
@@ -328,6 +332,9 @@ public sealed class TelegramIdentityAccessService(
 
         Guid? personId = null;
         long? pendingUpdateId = null;
+        var pendingMessage = dataProtector.Unprotect(
+            PendingMessagePurpose,
+            session.ProtectedPendingMessage!);
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
             var identity = session.PersonId is not null
@@ -355,7 +362,8 @@ public sealed class TelegramIdentityAccessService(
             true,
             "Identidad verificada correctamente.",
             personId,
-            pendingUpdateId);
+            pendingUpdateId,
+            pendingMessage);
     }
 
     private async Task EnsureUserLinkAsync(

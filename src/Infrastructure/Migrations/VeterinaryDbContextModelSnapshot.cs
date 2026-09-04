@@ -1783,6 +1783,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(512)")
                         .HasColumnName("PROTECTED_IDENTIFICATION");
 
+                    b.Property<string>("ProtectedPendingMessage")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("PROTECTED_PENDING_MESSAGE");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)

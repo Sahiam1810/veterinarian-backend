@@ -22,6 +22,7 @@ namespace Infrastructure.Migrations
                     PROTECTED_IDENTIFICATION = table.Column<string>(type: "VARCHAR2(512)", maxLength: 512, nullable: true),
                     PROTECTED_FULL_NAME = table.Column<string>(type: "VARCHAR2(1024)", maxLength: 1024, nullable: true),
                     PROTECTED_EMAIL = table.Column<string>(type: "VARCHAR2(1024)", maxLength: 1024, nullable: true),
+                    PROTECTED_PENDING_MESSAGE = table.Column<string>(type: "CLOB", nullable: true),
                     OTP_HASH = table.Column<string>(type: "VARCHAR2(64)", maxLength: 64, nullable: true),
                     STATUS = table.Column<string>(type: "VARCHAR2(40)", maxLength: 40, nullable: false),
                     OTP_ATTEMPTS = table.Column<int>(type: "NUMBER(10)", nullable: false),

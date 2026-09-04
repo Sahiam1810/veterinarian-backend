@@ -105,6 +105,7 @@ public sealed class TelegramIdentityAccessServiceTests
 
         Assert.Equal(PersonId, outcome.VerifiedPersonId);
         Assert.Equal(42, outcome.ResumeInboundUpdateId);
+        Assert.Equal("quiero ver mis mascotas", outcome.ResumeMessage);
         Assert.True(session.IsAccessValid(Now.AddMinutes(29).UtcDateTime));
         await fixture.UserLinks.Received(1).AddAsync(
             Arg.Is<TelegramUserLink>(link => link.PersonId == PersonId),
@@ -128,6 +129,7 @@ public sealed class TelegramIdentityAccessServiceTests
 
         Assert.Equal(PersonId, outcome.VerifiedPersonId);
         Assert.Equal(42, outcome.ResumeInboundUpdateId);
+        Assert.Equal("quiero ver mis mascotas", outcome.ResumeMessage);
         await fixture.Clients.Received(1).StageRegistrationAsync(
             new TelegramClientRegistration("999999999", "Ana Pérez", "ana@example.test"),
             default);
@@ -195,6 +197,9 @@ public sealed class TelegramIdentityAccessServiceTests
     private static TelegramIdentitySession KnownOtpSession()
     {
         var session = TelegramIdentitySession.Start(1001, 1001, 42, Now.UtcDateTime);
+        session.CapturePendingMessage(
+            "protected:pending-message:quiero ver mis mascotas",
+            Now.UtcDateTime);
         session.BeginKnownClientOtp(PersonId, Hash, Now.AddMinutes(5).UtcDateTime, Now.UtcDateTime);
         return session;
     }
@@ -202,6 +207,9 @@ public sealed class TelegramIdentityAccessServiceTests
     private static TelegramIdentitySession RegistrationOtpSession()
     {
         var session = TelegramIdentitySession.Start(1001, 1001, 42, Now.UtcDateTime);
+        session.CapturePendingMessage(
+            "protected:pending-message:quiero ver mis mascotas",
+            Now.UtcDateTime);
         session.RequireRegistration("protected:identification:999999999", Now.UtcDateTime);
         session.ConfirmRegistration(Now.UtcDateTime);
         session.CaptureFullName("protected:full-name:Ana Pérez", Now.UtcDateTime);

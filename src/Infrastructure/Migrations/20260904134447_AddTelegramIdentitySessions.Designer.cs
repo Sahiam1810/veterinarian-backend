@@ -12,7 +12,7 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    [Migration("20260904134111_AddTelegramIdentitySessions")]
+    [Migration("20260904134447_AddTelegramIdentitySessions")]
     partial class AddTelegramIdentitySessions
     {
         /// <inheritdoc />
@@ -1785,6 +1785,10 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("VARCHAR2(512)")
                         .HasColumnName("PROTECTED_IDENTIFICATION");
+
+                    b.Property<string>("ProtectedPendingMessage")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("PROTECTED_PENDING_MESSAGE");
 
                     b.Property<string>("Status")
                         .IsRequired()

@@ -17,6 +17,7 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
     public string? ProtectedIdentification { get; private set; }
     public string? ProtectedFullName { get; private set; }
     public string? ProtectedEmail { get; private set; }
+    public string? ProtectedPendingMessage { get; private set; }
     public string? OtpHash { get; private set; }
     public TelegramIdentitySessionStatus Status { get; private set; }
     public int OtpAttempts { get; private set; }
@@ -57,6 +58,15 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
         EnsurePersonId(personId);
         BeginOtp(otpHash, otpExpiresAt, now);
         PersonId = personId;
+    }
+
+    public void CapturePendingMessage(string protectedMessage, DateTime now)
+    {
+        EnsureStatus(TelegramIdentitySessionStatus.AwaitingIdentification);
+        ProtectedPendingMessage = EnsureProtectedValue(
+            protectedMessage,
+            nameof(protectedMessage));
+        UpdatedAt = now;
     }
 
     public void RequireRegistration(string protectedIdentification, DateTime now)
@@ -181,6 +191,7 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
         if (pending is not null)
         {
             PendingInboundUpdateId = null;
+            ProtectedPendingMessage = null;
             UpdatedAt = now;
         }
 
@@ -255,6 +266,7 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
         ProtectedIdentification = null;
         ProtectedFullName = null;
         ProtectedEmail = null;
+        ProtectedPendingMessage = null;
     }
 
     private static void EnsureExternalId(long value, string parameterName)
