@@ -33,6 +33,7 @@ public sealed class AgentMessagingHttpClientTests
         Assert.Equal(ConversationId, result.ConversationId);
         Assert.Equal(CorrelationId, result.CorrelationId);
         Assert.Equal("ai_generated", result.ResponseType);
+        Assert.Equal(AgentAccessRequirement.IdentityVerification, result.AccessRequirement);
         Assert.Equal("openai", result.Provider);
         Assert.Equal("gpt-4o-mini", result.Model);
         Assert.Equal(10, result.Usage!.InputTokens);
@@ -105,6 +106,19 @@ public sealed class AgentMessagingHttpClientTests
     public async Task Send_rejects_invalid_success_json()
     {
         var client = CreateClient(Respond(HttpStatusCode.OK, "not-json"));
+
+        await Assert.ThrowsAsync<AgentContractException>(
+            () => client.SendAsync(Envelope(), "secret-token", default));
+    }
+
+    [Fact]
+    public async Task Send_rejects_unknown_access_requirement()
+    {
+        var json = SuccessJson().Replace(
+            "\"accessRequirement\":\"identity_verification\"",
+            "\"accessRequirement\":\"unknown\"",
+            StringComparison.Ordinal);
+        var client = CreateClient(Respond(HttpStatusCode.OK, json));
 
         await Assert.ThrowsAsync<AgentContractException>(
             () => client.SendAsync(Envelope(), "secret-token", default));
@@ -219,6 +233,7 @@ public sealed class AgentMessagingHttpClientTests
           "conversationId":"{{ConversationId}}",
           "correlationId":"{{CorrelationId}}",
           "responseType":"ai_generated",
+          "accessRequirement":"identity_verification",
           "provider":"openai",
           "model":"gpt-4o-mini",
           "usage":{"inputTokens":10,"outputTokens":5},
@@ -241,6 +256,7 @@ public sealed class AgentMessagingHttpClientTests
           "conversationId":"{{ConversationId}}",
           "correlationId":"{{CorrelationId}}",
           "responseType":"human_controlled",
+          "accessRequirement":"none",
           "provider":null,
           "model":null,
           "usage":null,
