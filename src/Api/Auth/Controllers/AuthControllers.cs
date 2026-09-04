@@ -8,6 +8,7 @@ using Application.Security.Login;
 using Application.Security.Refresh;
 using Application.Security.Revoke;
 using Application.Security.ChangePassword;
+using Application.Security.Errors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -48,7 +49,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Login)]
     [HttpPost("login")]
     [EndpointSummary("Inicia sesión de usuario")]
-    [EndpointDescription("Valida las credenciales (nombre de usuario o correo y contraseña) y genera tokens de acceso AccessToken y RefreshToken.")]
+    [EndpointDescription("Valida correo y contraseña y genera AccessToken/RefreshToken. Fallo 401: application/problem+json con code fijo Authentication.InvalidCredentials (el front traduce por code).")]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(
@@ -71,7 +72,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Refresh)]
     [HttpPost("refresh")]
     [EndpointSummary("Renueva los tokens JWT vencidos usando el Refresh Token")]
-    [EndpointDescription("Genera un nuevo AccessToken y RefreshToken rotado para mantener la sesión activa sin solicitar credenciales nuevamente.")]
+    [EndpointDescription("Genera AccessToken y RefreshToken rotado. Fallo 401: application/problem+json con code fijo Authentication.InvalidRefreshToken.")]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Refresh(
@@ -103,13 +104,21 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (!Guid.TryParse(subject, out var userAccountId))
         {
-            return Unauthorized();
+            return AuthProblem(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized",
+                AuthenticationErrors.Unauthorized.Code);
         }
 
         var result = await sender.Send(
             new GetCurrentProfileQuery(userAccountId), cancellationToken);
 
-        return result.IsSuccess ? Ok(result.Value) : Unauthorized();
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : AuthProblem(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized",
+                AuthenticationErrors.Unauthorized.Code);
     }
 
     [Authorize]
@@ -188,7 +197,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [Authorize]
     [HttpPost("revoke")]
     [EndpointSummary("Revoca un Refresh Token y cierra la sesión")]
-    [EndpointDescription("Invalida el Refresh Token proporcionado para evitar su reutilización futura.")]
+    [EndpointDescription("Invalida el Refresh Token. Fallo 401: application/problem+json con code fijo Authentication.InvalidRefreshToken.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Revoke(

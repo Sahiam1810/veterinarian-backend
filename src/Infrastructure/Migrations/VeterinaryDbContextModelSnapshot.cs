@@ -1729,6 +1729,100 @@ namespace Infrastructure.Migrations
                     b.ToTable("TELEGRAM_CONVERSATION_LINKS", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramIdentitySession", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime?>("AbsoluteExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("ABSOLUTE_EXPIRES_AT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<DateTime?>("IdleExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("IDLE_EXPIRES_AT");
+
+                    b.Property<int>("OtpAttempts")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("OTP_ATTEMPTS");
+
+                    b.Property<DateTime?>("OtpExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("OTP_EXPIRES_AT");
+
+                    b.Property<string>("OtpHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("OTP_HASH");
+
+                    b.Property<long?>("PendingInboundUpdateId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("PENDING_INBOUND_UPDATE_ID");
+
+                    b.Property<string>("PersonId")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("PERSON_ID");
+
+                    b.Property<string>("ProtectedEmail")
+                        .HasMaxLength(1024)
+                        .HasColumnType("VARCHAR2(1024)")
+                        .HasColumnName("PROTECTED_EMAIL");
+
+                    b.Property<string>("ProtectedFullName")
+                        .HasMaxLength(1024)
+                        .HasColumnType("VARCHAR2(1024)")
+                        .HasColumnName("PROTECTED_FULL_NAME");
+
+                    b.Property<string>("ProtectedIdentification")
+                        .HasMaxLength(512)
+                        .HasColumnType("VARCHAR2(512)")
+                        .HasColumnName("PROTECTED_IDENTIFICATION");
+
+                    b.Property<string>("ProtectedPendingMessage")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("PROTECTED_PENDING_MESSAGE");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("VARCHAR2(40)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<long>("TelegramChatId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_CHAT_ID");
+
+                    b.Property<long>("TelegramUserId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_USER_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PendingInboundUpdateId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TG_ID_SESSIONS_PENDING")
+                        .HasFilter("\"PENDING_INBOUND_UPDATE_ID\" IS NOT NULL");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("TelegramChatId")
+                        .HasDatabaseName("IX_TG_ID_SESSIONS_CHAT");
+
+                    b.HasIndex("TelegramUserId", "Status")
+                        .HasDatabaseName("IX_TG_ID_SESSIONS_USER_STATUS");
+
+                    b.ToTable("TELEGRAM_IDENTITY_SESSIONS", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Telegram.Entities.TelegramInboundUpdate", b =>
                 {
                     b.Property<long>("Id")
@@ -2957,6 +3051,15 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_TELEGRAM_CONVERSATION_LINKS_USER_LINK");
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramIdentitySession", b =>
+                {
+                    b.HasOne("Domain.Users.Entities.Users", null)
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_TG_ID_SESSIONS_USERS");
                 });
 
             modelBuilder.Entity("Domain.Telegram.Entities.TelegramLinkCode", b =>

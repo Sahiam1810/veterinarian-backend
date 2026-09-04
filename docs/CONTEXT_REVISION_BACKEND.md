@@ -62,6 +62,28 @@ Toda excepción no controlada la captura `GlobalExceptionHandler` (`Api/Common/E
 
 **Patrón correcto**: el *handler* de Application lanza la excepción (`?? throw new NotFoundException(...)`); el *controller* nunca hace `is null ? NotFound() : Ok()` a mano — simplemente llama `sender.Send(...)` y envuelve el resultado en `Ok(...)`/`NoContent()`. Un refactor grande el 2026-09-01 (commit `6cd7068`) migró 18 controllers de un patrón viejo (`Handler` devolvía `bool`/`T?`, controller decidía 404 a mano) a este patrón nuevo — si ves un controller con `is null ? NotFound() : Ok(...)` o un `Handler` que retorna `bool`, es candidato a limpieza con este mismo patrón, pero **repórtalo, no lo cambies tú si el módulo no es tuyo** (ver sección 5).
 
+### Contrato de errores auth (`application/problem+json`)
+El front **solo traduce por `code`** (no por `title` ni por `Description` del `Error` de Application). Fuente de verdad: `Application/Security/Errors/AuthenticationErrors.cs`.
+
+Forma de la respuesta (login/refresh/revoke fallidos, JWT challenge/forbidden):
+
+```json
+{ "type": "https://httpstatuses.com/401", "title": "Unauthorized", "status": 401, "code": "Authentication.InvalidCredentials" }
+```
+
+| Code estable | HTTP típico | Cuándo |
+|---|---|---|
+| `Authentication.InvalidCredentials` | 401 | Login fallido (`AuthController` → `AuthProblem`) |
+| `Authentication.InvalidRefreshToken` | 401 | Refresh/revoke con token inválido |
+| `Authentication.Unauthorized` | 401 | JWT ausente/inválido (`JwtResponseEvents.OnChallenge`) o `/me` sin identidad usable |
+| `Authentication.Forbidden` | 403 | Autenticado pero policy deniega (`JwtResponseEvents.OnForbidden`) |
+| `Authentication.PlatformAccessDenied` | 403 | Denegación de acceso a la plataforma (catálogo; usar cuando el caso de negocio lo emita) |
+| `Authentication.UserAlreadyExists` | conflicto registro | Correo/usuario ya registrado |
+| `Authentication.IdentificationNumberAlreadyExists` | conflicto registro | Cédula ya registrada |
+| `Authentication.InvalidRegistrationData` | 400 | Datos de registro inválidos |
+
+No hardcodear mensajes de UX distintos por endpoint en español: el `Description` del `Error` es respaldo genérico en inglés; la copia visible la resuelve el front con el `code`.
+
 ### Patrón "ver solo lo propio" (`/mine`)
 Ya existen `GET /api/clients/me`, `GET /api/pets/mine`, `GET /api/appointments/mine` — todos resuelven la identidad desde el JWT (`sub`/`NameIdentifier` → `UserAccountsRepository` → `ClientsRepository.GetByUserIdAsync` → `ClientPetsRepository.GetByClientIdAsync`) y devuelven solo lo del cliente autenticado.
 

@@ -94,6 +94,11 @@ public sealed class JwtBearerAuthenticationTests : IClassFixture<JwtBearerApiFac
         Assert.Equal(
             "application/problem+json",
             response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            Application.Security.Errors.AuthenticationErrors.Unauthorized.Code,
+            document.RootElement.GetProperty("code").GetString());
     }
 
     private HttpClient CreateClient(string token)
