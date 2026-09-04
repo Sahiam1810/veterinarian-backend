@@ -39,6 +39,16 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.IdentificationNumber == idVo, cancellationToken);
     }
 
+    // Match exacto por VO normalizado (solo dígitos). Sin unicidad en BD aún: FirstOrDefault.
+    public async Task<ClientEntity?> GetByPhoneAsync(string phoneNumber, CancellationToken cancellationToken)
+    {
+        var phoneVo = ClientPhoneNumber.Create(phoneNumber);
+
+        return await _context.Set<ClientEntity>()
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.PhoneNumber == phoneVo, cancellationToken);
+    }
+
     public async Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await _context.Set<ClientEntity>()
@@ -78,6 +88,24 @@ public sealed class ClientRepository : IClientRepository
 
         var query = _context.Set<ClientEntity>()
             .Where(c => c.IdentificationNumber == idVo);
+
+        if (excludedId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludedId.Value);
+        }
+
+        return await query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsByPhoneAsync(
+        string phoneNumber,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null)
+    {
+        var phoneVo = ClientPhoneNumber.Create(phoneNumber);
+
+        var query = _context.Set<ClientEntity>()
+            .Where(c => c.PhoneNumber == phoneVo);
 
         if (excludedId.HasValue)
         {

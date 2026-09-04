@@ -1,18 +1,17 @@
-// Suite Etapa 2 (identidad de cliente vía teléfono) — tarea 2.5.
-// Matriz de aceptación (contratos reales al 2026-09-04; ver también
-// docs/adr/2026-09-04-client-identity-and-otp-boundaries.md).
+// Suite Etapa 2 (identidad de cliente vía teléfono) — tarea 2.5 / puerta de salida.
+// Ver docs/smoke/etapa-2-phone-key-exit-gate.md
 //
-// A Create con phone normalizado -> CUBIERTA.
-//   Application.Tests.Clients.CreateClientCommandHandlerTests
-//     .Handle_persists_the_client_with_a_normalized_phone_number
-// B Phone duplicado al crear -> BLOQUEADA (sin ExistsByPhoneAsync todavía).
-// C Búsqueda by-phone anónima dedicada -> BLOQUEADA (no hay endpoint by-phone).
-// D Lookup staff enriquecido (tarea 2.3) -> CUBIERTA.
-//   GET /api/clients/lookup + GetClientLookupQuery + Api.Tests.Clients.ClientStaffLookupHttpTests
+// A Create con phone normalizado -> CUBIERTA
+//   CreateClientCommandHandlerTests.Handle_persists_the_client_with_a_normalized_phone_number
+// B Phone duplicado al crear -> CUBIERTA
+//   CreateClientCommandHandlerTests.Handle_throws_conflict_when_phone_is_already_in_use
+// C by-phone anónimo -> CUBIERTA (tarea 2.2)
+//   GetClientByPhoneQueryHandlerTests + ClientPhoneLookupHttpTests
+// D Lookup staff -> CUBIERTA (tarea 2.3)
+//   GetClientLookup* + ClientStaffLookupHttpTests
 //
-// Run:
-//   dotnet test --filter FullyQualifiedName~ClientsStage2AcceptanceTests
-//   dotnet test --filter "FullyQualifiedName~GetClientLookup|FullyQualifiedName~ClientStaffLookup"
+// Smoke puerta de salida:
+//   dotnet test --filter "FullyQualifiedName~ClientsStage2AcceptanceTests|FullyQualifiedName~CreateClientCommandHandlerTests|FullyQualifiedName~GetClientByPhone|FullyQualifiedName~ClientPhoneLookup|FullyQualifiedName~GetClientLookup|FullyQualifiedName~ClientStaffLookup"
 
 using Application.Clients.Abstraction;
 using Xunit;
@@ -21,26 +20,36 @@ namespace Application.Tests.Clients;
 
 public sealed class ClientsStage2AcceptanceTests
 {
-    private const string BlockedReason =
-        "Bloqueada temporalmente por dependencia de implementación pendiente de 2.x " +
-        "(ver docs/adr/2026-09-04-client-identity-and-otp-boundaries.md). " +
-        "No existe contrato real (endpoint/repositorio) que ejercitar todavía.";
+    // Caso A — ancla de matriz: el contrato vive en CreateClientCommandHandlerTests.
+    [Fact]
+    public void Create_con_phone_normalizado_esta_cubierto_por_handler_tests()
+    {
+        Assert.Contains(
+            typeof(CreateClientCommandHandlerTests).GetMethods(),
+            m => m.Name == nameof(CreateClientCommandHandlerTests.Handle_persists_the_client_with_a_normalized_phone_number));
+    }
 
     // Caso B
-    [Fact(Skip = BlockedReason)]
-    public void PhoneDuplicado_al_crear_cliente_debe_ser_rechazado()
+    [Fact]
+    public void Phone_duplicado_expone_ExistsByPhoneAsync_en_IClientRepository()
     {
-        // Pendiente: ExistsByPhoneAsync / unicidad de PhoneNumber.
+        var method = typeof(IClientRepository).GetMethod(nameof(IClientRepository.ExistsByPhoneAsync));
+        Assert.NotNull(method);
+        Assert.Contains(
+            typeof(CreateClientCommandHandlerTests).GetMethods(),
+            m => m.Name == nameof(CreateClientCommandHandlerTests.Handle_throws_conflict_when_phone_is_already_in_use));
     }
 
     // Caso C
-    [Fact(Skip = BlockedReason)]
-    public void Busqueda_by_phone_debe_localizar_el_cliente_esperado()
+    [Fact]
+    public void By_phone_expone_GetByPhoneAsync_en_IClientRepository()
     {
-        // Pendiente: endpoint anónimo by-phone (distinto del lookup staff).
+        var method = typeof(IClientRepository).GetMethod(nameof(IClientRepository.GetByPhoneAsync));
+        Assert.NotNull(method);
+        Assert.Equal(2, method!.GetParameters().Length);
     }
 
-    // Caso D — tarea 2.3 ya implementada (lookup staff, no entidad "Staff").
+    // Caso D — lookup staff (cliente para staff), no entidad "Staff".
     [Fact]
     public void Lookup_staff_expone_GetByLookupAsync_en_IClientRepository()
     {
