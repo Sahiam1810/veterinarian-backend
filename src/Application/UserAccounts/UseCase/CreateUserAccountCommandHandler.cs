@@ -1,6 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.UserAccounts.Errors;
+using Application.Security.Errors;
 using MediatR;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 
@@ -45,9 +45,7 @@ public sealed class CreateUserAccountCommandHandler
         // Cliente no tiene login staff: no asociar USER_ACCOUNTS.
         if (string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal))
         {
-            throw new ConflictException(
-                "Un usuario con rol Cliente no puede tener cuenta de acceso.",
-                UserAccountErrorCodes.ClientCannotHaveLogin);
+            throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
         }
 
         var userAlreadyHasAccount = await _uow.UserAccountsRepository.ExistsByUserIdAsync(

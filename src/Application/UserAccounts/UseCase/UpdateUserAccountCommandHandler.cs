@@ -1,6 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.UserAccounts.Errors;
+using Application.Security.Errors;
 using MediatR;
 
 namespace Application.UserAccounts.UseCase;
@@ -50,9 +50,7 @@ public sealed class UpdateUserAccountCommandHandler
 
         if (string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal))
         {
-            throw new ConflictException(
-                "Un usuario con rol Cliente no puede tener cuenta de acceso.",
-                UserAccountErrorCodes.ClientCannotHaveLogin);
+            throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
         }
 
         var usernameInUse = await _uow.UserAccountsRepository.ExistsByUsernameAsync(

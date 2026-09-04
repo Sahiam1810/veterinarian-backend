@@ -1,8 +1,8 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Roles.Abstraction;
+using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
-using Application.UserAccounts.Errors;
 using Application.UserAccounts.UseCase;
 using Application.Users.Abstraction;
 using NSubstitute;
@@ -77,7 +77,7 @@ public sealed class UpdateUserAccountCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_throws_conflict_with_stable_code_when_account_user_is_Cliente()
+    public async Task Handle_throws_forbidden_with_PlatformAccessDenied_when_account_user_is_Cliente()
     {
         var clientRole = new RoleEntity("Cliente", null);
         var user = new UserEntity("Cliente Ana", "cliente@huellitas.test", null, clientRole.Id);
@@ -90,9 +90,9 @@ public sealed class UpdateUserAccountCommandHandlerTests
         // Reactivar no debe abrirse para Cliente.
         var command = new UpdateUserAccountCommand(account.Id, "cliente", "cliente@huellitas.test", "Activo");
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() => sut.Handle(command, CancellationToken.None));
 
-        Assert.Equal(UserAccountErrorCodes.ClientCannotHaveLogin, ex.Code);
+        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
         await userAccountsRepository.DidNotReceive().UpdateAsync(
             Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
     }

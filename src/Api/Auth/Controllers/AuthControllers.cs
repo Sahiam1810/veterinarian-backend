@@ -62,6 +62,15 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
+            // PlatformAccessDenied es 403 (rol no admitido), no 401 de credenciales.
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code)
+            {
+                return AuthProblem(
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden",
+                    result.Error.Code);
+            }
+
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
@@ -85,6 +94,14 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code)
+            {
+                return AuthProblem(
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden",
+                    result.Error.Code);
+            }
+
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
