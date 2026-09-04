@@ -35,12 +35,33 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.ClinicalStaffOnly)]
     [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las vacunaciones")]
-    [EndpointDescription("Retorna el listado de vacunas: completo para el personal, o solo de sus propias mascotas si quien consulta es un cliente.")]
+    [EndpointDescription("Retorna el listado completo de vacunas para el personal clínico autorizado.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VaccinationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IReadOnlyCollection<VaccinationResponse>>> GetAll(
+        CancellationToken cancellationToken)
+    {
+        var vaccinations = await sender.Send(
+            new GetAllVaccinationsQuery(),
+            cancellationToken);
+
+        return Ok(vaccinations.ToResponse());
+    }
+
+    [HttpGet("mine")]
+    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
+    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
+    [EndpointSummary("Obtiene las vacunaciones de las mascotas del cliente")]
+    [EndpointDescription("Deriva la cuenta desde el JWT y retorna únicamente las vacunas de las mascotas del cliente autenticado.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<VaccinationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<VaccinationResponse>>> GetMine(
         CancellationToken cancellationToken)
     {
         if (!TryGetUserAccountId(out var userAccountId))
@@ -49,30 +70,27 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
         }
 
         var vaccinations = await sender.Send(
-            new GetAllVaccinationsQuery(userAccountId),
+            new GetMyVaccinationsQuery(userAccountId),
             cancellationToken);
 
         return Ok(vaccinations.ToResponse());
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.ClinicalStaffOnly)]
     [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene un registro de vacunación por su ID")]
-    [EndpointDescription("Retorna la información detallada de un registro de vacunación específico, si el personal lo consulta o si pertenece a una mascota del cliente autenticado.")]
+    [EndpointDescription("Retorna un registro de vacunación específico para el personal clínico autorizado.")]
     [ProducesResponseType(typeof(VaccinationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<VaccinationResponse>> GetById(
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
         var vaccination = await sender.Send(
-            new GetVaccinationByIdQuery(id, userAccountId),
+            new GetVaccinationByIdQuery(id),
             cancellationToken);
 
         return Ok(vaccination.ToResponse());
