@@ -114,4 +114,3 @@ Los tokens antiguos con `super_admin=true` dejarán de ser suficientes después 
 - Validar estáticamente los scripts y, únicamente con autorización explícita, ejecutarlos contra una base Oracle concreta.
 - Confirmar que no quedan referencias de runtime a `SuperAdminOptions`, `SuperAdmin__*` o `super_admin=true`.
 - Ejecutar `git diff --check` y revisar que no se incluyan secretos ni archivos del chatbot.
-

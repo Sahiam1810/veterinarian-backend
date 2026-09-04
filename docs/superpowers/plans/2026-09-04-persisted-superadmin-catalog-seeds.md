@@ -434,4 +434,3 @@ git commit -m "docs(security): 📝 document persisted SuperAdmin provisioning"
 5. Verify `/api/auth/me`, `/api/auth/permissions` and one `SuperAdminOnly` endpoint.
 6. If provisioning fails, the script rolls back; correct the missing account/credential/catalog prerequisite and rerun it.
 7. If application rollout must be reversed, revert the application deployment. The added role/catalog rows are additive and may remain; no destructive schema rollback is necessary.
-
