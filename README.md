@@ -172,12 +172,17 @@ autorización que combinan uno o más roles por endpoint:
 | `AdminOrVeterinarian` | Administrador, Veterinario |
 | `ClinicalStaffOnly` | Administrador, Veterinario, Recepcionista |
 | `FrontDeskStaffOnly` | Administrador, Recepcionista, Auxiliar |
-| `ClinicalHistoryReadOnly` | Administrador, Veterinario, Recepcionista, Cliente (lectura de historia clínica y vacunas) |
+| `ClinicalHistoryReadOnly` | Administrador, Veterinario, Recepcionista, Cliente (lecturas clínicas que implementen además el alcance de propiedad correspondiente) |
 
 Todo endpoint que no declare explícitamente `[Authorize]` ni
 `[AllowAnonymous]` exige de todas formas un JWT válido (política de
 respaldo). Los endpoints públicos son únicamente `register`, `login` y
 `refresh` en `/api/auth`.
+
+En vacunaciones, los contratos de cliente y personal están separados. Un JWT de cliente usa
+`GET /api/vaccinations/mine`; la ausencia de un `sub` válido devuelve `401`. Los endpoints
+generales requieren `ClinicalStaffOnly`, por lo que un cliente autenticado recibe `403`. La API
+deriva siempre la cuenta desde el token y no acepta identificadores de propietario en la petición.
 
 ## Modelo de datos (resumen de entidades)
 
@@ -338,8 +343,9 @@ autorización indicada.
 | PUT | `/api/diagnostics/{id}` | AdminOrVeterinarian | Actualiza código, nombre, descripción o estado de un diagnóstico. |
 | DELETE | `/api/diagnostics/{id}` | AdminOnly | Desactiva (borrado lógico) un diagnóstico. |
 | POST | `/api/vaccinations` | AdminOrVeterinarian | Registra una vacuna aplicada a la mascota de un cliente. |
-| GET | `/api/vaccinations` | ClinicalHistoryReadOnly | Lista los registros de vacunación. |
-| GET | `/api/vaccinations/{id}` | ClinicalHistoryReadOnly | Obtiene un registro de vacunación por ID. |
+| GET | `/api/vaccinations/mine` | ClientOnly + permiso View de Historiales Clínicos | Lista únicamente las vacunas de las mascotas del cliente derivado del `sub` del JWT. |
+| GET | `/api/vaccinations` | ClinicalStaffOnly + permiso View de Historiales Clínicos | Lista todos los registros de vacunación para personal clínico. |
+| GET | `/api/vaccinations/{id}` | ClinicalStaffOnly + permiso View de Historiales Clínicos | Obtiene un registro de vacunación por ID para personal clínico. |
 | PUT | `/api/vaccinations/{id}` | AdminOnly | Corrige un registro de vacunación existente. |
 | POST | `/api/statusappointments` | AdminOnly | Crea un estado de cita (p. ej. Pendiente, Confirmada). |
 | GET | `/api/statusappointments` | StaffOnly | Lista los estados de cita. |
