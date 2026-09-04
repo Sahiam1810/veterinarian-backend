@@ -53,6 +53,25 @@ public class ClientsController(ISender sender) : ControllerBase
         return Ok(client.ToIdentificationLookupResponse());
     }
 
+    // GET /api/clients/lookup
+    [HttpGet("lookup")]
+    [RequirePermission("Clientes", PermissionAction.View)]
+    [EndpointSummary("Busca un cliente por cédula y/o teléfono (Staff)")]
+    [EndpointDescription("Retorna la información operativa completa de un cliente buscando por cédula, teléfono o ambos (lógica AND). Requiere al menos un parámetro.")]
+    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClientResponseDto>> Lookup(
+        [FromQuery] string? identification,
+        [FromQuery] string? phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientLookupQuery(identification, phone), ct);
+        return Ok(client.ToDto());
+    }
+
     // GET /api/clients
     [HttpGet]
     [RequirePermission("Clientes", PermissionAction.View)]
