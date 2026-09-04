@@ -99,7 +99,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ForbiddenException forbidden => (StatusCodes.Status403Forbidden, forbidden.Message, null),
             NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
-            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, null),
+            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, conflict.Code),
             DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation", null),
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error", null)
         };
