@@ -3,27 +3,16 @@ using System.Security.Claims;
 using Api.Common.Security.Permissions;
 using Api.Diagnostics.Controllers;
 using Api.Roles.Controllers;
-using Application.Permissions.UseCases;
+using Application.Permissions.Claims;
 using Domain.Roles;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using NSubstitute;
 using Xunit;
 
 namespace Api.Tests.Security;
 
 public sealed class RolesAndDiagnosticsAuthorizationTests
 {
-    private static readonly Guid AdminRoleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid PersonId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-    private readonly ISender sender = Substitute.For<ISender>();
-    private readonly PermissionAuthorizationHandler handler;
-
-    public RolesAndDiagnosticsAuthorizationTests()
-    {
-        handler = new PermissionAuthorizationHandler(sender);
-    }
+    private readonly PermissionAuthorizationHandler handler = new();
 
     [Fact]
     public void RolesController_does_not_have_class_level_authorize_attribute()
@@ -73,34 +62,23 @@ public sealed class RolesAndDiagnosticsAuthorizationTests
     }
 
     [Fact]
-    public async Task SuperAdmin_bypasses_matrix_and_gained_access_to_Roles_module()
+    public async Task SuperAdmin_bypasses_matrix_and_gains_access_to_Roles_module()
     {
         var requirement = new PermissionRequirement("Roles", PermissionAction.View);
         var context = CreateContext(
             requirement,
-            claims: [new Claim("role_id", SystemRoles.SuperAdminId.ToString())]);
+            [new Claim("role_id", SystemRoles.SuperAdminId.ToString())]);
 
         await handler.HandleAsync(context);
 
         Assert.True(context.HasSucceeded);
-        await sender.DidNotReceive().Send(Arg.Any<GetEffectivePermissionQuery>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Regular_role_without_explicit_roles_permission_is_denied_access_to_Roles_module()
     {
-        sender
-            .Send(Arg.Is<GetEffectivePermissionQuery>(q => q.ModuleName == "Roles"), Arg.Any<CancellationToken>())
-            .Returns(EffectivePermission.None);
-
         var requirement = new PermissionRequirement("Roles", PermissionAction.View);
-        var context = CreateContext(
-            requirement,
-            claims:
-            [
-                new Claim("role_id", AdminRoleId.ToString()),
-                new Claim("person_id", PersonId.ToString())
-            ]);
+        var context = CreateContext(requirement, []);
 
         await handler.HandleAsync(context);
 
@@ -108,19 +86,15 @@ public sealed class RolesAndDiagnosticsAuthorizationTests
     }
 
     [Fact]
-    public async Task Diagnostics_GetAll_succeeds_when_user_has_HistorialesClinicos_View_permission()
+    public async Task Diagnostics_GetAll_succeeds_with_the_exact_HistorialesClinicos_View_claim()
     {
-        sender
-            .Send(Arg.Is<GetEffectivePermissionQuery>(q => q.ModuleName == "Historiales Clínicos"), Arg.Any<CancellationToken>())
-            .Returns(new EffectivePermission(CanView: true, CanCreate: false, CanEdit: false, CanDelete: false));
-
         var requirement = new PermissionRequirement("Historiales Clínicos", PermissionAction.View);
         var context = CreateContext(
             requirement,
-            claims:
             [
-                new Claim("role_id", AdminRoleId.ToString()),
-                new Claim("person_id", PersonId.ToString())
+                new Claim(
+                    PermissionClaimValue.ClaimType,
+                    "perm:Historiales Clínicos:View")
             ]);
 
         await handler.HandleAsync(context);
@@ -129,20 +103,10 @@ public sealed class RolesAndDiagnosticsAuthorizationTests
     }
 
     [Fact]
-    public async Task Diagnostics_GetAll_fails_when_user_lacks_HistorialesClinicos_View_permission()
+    public async Task Diagnostics_GetAll_fails_without_the_required_claim()
     {
-        sender
-            .Send(Arg.Is<GetEffectivePermissionQuery>(q => q.ModuleName == "Historiales Clínicos"), Arg.Any<CancellationToken>())
-            .Returns(EffectivePermission.None);
-
         var requirement = new PermissionRequirement("Historiales Clínicos", PermissionAction.View);
-        var context = CreateContext(
-            requirement,
-            claims:
-            [
-                new Claim("role_id", AdminRoleId.ToString()),
-                new Claim("person_id", PersonId.ToString())
-            ]);
+        var context = CreateContext(requirement, []);
 
         await handler.HandleAsync(context);
 
@@ -154,8 +118,9 @@ public sealed class RolesAndDiagnosticsAuthorizationTests
         IEnumerable<Claim> claims)
     {
         var identity = new ClaimsIdentity(claims, authenticationType: "TestAuth");
-        var user = new ClaimsPrincipal(identity);
-
-        return new AuthorizationHandlerContext([requirement], user, resource: null);
+        return new AuthorizationHandlerContext(
+            [requirement],
+            new ClaimsPrincipal(identity),
+            resource: null);
     }
 }
