@@ -44,6 +44,9 @@ citas creadas manualmente y citas creadas por el agente.
 - **Roles y permisos configurables** desde base de datos (no quemados en
   código): Administrador, Veterinario, Recepcionista, Auxiliar y Cliente,
   combinados en políticas de autorización por endpoint.
+- Los permisos efectivos se cargan desde Oracle durante el login o refresh y
+  se incluyen en el access token como claims `perm:{Módulo}:{Acción}`. La
+  autorización de cada endpoint se resuelve localmente desde el JWT.
 - Gestión completa de dueños, mascotas, especies, razas, veterinarios,
   especialidades y disponibilidad horaria.
 - Catálogo de servicios, tipos de servicio, diagnósticos y vacunas.
@@ -115,6 +118,9 @@ citas creadas manualmente y citas creadas por el agente.
    - `Jwt__PrivateKeyPemBase64` / `Jwt__PublicKeyPemBase64`: par de llaves RSA
      en Base64, más `Jwt__KeyId`, `Jwt__Issuer`, `Jwt__Audience`,
      `Jwt__AccessTokenMinutes`, `Jwt__RefreshTokenDays`, `Jwt__ClockSkewSeconds`.
+     Use `Jwt__AccessTokenMinutes=15`: los cambios de rol o permisos quedan
+     persistidos inmediatamente y llegan a una sesión existente al renovar el
+     token, con una demora máxima esperada de 15 minutos.
    - `Cors__AllowedOrigins__0`: origen del frontend React local (por defecto
      `http://localhost:5173` con Vite).
    - Variables `Agent__*` si va a probar la integración con el agente
