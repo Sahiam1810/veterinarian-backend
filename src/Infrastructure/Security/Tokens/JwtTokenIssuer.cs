@@ -1,4 +1,6 @@
+using Application.Permissions.Claims;
 using Application.Security.Models;
+using Domain.Roles;
 using Infrastructure.Security.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -15,9 +17,20 @@ public sealed class JwtTokenIssuer(
     private readonly JwtOptions jwtOptions = options.Value;
 
     public IssuedAccessToken Issue(AuthenticatedIdentity identity) =>
-        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), []);
 
-    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime)
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        IReadOnlyCollection<string> permissions) =>
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), permissions);
+
+    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime) =>
+        Issue(identity, lifetime, []);
+
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
     {
         if (lifetime <= TimeSpan.Zero)
         {
@@ -50,6 +63,18 @@ public sealed class JwtTokenIssuer(
                 JwtRegisteredClaimNames.Email,
                 identity.Email)
         };
+
+        if (!SystemRoles.IsSuperAdmin(identity.RoleId))
+        {
+            claims.AddRange(
+                permissions
+                    .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal)
+                    .Select(permission => new Claim(
+                        PermissionClaimValue.ClaimType,
+                        permission)));
+        }
 
         return BuildToken(claims, lifetime);
     }

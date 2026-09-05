@@ -11,6 +11,7 @@ using Domain.Roles;
 using Infrastructure.Security.Authentication;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
+using MediatR;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
@@ -70,6 +71,7 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
             tokenRepository,
             usersRepository,
             unitOfWork,
+            Substitute.For<ISender>(),
             jwtTokenIssuer,
             new RefreshTokenProtector(),
             passwordHasher,
