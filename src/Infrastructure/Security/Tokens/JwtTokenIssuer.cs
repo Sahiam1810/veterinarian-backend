@@ -64,22 +64,21 @@ public sealed class JwtTokenIssuer(
                 identity.Email)
         };
 
-        if (!SystemRoles.IsSuperAdmin(identity.RoleId))
-        {
-            claims.AddRange(
-                permissions
-                    .Where(permission => !string.IsNullOrWhiteSpace(permission))
-                    .Distinct(StringComparer.Ordinal)
-                    .Order(StringComparer.Ordinal)
-                    .Select(permission => new Claim(
-                        PermissionClaimValue.ClaimType,
-                        permission)));
-        }
+        string[] normalizedPermissions = SystemRoles.IsSuperAdmin(identity.RoleId)
+            ? []
+            : permissions
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray();
 
-        return BuildToken(claims, lifetime);
+        return BuildToken(claims, lifetime, normalizedPermissions);
     }
 
-    private IssuedAccessToken BuildToken(List<Claim> claims, TimeSpan lifetime)
+    private IssuedAccessToken BuildToken(
+        List<Claim> claims,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
     {
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.Add(lifetime);
@@ -102,6 +101,11 @@ public sealed class JwtTokenIssuer(
                 new SigningCredentials(
                     keyMaterial.SigningKey,
                     SecurityAlgorithms.RsaSha256));
+
+        if (permissions.Count > 0)
+        {
+            token.Payload[PermissionClaimValue.ClaimType] = permissions.ToArray();
+        }
 
         return new IssuedAccessToken(
             new JwtSecurityTokenHandler().WriteToken(token),
