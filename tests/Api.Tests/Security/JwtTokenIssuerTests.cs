@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
 using Api.Tests.Support;
+using Application.Permissions.Claims;
 using Application.Security.Models;
 using Domain.Roles;
 using Infrastructure.Security.Options;
@@ -73,6 +75,73 @@ public sealed class JwtTokenIssuerTests
     }
 
     [Fact]
+    public void Issue_embeds_distinct_ordered_permission_claims()
+    {
+        var options = CreateOptions(RsaTestKeys.Create());
+        using var keyMaterial = new JwtRsaKeyMaterial(Options.Create(options));
+        var issuer = new JwtTokenIssuer(
+            Options.Create(options),
+            keyMaterial,
+            new FixedTimeProvider(Now));
+
+        var issued = issuer.Issue(
+            CreateIdentity(),
+            [
+                "perm:Mascotas:View",
+                "perm:Citas:Create",
+                "perm:Mascotas:View",
+                " "
+            ]);
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(issued.Token);
+
+        Assert.Equal(
+            ["perm:Citas:Create", "perm:Mascotas:View"],
+            token.Claims
+                .Where(claim => claim.Type == PermissionClaimValue.ClaimType)
+                .Select(claim => claim.Value)
+                .ToArray());
+    }
+
+    [Fact]
+    public void Issue_serializes_a_single_permission_as_a_json_array()
+    {
+        var options = CreateOptions(RsaTestKeys.Create());
+        using var keyMaterial = new JwtRsaKeyMaterial(Options.Create(options));
+        var issuer = new JwtTokenIssuer(
+            Options.Create(options),
+            keyMaterial,
+            new FixedTimeProvider(Now));
+
+        var issued = issuer.Issue(CreateIdentity(), ["perm:Mascotas:View"]);
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(issued.Token);
+        using var payload = JsonDocument.Parse(Base64UrlEncoder.Decode(token.RawPayload));
+
+        var permissions = payload.RootElement.GetProperty(PermissionClaimValue.ClaimType);
+        Assert.Equal(JsonValueKind.Array, permissions.ValueKind);
+        Assert.Equal("perm:Mascotas:View", permissions[0].GetString());
+
+        var principal = new JwtSecurityTokenHandler { MapInboundClaims = false }
+            .ValidateToken(
+                issued.Token,
+                new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = options.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = options.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = keyMaterial.ValidationKey,
+                    ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
+                    ValidateLifetime = false
+                },
+                out _);
+        Assert.Contains(
+            principal.Claims,
+            claim => claim.Type == PermissionClaimValue.ClaimType &&
+                     claim.Value == "perm:Mascotas:View");
+    }
+
+    [Fact]
     public void Issue_for_persisted_SuperAdmin_creates_normal_role_claims()
     {
         var options = CreateOptions(RsaTestKeys.Create());
@@ -91,7 +160,7 @@ public sealed class JwtTokenIssuerTests
             "superadmin",
             "superadmin@huellitas.test",
             "Activo");
-        var issued = issuer.Issue(identity);
+        var issued = issuer.Issue(identity, ["perm:Usuarios:Delete"]);
         var token = new JwtSecurityTokenHandler().ReadJwtToken(issued.Token);
 
         Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
@@ -100,6 +169,7 @@ public sealed class JwtTokenIssuerTests
         Assert.Equal(SystemRoles.SuperAdminName, Claim(token, "role"));
         Assert.Equal("superadmin@huellitas.test", Claim(token, JwtRegisteredClaimNames.Email));
         Assert.DoesNotContain(token.Claims, claim => claim.Type == "super_admin");
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == PermissionClaimValue.ClaimType);
         Assert.Equal(Now.AddMinutes(15), issued.ExpiresAt);
     }
 

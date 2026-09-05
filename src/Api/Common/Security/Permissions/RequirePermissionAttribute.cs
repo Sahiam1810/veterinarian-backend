@@ -1,3 +1,4 @@
+using Application.Permissions.Claims;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Common.Security.Permissions;
@@ -7,7 +8,7 @@ namespace Api.Common.Security.Permissions;
 // distinta por cada combinación de módulo y acción).
 public sealed class RequirePermissionAttribute : AuthorizeAttribute
 {
-    public const string PolicyPrefix = "perm:";
+    public const string PolicyPrefix = PermissionClaimValue.PolicyPrefix;
 
     public RequirePermissionAttribute(string moduleName, PermissionAction action)
     {
