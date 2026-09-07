@@ -53,8 +53,7 @@ citas creadas manualmente y citas creadas por el agente.
 - Calendario y agenda de citas con validación de solapamiento por
   profesional, historial de estados y notificaciones.
 - Historia clínica de la mascota y control de vacunación.
-- Portal de autoservicio para el cliente (`/me`, `/mine`) para consultar sus
-  propias mascotas y citas.
+- Interacción del cliente (dueño de mascota) exclusiva a través de Telegram Chatbot y verificaciones de autoservicio por OTP (teléfono/correo), sin interfaz ni login web.
 - Gateway hacia el agente conversacional (Huellitas ChatBot): el backend
   deriva la identidad del usuario desde el JWT y reenvía el mensaje, sin
   exponer la base de datos al agente.

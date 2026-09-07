@@ -8,34 +8,52 @@
 
 ---
 
-## 0. Alcance de producto y estado del frontend (leer primero, actualizado 2026-09-03)
+## 0. Alcance de producto y estado del frontend (leer primero, actualizado 2026-09-07 — CONTEXT final)
 
-**El Cliente nunca tiene interfaz propia ni login.** Se había planeado en algún momento un panel de cliente (self-service web/app con JWT, viendo sus citas/mascotas/etc.) — **esa idea se descartó**, indicación explícita de la líder: el Cliente **solo** interactúa con el sistema a través del chatbot (Telegram por ahora). Todo lo que el cliente necesita — agendar cita, cancelar, reprogramar, consultar sus mascotas — pasa por el chatbot, no por un frontend propio del cliente.
+> 🚨 **REGLA ARQUITECTÓNICA DE ORO (CANDADO DE PRODUCTO):**
+> 1. **La interfaz web es EXCLUSIVAMENTE para Staff** (SuperAdmin, Administrador, Veterinario, Recepcionista, Auxiliar).
+> 2. **El Cliente (dueño de mascota) NUNCA tiene interfaz web, NUNCA tiene login por contraseña y NUNCA tiene portal de cliente.** No existen menús, páginas ni tableros web para dueños de mascotas.
+> 3. **Canal real y único del Cliente = Telegram Chatbot + Teléfono + Gmail OTP (autoservicio).** Todo flujo de agendamiento, consulta o cancelación para el cliente pasa por el chatbot conversacional o endpoints anónimos de autoservicio vía OTP.
+> 4. **WhatsApp está explícitamente FUERA DE ALCANCE** para todo el programa (Etapas 3–6).
+> 5. **Portal JWT de Cliente = Retirado (410 Gone / `ClientPortal.Gone`).** Los endpoints legacy del portal de cliente devolvieron HTTP 410 o fueron eliminados (tarea 5.2). La matriz `ROLE_PERMISSIONS` para el rol Cliente no contiene filas de módulos web (ADR 5.3).
+> 6. **Responsabilidad del Frontend Staff:** El front staff opera únicamente para roles de personal y **no implementa flujos OTP de cliente**. El front traduce el estado únicamente leyendo la propiedad `code` de las respuestas de error canónicas.
 
 **Qué implica esto para el backend:**
 - El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es el canal real y activo del Cliente — ahí aplica el peso de revisión y corrección.
-- Las rutas JWT del portal dueño (`ClientOnly` / `/me` / `/mine` de panel) **quedaron retiradas en la tarea 5.2** (eliminación de endpoints; no 410 en este slice). Política residual `ClientOnly` puede vivir hasta 5.5 si no hay consumidores.
-- **Excepción explícita (única):** `POST /api/appointments/mine/{id}/request-code|confirm-code` — OTP anónimo + rate limit (teléfono de la cita); no es portal JWT ni OTP Gmail.
-- WhatsApp sigue **fuera de alcance** (Etapas 3–6). **Canal de dueño = Telegram.**
+- Las rutas JWT del portal dueño (`ClientOnly` / `/me` / `/mine` de panel) **quedaron retiradas** (retorno HTTP 410 `ClientPortal.Gone` / eliminación en tarea 5.2 y 5.5). La política `ClientOnly` ha sido devaluada/retirada para evitar exponer superficie web.
+- **Excepción explícita (única):** Endpoints anónimos de autoservicio de cita (`POST /api/appointments/mine/{id}/request-code|confirm-code`) respaldados por OTP y rate limit; no forman un portal JWT ni requieren sesión web.
+- **WhatsApp fuera de alcance.** El único canal de mensajería para dueños es **Telegram**.
 
-**Estado del frontend (para contexto, no accionable desde el backend):** SuperAdmin, Veterinario y Auxiliar ya están **100% conectados** al frontend real (no es solo backend con Swagger — hay UI consumiéndolos en producción/staging). Tenerlo en cuenta al estimar impacto de un cambio: romper un contrato de esos tres roles es visible para usuarios reales ahora mismo, no solo teórico.
+**Estado del frontend:** SuperAdmin, Veterinario y Auxiliar están **100% conectados** al frontend real staff. Romper un contrato de esos roles es visible en UI de inmediato.
+
+---
+
+### Referencias normativas de arquitectura (ADRs y Smoke Gates)
+
+- **ADR 3 (Email OTP):** [`docs/adr/2026-09-07-contact-verification-email-foundations.md`](adr/2026-09-07-contact-verification-email-foundations.md) — Verificación de contacto e identidad mediante OTP por correo electrónico.
+- **ADR 4 (RegisterOwner):** [`docs/adr/2026-09-07-register-owner-foundations.md`](adr/2026-09-07-register-owner-foundations.md) — Alta de dueño sin credenciales ni contraseña (`PASSWORD_HASH = null`), exclusivo por staff/bot.
+- **ADR 5 (Retiro portal Cliente & 410):** [`docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`](adr/2026-09-07-etapa-5-client-portal-retirement.md) — Cierre definitivo del portal JWT de dueño, retiro de rutas `/mine` y respuestas HTTP 410 `ClientPortal.Gone`.
+- **ADR 5.3 (Límites permisos Cliente):** [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — Opción A: Cero filas en `ROLE_PERMISSIONS` para el rol Cliente.
+- **ADR 6 (Hardening & Codes):** [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md) — Rate limiting en endpoints anónimos, sanidad de logs (no PII) y catálogo de códigos de error `code`.
+- **Smoke Gate 6.4:** [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md) — Matriz de verificación de salida y humo del backend.
+
+---
 
 ### Alta de dueño (Etapa 4) — sin login de Cliente
 El path legacy `ClientAccountRegistration` / `ClientAccountRegistrationService` (User + Account + Credentials + Client con password) **fue eliminado** (tarea 4.4). El alta de dueño pasa solo por `RegisterOwner` (staff/bot/Telegram): User rol Cliente **sin** `PASSWORD_HASH`, perfil Client, **cero** `USER_ACCOUNTS` / `USER_CREDENTIALS`. No reintroducir StageAsync con password ni registrar ese servicio en DI.
 
 ### Etapa 5 (kickoff) — retiro portal Cliente JWT
 ADR: [`docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`](adr/2026-09-07-etapa-5-client-portal-retirement.md). Smoke kickoff: [`docs/smoke/etapa-5-kickoff-gate.md`](smoke/etapa-5-kickoff-gate.md).
-Decisiones ya escritas: política `RequesterPhoneNumber` ↔ `Clients.PhoneNumber`; inventario ClientOnly → eliminar/410; OTP citas anónimo; seed Cliente sin módulos de escritorio; WhatsApp fuera.
+Decisiones escritas: política `RequesterPhoneNumber` ↔ `Clients.PhoneNumber`; inventario ClientOnly → eliminar/410; OTP citas anónimo; seed Cliente sin módulos de escritorio; WhatsApp fuera.
 
 ### Cierre superficie JWT ClientOnly (tarea 5.2)
-Eliminados: `/api/clients/me`, `/api/pets/mine*`, `/api/appointments/mine` (GET/POST JWT), booking JWT, `PATCH .../cancel` JWT, `/api/vaccinations/mine`, `/api/accountstatements/mine`. **Excepción en CONTEXT:** solo OTP `request-code`/`confirm-code` en `MyAppointmentsController` (AllowAnonymous). Tests: `ClientOnlyPortalClosureTests`.
+Eliminados / 410: `/api/clients/me`, `/api/pets/mine*`, `/api/appointments/mine` (GET/POST JWT), booking JWT, `PATCH .../cancel` JWT, `/api/vaccinations/mine`, `/api/accountstatements/mine`. **Excepción:** solo OTP `request-code`/`confirm-code` en `MyAppointmentsController` (AllowAnonymous). Tests: `ClientOnlyPortalClosureTests`.
 
 ### Seed permisos rol Cliente (tarea 5.3)
 ADR: [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — **Opción A**: cero filas de módulos de plataforma en `ROLE_PERMISSIONS` para `77777777-…`. El seed borra residuales al reejecutar. Staff (Admin/Vet/Recep/Aux) intacto. Cliente = chatbot, no web.
 
 ### Coherencia teléfono cita ↔ dueño (tarea 5.1)
 Regla ADR: si el dueño tiene `Clients.PhoneNumber`, Create/Update staff (y CreateMy) **copian** ese valor normalizado a `Appointment.RequesterPhoneNumber` e **ignoran** un requester divergente del body. Sin teléfono en perfil, se usa el request (solo dígitos, VO 7–20). Política: `AppointmentRequesterPhonePolicy`. OTP `request-code` sigue matcheando contra requester de la cita. Tests: `AppointmentRequesterPhonePolicyTests` + handlers Create/Update/CreateMy. No toca ContactVerification ni Telegram registration.
-
 
 ### Etapa 6 (kickoff) — rate limit, logs y codes
 ADR: [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md). Catálogo: [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md). Smoke: [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md).
@@ -105,8 +123,8 @@ Forma de la respuesta (login/refresh/revoke fallidos, JWT challenge/forbidden):
 
 No hardcodear mensajes de UX distintos por endpoint en español: el `Description` del `Error` es respaldo genérico en inglés; la copia visible la resuelve el front con el `code`.
 
-### Patrón "ver solo lo propio" (histórico `/mine` JWT)
-El portal dueño con JWT (`ClientOnly` + `/clients/me`, `/pets/mine`, `/appointments/mine`, etc.) **ya no existe** (tarea 5.2). El dueño opera por chatbot + OTP de cita anónimo; el staff usa endpoints generales con `RequirePermission` / `StaffOnly`.
+### Patrón "ver solo lo propio" (histórico `/mine` JWT) — ⛔ OBSOLETO Y RETIRADO (ADR 5)
+El portal de dueño con JWT (`ClientOnly` + `/clients/me`, `/pets/mine`, `/appointments/mine`, etc.) **fue retirado definitivamente y marcado como OBSOLETO** (Etapa 5 / Tarea 5.2 / ADR 5). Los endpoints del portal web del cliente fueron removidos o devuelven HTTP 410 `ClientPortal.Gone`. El dueño no opera con JWT ni tiene sesión web; interactúa exclusivamente vía Telegram Chatbot y verificaciones anónimas por OTP de cita o Gmail.
 
 **Por qué el `GetAll` general (`GET /api/pets`, `GET /api/clientspets`, etc.) no filtra por dueño**: esos endpoints son para el personal (Admin/Vet/Recepcionista/Auxiliar) y devuelven todo sin filtrar a propósito. Ver el detalle exacto por controller en la sección 2.
 
