@@ -1,5 +1,6 @@
 using Api.Common.Security;
 using Api.Telegram.Dtos;
+using Application.Clients.Errors;
 using Application.Security.Errors;
 using Application.Telegram.Registration;
 using MediatR;
@@ -88,16 +89,27 @@ public sealed class TelegramRegistrationController(
             return Expired();
         }
 
-        var field = result.Error == AuthenticationErrors.IdentificationNumberAlreadyExists
-            ? nameof(request.IdentificationNumber)
-            : string.Empty;
-        ModelState.AddModelError(
-            field,
-            result.Error == AuthenticationErrors.IdentificationNumberAlreadyExists
-                ? "El número de identificación ya está registrado."
-                : "No fue posible completar el registro. Inténtalo nuevamente.");
+        // Codes del núcleo RegisterOwner / catálogo auth-clients.
+        var field = result.Error.Code switch
+        {
+            var c when c == AuthenticationErrors.IdentificationNumberAlreadyExists.Code =>
+                nameof(request.IdentificationNumber),
+            var c when c == ClientErrorCodes.PhoneAlreadyInUse =>
+                nameof(request.PhoneNumber),
+            _ => string.Empty
+        };
+        var message = result.Error.Code switch
+        {
+            var c when c == AuthenticationErrors.IdentificationNumberAlreadyExists.Code =>
+                "El número de identificación ya está registrado.",
+            var c when c == AuthenticationErrors.UserAlreadyExists.Code =>
+                "El correo ya está registrado.",
+            var c when c == ClientErrorCodes.PhoneAlreadyInUse =>
+                "El teléfono ya está registrado.",
+            _ => "No fue posible completar el registro. Inténtalo nuevamente."
+        };
+        ModelState.AddModelError(field, message);
         return View("Complete", request);
-
     }
 
     private string CookieName => environment.IsDevelopment()

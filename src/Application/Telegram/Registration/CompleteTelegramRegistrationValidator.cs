@@ -3,6 +3,7 @@ using FluentValidation;
 
 namespace Application.Telegram.Registration;
 
+// Validación del complete Telegram: sin password; teléfono obligatorio (ADR dueño).
 public sealed class CompleteTelegramRegistrationCommandValidator
     : AbstractValidator<CompleteTelegramRegistrationCommand>
 {
@@ -13,5 +14,11 @@ public sealed class CompleteTelegramRegistrationCommandValidator
         RuleFor(command => command.IdentificationNumber)
             .NotEmpty()
             .MaximumLength(ClientIdentificationNumber.MaxLength);
+        RuleFor(command => command.PhoneNumber)
+            .NotEmpty()
+            .MaximumLength(ClientPhoneNumber.MaxLength);
+        RuleFor(command => command.Address)
+            .MaximumLength(ClientAddress.MaxLength)
+            .When(command => !string.IsNullOrWhiteSpace(command.Address));
     }
 }

@@ -1,11 +1,10 @@
+using Application.Common.Exceptions;
 using Application.Common.Results;
 using Application.Owners.Abstractions;
-using Application.Owners.UseCases;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Registration;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
-using MediatR;
 using NSubstitute;
 using Xunit;
 
@@ -27,7 +26,7 @@ public sealed class CompleteTelegramRegistrationHandlerTests
         var fixture = CreateFixture();
         var session = ProfileSession();
         fixture.Sessions.GetByCompletionTokenHashAsync(Hash, default).Returns(session);
-        fixture.Sender.Send(Arg.Any<RegisterOwnerCommand>(), default)
+        fixture.RegisterOwner.RegisterAsync(Arg.Any<RegisterOwnerFromTelegramRequest>(), default)
             .Returns(new RegisterOwnerResult(PersonId, ClientId));
 
         var result = await fixture.Handler.Handle(Command(), default);
@@ -37,6 +36,14 @@ public sealed class CompleteTelegramRegistrationHandlerTests
         await fixture.Links.Received(1).AddAsync(
             Arg.Is<TelegramUserLink>(link => link.PersonId == PersonId), default);
         Assert.Equal(TelegramRegistrationSessionStatus.Completed, session.Status);
+        await fixture.RegisterOwner.Received(1).RegisterAsync(
+            Arg.Is<RegisterOwnerFromTelegramRequest>(r =>
+                r.Email == "new@huellitas.test" &&
+                r.PhoneNumber == "3001234567" &&
+                r.ContactProofSessionId == null &&
+                r.ContactProof == null &&
+                r.TelegramUserId == 1001),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -50,8 +57,8 @@ public sealed class CompleteTelegramRegistrationHandlerTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(TelegramRegistrationErrors.InvalidOrExpired, result.Error);
-        await fixture.Sender.DidNotReceive().Send(
-            Arg.Any<RegisterOwnerCommand>(), default);
+        await fixture.RegisterOwner.DidNotReceive().RegisterAsync(
+            Arg.Any<RegisterOwnerFromTelegramRequest>(), default);
     }
 
     [Fact]
@@ -60,15 +67,25 @@ public sealed class CompleteTelegramRegistrationHandlerTests
         var fixture = CreateFixture();
         var session = ProfileSession();
         fixture.Sessions.GetByCompletionTokenHashAsync(Hash, default).Returns(session);
-        fixture.Sender.Send(Arg.Any<RegisterOwnerCommand>(), default)
-            .Returns(Task.FromException<RegisterOwnerResult>(new InvalidOperationException("Conflict")));
-
+        fixture.RegisterOwner.RegisterAsync(Arg.Any<RegisterOwnerFromTelegramRequest>(), default)
+            .Returns<Task<RegisterOwnerResult>>(_ =>
+                throw new ConflictException("dup", "Authentication.UserAlreadyExists"));
 
         var result = await fixture.Handler.Handle(Command(), default);
 
         Assert.True(result.IsFailure);
+        Assert.Equal("Authentication.UserAlreadyExists", result.Error.Code);
         Assert.Equal(TelegramRegistrationSessionStatus.AwaitingProfile, session.Status);
         await fixture.Links.DidNotReceive().AddAsync(Arg.Any<TelegramUserLink>(), default);
+    }
+
+    [Fact]
+    public void Command_and_request_have_no_password_surface()
+    {
+        Assert.Null(typeof(CompleteTelegramRegistrationCommand).GetProperty("Password"));
+        Assert.Null(typeof(CompleteTelegramRegistrationCommand).GetProperty("PasswordConfirmation"));
+        Assert.Null(typeof(CompleteTelegramRegistrationCommand).GetProperty("Username"));
+        Assert.Null(typeof(RegisterOwnerFromTelegramRequest).GetProperty("Password"));
     }
 
     private static Fixture CreateFixture()
@@ -84,11 +101,11 @@ public sealed class CompleteTelegramRegistrationHandlerTests
         var protector = Substitute.For<ITelegramRegistrationProtector>();
         protector.HashCompletionToken("raw-token").Returns(Hash);
         protector.UnprotectEmail("protected-email").Returns("new@huellitas.test");
-        var sender = Substitute.For<ISender>();
+        var registerOwner = Substitute.For<IRegisterOwnerFromTelegram>();
         return new Fixture(
             new CompleteTelegramRegistrationCommandHandler(
-                unitOfWork, protector, sender, new FixedTimeProvider(Now)),
-            sessions, links, sender);
+                unitOfWork, protector, registerOwner, new FixedTimeProvider(Now)),
+            sessions, links, registerOwner);
     }
 
     private static CompleteTelegramRegistrationCommand Command() => new(
@@ -110,7 +127,7 @@ public sealed class CompleteTelegramRegistrationHandlerTests
         CompleteTelegramRegistrationCommandHandler Handler,
         ITelegramRegistrationSessionRepository Sessions,
         ITelegramUserLinkRepository Links,
-        ISender Sender);
+        IRegisterOwnerFromTelegram RegisterOwner);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

@@ -68,6 +68,11 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.ContactEmailConfirmPermitLimit,
                     settings.ContactEmailConfirmWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.BotOwnerRegistration, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.BotOwnerRegistrationPermitLimit,
+                    settings.BotOwnerRegistrationWindowSeconds));
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = async (context, cancellationToken) =>
             {

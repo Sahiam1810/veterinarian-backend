@@ -30,7 +30,9 @@ public sealed class RateLimitOptionsValidator
             options.ContactEmailRequestPermitLimit,
             options.ContactEmailRequestWindowSeconds,
             options.ContactEmailConfirmPermitLimit,
-            options.ContactEmailConfirmWindowSeconds
+            options.ContactEmailConfirmWindowSeconds,
+            options.BotOwnerRegistrationPermitLimit,
+            options.BotOwnerRegistrationWindowSeconds
         };
 
         return values.All(value => value > 0)

@@ -12,7 +12,6 @@ using Api.Common.Security.Permissions;
 using Api.Tests.Support;
 using Application.Clients.UseCases;
 using Application.Permissions.Claims;
-using Application.Permissions.UseCases;
 using Domain.Clients.Entities;
 using Domain.Roles;
 using MediatR;
@@ -110,7 +109,6 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
     private const string Audience = "Veterinaria.Client.ClientLookup.Tests";
     private const string KeyId = "client-lookup-http-test-key";
     private static readonly Guid StaffRoleId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid StaffRoleIdNoPermission = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-bbbbbbbbbbbb");
     private static readonly Guid PersonId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly RsaTestKeys Keys = RsaTestKeys.Create();
 
@@ -153,10 +151,9 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
 
     public HttpClient CreateAuthenticatedClient(bool withClientesView, Guid? roleId = null)
     {
-        var targetRoleId = roleId ?? (withClientesView ? StaffRoleId : StaffRoleIdNoPermission);
         var client = CreateGuestClient();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", CreateToken(targetRoleId, withClientesView));
+            new AuthenticationHeaderValue("Bearer", CreateToken(roleId ?? StaffRoleId, withClientesView));
         return client;
     }
 
@@ -195,16 +192,14 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
 
         sender.Send(Arg.Any<GetClientLookupQuery>(), Arg.Any<CancellationToken>())
             .Returns(clientEntity);
-
-        sender.Send(Arg.Any<GetEffectivePermissionQuery>(), Arg.Any<CancellationToken>())
-            .Returns(call => new EffectivePermission(
-                CanView: call.Arg<GetEffectivePermissionQuery>().RoleId != StaffRoleIdNoPermission,
-                CanCreate: false,
-                CanEdit: false,
-                CanDelete: false));
     }
 
-    private string CreateToken(Guid roleId, bool withClientesView = false)
+    // El claim "permissions" (JwtTokenIssuer.BuildToken) es el que evalúa
+    // PermissionAuthorizationHandler; lo incrustamos igual que el emisor real
+    // en lugar de mockear GetEffectivePermissionQuery, que ningún código de
+    // producción invoca (los permisos viajan en el JWT, no se resuelven por
+    // consulta en vivo).
+    private string CreateToken(Guid roleId, bool withClientesView)
     {
         using var rsa = RSA.Create();
         rsa.ImportFromPem(Encoding.UTF8.GetString(
@@ -218,27 +213,26 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
             }
         };
         var now = DateTime.UtcNow;
-        var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-            new Claim("person_id", PersonId.ToString()),
-            new Claim("role_id", roleId.ToString()),
-            new Claim("role", roleId == SystemRoles.SuperAdminId ? SystemRoles.SuperAdminName : "Administrador")
-        };
-
-        if (withClientesView)
-        {
-            claims.Add(new Claim(PermissionClaimValue.ClaimType, PermissionClaimValue.Create("Clientes", "View")));
-        }
-
         var token = new JwtSecurityToken(
             Issuer,
             Audience,
-            claims,
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+                new Claim("person_id", PersonId.ToString()),
+                new Claim("role_id", roleId.ToString())
+            ],
             now.AddMinutes(-1),
             now.AddMinutes(5),
             new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
+
+        if (withClientesView)
+        {
+            token.Payload[PermissionClaimValue.ClaimType] = new[]
+            {
+                PermissionClaimValue.Create("Clientes", "View")
+            };
+        }
+
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
-

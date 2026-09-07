@@ -124,16 +124,19 @@ public sealed class RegisterOwnerCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_telegram_always_requires_proof_even_when_staff_flag_is_false()
+    public async Task Handle_telegram_uses_session_equivalence_without_contact_proof()
     {
         var sut = CreateSut(requireStaffProof: false);
 
-        var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
-            sut.Handle(
-                StaffCommand() with { Channel = RegisterOwnerChannel.Telegram },
-                CancellationToken.None));
+        var result = await sut.Handle(
+            StaffCommand() with { Channel = RegisterOwnerChannel.Telegram },
+            CancellationToken.None);
 
-        Assert.Equal(OwnerRegistrationErrors.ProofRequired.Code, error.Code);
+        Assert.NotEqual(Guid.Empty, result.UserId);
+        await consumeProof.DidNotReceive().ConsumeAsync(
+            Arg.Any<ConsumeContactVerificationProof>(),
+            Arg.Any<CancellationToken>());
+        await users.Received(1).AddAsync(Arg.Any<UserEntity>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -240,7 +243,7 @@ public sealed class RegisterOwnerCommandHandlerTests
         public bool RequireContactProofs { get; } = requireContactProofs;
 
         public bool RequiresContactProof(RegisterOwnerChannel channel) =>
-            channel is RegisterOwnerChannel.Bot or RegisterOwnerChannel.Telegram
+            channel is RegisterOwnerChannel.Bot
             || RequireContactProofs;
     }
 }

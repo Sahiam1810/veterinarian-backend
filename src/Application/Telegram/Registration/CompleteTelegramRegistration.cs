@@ -1,19 +1,19 @@
+using Application.Common.Exceptions;
 using Application.Common.Results;
-using Application.Owners.Enums;
-using Application.Owners.UseCases;
+using Application.Owners.Abstractions;
 using Application.Telegram.Abstractions;
 using Domain.Telegram.Entities;
 using MediatR;
 
 namespace Application.Telegram.Registration;
 
-// Completado de registro desde Telegram (sin usuario ni contraseña).
-// Registra el dueño a través del núcleo RegisterOwner (User sin hash + Client sin credentials) y vincula la cuenta a Telegram.
+// Completado Telegram sin password: RegisterOwner (User sin hash + Client) + enlace chat.
+// Equivalencia ADR: OTP Gmail de la sesión sustituye ContactVerification ConsumeProof.
 public sealed record CompleteTelegramRegistrationCommand(
     string Token,
     string FullName,
     string IdentificationNumber,
-    string? PhoneNumber = null,
+    string PhoneNumber,
     string? Address = null)
     : IRequest<Result<CompletedTelegramRegistration>>;
 
@@ -22,7 +22,7 @@ public sealed record CompletedTelegramRegistration(Guid PersonId, long TelegramC
 public sealed class CompleteTelegramRegistrationCommandHandler(
     ITelegramUnitOfWork unitOfWork,
     ITelegramRegistrationProtector protector,
-    ISender sender,
+    IRegisterOwnerFromTelegram registerOwner,
     TimeProvider timeProvider)
     : IRequestHandler<CompleteTelegramRegistrationCommand, Result<CompletedTelegramRegistration>>
 {
@@ -58,19 +58,17 @@ public sealed class CompleteTelegramRegistrationCommandHandler(
             }
 
             var email = protector.UnprotectEmail(session.ProtectedEmail);
-            var phone = !string.IsNullOrWhiteSpace(request.PhoneNumber)
-                ? request.PhoneNumber
-                : "3000000000";
 
             try
             {
-                var registerResult = await sender.Send(
-                    new RegisterOwnerCommand(
+                // Canal Telegram: sin proof Etapa 3; la sesión ya verificó el correo.
+                var registerResult = await registerOwner.RegisterAsync(
+                    new RegisterOwnerFromTelegramRequest(
                         request.FullName,
                         email,
                         request.IdentificationNumber,
-                        phone,
-                        RegisterOwnerChannel.Telegram,
+                        request.PhoneNumber,
+                        session.TelegramUserId,
                         request.Address),
                     transactionToken);
 
@@ -86,6 +84,13 @@ public sealed class CompleteTelegramRegistrationCommandHandler(
 
                 completed = Result<CompletedTelegramRegistration>.Success(
                     new CompletedTelegramRegistration(registerResult.UserId, session.TelegramChatId));
+            }
+            catch (ConflictException ex)
+            {
+                // Conserva code estable del núcleo (email/cédula/teléfono).
+                failure = new Error(
+                    string.IsNullOrWhiteSpace(ex.Code) ? "Registration.Failed" : ex.Code,
+                    ex.Message);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
