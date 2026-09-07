@@ -39,6 +39,34 @@ public sealed class TelegramIdentityAccessServiceTests
     }
 
     [Fact]
+    public async Task Stale_link_is_revoked_and_private_access_requests_identification()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(42, "quiero agendar una cita");
+        var staleLink = TelegramUserLink.Create(
+            PersonId,
+            1001,
+            1001,
+            Now.AddDays(-1).UtcDateTime);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(staleLink);
+        fixture.Clients.FindActiveByPersonIdAsync(PersonId, default)
+            .Returns((TelegramClientIdentity?)null);
+
+        var outcome = await fixture.Service.BeginPrivateAccessAsync(update, default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Contains("cédula", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
+        Assert.False(staleLink.IsActive);
+        await fixture.UserLinks.Received(1).UpdateAsync(staleLink, default);
+        await fixture.Sessions.Received(1).AddAsync(
+            Arg.Is<TelegramIdentitySession>(session =>
+                session.Status == TelegramIdentitySessionStatus.AwaitingIdentification &&
+                session.PendingInboundUpdateId == 42),
+            default);
+        await fixture.UnitOfWork.Received(1).SaveChangesAsync(default);
+    }
+
+    [Fact]
     public async Task Known_identification_is_redacted_and_receives_otp()
     {
         var fixture = CreateFixture();

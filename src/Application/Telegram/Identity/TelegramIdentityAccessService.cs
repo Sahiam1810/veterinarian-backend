@@ -84,9 +84,15 @@ public sealed class TelegramIdentityAccessService(
         var identity = await clients.FindActiveByPersonIdAsync(link.PersonId, cancellationToken);
         if (identity is null)
         {
+            link.Revoke(now.UtcDateTime);
+            await unitOfWork.UserLinksRepository.UpdateAsync(link, cancellationToken);
+            await unitOfWork.IdentitySessionsRepository.AddAsync(session, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new TelegramIdentityAccessOutcome(
                 true,
-                "Tu perfil de Huellitas no está disponible. Intenta nuevamente más tarde.");
+                "Tu acceso anterior ya no corresponde a un perfil activo. " +
+                "Para proteger tus datos, escribe tu número de cédula. " +
+                "Puedes usar /cancelar para salir.");
         }
 
         var otp = otpProtector.Create();
