@@ -27,6 +27,9 @@ El path legacy `ClientAccountRegistration` / `ClientAccountRegistrationService` 
 ADR: [`docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`](adr/2026-09-07-etapa-5-client-portal-retirement.md). Smoke kickoff: [`docs/smoke/etapa-5-kickoff-gate.md`](smoke/etapa-5-kickoff-gate.md).
 Decisiones ya escritas: política `RequesterPhoneNumber` ↔ `Clients.PhoneNumber`; inventario ClientOnly → 410/`ClientPortal.Gone`; OTP citas anónimo; seed Cliente sin módulos de escritorio; WhatsApp fuera. **No** implementar los cinco slices en el mismo PR que el kickoff.
 
+### Seed permisos rol Cliente (tarea 5.3)
+ADR: [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — **Opción A**: cero filas de módulos de plataforma en `ROLE_PERMISSIONS` para `77777777-…`. El seed borra residuales al reejecutar. Staff (Admin/Vet/Recep/Aux) intacto. Cliente = chatbot, no web.
+
 ---
 
 ## 1. Arquitectura y patrones establecidos

@@ -21,9 +21,9 @@ Esta configuración inducía a error al sugerir que el cliente cuenta con acceso
 
 Se adopta la **Opción A**. 
 
-1. **Sin filas en `ROLE_PERMISSIONS` para Cliente**: El seed `database/seeds/role_permissions_seed.sql` no insertará ninguna relación en `ROLE_PERMISSIONS` para el rol `Cliente`.
-2. **Autorización basada en Políticas de Dominio y Recursos**: La autorización del `Cliente` se realiza mediante políticas de API (`ClientOnly`), ownership de recursos (`user_id` / `client_id`) y verificación por OTPs, no mediante la matriz dinámica de permisos de módulos de plataforma.
-3. **Claridad conceptual**: Se deja explícito mediante comentarios en los scripts de seed que el rol `Cliente` es de uso exclusivo para chatbot/Telegram y autoservicio.
+1. **Sin filas en `ROLE_PERMISSIONS` para Cliente**: el seed **no inserta** módulos de plataforma para ese rol y, al reejecutar, hace `DELETE FROM ROLE_PERMISSIONS WHERE ROLE_ID = 77777777-…` para retirar filas residuales de semillas anteriores (`ensure_permission` solo hace INSERT en NOT MATCHED).
+2. **Autorización basada en Políticas de Dominio y Recursos**: La autorización del `Cliente` se realiza mediante políticas de API (`ClientOnly` en retiro Etapa 5), ownership de recursos (`user_id` / `client_id`) y verificación por OTPs, no mediante la matriz dinámica de permisos de módulos de plataforma.
+3. **Claridad conceptual**: Se deja explícito mediante comentarios en los scripts de seed que el rol `Cliente` es de uso exclusivo para chatbot/Telegram y autoservicio (no web).
 
 ## Consecuencias
 
