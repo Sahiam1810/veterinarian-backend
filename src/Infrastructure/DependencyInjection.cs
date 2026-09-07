@@ -297,7 +297,9 @@ public static class DependencyInjection
         services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();
         services.AddScoped<IVerificationCodeDispatcher, VerificationCodeDispatcher>();
         services.AddScoped<IAppointmentActionVerificationSessionRepository, AppointmentActionVerificationSessionRepository>();
+        services.AddScoped<IEmailVerificationSessionRepository, Infrastructure.Verification.Repositories.InMemoryEmailVerificationSessionRepository>();
         services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
+        services.AddScoped<IEmailVerificationSettings, ConfiguredEmailVerificationSettings>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddHttpClient(nameof(TwilioSmsVerificationCodeSender));
         services.AddHttpClient(nameof(TwilioWhatsAppVerificationCodeSender));
@@ -316,12 +318,17 @@ public static class DependencyInjection
         services.AddOptions<EmailOptions>()
             .Bind(configuration.GetSection(EmailOptions.SectionName))
             .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<Infrastructure.Email.Configuration.EmailVerificationOptions>, Infrastructure.Email.Configuration.EmailVerificationOptionsValidator>();
+        services.AddOptions<Infrastructure.Email.Configuration.EmailVerificationOptions>()
+            .Bind(configuration.GetSection(Infrastructure.Email.Configuration.EmailVerificationOptions.SectionName))
+            .ValidateOnStart();
         services.AddSingleton<IValidateOptions<TwilioOptions>, TwilioOptionsValidator>();
         services.AddOptions<TwilioOptions>()
             .Bind(configuration.GetSection(TwilioOptions.SectionName))
             .ValidateOnStart();
         services.AddOptions<AppointmentVerificationOptions>()
             .Bind(configuration.GetSection(AppointmentVerificationOptions.SectionName));
+
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
