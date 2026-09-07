@@ -92,13 +92,6 @@ public sealed class TelegramClientIdentityGateway(
             return null;
         }
 
-        var role = await roles.GetByIdAsync(user.RoleId, cancellationToken);
-        if (role is null ||
-            !string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal))
-        {
-            return null;
-        }
-
         var account = await accounts.GetByUserIdAsync(personId, cancellationToken);
         if (account is null ||
             !string.Equals(account.Status, ActiveStatus, StringComparison.Ordinal))

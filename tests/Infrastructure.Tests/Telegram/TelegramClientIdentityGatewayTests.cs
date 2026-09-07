@@ -38,6 +38,28 @@ public sealed class TelegramClientIdentityGatewayTests
     }
 
     [Fact]
+    public async Task Active_client_with_administrative_role_is_resolved_by_identification()
+    {
+        var clients = Substitute.For<IClientRepository>();
+        var users = Substitute.For<IUsersRepository>();
+        var accounts = Substitute.For<IUserAccountsRepository>();
+        var roles = Substitute.For<IRolesRepository>();
+        var role = new RoleEntity("SuperAdmin", null);
+        var user = new UserEntity("Ana Pérez", "ana@example.test", null, role.Id);
+        var account = new UserAccountEntity(user.Id, "admin_ana", "ana@example.test", "Activo");
+        var client = new ClientEntity(user.Id, "123456789", null);
+        clients.GetByIdentificationNumberAsync("123456789", default).Returns(client);
+        users.GetByIdAsync(user.Id, default).Returns(user);
+        accounts.GetByUserIdAsync(user.Id, default).Returns(account);
+        roles.GetByIdAsync(role.Id, default).Returns(role);
+        var gateway = new TelegramClientIdentityGateway(clients, users, accounts, roles);
+
+        var result = await gateway.FindActiveByIdentificationAsync("123456789", default);
+
+        Assert.Equal(new TelegramClientIdentity(user.Id, account.Id, "ana@example.test"), result);
+    }
+
+    [Fact]
     public async Task Registration_stages_passwordless_client_records()
     {
         var clients = Substitute.For<IClientRepository>();
