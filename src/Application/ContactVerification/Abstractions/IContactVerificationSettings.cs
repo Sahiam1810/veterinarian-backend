@@ -1,6 +1,6 @@
 namespace Application.ContactVerification.Abstractions;
 
-// TTL, intentos y resend de OTP/proof de contacto (stub de configuración).
+// TTL, intentos, resend y proof de contacto (ContactVerificationOptions).
 public interface IContactVerificationSettings
 {
     TimeSpan OtpLifetime { get; }

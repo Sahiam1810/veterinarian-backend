@@ -1,23 +1,24 @@
 using System.Net.Mail;
 using Application.Common.Abstractions;
-using Application.Common.Exceptions;
 using Application.ContactVerification.Abstractions;
 using Application.ContactVerification.Errors;
 using Application.Verification.Abstractions;
 using Domain.ContactVerification.Entities;
 using Domain.ContactVerification.Enums;
 using Domain.Verification.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Application.ContactVerification.UseCases;
 
-// 3.1: reemplaza ContactEmailVerificationRequestStub con el envío real (hash, no OTP en claro).
+// 3.1: solicitud OTP de contacto por Email (hash + SMTP vía dispatcher; nunca OTP en response/logs).
 public sealed class ContactEmailVerificationRequestHandler(
     IUnitOfWork unitOfWork,
     IContactVerificationSessionRepository sessions,
     IOtpProtector otpProtector,
     IVerificationCodeDispatcher codeDispatcher,
     IContactVerificationSettings settings,
-    TimeProvider timeProvider) : IRequestContactEmailVerification
+    TimeProvider timeProvider,
+    ILogger<ContactEmailVerificationRequestHandler> logger) : IRequestContactEmailVerification
 {
     public async Task<RequestContactEmailVerificationResult> RequestAsync(
         RequestContactEmailVerification request,
@@ -25,17 +26,17 @@ public sealed class ContactEmailVerificationRequestHandler(
     {
         if (!MailAddress.TryCreate(request.Email, out var mailAddress))
         {
-            throw new BadRequestException("El correo electrónico no tiene un formato válido.");
+            throw new ContactVerificationException(ContactVerificationErrors.EmailInvalid);
         }
 
         if (request.Purpose == ContactVerificationPurpose.Claim && request.SubjectUserId is null)
         {
-            throw new BadRequestException("Claim exige el usuario sujeto.");
+            throw new ContactVerificationException(ContactVerificationErrors.PurposeInvalid);
         }
 
         if (request.Purpose == ContactVerificationPurpose.Register && request.SubjectUserId is not null)
         {
-            throw new BadRequestException("Register no admite usuario sujeto todavía.");
+            throw new ContactVerificationException(ContactVerificationErrors.PurposeInvalid);
         }
 
         var normalizedEmail = mailAddress.Address.Trim().ToLowerInvariant();
@@ -53,9 +54,7 @@ public sealed class ContactEmailVerificationRequestHandler(
                 .Add(settings.OtpResendInterval);
             if (active.ExpiresAt > now.UtcDateTime && now.UtcDateTime < resendAllowedAt)
             {
-                throw new ConflictException(
-                    "El código ya fue enviado. Espera un momento antes de solicitar otro.",
-                    ContactVerificationErrors.ResendTooSoon.Code);
+                throw new ContactVerificationException(ContactVerificationErrors.ResendTooSoon);
             }
 
             active.Cancel(now.UtcDateTime);
@@ -76,8 +75,11 @@ public sealed class ContactEmailVerificationRequestHandler(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            throw new ConflictException(
-                "No fue posible enviar el código en este momento. Intenta de nuevo.");
+            logger.LogWarning(
+                exception,
+                "Fallo al enviar OTP de contacto. Purpose={Purpose}",
+                request.Purpose);
+            throw new ContactVerificationException(ContactVerificationErrors.DeliveryFailed);
         }
 
         var session = ContactVerificationSession.Start(
@@ -91,6 +93,13 @@ public sealed class ContactEmailVerificationRequestHandler(
 
         await sessions.AddAsync(session, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Metadatos seguros: sessionId + purpose; nunca el OTP ni el correo en claro.
+        logger.LogInformation(
+            "OTP de contacto solicitado. SessionId={SessionId} Purpose={Purpose} Channel={Channel}",
+            session.Id,
+            session.Purpose,
+            session.Channel);
 
         return new RequestContactEmailVerificationResult(
             session.Id,

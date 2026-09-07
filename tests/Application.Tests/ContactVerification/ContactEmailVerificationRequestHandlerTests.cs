@@ -1,11 +1,12 @@
 using Application.Common.Abstractions;
-using Application.Common.Exceptions;
 using Application.ContactVerification.Abstractions;
+using Application.ContactVerification.Errors;
 using Application.ContactVerification.UseCases;
 using Application.Verification.Abstractions;
 using Domain.ContactVerification.Entities;
 using Domain.ContactVerification.Enums;
 using Domain.Verification.Enums;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
@@ -28,6 +29,8 @@ public sealed class ContactEmailVerificationRequestHandlerTests
     private readonly IOtpProtector otpProtector = Substitute.For<IOtpProtector>();
     private readonly IVerificationCodeDispatcher codeDispatcher = Substitute.For<IVerificationCodeDispatcher>();
     private readonly IContactVerificationSettings settings = Substitute.For<IContactVerificationSettings>();
+    private readonly ILogger<ContactEmailVerificationRequestHandler> logger =
+        Substitute.For<ILogger<ContactEmailVerificationRequestHandler>>();
 
     private readonly ContactEmailVerificationRequestHandler sut;
 
@@ -41,7 +44,13 @@ public sealed class ContactEmailVerificationRequestHandlerTests
         otpProtector.HashEmail(Arg.Any<string>()).Returns(DestinationHash);
 
         sut = new ContactEmailVerificationRequestHandler(
-            unitOfWork, sessions, otpProtector, codeDispatcher, settings, new FixedTimeProvider(Now));
+            unitOfWork,
+            sessions,
+            otpProtector,
+            codeDispatcher,
+            settings,
+            new FixedTimeProvider(Now),
+            logger);
     }
 
     [Fact]
@@ -73,12 +82,14 @@ public sealed class ContactEmailVerificationRequestHandlerTests
     }
 
     [Fact]
-    public async Task RequestAsync_throws_BadRequestException_when_the_email_is_invalid()
+    public async Task RequestAsync_throws_EmailInvalid_when_the_email_is_invalid()
     {
         var request = new RequestContactEmailVerification("not-an-email", ContactVerificationPurpose.Register);
 
-        await Assert.ThrowsAsync<BadRequestException>(() => sut.RequestAsync(request, CancellationToken.None));
+        var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
+            sut.RequestAsync(request, CancellationToken.None));
 
+        Assert.Equal(ContactVerificationErrors.EmailInvalid.Code, error.Code);
         otpProtector.DidNotReceive().Create();
         await sessions.DidNotReceive().AddAsync(Arg.Any<ContactVerificationSession>(), Arg.Any<CancellationToken>());
         await codeDispatcher.DidNotReceive().SendAsync(
@@ -114,15 +125,15 @@ public sealed class ContactEmailVerificationRequestHandlerTests
 
         var result = await sut.RequestAsync(request, CancellationToken.None);
 
-        // RequestContactEmailVerificationResult solo expone SessionId/ExpiresAt/Channel: no hay forma de filtrar el OTP.
         Assert.Equal(3, typeof(RequestContactEmailVerificationResult).GetProperties().Length);
+        Assert.DoesNotContain(GeneratedCode, result.SessionId.ToString(), StringComparison.Ordinal);
         await sessions.Received(1).AddAsync(
             Arg.Is<ContactVerificationSession>(s => s.OtpHash == GeneratedOtpHash && s.OtpHash != GeneratedCode),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task RequestAsync_throws_conflict_when_an_active_session_was_just_sent()
+    public async Task RequestAsync_throws_ResendTooSoon_when_an_active_session_was_just_sent()
     {
         var activeSession = ContactVerificationSession.Start(
             ContactVerificationPurpose.Register,
@@ -138,7 +149,10 @@ public sealed class ContactEmailVerificationRequestHandlerTests
 
         var request = new RequestContactEmailVerification(Email, ContactVerificationPurpose.Register);
 
-        await Assert.ThrowsAsync<ConflictException>(() => sut.RequestAsync(request, CancellationToken.None));
+        var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
+            sut.RequestAsync(request, CancellationToken.None));
+
+        Assert.Equal(ContactVerificationErrors.ResendTooSoon.Code, error.Code);
         await sessions.DidNotReceive().AddAsync(Arg.Any<ContactVerificationSession>(), Arg.Any<CancellationToken>());
         await codeDispatcher.DidNotReceive().SendAsync(
             Arg.Any<VerificationDeliveryChannel>(), Arg.Any<string>(), Arg.Any<string>(),
@@ -170,7 +184,7 @@ public sealed class ContactEmailVerificationRequestHandlerTests
     }
 
     [Fact]
-    public async Task RequestAsync_throws_conflict_when_the_dispatcher_fails_to_send_the_code()
+    public async Task RequestAsync_throws_DeliveryFailed_when_the_dispatcher_fails_to_send_the_code()
     {
         sessions.GetActiveByPurposeAndDestinationAsync(
                 ContactVerificationPurpose.Register, DestinationHash, Arg.Any<CancellationToken>())
@@ -182,17 +196,23 @@ public sealed class ContactEmailVerificationRequestHandlerTests
 
         var request = new RequestContactEmailVerification(Email, ContactVerificationPurpose.Register);
 
-        await Assert.ThrowsAsync<ConflictException>(() => sut.RequestAsync(request, CancellationToken.None));
+        var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
+            sut.RequestAsync(request, CancellationToken.None));
+
+        Assert.Equal(ContactVerificationErrors.DeliveryFailed.Code, error.Code);
         await sessions.DidNotReceive().AddAsync(Arg.Any<ContactVerificationSession>(), Arg.Any<CancellationToken>());
         await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task RequestAsync_throws_when_claim_purpose_is_missing_the_subject_user()
+    public async Task RequestAsync_throws_PurposeInvalid_when_claim_purpose_is_missing_the_subject_user()
     {
         var request = new RequestContactEmailVerification(Email, ContactVerificationPurpose.Claim);
 
-        await Assert.ThrowsAsync<BadRequestException>(() => sut.RequestAsync(request, CancellationToken.None));
+        var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
+            sut.RequestAsync(request, CancellationToken.None));
+
+        Assert.Equal(ContactVerificationErrors.PurposeInvalid.Code, error.Code);
         await sessions.DidNotReceive().AddAsync(Arg.Any<ContactVerificationSession>(), Arg.Any<CancellationToken>());
         await codeDispatcher.DidNotReceive().SendAsync(
             Arg.Any<VerificationDeliveryChannel>(), Arg.Any<string>(), Arg.Any<string>(),

@@ -20,6 +20,8 @@ public sealed class ContactVerificationErrorsTests
             ContactVerificationErrors.ProofExpired.Code,
             ContactVerificationErrors.ChannelNotSupported.Code,
             ContactVerificationErrors.PurposeInvalid.Code,
+            ContactVerificationErrors.EmailInvalid.Code,
+            ContactVerificationErrors.DeliveryFailed.Code,
             ContactVerificationErrors.NotImplemented.Code
         };
 

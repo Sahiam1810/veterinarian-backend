@@ -47,6 +47,16 @@ public static class ContactVerificationErrors
         "ContactVerification.PurposeInvalid",
         GenericDescription);
 
+    // Correo con formato inválido en Request Email (3.1).
+    public static readonly Error EmailInvalid = new(
+        "ContactVerification.EmailInvalid",
+        GenericDescription);
+
+    // Fallo del dispatcher SMTP (sin filtrar detalles del proveedor).
+    public static readonly Error DeliveryFailed = new(
+        "ContactVerification.DeliveryFailed",
+        GenericDescription);
+
     public static readonly Error NotImplemented = new(
         "ContactVerification.NotImplemented",
         GenericDescription);
