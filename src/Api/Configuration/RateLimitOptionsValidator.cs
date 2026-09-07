@@ -30,11 +30,7 @@ public sealed class RateLimitOptionsValidator
             options.ContactEmailRequestPermitLimit,
             options.ContactEmailRequestWindowSeconds,
             options.ContactEmailConfirmPermitLimit,
-            options.ContactEmailConfirmWindowSeconds,
-            options.EmailOtpRequestPermitLimit,
-            options.EmailOtpRequestWindowSeconds,
-            options.EmailOtpConfirmPermitLimit,
-            options.EmailOtpConfirmWindowSeconds
+            options.ContactEmailConfirmWindowSeconds
         };
 
         return values.All(value => value > 0)

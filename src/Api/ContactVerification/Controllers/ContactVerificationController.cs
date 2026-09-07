@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Api.ContactVerification.Controllers;
 
-// Kickoff Etapa 3: rutas email. 3.1–3.2 implementan los puertos; RegisterOwner queda fuera.
+// Etapa 3: Request Email (3.1) + Confirm proof (3.2). RegisterOwner fuera.
 [ApiController]
 [Route("api/contact-verification")]
 public sealed class ContactVerificationController(
@@ -21,11 +21,11 @@ public sealed class ContactVerificationController(
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.ContactEmailRequest)]
     [EndpointSummary("Solicita OTP de contacto por correo")]
-    [EndpointDescription("Canal v1 solo Email. Purpose Register o Claim. No envía WhatsApp/SMS ni registra dueño. Kickoff: 501 hasta 3.1.")]
+    [EndpointDescription("Canal v1 solo Email. Purpose Register o Claim. Devuelve sessionId/expiresAt/channel sin OTP.")]
     [ProducesResponseType(typeof(RequestContactEmailVerificationResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public async Task<ActionResult<RequestContactEmailVerificationResponse>> RequestEmail(
         [FromBody] RequestContactEmailVerificationRequest request,
         CancellationToken cancellationToken)
@@ -39,19 +39,22 @@ public sealed class ContactVerificationController(
             new RequestContactEmailVerification(request.Email, purpose, request.SubjectUserId),
             cancellationToken);
 
-        return Accepted(new RequestContactEmailVerificationResponse(result.SessionId));
+        return Accepted(new RequestContactEmailVerificationResponse(
+            result.SessionId,
+            result.ExpiresAt,
+            result.Channel.ToString()));
     }
 
     [HttpPost("email/confirm")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.ContactEmailConfirm)]
     [EndpointSummary("Confirma OTP de contacto y emite proof de un solo uso")]
-    [EndpointDescription("No consume el proof ni registra dueño. Kickoff: 501 hasta 3.2.")]
+    [EndpointDescription("Emite proof single-use; no lo consume ni registra dueño. Codes tipados vía ContactVerificationException.")]
     [ProducesResponseType(typeof(ConfirmContactEmailVerificationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public async Task<ActionResult<ConfirmContactEmailVerificationResponse>> ConfirmEmail(
         [FromBody] ConfirmContactEmailVerificationRequest request,
         CancellationToken cancellationToken)

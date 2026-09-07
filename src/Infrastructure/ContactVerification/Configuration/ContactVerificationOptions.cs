@@ -1,6 +1,6 @@
 namespace Infrastructure.ContactVerification.Configuration;
 
-// Stub de opciones: TTL, intentos y resend. 3.1–3.2 cablean el envío real.
+// Options propias de OTP de contacto (Etapa 3). No reutilizar AppointmentVerification.
 public sealed class ContactVerificationOptions
 {
     public const string SectionName = "ContactVerification";

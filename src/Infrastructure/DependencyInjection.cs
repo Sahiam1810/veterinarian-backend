@@ -157,7 +157,7 @@ using Infrastructure.Messaging;
 using Infrastructure.Messaging.Configuration;
 using Application.Verification.Abstractions;
 using Application.ContactVerification.Abstractions;
-using Application.Security.EmailOtp;
+using Application.ContactVerification.UseCases;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
@@ -165,7 +165,6 @@ using Infrastructure.Verification.Security;
 using Infrastructure.ContactVerification;
 using Infrastructure.ContactVerification.Configuration;
 using Infrastructure.ContactVerification.Repositories;
-using Infrastructure.ContactVerification.Stubs;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -312,9 +311,9 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
         services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
         services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
-        services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestStub>();
-        services.AddScoped<IConfirmContactEmailVerification, ContactEmailVerificationConfirmStub>();
-        services.AddScoped<IConsumeContactVerificationProof, ContactVerificationProofConsumerStub>();
+        services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestHandler>();
+        services.AddScoped<IConfirmContactEmailVerification, ConfirmContactEmailVerificationHandler>();
+        services.AddScoped<IConsumeContactVerificationProof, ConsumeContactVerificationProofHandler>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddHttpClient(nameof(TwilioSmsVerificationCodeSender));
         services.AddHttpClient(nameof(TwilioWhatsAppVerificationCodeSender));
@@ -422,7 +421,6 @@ public static class DependencyInjection
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IClientAccountRegistrationService, ClientAccountRegistrationService>();
-        services.AddScoped<IEmailOtpAuthenticationService, EmailOtpAuthenticationStub>();
 
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()

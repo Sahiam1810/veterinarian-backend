@@ -26,4 +26,11 @@ public interface IContactVerificationSessionRepository
     Task UpdateAsync(
         ContactVerificationSession session,
         CancellationToken cancellationToken);
+
+    // Consume atómico: solo una carrera gana (Status ProofIssued + ProofHash coincidente).
+    Task<bool> TryConsumeProofAsync(
+        Guid sessionId,
+        string proofHash,
+        DateTime consumedAt,
+        CancellationToken cancellationToken);
 }
