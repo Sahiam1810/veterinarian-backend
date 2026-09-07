@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentValidation;
 using Application.Agent.Errors;
 using Application.Common.Exceptions;
+using Application.ContactVerification.Errors;
 using Application.Telegram.Errors;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -33,12 +34,48 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             return true;
         }
 
+        if (exception is ContactVerificationNotImplementedException notImplemented)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status501NotImplemented;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status501NotImplemented}",
+                    title = "Not Implemented",
+                    status = StatusCodes.Status501NotImplemented,
+                    code = notImplemented.Code
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is ContactVerificationException contactVerification)
+        {
+            var contactStatus = MapContactVerificationStatus(contactVerification.Code);
+            httpContext.Response.StatusCode = contactStatus;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{contactStatus}",
+                    title = "Contact verification failed",
+                    status = contactStatus,
+                    code = contactVerification.Code
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
         var (status, message, agentError) = Map(exception);
         var violations = exception is ValidationException validationException
             ? validationException.Errors
                 .Select(failure => new FieldViolationResponse(
                     ApiErrorResponseFactory.ToJsonFieldName(failure.PropertyName),
-                    failure.ErrorMessage))
+                    failure.ErrorMessage,
+                    string.IsNullOrWhiteSpace(failure.ErrorCode) ? null : failure.ErrorCode))
                 .ToArray()
             : [];
         var typeContract = httpContext.Request.Path.StartsWithSegments("/TypeContract", StringComparison.OrdinalIgnoreCase);
@@ -121,5 +158,17 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, conflict.Code),
             DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation", null),
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error", null)
+        };
+
+    private static int MapContactVerificationStatus(string code) =>
+        code switch
+        {
+            "ContactVerification.SessionNotFound" => StatusCodes.Status404NotFound,
+            "ContactVerification.Blocked" => StatusCodes.Status409Conflict,
+            "ContactVerification.Expired" => StatusCodes.Status409Conflict,
+            "ContactVerification.ResendTooSoon" => StatusCodes.Status409Conflict,
+            "ContactVerification.ProofExpired" => StatusCodes.Status409Conflict,
+            "ContactVerification.ProofAlreadyConsumed" => StatusCodes.Status409Conflict,
+            _ => StatusCodes.Status400BadRequest
         };
 }

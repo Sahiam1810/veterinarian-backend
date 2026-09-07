@@ -13,10 +13,10 @@ public record CreateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null,
+    // Obligatoriedad y formato los resuelve FluentValidation (codes Clients.Phone*).
+    string? PhoneNumber,
 
-    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
-    string? PhoneNumber = null
+    DateTime? RegistrationDate = null
 );
 
 public record UpdateClientDto(
@@ -30,10 +30,10 @@ public record UpdateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null,
+    // Update no deja el teléfono vacío: misma regla FluentValidation que Create.
+    string? PhoneNumber,
 
-    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
-    string? PhoneNumber = null
+    DateTime? RegistrationDate = null
 );
 
 public record ClientResponseDto(
@@ -52,6 +52,15 @@ public record ClientResponseDto(
 // tener JWT -- no requiere devolver PII de contacto, y cualquiera que
 // conozca un número de identificación válido puede llamarlo.
 public record ClientIdentificationLookupResponseDto(
+    Guid Id,
+    Guid UserId,
+    string IdentificationNumber,
+    DateTime RegistrationDate
+);
+
+// Mismo contrato acotado que by-identification (sin Address ni PhoneNumber).
+// El caller ya conoce el teléfono; no se reexpone PII de contacto.
+public record ClientPhoneLookupResponseDto(
     Guid Id,
     Guid UserId,
     string IdentificationNumber,

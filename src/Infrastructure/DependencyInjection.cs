@@ -156,10 +156,16 @@ using Infrastructure.Email.Configuration;
 using Infrastructure.Messaging;
 using Infrastructure.Messaging.Configuration;
 using Application.Verification.Abstractions;
+using Application.ContactVerification.Abstractions;
+using Application.ContactVerification.UseCases;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
 using Infrastructure.Verification.Security;
+using Infrastructure.ContactVerification;
+using Infrastructure.ContactVerification.Configuration;
+using Infrastructure.ContactVerification.Repositories;
+using Infrastructure.ContactVerification.Stubs;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -274,6 +280,12 @@ public static class DependencyInjection
             provider.GetRequiredService<TelegramRegistrationProtector>());
         services.AddSingleton<IOtpProtector>(provider =>
         {
+            var contactOptions = provider.GetRequiredService<IOptions<ContactVerificationOptions>>().Value;
+            if (!string.IsNullOrWhiteSpace(contactOptions.OtpPepperBase64))
+            {
+                return new OtpProtector(contactOptions.OtpPepperBase64);
+            }
+
             var appointmentOptions = provider.GetRequiredService<IOptions<AppointmentVerificationOptions>>().Value;
             if (!string.IsNullOrWhiteSpace(appointmentOptions.OtpPepperBase64))
             {
@@ -286,7 +298,7 @@ public static class DependencyInjection
                 return new OtpProtector(telegramOptions.OtpPepperBase64);
             }
 
-            // Pepper de desarrollo cuando Telegram y AppointmentVerification están apagados.
+            // Pepper de desarrollo cuando los OTP de contacto/cita/Telegram están apagados.
             return new OtpProtector(Convert.ToBase64String(new byte[32]));
         });
         services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
@@ -297,9 +309,12 @@ public static class DependencyInjection
         services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();
         services.AddScoped<IVerificationCodeDispatcher, VerificationCodeDispatcher>();
         services.AddScoped<IAppointmentActionVerificationSessionRepository, AppointmentActionVerificationSessionRepository>();
-        services.AddScoped<IEmailVerificationSessionRepository, Infrastructure.Verification.Repositories.InMemoryEmailVerificationSessionRepository>();
         services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
-        services.AddScoped<IEmailVerificationSettings, ConfiguredEmailVerificationSettings>();
+        services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
+        services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
+        services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestStub>();
+        services.AddScoped<IConfirmContactEmailVerification, ConfirmContactEmailVerificationHandler>();
+        services.AddScoped<IConsumeContactVerificationProof, ConsumeContactVerificationProofHandler>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddHttpClient(nameof(TwilioSmsVerificationCodeSender));
         services.AddHttpClient(nameof(TwilioWhatsAppVerificationCodeSender));
@@ -318,17 +333,16 @@ public static class DependencyInjection
         services.AddOptions<EmailOptions>()
             .Bind(configuration.GetSection(EmailOptions.SectionName))
             .ValidateOnStart();
-        services.AddSingleton<IValidateOptions<Infrastructure.Email.Configuration.EmailVerificationOptions>, Infrastructure.Email.Configuration.EmailVerificationOptionsValidator>();
-        services.AddOptions<Infrastructure.Email.Configuration.EmailVerificationOptions>()
-            .Bind(configuration.GetSection(Infrastructure.Email.Configuration.EmailVerificationOptions.SectionName))
-            .ValidateOnStart();
         services.AddSingleton<IValidateOptions<TwilioOptions>, TwilioOptionsValidator>();
         services.AddOptions<TwilioOptions>()
             .Bind(configuration.GetSection(TwilioOptions.SectionName))
             .ValidateOnStart();
         services.AddOptions<AppointmentVerificationOptions>()
             .Bind(configuration.GetSection(AppointmentVerificationOptions.SectionName));
-
+        services.AddSingleton<IValidateOptions<ContactVerificationOptions>, ContactVerificationOptionsValidator>();
+        services.AddOptions<ContactVerificationOptions>()
+            .Bind(configuration.GetSection(ContactVerificationOptions.SectionName))
+            .ValidateOnStart();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;

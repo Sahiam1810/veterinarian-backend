@@ -21,10 +21,16 @@ public sealed class RateLimitOptionsValidator
             options.TelegramWebhookWindowSeconds,
             options.ClientIdentificationLookupPermitLimit,
             options.ClientIdentificationLookupWindowSeconds,
+            options.ClientPhoneLookupPermitLimit,
+            options.ClientPhoneLookupWindowSeconds,
             options.AppointmentOtpRequestPermitLimit,
             options.AppointmentOtpRequestWindowSeconds,
             options.AppointmentOtpConfirmPermitLimit,
-            options.AppointmentOtpConfirmWindowSeconds
+            options.AppointmentOtpConfirmWindowSeconds,
+            options.ContactEmailRequestPermitLimit,
+            options.ContactEmailRequestWindowSeconds,
+            options.ContactEmailConfirmPermitLimit,
+            options.ContactEmailConfirmWindowSeconds
         };
 
         return values.All(value => value > 0)

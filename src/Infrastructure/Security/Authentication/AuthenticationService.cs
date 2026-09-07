@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Results;
+using Application.Permissions.UseCases;
 using Application.Security.Abstractions;
 using Application.Security.Errors;
 using Application.Security.Models;
@@ -9,6 +10,8 @@ using Application.UserTokens.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
+using Domain.Roles;
+using MediatR;
 using Microsoft.Extensions.Options;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
@@ -21,6 +24,7 @@ public sealed class AuthenticationService(
     IUserTokensRepository userTokenRepository,
     IUsersRepository usersRepository,
     IUnitOfWork unitOfWork,
+    ISender sender,
     JwtTokenIssuer jwtTokenIssuer,
     RefreshTokenProtector refreshTokenProtector,
     IPasswordHasher passwordHasher,
@@ -221,8 +225,13 @@ public sealed class AuthenticationService(
             userToken,
             cancellationToken);
 
-        var accessToken = jwtTokenIssuer.Issue(
-            identity);
+        var permissions = SystemRoles.IsSuperAdmin(identity.RoleId)
+            ? Array.Empty<string>()
+            : await sender.Send(
+                new GetUserPermissionClaimsQuery(identity.RoleId, identity.PersonId),
+                cancellationToken);
+
+        var accessToken = jwtTokenIssuer.Issue(identity, permissions);
 
         return Result<AuthenticationTokens>.Success(
             new AuthenticationTokens(

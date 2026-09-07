@@ -989,6 +989,11 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IdentificationNumber")
                         .IsUnique();
 
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER")
+                        .HasFilter("\"PHONE_NUMBER\" IS NOT NULL");
+
                     b.HasIndex("UserId")
                         .IsUnique();
 
@@ -1033,6 +1038,81 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CLIENTS_PETS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.ContactVerification.Entities.ContactVerificationSession", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ATTEMPTS");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("CHANNEL");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("DESTINATION_HASH");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("EXPIRES_AT");
+
+                    b.Property<string>("OtpHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("OTP_HASH");
+
+                    b.Property<DateTime?>("ProofExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("PROOF_EXPIRES_AT");
+
+                    b.Property<string>("ProofHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("PROOF_HASH");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("PURPOSE");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<string>("SubjectUserId")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("SUBJECT_USER_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProofHash")
+                        .HasDatabaseName("IX_CONTACT_VERIF_PROOF");
+
+                    b.HasIndex("Purpose", "DestinationHash", "Status")
+                        .HasDatabaseName("IX_CONTACT_VERIF_ACTIVE");
+
+                    b.ToTable("CONTACT_VERIFICATION_SESSIONS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.ConversationStatuses.Entities.ConversationStatusEntity", b =>

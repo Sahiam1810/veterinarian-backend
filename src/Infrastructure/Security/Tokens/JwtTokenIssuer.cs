@@ -1,4 +1,6 @@
+using Application.Permissions.Claims;
 using Application.Security.Models;
+using Domain.Roles;
 using Infrastructure.Security.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -15,9 +17,20 @@ public sealed class JwtTokenIssuer(
     private readonly JwtOptions jwtOptions = options.Value;
 
     public IssuedAccessToken Issue(AuthenticatedIdentity identity) =>
-        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), []);
 
-    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime)
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        IReadOnlyCollection<string> permissions) =>
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), permissions);
+
+    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime) =>
+        Issue(identity, lifetime, []);
+
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
     {
         if (lifetime <= TimeSpan.Zero)
         {
@@ -51,10 +64,21 @@ public sealed class JwtTokenIssuer(
                 identity.Email)
         };
 
-        return BuildToken(claims, lifetime);
+        string[] normalizedPermissions = SystemRoles.IsSuperAdmin(identity.RoleId)
+            ? []
+            : permissions
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+
+        return BuildToken(claims, lifetime, normalizedPermissions);
     }
 
-    private IssuedAccessToken BuildToken(List<Claim> claims, TimeSpan lifetime)
+    private IssuedAccessToken BuildToken(
+        List<Claim> claims,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
     {
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.Add(lifetime);
@@ -77,6 +101,11 @@ public sealed class JwtTokenIssuer(
                 new SigningCredentials(
                     keyMaterial.SigningKey,
                     SecurityAlgorithms.RsaSha256));
+
+        if (permissions.Count > 0)
+        {
+            token.Payload[PermissionClaimValue.ClaimType] = permissions.ToArray();
+        }
 
         return new IssuedAccessToken(
             new JwtSecurityTokenHandler().WriteToken(token),

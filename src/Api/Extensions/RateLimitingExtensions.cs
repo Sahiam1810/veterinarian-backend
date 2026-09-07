@@ -43,6 +43,11 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.ClientIdentificationLookupPermitLimit,
                     settings.ClientIdentificationLookupWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.ClientPhoneLookup, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.ClientPhoneLookupPermitLimit,
+                    settings.ClientPhoneLookupWindowSeconds));
             options.AddPolicy(RateLimitPolicies.AppointmentOtpRequest, context =>
                 CreatePartition(
                     GetPartitionKey(context),
@@ -53,6 +58,16 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.AppointmentOtpConfirmPermitLimit,
                     settings.AppointmentOtpConfirmWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.ContactEmailRequest, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.ContactEmailRequestPermitLimit,
+                    settings.ContactEmailRequestWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.ContactEmailConfirm, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.ContactEmailConfirmPermitLimit,
+                    settings.ContactEmailConfirmWindowSeconds));
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = async (context, cancellationToken) =>
             {
