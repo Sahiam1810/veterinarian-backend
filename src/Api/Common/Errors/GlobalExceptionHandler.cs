@@ -69,6 +69,26 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             return true;
         }
 
+        // Solo POST /api/owners/bot (path exacto): conflictos tipados → problem+json con `code`.
+        // Prefijos futuros /api/owners/bot/... y otros métodos conservan ApiErrorResponse legacy.
+        if (exception is ConflictException { Code: { Length: > 0 } ownerConflictCode }
+            && IsExactBotOwnerRegistrationEndpoint(httpContext))
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status409Conflict}",
+                    title = "Owner registration conflict",
+                    status = StatusCodes.Status409Conflict,
+                    code = ownerConflictCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
         var (status, message, agentError) = Map(exception);
         var violations = exception is ValidationException validationException
             ? validationException.Errors
@@ -172,4 +192,12 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             "ContactVerification.ProofAlreadyConsumed" => StatusCodes.Status409Conflict,
             _ => StatusCodes.Status400BadRequest
         };
+
+    // Contrato especial bot: únicamente POST con path exacto /api/owners/bot.
+    private static bool IsExactBotOwnerRegistrationEndpoint(HttpContext httpContext) =>
+        HttpMethods.IsPost(httpContext.Request.Method)
+        && string.Equals(
+            httpContext.Request.Path.Value,
+            "/api/owners/bot",
+            StringComparison.OrdinalIgnoreCase);
 }
