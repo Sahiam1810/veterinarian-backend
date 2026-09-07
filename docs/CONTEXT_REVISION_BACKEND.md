@@ -33,6 +33,9 @@ Eliminados: `/api/clients/me`, `/api/pets/mine*`, `/api/appointments/mine` (GET/
 ### Seed permisos rol Cliente (tarea 5.3)
 ADR: [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — **Opción A**: cero filas de módulos de plataforma en `ROLE_PERMISSIONS` para `77777777-…`. El seed borra residuales al reejecutar. Staff (Admin/Vet/Recep/Aux) intacto. Cliente = chatbot, no web.
 
+### Coherencia teléfono cita ↔ dueño (tarea 5.1)
+Regla ADR: si el dueño tiene `Clients.PhoneNumber`, Create/Update staff (y CreateMy) **copian** ese valor normalizado a `Appointment.RequesterPhoneNumber` e **ignoran** un requester divergente del body. Sin teléfono en perfil, se usa el request (solo dígitos, VO 7–20). Política: `AppointmentRequesterPhonePolicy`. OTP `request-code` sigue matcheando contra requester de la cita. Tests: `AppointmentRequesterPhonePolicyTests` + handlers Create/Update/CreateMy. No toca ContactVerification ni Telegram registration.
+
 ---
 
 ## 1. Arquitectura y patrones establecidos

@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Application.Tests.Appointments;
 
-// Politica Etapa 5.1: perfil del dueño gana; sin perfil usa request.
+// Política Etapa 5.1: perfil del dueño gana; sin perfil usa request normalizado.
 public sealed class AppointmentRequesterPhonePolicyTests
 {
     [Fact]
@@ -112,7 +112,74 @@ public sealed class AppointmentRequesterPhonePolicyTests
             requirePhone: true,
             CancellationToken.None);
 
-        Assert.Equal("+57 301 555 1234", phone);
+        Assert.Equal("573015551234", phone);
+    }
+
+    [Fact]
+    public async Task Update_realigns_requester_phone_to_profile_when_stale()
+    {
+        var unitOfWork = Substitute.For<IUnitOfWork>();
+        var appointments = Substitute.For<IAppointmentRepository>();
+        var availabilities = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
+        var absences = Substitute.For<IVeterinarianAbsenceRepository>();
+        var clientPets = Substitute.For<IClientPetRepository>();
+        var clients = Substitute.For<IClientRepository>();
+
+        var veterinarianId = Guid.NewGuid();
+        var availability = new Availability(
+            veterinarianId, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(18, 0));
+        var userId = Guid.NewGuid();
+        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var clientPet = new ClientPetEntity(client, pet, true);
+
+        var appointment = new Appointment(
+            clientPet.Id,
+            veterinarianId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            availability.Id,
+            new DateTime(2026, 9, 7, 14, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 7, 14, 30, 0, DateTimeKind.Utc),
+            notes: null,
+            requesterPhoneNumber: "3009999999");
+
+        unitOfWork.AppointmentsRepository.Returns(appointments);
+        unitOfWork.AvailabilitiesRepository.Returns(availabilities);
+        unitOfWork.ClientPetsRepository.Returns(clientPets);
+        unitOfWork.ClientsRepository.Returns(clients);
+        appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
+        clientPets.GetByIdAsync(clientPet.Id, Arg.Any<CancellationToken>()).Returns(clientPet);
+        clients.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
+        absences.GetOverlappingAsync(
+                Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<VeterinarianAbsence>());
+        availabilities.LockByIdAsync(availability.Id, Arg.Any<CancellationToken>())
+            .Returns(availability);
+        appointments.HasOverlappingAppointmentAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<Guid?>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+        unitOfWork.ExecuteInTransactionAsync(
+                Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
+                call.ArgAt<CancellationToken>(1)));
+
+        var sut = new UpdateAppointmentCommandHandler(unitOfWork, absences);
+        await sut.Handle(
+            new UpdateAppointmentCommand(
+                appointment.Id,
+                clientPet.Id,
+                veterinarianId,
+                appointment.ServiceId,
+                appointment.StatusId,
+                availability.Id,
+                appointment.ScheduledStart,
+                appointment.ScheduledEnd,
+                "realineado"),
+            CancellationToken.None);
+
+        Assert.Equal("3001234567", appointment.RequesterPhoneNumber?.Value);
     }
 
     private static StaffFixture CreateStaffFixture(string? profilePhone)
