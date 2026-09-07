@@ -239,6 +239,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("CLIENT_PET_ID");
 
+                    b.Property<string>("ConsultingRoom")
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("CONSULTING_ROOM");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("CREATED_AT");
@@ -306,6 +311,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("AVAILABILITY_ID");
 
+                    b.Property<string>("ConsultingRoom")
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("CONSULTING_ROOM");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("CREATED_AT");
@@ -324,6 +334,23 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("CHAR(1)")
                         .HasColumnName("IS_ACTIVE");
+
+                    b.Property<int>("MaxConcurrentAppointments")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(1)
+                        .HasColumnName("MAX_CONCURRENT_APPOINTMENTS");
+
+                    b.Property<string>("ShiftName")
+                        .HasMaxLength(30)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("SHIFT_NAME");
+
+                    b.Property<int>("SlotDurationMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(30)
+                        .HasColumnName("SLOT_DURATION_MINUTES");
 
                     b.Property<string>("StartTime")
                         .IsRequired()
@@ -2604,6 +2631,52 @@ namespace Infrastructure.Migrations
                     b.ToTable("APPOINTMENT_ACTION_VERIFICATION_SESSIONS", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.VeterinarianAbsences.Entities.VeterinarianAbsence", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ABSENCE_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<DateTime>("EndAtUtc")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("END_AT");
+
+                    b.Property<string>("IsFullDay")
+                        .IsRequired()
+                        .HasColumnType("CHAR(1)")
+                        .HasColumnName("IS_FULL_DAY");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("REASON");
+
+                    b.Property<DateTime>("StartAtUtc")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("START_AT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.Property<string>("VeterinarianId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("VETERINARIAN_ID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VeterinarianId");
+
+                    b.HasIndex("VeterinarianId", "StartAtUtc", "EndAtUtc");
+
+                    b.ToTable("VETERINARIAN_ABSENCES", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>
                 {
                     b.Property<string>("Id")
@@ -3248,6 +3321,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("ClientPet");
 
                     b.Navigation("Record");
+                });
+
+            modelBuilder.Entity("Domain.VeterinarianAbsences.Entities.VeterinarianAbsence", b =>
+                {
+                    b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
+                        .WithMany()
+                        .HasForeignKey("VeterinarianId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Veterinarian");
                 });
 
             modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>

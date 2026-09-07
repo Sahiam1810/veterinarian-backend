@@ -9,4 +9,5 @@ public sealed record CreateAppointmentRequest(
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes,
-    string RequesterPhoneNumber);
+    string RequesterPhoneNumber,
+    string? ConsultingRoom = null);

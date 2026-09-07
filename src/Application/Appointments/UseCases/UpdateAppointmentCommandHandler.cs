@@ -1,10 +1,13 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.VeterinarianAbsences.Abstraction;
 using MediatR;
 
 namespace Application.Appointments.UseCases;
 
-public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
+public sealed class UpdateAppointmentCommandHandler(
+    IUnitOfWork unitOfWork,
+    IVeterinarianAbsenceRepository absences)
     : IRequestHandler<UpdateAppointmentCommand>
 {
     public async Task Handle(
@@ -14,7 +17,7 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
         var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(
             request.Id,
             cancellationToken)
-            ?? throw new NotFoundException("Cita médica no encontrada.");
+            ?? throw new NotFoundException("Cita medica no encontrada.");
 
         await AppointmentVeterinarianOwnership.EnsureAsync(
             unitOfWork,
@@ -25,14 +28,16 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
 
         await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
+            var locked = await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
                 unitOfWork,
+                absences,
                 request.AvailabilityId,
                 request.ClientPetId,
                 request.VeterinarianId,
                 request.ScheduledStart,
                 request.ScheduledEnd,
                 request.Id,
+                request.ConsultingRoom,
                 transactionCancellationToken);
 
             appointment.Update(
@@ -43,7 +48,8 @@ public sealed class UpdateAppointmentCommandHandler(IUnitOfWork unitOfWork)
                 request.AvailabilityId,
                 request.ScheduledStart,
                 request.ScheduledEnd,
-                request.Notes);
+                request.Notes,
+                request.ConsultingRoom ?? locked.ConsultingRoom);
 
             await unitOfWork.AppointmentsRepository.UpdateAsync(
                 appointment,

@@ -1,6 +1,8 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Application.Common.Exceptions;
 using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
@@ -17,6 +19,7 @@ public sealed class CreateAppointmentConcurrencyTests
         var unitOfWork = Substitute.For<IUnitOfWork>();
         var appointments = Substitute.For<IAppointmentRepository>();
         var availabilities = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
+        var absences = Substitute.For<IVeterinarianAbsenceRepository>();
         var veterinarianId = Guid.NewGuid();
         var availability = new Availability(
             veterinarianId, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(18, 0));
@@ -28,6 +31,9 @@ public sealed class CreateAppointmentConcurrencyTests
 
         unitOfWork.AppointmentsRepository.Returns(appointments);
         unitOfWork.AvailabilitiesRepository.Returns(availabilities);
+        absences.GetOverlappingAsync(
+                Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<VeterinarianAbsence>());
         availabilities.LockByIdAsync(availability.Id, Arg.Any<CancellationToken>())
             .Returns(availability);
         appointments.HasOverlappingAppointmentAsync(
@@ -39,7 +45,7 @@ public sealed class CreateAppointmentConcurrencyTests
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                 call.ArgAt<CancellationToken>(1)));
 
-        var handler = new CreateAppointmentCommandHandler(unitOfWork);
+        var handler = new CreateAppointmentCommandHandler(unitOfWork, absences);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             handler.Handle(command, CancellationToken.None));

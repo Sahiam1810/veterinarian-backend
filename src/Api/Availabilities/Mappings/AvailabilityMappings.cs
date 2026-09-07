@@ -14,7 +14,11 @@ public static class AvailabilityMappings
             request.DayOfWeek,
             request.StartTime,
             request.EndTime,
-            request.IsActive);
+            request.IsActive,
+            request.SlotDurationMinutes,
+            request.ShiftName,
+            request.ConsultingRoom,
+            request.MaxConcurrentAppointments);
     }
 
     public static UpdateAvailabilityCommand ToCommand(
@@ -27,7 +31,11 @@ public static class AvailabilityMappings
             request.DayOfWeek,
             request.StartTime,
             request.EndTime,
-            request.IsActive);
+            request.IsActive,
+            request.SlotDurationMinutes,
+            request.ShiftName,
+            request.ConsultingRoom,
+            request.MaxConcurrentAppointments);
     }
 
     public static AvailabilityResponse ToResponse(
@@ -41,7 +49,11 @@ public static class AvailabilityMappings
             entity.StartTime,
             entity.EndTime,
             entity.IsActive,
-            entity.CreatedAt);
+            entity.CreatedAt,
+            entity.SlotDurationMinutes,
+            entity.ShiftName,
+            entity.ConsultingRoom,
+            entity.MaxConcurrentAppointments);
     }
 
     public static IReadOnlyCollection<AvailabilityResponse> ToResponse(

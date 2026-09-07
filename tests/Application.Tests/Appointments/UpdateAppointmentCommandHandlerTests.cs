@@ -1,6 +1,8 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Application.Common.Exceptions;
 using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
@@ -23,12 +25,17 @@ public sealed class UpdateAppointmentCommandHandlerTests
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
     private readonly Application.Availabilities.Abstraction.IAvailabilityRepository availabilitiesRepository
         = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
+    private readonly IVeterinarianAbsenceRepository absences
+        = Substitute.For<IVeterinarianAbsenceRepository>();
     private readonly UpdateAppointmentCommandHandler sut;
 
     public UpdateAppointmentCommandHandlerTests()
     {
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
         unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
+        absences.GetOverlappingAsync(
+                Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<VeterinarianAbsence>());
         availabilitiesRepository.LockByIdAsync(AvailabilityId, Arg.Any<CancellationToken>())
             .Returns(new Availability(
                 VeterinarianId,
@@ -39,7 +46,7 @@ public sealed class UpdateAppointmentCommandHandlerTests
                 Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                 call.ArgAt<CancellationToken>(1)));
-        sut = new UpdateAppointmentCommandHandler(unitOfWork);
+        sut = new UpdateAppointmentCommandHandler(unitOfWork, absences);
     }
 
     [Fact]

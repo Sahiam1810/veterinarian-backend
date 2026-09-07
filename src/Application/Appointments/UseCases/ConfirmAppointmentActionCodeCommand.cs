@@ -2,6 +2,7 @@ using System.Text.Json;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Verification.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
 using Domain.AppointmentStatusHistories.Entities;
 using Domain.Appointments.ValueObjects;
 using Domain.Verification.Enums;
@@ -22,7 +23,8 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
     IAppointmentActionVerificationSessionRepository sessions,
     IOtpProtector otpProtector,
     IAppointmentVerificationSettings settings,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IVeterinarianAbsenceRepository absences)
     : IRequestHandler<ConfirmAppointmentActionCodeCommand>
 {
     private const string Agendada = "AGENDADA";
@@ -185,14 +187,16 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             throw new BadRequestException("La franja horaria de reagendado no es válida.");
         }
 
-        await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
+        var locked = await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
             unitOfWork,
+            absences,
             payload.AvailabilityId,
             appointment.ClientPetId,
             appointment.VeterinarianId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
             appointment.Id,
+            consultingRoom: null,
             cancellationToken);
 
         var hasOverlap = await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
@@ -213,7 +217,8 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             payload.AvailabilityId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
-            payload.Notes);
+            payload.Notes,
+            locked.ConsultingRoom);
 
         await unitOfWork.AppointmentsRepository.UpdateAsync(appointment, cancellationToken);
     }
