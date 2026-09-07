@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using Application.Security.Errors;
 using Api.Common.Security;
 using Api.Configuration;
 using Microsoft.AspNetCore.RateLimiting;
@@ -91,7 +92,7 @@ public static class RateLimitingExtensions
                         type = "https://httpstatuses.com/429",
                         title = "Too Many Requests",
                         status = StatusCodes.Status429TooManyRequests,
-                        code = "RateLimit.Exceeded"
+                        code = RateLimitErrors.Exceeded.Code
                     },
                     cancellationToken: cancellationToken);
             };

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Api.Tests.Owners;
 
-// Regresión: el contrato problem+json+code solo aplica a POST /api/owners/bot exacto.
+// 6.3: Conflict con Code → problem+json en cualquier ruta (ya no solo POST /api/owners/bot exacto).
 public sealed class BotOwnerRegistrationErrorContractTests
 {
     [Fact]
@@ -36,7 +36,7 @@ public sealed class BotOwnerRegistrationErrorContractTests
     [InlineData("POST", "/api/owners/bot/")]
     [InlineData("GET", "/api/owners/bot")]
     [InlineData("PUT", "/api/owners/bot")]
-    public async Task Conflict_OnNonExactBotRoute_KeepsLegacyErrorField(
+    public async Task Conflict_WithCode_OnAnyRoute_UsesProblemJsonCode(
         string method,
         string path)
     {
@@ -52,16 +52,14 @@ public sealed class BotOwnerRegistrationErrorContractTests
 
         Assert.True(handled);
         Assert.Equal(StatusCodes.Status409Conflict, httpContext.Response.StatusCode);
+        Assert.Equal("application/problem+json", httpContext.Response.ContentType);
 
         httpContext.Response.Body.Position = 0;
         using var document = await JsonDocument.ParseAsync(httpContext.Response.Body);
         Assert.Equal(
             ClientErrorCodes.PhoneAlreadyInUse,
-            document.RootElement.GetProperty("error").GetString());
-        Assert.False(document.RootElement.TryGetProperty("code", out _));
-        Assert.NotEqual(
-            "application/problem+json",
-            httpContext.Response.ContentType);
+            document.RootElement.GetProperty("code").GetString());
+        Assert.False(document.RootElement.TryGetProperty("error", out _));
     }
 
     private static DefaultHttpContext CreateContext(string method, string path)
