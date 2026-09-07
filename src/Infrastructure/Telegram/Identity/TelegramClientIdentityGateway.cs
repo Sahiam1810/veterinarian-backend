@@ -48,14 +48,54 @@ public sealed class TelegramClientIdentityGateway(
             : await ResolveActiveAsync(personId, cancellationToken);
     }
 
-    public async Task<TelegramClientIdentity> StageRegistrationAsync(
+    public async Task<TelegramClientIdentity> CompleteRegistrationAsync(
         TelegramClientRegistration registration,
+        Guid? existingPersonId,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(registration);
         var fullName = registration.FullName.Trim();
         var email = registration.Email.Trim().ToLowerInvariant();
         var identification = registration.IdentificationNumber.Trim();
+
+        if (existingPersonId.HasValue)
+        {
+            var identity = await ResolveActiveAsync(existingPersonId.Value, cancellationToken)
+                ?? throw new TelegramAccountUnavailableException();
+            if (!string.Equals(identity.Email, email, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new TelegramClientIdentificationMismatchException();
+            }
+
+            var existingClient = await clients.GetByUserIdAsync(
+                existingPersonId.Value,
+                cancellationToken);
+            if (existingClient is not null)
+            {
+                if (!string.Equals(
+                    existingClient.IdentificationNumber.Value,
+                    identification,
+                    StringComparison.Ordinal))
+                {
+                    throw new TelegramClientIdentificationMismatchException();
+                }
+
+                return identity;
+            }
+
+            if (await clients.ExistsByIdentificationNumberAsync(
+                identification,
+                cancellationToken))
+            {
+                throw new TelegramClientIdentificationMismatchException();
+            }
+
+            await clients.AddAsync(
+                new ClientEntity(existingPersonId.Value, identification, address: null),
+                cancellationToken);
+            return identity;
+        }
+
         var role = await roles.GetByNameAsync(ClientRoleName, cancellationToken)
             ?? throw new TelegramAccountUnavailableException();
 
