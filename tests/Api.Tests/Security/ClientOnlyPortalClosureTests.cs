@@ -14,6 +14,8 @@ using Api.Common.Security;
 using Api.Pets.Controllers;
 using Api.Tests.Support;
 using Api.Vaccinations.Controllers;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -28,11 +30,8 @@ using Xunit;
 
 namespace Api.Tests.Security;
 
-// Tarea 5.2: cierra la superficie JWT ClientOnly del antiguo portal dueño.
-// El dueño ya no se autentica con JWT (OTP Gmail + flujos del chatbot); las
-// acciones "mine"/"me" listadas abajo dejaron de existir. request-code y
-// confirm-code de MyAppointmentsController son la excepción explícita: son
-// OTP anónimo (sin JWT) y deben seguir funcionando con su rate limit intacto.
+// Tarea 5.2 / Etapa 5: rutas JWT del portal dueno retiradas con 410 Gone.
+// request-code y confirm-code de MyAppointmentsController siguen OTP anonimo.
 public sealed class ClientOnlyPortalSurfaceTests
 {
     [Theory]
@@ -48,11 +47,14 @@ public sealed class ClientOnlyPortalSurfaceTests
     [InlineData(typeof(MyAppointmentsController), "CancelMine")]
     [InlineData(typeof(AccountStatementsController), "GetMine")]
     [InlineData(typeof(VaccinationsController), "GetMine")]
-    public void Portal_action_no_longer_exists(Type controllerType, string methodName)
+    public void Portal_action_is_allow_anonymous_without_ClientOnly(Type controllerType, string methodName)
     {
         var method = controllerType.GetMethod(methodName);
-
-        Assert.Null(method);
+        Assert.NotNull(method);
+        Assert.NotNull(method!.GetCustomAttribute<AllowAnonymousAttribute>());
+        Assert.DoesNotContain(
+            method.GetCustomAttributes<AuthorizeAttribute>(inherit: true),
+            a => a.Policy == "ClientOnly");
     }
 
     [Fact]
@@ -62,13 +64,13 @@ public sealed class ClientOnlyPortalSurfaceTests
         var clientOnlyUsages = controllerAssembly.GetTypes()
             .SelectMany(type => type.GetMethods())
             .SelectMany(method => method.GetCustomAttributes<AuthorizeAttribute>(inherit: true))
-            .Where(attribute => attribute.Policy == AuthorizationPolicies.ClientOnly);
+            .Where(attribute => attribute.Policy == "ClientOnly");
 
         Assert.Empty(clientOnlyUsages);
     }
 }
 
-// Excepción explícita del cierre: OTP de citas sigue anónimo y rate-limited.
+// Excepcion explicita del cierre: OTP de citas sigue anonimo y rate-limited.
 public sealed class MyAppointmentsOtpSurfaceTests
 {
     [Theory]
@@ -91,6 +93,15 @@ public sealed class MyAppointmentsOtpSurfaceTests
     public void Controller_has_no_class_level_authorization_that_could_shadow_the_otp_actions()
     {
         Assert.Empty(typeof(MyAppointmentsController).GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true));
+    }
+
+    [Fact]
+    public async Task CancelMine_throws_ClientPortalGone()
+    {
+        var controller = new MyAppointmentsController(Substitute.For<ISender>());
+        var ex = await Assert.ThrowsAsync<GoneException>(() =>
+            controller.CancelMine(Guid.NewGuid(), null, CancellationToken.None));
+        Assert.Equal(ClientPortalErrors.Gone.Code, ex.Code);
     }
 }
 
