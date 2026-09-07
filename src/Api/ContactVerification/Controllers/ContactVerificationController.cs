@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Api.ContactVerification.Controllers;
 
-// Kickoff Etapa 3: rutas email. 3.1–3.2 implementan los puertos; RegisterOwner queda fuera.
+// Etapa 3: rutas email. Request (3.1) puede seguir en stub; Confirm (3.2) emite proof. RegisterOwner fuera.
 [ApiController]
 [Route("api/contact-verification")]
 public sealed class ContactVerificationController(
@@ -46,12 +46,12 @@ public sealed class ContactVerificationController(
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.ContactEmailConfirm)]
     [EndpointSummary("Confirma OTP de contacto y emite proof de un solo uso")]
-    [EndpointDescription("No consume el proof ni registra dueño. Kickoff: 501 hasta 3.2.")]
+    [EndpointDescription("Emite proof single-use; no lo consume ni registra dueño. Codes tipados vía ContactVerificationException.")]
     [ProducesResponseType(typeof(ConfirmContactEmailVerificationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
-    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public async Task<ActionResult<ConfirmContactEmailVerificationResponse>> ConfirmEmail(
         [FromBody] ConfirmContactEmailVerificationRequest request,
         CancellationToken cancellationToken)

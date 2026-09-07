@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Api.Tests.ContactVerification;
 
-// Kickoff Etapa 3 + 3.2 Confirm: request sigue 501; confirm usa handler real sin Oracle.
+// Etapa 3: request email sigue 501 (stub 3.1); confirm (3.2) usa handler real sin Oracle.
 public sealed class ContactVerificationHttpTests : IClassFixture<ContactVerificationApiFactory>
 {
     private readonly ContactVerificationApiFactory factory;
