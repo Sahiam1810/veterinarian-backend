@@ -7,15 +7,33 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 using System.Text.Json;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.Appointments.Controllers;
 
-// Autoservicio de citas: OTP sin JWT (chatbot). Tarea 5.2 cerró la variante JWT (CancelMine).
+// Autoservicio de citas: JWT (mine) y OTP sin JWT (chatbot).
 [ApiController]
 [Route("api/appointments/mine")]
 public sealed class MyAppointmentsController(ISender sender) : ControllerBase
 {
+    // Portal Cliente JWT retirado (Etapa 5): cancel JWT -> 410; OTP anonimo intacto.
+    [HttpPatch("{id:guid}/cancel")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy CancelMine. Responde 410 Gone (ClientPortal.Gone). Usar OTP anonimo.")] 
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<IActionResult> CancelMine(
+        Guid id,
+        [FromBody] CancelMyAppointmentRequest? request,
+        CancellationToken cancellationToken)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
+
     [HttpPost("{id:guid}/request-code")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AppointmentOtpRequest)]

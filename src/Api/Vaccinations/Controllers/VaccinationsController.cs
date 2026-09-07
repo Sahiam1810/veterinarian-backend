@@ -8,6 +8,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.Vaccinations.Controllers;
 
@@ -51,6 +53,19 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
 
         return Ok(vaccinations.ToResponse());
     }
+
+    // Portal Cliente JWT retirado (Etapa 5).
+    [HttpGet("mine")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<VaccinationResponse>>> GetMine(
+        CancellationToken cancellationToken)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.ClinicalStaffOnly)]

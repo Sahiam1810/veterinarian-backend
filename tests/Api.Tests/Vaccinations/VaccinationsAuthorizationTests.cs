@@ -21,15 +21,6 @@ public sealed class VaccinationsAuthorizationTests
         AssertPolicy(method, $"perm:Historiales Clínicos:{PermissionAction.View}");
     }
 
-    // Tarea 5.2: cerró la superficie JWT ClientOnly del portal dueño.
-    [Fact]
-    public void Mine_no_longer_exists_on_the_controller()
-    {
-        var method = typeof(VaccinationsController).GetMethod("GetMine");
-
-        Assert.Null(method);
-    }
-
     private static void AssertPolicy(MethodInfo method, string expectedPolicy)
     {
         var policies = method.GetCustomAttributes<AuthorizeAttribute>(inherit: true)

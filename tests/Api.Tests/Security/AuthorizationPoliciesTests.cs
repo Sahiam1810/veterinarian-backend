@@ -30,7 +30,6 @@ public sealed class AuthorizationPoliciesTests
     [Theory]
     [InlineData(AuthorizationPolicies.AdminOnly)]
     [InlineData(AuthorizationPolicies.StaffOnly)]
-    [InlineData(AuthorizationPolicies.ClientOnly)]
     [InlineData(AuthorizationPolicies.ClinicalHistoryReadOnly)]
     public async Task Role_based_policies_allow_the_persisted_SuperAdmin_role(string policy)
     {
@@ -59,16 +58,6 @@ public sealed class AuthorizationPoliciesTests
         var result = await authorizationService.AuthorizeAsync(veterinarian, AuthorizationPolicies.StaffOnly);
 
         Assert.True(result.Succeeded);
-    }
-
-    [Fact]
-    public async Task ClientOnly_still_denies_a_role_it_does_not_cover()
-    {
-        var receptionist = PrincipalWithClaims(new Claim(ClaimTypes.Role, "Recepcionista"));
-
-        var result = await authorizationService.AuthorizeAsync(receptionist, AuthorizationPolicies.ClientOnly);
-
-        Assert.False(result.Succeeded);
     }
 
     [Fact]

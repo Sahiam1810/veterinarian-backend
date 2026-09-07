@@ -1,4 +1,4 @@
-# ADR: Definición de límites y desasignación de permisos de módulos de plataforma web para el rol Cliente
+﻿# ADR: Definición de límites y desasignación de permisos de módulos de plataforma web para el rol Cliente
 
 - **Estado**: Aceptada
 - **Fecha**: 2026-09-07
@@ -19,10 +19,10 @@ Esta configuración inducía a error al sugerir que el cliente cuenta con acceso
 
 ## Decisión
 
-Se adopta la **Opción A**. 
+Se adopta la **Opción A**.
 
 1. **Sin filas en `ROLE_PERMISSIONS` para Cliente**: el seed **no inserta** módulos de plataforma para ese rol y, al reejecutar, hace `DELETE FROM ROLE_PERMISSIONS WHERE ROLE_ID = 77777777-…` para retirar filas residuales de semillas anteriores (`ensure_permission` solo hace INSERT en NOT MATCHED).
-2. **Autorización basada en Políticas de Dominio y Recursos**: La autorización del `Cliente` se realiza mediante políticas de API (`ClientOnly` en retiro Etapa 5), ownership de recursos (`user_id` / `client_id`) y verificación por OTPs, no mediante la matriz dinámica de permisos de módulos de plataforma.
+2. **Autorización basada en políticas de dominio y recursos**: La autorización del `Cliente` se realiza mediante ownership de recursos (`user_id` / `client_id`) y verificación por OTPs (chatbot/autoservicio), no mediante la matriz dinámica de permisos de módulos de plataforma. En Etapa 5 se retiran las rutas JWT del portal Cliente (`410 Gone` / `ClientPortal.Gone`) y se elimina la política `ClientOnly`.
 3. **Claridad conceptual**: Se deja explícito mediante comentarios en los scripts de seed que el rol `Cliente` es de uso exclusivo para chatbot/Telegram y autoservicio (no web).
 
 ## Consecuencias
@@ -30,3 +30,4 @@ Se adopta la **Opción A**.
 - Previene la simulación errónea de menús o accesos web para usuarios con rol `Cliente` en el token JWT o endpoint `/auth/permissions`.
 - Los permisos asignados al Staff (`Administrador`, `Veterinario`, `Recepcionista`, `Auxiliar`) se mantienen completamente intactos.
 - La semilla es idempotente y segura para reejecuciones.
+- Las rutas legacy del portal Cliente JWT responden `410 Gone` con código estable `ClientPortal.Gone`; OTP anónimo (request-code/confirm-code) permanece operativo.

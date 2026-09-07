@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Pets.Dtos;
@@ -7,6 +8,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.Pets.Controllers;
 
@@ -20,6 +23,45 @@ public class PetsController : ControllerBase
     {
         _mediator = mediator;
     }
+
+    // Portal Cliente JWT retirado (Etapa 5).
+    [HttpGet("mine")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<OwnedPetProfileResponseDto>>> GetMine(CancellationToken ct)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
+
+    [HttpPost("mine")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<OwnedPetProfileResponseDto>> RegisterMine(
+        [FromBody] CreateOwnedPetDto request,
+        CancellationToken ct)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
+
+    [HttpPatch("mine/{petId:guid}")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<OwnedPetProfileResponseDto>> UpdateMine(
+        Guid petId,
+        [FromBody] UpdateOwnedPetProfileDto dto,
+        CancellationToken ct)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
 
     // GET /api/pets
     [HttpGet]

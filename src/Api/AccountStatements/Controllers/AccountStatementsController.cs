@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Api.AccountStatements.Dtos;
 using Api.AccountStatements.Mappings;
 using Api.Common.Security;
@@ -7,6 +8,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.AccountStatements.Controllers;
 
@@ -33,6 +36,19 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
             StatusCodes.Status201Created,
             new CreateAccountStatementResponse(statementId));
     }
+
+    // Portal Cliente JWT retirado (Etapa 5).
+    [HttpGet("mine")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<AccountStatementResponse>>> GetMine(
+        CancellationToken cancellationToken)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.StaffOnly)]

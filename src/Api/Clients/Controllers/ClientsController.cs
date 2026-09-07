@@ -3,6 +3,8 @@ using Api.Clients.Mappings;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.Clients.UseCases;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 using Application.Owners.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +18,17 @@ namespace Api.Clients.Controllers;
 [Route("api/[controller]")]
 public class ClientsController(ISender sender, IRegisterOwnerFromStaff registerOwnerFromStaff) : ControllerBase
 {
+    // GET /api/clients/me - portal Cliente retirado (Etapa 5): siempre 410.
+    [HttpGet("me")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone); usar chatbot/staff.")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<ClientResponseDto>> GetMe(CancellationToken ct)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
     // GET /api/clients/by-identification/{identificationNumber}
     [HttpGet("by-identification/{identificationNumber}")]
     [AllowAnonymous]

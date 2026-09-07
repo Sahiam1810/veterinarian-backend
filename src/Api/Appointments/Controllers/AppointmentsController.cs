@@ -4,6 +4,8 @@ using Api.Appointments.Mappings;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.Appointments.UseCases;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +17,69 @@ namespace Api.Appointments.Controllers;
 [Route("api/[controller]")]
 public sealed class AppointmentsController(ISender sender) : ControllerBase
 {
+    // Portal Cliente JWT retirado (Etapa 5): rutas legacy responden 410.
+    [HttpGet("mine")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<AppointmentResponse>>> GetMine(
+        [FromQuery] AppointmentQueryScope scope = AppointmentQueryScope.All,
+        CancellationToken cancellationToken = default)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
+    [HttpGet("mine/{appointmentId:guid}")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<AppointmentResponse>> GetMineById(
+        Guid appointmentId,
+        CancellationToken cancellationToken)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
+    [HttpGet("booking/options")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<AppointmentBookingOptionsResponse>> GetBookingOptions(
+        CancellationToken cancellationToken)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
+    [HttpGet("booking/slots")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<AppointmentBookingSlotResponse>>> GetBookingSlots(
+        [FromQuery] Guid veterinarianId,
+        [FromQuery] Guid serviceId,
+        [FromQuery] DateOnly date,
+        CancellationToken cancellationToken)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
+    [HttpPost("mine")]
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<AppointmentResponse>> CreateMine(
+        [FromBody] CreateMyAppointmentRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        throw new GoneException(ClientPortalErrors.Gone);
+    }
+
     [HttpGet("me")]
     [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene las citas del veterinario autenticado")]

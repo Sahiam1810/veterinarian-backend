@@ -1,4 +1,4 @@
--- Resumen de verificación de catálogos canónicos.
+﻿-- Resumen de verificaci├│n de cat├ílogos can├│nicos.
 SET PAGESIZE 100;
 SET LINESIZE 180;
 
@@ -11,7 +11,7 @@ WHERE ROLE_ID IN (
     '66666666-6666-6666-6666-666666666666',
     '77777777-7777-7777-7777-777777777777');
 
--- Tarea 5.3 / ADR Opción A: Cliente sin filas de plataforma (esperado: 0).
+-- Tarea 5.3 / ADR Opci├│n A: Cliente sin filas de plataforma (esperado: 0).
 SELECT COUNT(*) CLIENT_ROLE_PERMISSIONS
 FROM ROLE_PERMISSIONS
 WHERE ROLE_ID = '77777777-7777-7777-7777-777777777777';
