@@ -24,4 +24,9 @@ public sealed class RateLimitOptions
     public int ContactEmailRequestWindowSeconds { get; init; } = 60;
     public int ContactEmailConfirmPermitLimit { get; init; } = 10;
     public int ContactEmailConfirmWindowSeconds { get; init; } = 60;
+    public int EmailOtpRequestPermitLimit { get; init; } = 5;
+    public int EmailOtpRequestWindowSeconds { get; init; } = 60;
+    public int EmailOtpConfirmPermitLimit { get; init; } = 10;
+    public int EmailOtpConfirmWindowSeconds { get; init; } = 60;
 }
+

@@ -157,6 +157,7 @@ using Infrastructure.Messaging;
 using Infrastructure.Messaging.Configuration;
 using Application.Verification.Abstractions;
 using Application.ContactVerification.Abstractions;
+using Application.Security.EmailOtp;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
@@ -421,6 +422,7 @@ public static class DependencyInjection
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IClientAccountRegistrationService, ClientAccountRegistrationService>();
+        services.AddScoped<IEmailOtpAuthenticationService, EmailOtpAuthenticationStub>();
 
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()

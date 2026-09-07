@@ -12,4 +12,7 @@ public static class RateLimitPolicies
     public const string AppointmentOtpConfirm = "AppointmentOtpConfirm";
     public const string ContactEmailRequest = "ContactEmailRequest";
     public const string ContactEmailConfirm = "ContactEmailConfirm";
+    public const string EmailOtpRequest = "EmailOtpRequest";
+    public const string EmailOtpConfirm = "EmailOtpConfirm";
 }
+

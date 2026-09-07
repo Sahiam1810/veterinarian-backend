@@ -42,4 +42,10 @@ public static class AuthenticationErrors
     public static readonly Error PlatformAccessDenied = new(
         "Authentication.PlatformAccessDenied",
         GenericDescription);
+
+    // Fallo de confirmación de OTP (código incorrecto o expirado).
+    public static readonly Error InvalidOtp = new(
+        "Authentication.InvalidOtp",
+        GenericDescription);
 }
+

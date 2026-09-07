@@ -68,6 +68,16 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.ContactEmailConfirmPermitLimit,
                     settings.ContactEmailConfirmWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.EmailOtpRequest, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.EmailOtpRequestPermitLimit,
+                    settings.EmailOtpRequestWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.EmailOtpConfirm, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.EmailOtpConfirmPermitLimit,
+                    settings.EmailOtpConfirmWindowSeconds));
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = async (context, cancellationToken) =>
             {
