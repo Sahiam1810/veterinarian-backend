@@ -73,9 +73,8 @@ public sealed class TelegramRegistrationController(
                 token,
                 request.FullName,
                 request.IdentificationNumber,
-                request.UserName,
-                request.Password,
-                request.PasswordConfirmation),
+                request.PhoneNumber,
+                request.Address),
             cancellationToken);
         if (result.IsSuccess)
         {
@@ -91,17 +90,14 @@ public sealed class TelegramRegistrationController(
 
         var field = result.Error == AuthenticationErrors.IdentificationNumberAlreadyExists
             ? nameof(request.IdentificationNumber)
-            : result.Error == AuthenticationErrors.UserAlreadyExists
-                ? nameof(request.UserName)
-                : string.Empty;
+            : string.Empty;
         ModelState.AddModelError(
             field,
             result.Error == AuthenticationErrors.IdentificationNumberAlreadyExists
                 ? "El número de identificación ya está registrado."
-                : result.Error == AuthenticationErrors.UserAlreadyExists
-                    ? "El correo o nombre de usuario ya está registrado."
-                    : "No fue posible completar el registro. Inténtalo nuevamente.");
+                : "No fue posible completar el registro. Inténtalo nuevamente.");
         return View("Complete", request);
+
     }
 
     private string CookieName => environment.IsDevelopment()

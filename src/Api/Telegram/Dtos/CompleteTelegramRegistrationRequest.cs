@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Api.Telegram.Dtos;
 
+// Solicitud de completado de registro desde Telegram (sin usuario ni contraseña).
 public sealed record CompleteTelegramRegistrationRequest(
     [property: Required, MaxLength(150)] string FullName,
     [property: Required, MaxLength(20)] string IdentificationNumber,
-    [property: Required, MaxLength(50)] string UserName,
-    [property: Required, MinLength(8), MaxLength(100), DataType(DataType.Password)] string Password,
-    [property: Required, DataType(DataType.Password), Compare("Password")] string PasswordConfirmation);
+    [property: MaxLength(30)] string? PhoneNumber = null,
+    [property: MaxLength(200)] string? Address = null);

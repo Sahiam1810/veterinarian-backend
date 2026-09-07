@@ -53,8 +53,7 @@ public sealed class TelegramRegistrationControllerTests
             .Returns(Result<CompletedTelegramRegistration>.Success(
                 new CompletedTelegramRegistration(Guid.NewGuid(), 1001)));
         var request = new CompleteTelegramRegistrationRequest(
-            "Ana Cliente", "1234567890", "ana.cliente",
-            "Password123!", "Password123!");
+            "Ana Cliente", "1234567890", "3001234567", "Calle 123");
 
         var result = await controller.Submit(request, default);
 
