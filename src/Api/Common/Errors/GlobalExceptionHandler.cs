@@ -16,23 +16,6 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        // GoneException con Code: problem+json estable (ruta de portal retirada).
-        if (exception is GoneException { Code: { Length: > 0 } goneCode })
-        {
-            httpContext.Response.StatusCode = StatusCodes.Status410Gone;
-            httpContext.Response.ContentType = "application/problem+json";
-            await JsonSerializer.SerializeAsync(
-                httpContext.Response.Body,
-                new
-                {
-                    type = $"https://httpstatuses.com/{StatusCodes.Status410Gone}",
-                    title = "Gone",
-                    status = StatusCodes.Status410Gone,
-                    code = goneCode
-                },
-                cancellationToken: cancellationToken);
-            return true;
-        }
         // ForbiddenException con Code → problem+json estable (sin Message interno).
         if (exception is ForbiddenException { Code: { Length: > 0 } code })
         {
@@ -189,7 +172,6 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message, null),
             UnauthorizedException unauthorized => (StatusCodes.Status401Unauthorized, unauthorized.Message, null),
             UnauthorizedAccessException unauthorizedAccess => (StatusCodes.Status401Unauthorized, unauthorizedAccess.Message, null),
-            GoneException gone => (StatusCodes.Status410Gone, gone.Message, gone.Code),
             ForbiddenException forbidden => (StatusCodes.Status403Forbidden, forbidden.Message, null),
             NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
