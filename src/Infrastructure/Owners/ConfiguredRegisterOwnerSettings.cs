@@ -5,6 +5,8 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Owners;
 
+// Bot siempre ConsumeProof (Etapa 3). Telegram: equivalencia OTP de sesión (ADR 4.3).
+// Staff solo si RegisterOwner:RequireContactProofs=true.
 public sealed class ConfiguredRegisterOwnerSettings(
     IOptions<RegisterOwnerOptions> options) : IRegisterOwnerSettings
 {
@@ -13,6 +15,10 @@ public sealed class ConfiguredRegisterOwnerSettings(
     public bool RequireContactProofs => _options.RequireContactProofs;
 
     public bool RequiresContactProof(RegisterOwnerChannel channel) =>
-        channel is RegisterOwnerChannel.Bot or RegisterOwnerChannel.Telegram
-        || _options.RequireContactProofs;
+        channel switch
+        {
+            RegisterOwnerChannel.Bot => true,
+            RegisterOwnerChannel.Telegram => false,
+            _ => _options.RequireContactProofs
+        };
 }

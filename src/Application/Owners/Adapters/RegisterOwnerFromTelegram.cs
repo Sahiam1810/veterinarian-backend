@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Owners.Adapters;
 
-// Adaptador Telegram (4.3). TelegramUserId queda para el enlace posterior; el núcleo no crea login.
+// Adaptador Telegram (4.3). ContactProof opcional: equivalencia OTP de sesión (ADR).
 public sealed class RegisterOwnerFromTelegram(ISender sender) : IRegisterOwnerFromTelegram
 {
     public Task<RegisterOwnerResult> RegisterAsync(

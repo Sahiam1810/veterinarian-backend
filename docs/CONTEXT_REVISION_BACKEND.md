@@ -19,6 +19,9 @@
 
 **Estado del frontend (para contexto, no accionable desde el backend):** SuperAdmin, Veterinario y Auxiliar ya están **100% conectados** al frontend real (no es solo backend con Swagger — hay UI consumiéndolos en producción/staging). Tenerlo en cuenta al estimar impacto de un cambio: romper un contrato de esos tres roles es visible para usuarios reales ahora mismo, no solo teórico.
 
+### Alta de dueño (Etapa 4) — sin login de Cliente
+El path legacy `ClientAccountRegistration` / `ClientAccountRegistrationService` (User + Account + Credentials + Client con password) **fue eliminado** (tarea 4.4). El alta de dueño pasa solo por `RegisterOwner` (staff/bot/Telegram): User rol Cliente **sin** `PASSWORD_HASH`, perfil Client, **cero** `USER_ACCOUNTS` / `USER_CREDENTIALS`. No reintroducir StageAsync con password ni registrar ese servicio en DI.
+
 ---
 
 ## 1. Arquitectura y patrones establecidos

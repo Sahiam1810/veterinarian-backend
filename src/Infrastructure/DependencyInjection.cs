@@ -98,7 +98,6 @@ using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
-using Application.Security.Registration;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
@@ -159,6 +158,7 @@ using Application.Verification.Abstractions;
 using Application.ContactVerification.Abstractions;
 using Application.ContactVerification.UseCases;
 using Application.Owners.Abstractions;
+using Application.Owners.Adapters;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
@@ -348,6 +348,8 @@ public static class DependencyInjection
         services.AddOptions<RegisterOwnerOptions>()
             .Bind(configuration.GetSection(RegisterOwnerOptions.SectionName));
         services.AddScoped<IRegisterOwnerSettings, ConfiguredRegisterOwnerSettings>();
+        // 4.1: adaptador staff sobre el RegisterOwnerCommand ya existente (sin User/Account/Credentials extra).
+        services.AddScoped<IRegisterOwnerFromStaff, RegisterOwnerFromStaff>();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
@@ -426,7 +428,6 @@ public static class DependencyInjection
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<IClientAccountRegistrationService, ClientAccountRegistrationService>();
 
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()

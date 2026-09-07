@@ -24,5 +24,7 @@ public sealed class RateLimitOptions
     public int ContactEmailRequestWindowSeconds { get; init; } = 60;
     public int ContactEmailConfirmPermitLimit { get; init; } = 10;
     public int ContactEmailConfirmWindowSeconds { get; init; } = 60;
+    public int BotOwnerRegistrationPermitLimit { get; init; } = 5;
+    public int BotOwnerRegistrationWindowSeconds { get; init; } = 60;
 }
 
