@@ -165,6 +165,7 @@ using Infrastructure.ContactVerification;
 using Infrastructure.ContactVerification.Configuration;
 using Infrastructure.ContactVerification.Repositories;
 using Infrastructure.ContactVerification.Stubs;
+using Application.ContactVerification.UseCases;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -311,7 +312,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
         services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
         services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
-        services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestStub>();
+        services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestHandler>();
         services.AddScoped<IConfirmContactEmailVerification, ContactEmailVerificationConfirmStub>();
         services.AddScoped<IConsumeContactVerificationProof, ContactVerificationProofConsumerStub>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();

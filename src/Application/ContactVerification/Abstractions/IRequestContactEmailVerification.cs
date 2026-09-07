@@ -8,7 +8,10 @@ public sealed record RequestContactEmailVerification(
     ContactVerificationPurpose Purpose,
     Guid? SubjectUserId = null);
 
-public sealed record RequestContactEmailVerificationResult(Guid SessionId);
+public sealed record RequestContactEmailVerificationResult(
+    Guid SessionId,
+    DateTime ExpiresAt,
+    ContactVerificationChannel Channel);
 
 public interface IRequestContactEmailVerification
 {
