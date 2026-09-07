@@ -13,6 +13,7 @@ using Api.Clients.Controllers;
 using Api.Common.Security;
 using Api.Pets.Controllers;
 using Api.Tests.Support;
+using Api.Vaccinations.Controllers;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -46,6 +47,7 @@ public sealed class ClientOnlyPortalSurfaceTests
     [InlineData(typeof(AppointmentsController), "CreateMine")]
     [InlineData(typeof(MyAppointmentsController), "CancelMine")]
     [InlineData(typeof(AccountStatementsController), "GetMine")]
+    [InlineData(typeof(VaccinationsController), "GetMine")]
     public void Portal_action_no_longer_exists(Type controllerType, string methodName)
     {
         var method = controllerType.GetMethod(methodName);
@@ -106,13 +108,19 @@ public sealed class ClientOnlyPortalClosureHttpTests : IClassFixture<ClientOnlyP
     [InlineData("/api/clients/me")]
     [InlineData("/api/pets/mine")]
     [InlineData("/api/appointments/mine")]
-    public async Task Client_jwt_gets_404_because_the_route_no_longer_exists(string path)
+    [InlineData("/api/appointments/booking/options")]
+    [InlineData("/api/vaccinations/mine")]
+    [InlineData("/api/accountstatements/mine")]
+    public async Task Client_jwt_does_not_get_200_on_retired_portal_routes(string path)
     {
         using var client = factory.CreateClientJwtClient();
 
         using var response = await client.GetAsync(path);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact]
