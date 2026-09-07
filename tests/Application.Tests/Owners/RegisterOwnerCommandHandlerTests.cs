@@ -225,7 +225,12 @@ public sealed class RegisterOwnerCommandHandlerTests
     }
 
     private RegisterOwnerCommandHandler CreateSut(bool requireStaffProof) =>
-        new(unitOfWork, consumeProof, new StubSettings(requireStaffProof), otpProtector);
+        new(
+            unitOfWork,
+            consumeProof,
+            new StubSettings(requireStaffProof),
+            otpProtector,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RegisterOwnerCommandHandler>.Instance);
 
     private static RegisterOwnerCommand StaffCommand() =>
         new("Ana Dueña", Email, Identification, Phone, RegisterOwnerChannel.Staff, "Calle 1");

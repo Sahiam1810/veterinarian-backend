@@ -1,59 +1,39 @@
-# Política de PII en Logs
+# Política de PII en Logs (Etapa 6.2)
 
 ## Objetivo
-Proteger la información personal identificable (PII) de los usuarios en los logs del sistema para evitar exposición de datos sensibles.
+En lookup, Gmail/ContactVerification, RegisterOwner, Telegram y OTP de cita, los logs **no** escriben teléfono, cédula, código OTP, proof ni texto del correo. Se loguea el **resultado** (éxito/fallo + `code` + ids), no el secreto.
 
-## PII Prohibido en Logs
-En los flujos de Lookup, Gmail, RegisterOwner, Telegram y OTP de cita, los logs NO deben escribir:
+## PII prohibido
+- Teléfono (`PhoneNumber`, requester, destino SMS)
+- Email / cuerpo o asunto de correo
+- OTP / código en claro
+- Cédula / número de identificación
+- Proof / completion token / link code
 
-- **Teléfono**: `{PhoneNumber}`, `{phone}`, `{RequesterPhoneNumber}`
-- **Email**: `{Email}`, `{email}`, `{EmailAddress}`
-- **OTP/Código**: `{Otp}`, `{otp}`, `{OTP}`, `{Code}`, `{code}`
-- **Cédula/Identificación**: `{IdentificationNumber}`, `{Cedula}`, `{IdNumber}`
-- **Proof**: `{ContactProof}`, `{proof}`, `{VerificationProof}`
+## Permitido
+- Ids: `ClientId`, `UserId`, `AppointmentId`, `SessionId`
+- `ErrorCode` / resultado de negocio
+- Canal genérico (`Email`, `Sms`, `Telegram`) y `Purpose` / `Action` / `Mode` (Phone|Identification **sin** el valor)
 
-## Datos Permitidos en Logs
-Los siguientes datos SÍ pueden aparecer en logs para mantener trazabilidad:
+## EF Core
+`EnableSensitiveDataLogging` **no** se habilita (ni Production ni Development). Comentario de guardia en `Infrastructure/DependencyInjection.cs`.
 
-- **IDs**: `{SessionId}`, `{AppointmentId}`, `{UserId}`, `{ClientId}`
-- **Códigos de error**: `{ErrorCode}`, `{ErrorType}`
-- **Metadatos de flujo**: `{Purpose}`, `{Channel}`, `{Action}`
-- **Contadores**: `{Count}`, `{Attempt}`
-- **Técnicos**: `{ExceptionType}`, `{Status}`
+## Inventario verificado
+| Flujo | Traza segura |
+|---|---|
+| Lookup | `ClientId` + `Mode` |
+| Gmail OTP | `SessionId` + `Purpose` + `Channel` |
+| RegisterOwner | `UserId` + `ClientId` + `Channel` |
+| Telegram | `ErrorCode` + `Attempt` / `ExceptionType` |
+| OTP cita | `AppointmentId` + `SessionId` + `Action` (+ `ErrorCode` si falla envío) |
 
-## Flujos Verificados
-
-### ✅ Lookup (GetClientLookupQueryHandler)
-- **Estado**: Sin logs actuales
-- **PII**: Ninguno
-
-### ✅ Gmail (ContactEmailVerificationRequestHandler)
-- **Logs existentes**: 
-  - `"Fallo al enviar OTP de contacto. Purpose={Purpose}"`
-  - `"OTP de contacto solicitado. SessionId={SessionId} Purpose={Purpose} Channel={Channel}"`
-- **PII**: Ninguno ✅
-
-### ✅ RegisterOwner (RegisterOwnerCommandHandler)
-- **Estado**: Sin logs actuales
-- **PII**: Ninguno
-
-### ✅ Telegram (ProcessTelegramUpdate, TelegramUpdateWorker)
-- **Logs existentes**:
-  - `"Telegram update worker cycle failed with type {ExceptionType}"`
-  - `"Telegram update processing failed with code {ErrorCode} on attempt {Attempt}."`
-- **PII**: Ninguno ✅
-
-### ✅ OTP de Cita (RequestAppointmentActionCodeCommand, ConfirmAppointmentActionCodeCommand)
-- **Estado**: Sin logs actuales
-- **PII**: Ninguno
-
-## Test de Seguridad
-Existe un test preventivo en `tests/Application.Tests/Security/PiiInLogsTests.cs` que documenta el estado actual de la política y puede extenderse para verificar automáticamente que no se agreguen logs con PII en el futuro.
+## Tests
+`tests/Application.Tests/Security/PiiInLogsTests.cs` — logger fake (teléfono/correo/OTP no aparecen en mensajes) + escaneo de plantillas + guardia EF.
 
 ## Referencias
-- ADR: 2026-09-04-client-identity-and-otp-boundaries.md
-- ADR: 2026-09-07-contact-verification-email-foundations.md
-- ADR: 2026-09-07-register-owner-foundations.md
+- ADR 6: `docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md` §2
+- ADR identidad OTP: `docs/adr/2026-09-04-client-identity-and-otp-boundaries.md`
+- CONTEXT §0 / Etapa 6.2
 
 ## Fecha
-2026-09-08
+2026-09-07

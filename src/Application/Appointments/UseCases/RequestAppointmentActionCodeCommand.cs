@@ -7,6 +7,7 @@ using Domain.Appointments.ValueObjects;
 using Domain.Verification.Entities;
 using Domain.Verification.Enums;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Appointments.UseCases;
 
@@ -23,7 +24,8 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
     IOtpProtector otpProtector,
     IVerificationCodeDispatcher codeDispatcher,
     IAppointmentVerificationSettings settings,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    ILogger<RequestAppointmentActionCodeCommandHandler> logger)
     : IRequestHandler<RequestAppointmentActionCodeCommand, Guid>
 {
     public async Task<Guid> Handle(
@@ -96,6 +98,13 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            // Traza útil sin teléfono ni OTP en claro.
+            logger.LogWarning(
+                exception,
+                "Appointment OTP delivery failed. AppointmentId={AppointmentId} Action={Action} ErrorCode={ErrorCode}",
+                request.AppointmentId,
+                request.Action,
+                AppointmentActionErrors.DeliveryFailed.Code);
             throw new ConflictException(
                 "No fue posible enviar el código en este momento. Intenta de nuevo.",
                 AppointmentActionErrors.DeliveryFailed.Code);
@@ -113,6 +122,13 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
 
         await sessions.AddAsync(session, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Appointment OTP requested. AppointmentId={AppointmentId} SessionId={SessionId} Action={Action}",
+            request.AppointmentId,
+            session.Id,
+            request.Action);
+
         return session.Id;
     }
 
