@@ -13,10 +13,10 @@ public record CreateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null,
+    // Obligatoriedad y formato los resuelve FluentValidation (codes Clients.Phone*).
+    string? PhoneNumber,
 
-    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
-    string? PhoneNumber = null
+    DateTime? RegistrationDate = null
 );
 
 public record UpdateClientDto(
@@ -30,10 +30,10 @@ public record UpdateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null,
+    // Update no deja el teléfono vacío: misma regla FluentValidation que Create.
+    string? PhoneNumber,
 
-    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
-    string? PhoneNumber = null
+    DateTime? RegistrationDate = null
 );
 
 public record ClientResponseDto(

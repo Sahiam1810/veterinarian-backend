@@ -37,7 +37,8 @@ public sealed class CreateClientCommandHandlerTests
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(true);
 
-        var command = new CreateClientCommand(user.Id, "1234567890", "Calle Falsa 123");
+        var command = new CreateClientCommand(
+            user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
 
@@ -54,7 +55,8 @@ public sealed class CreateClientCommandHandlerTests
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
 
-        var command = new CreateClientCommand(user.Id, "1234567890", "Calle Falsa 123");
+        var command = new CreateClientCommand(
+            user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         var id = await sut.Handle(command, CancellationToken.None);
 
@@ -63,7 +65,7 @@ public sealed class CreateClientCommandHandlerTests
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
-    // Etapa 2: create normaliza phone vía ClientPhoneNumber (solo dígitos).
+    // Etapa 2 / 2.4: el handler pasa por ClientPhoneNumber.Create (solo dígitos).
     [Fact]
     public async Task Handle_persists_the_client_with_a_normalized_phone_number()
     {

@@ -38,7 +38,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ? validationException.Errors
                 .Select(failure => new FieldViolationResponse(
                     ApiErrorResponseFactory.ToJsonFieldName(failure.PropertyName),
-                    failure.ErrorMessage))
+                    failure.ErrorMessage,
+                    string.IsNullOrWhiteSpace(failure.ErrorCode) ? null : failure.ErrorCode))
                 .ToArray()
             : [];
         var typeContract = httpContext.Request.Path.StartsWithSegments("/TypeContract", StringComparison.OrdinalIgnoreCase);
