@@ -157,6 +157,7 @@ using Infrastructure.Messaging;
 using Infrastructure.Messaging.Configuration;
 using Application.Verification.Abstractions;
 using Application.ContactVerification.Abstractions;
+using Application.ContactVerification.UseCases;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
@@ -312,8 +313,8 @@ public static class DependencyInjection
         services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
         services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
         services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestStub>();
-        services.AddScoped<IConfirmContactEmailVerification, ContactEmailVerificationConfirmStub>();
-        services.AddScoped<IConsumeContactVerificationProof, ContactVerificationProofConsumerStub>();
+        services.AddScoped<IConfirmContactEmailVerification, ConfirmContactEmailVerificationHandler>();
+        services.AddScoped<IConsumeContactVerificationProof, ConsumeContactVerificationProofHandler>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddHttpClient(nameof(TwilioSmsVerificationCodeSender));
         services.AddHttpClient(nameof(TwilioWhatsAppVerificationCodeSender));

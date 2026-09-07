@@ -45,4 +45,29 @@ public sealed class ContactVerificationSessionRepository(VeterinaryDbContext con
         context.Set<ContactVerificationSession>().Update(session);
         return Task.CompletedTask;
     }
+
+    public async Task<bool> TryConsumeProofAsync(
+        Guid sessionId,
+        string proofHash,
+        DateTime consumedAt,
+        CancellationToken cancellationToken)
+    {
+        var affected = await context.Set<ContactVerificationSession>()
+            .Where(session =>
+                session.Id == sessionId
+                && session.Status == ContactVerificationSessionStatus.ProofIssued
+                && session.ProofHash == proofHash
+                && session.ProofExpiresAt != null
+                && consumedAt < session.ProofExpiresAt)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        session => session.Status,
+                        ContactVerificationSessionStatus.Consumed)
+                    .SetProperty(session => session.ProofHash, (string?)null)
+                    .SetProperty(session => session.UpdatedAt, consumedAt),
+                cancellationToken);
+
+        return affected == 1;
+    }
 }

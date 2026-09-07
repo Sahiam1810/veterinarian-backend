@@ -1,15 +1,22 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Api.Auth.Controllers;
 using Api.Tests.Support;
+using Application.ContactVerification.Abstractions;
+using Domain.ContactVerification.Entities;
+using Domain.ContactVerification.Enums;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using NSubstitute;
 using Xunit;
 
 namespace Api.Tests.ContactVerification;
 
-// Kickoff Etapa 3: esqueleto anónimo; puertos aún no implementados (501).
+// Kickoff Etapa 3 + 3.2 Confirm: request sigue 501; confirm usa handler real sin Oracle.
 public sealed class ContactVerificationHttpTests : IClassFixture<ContactVerificationApiFactory>
 {
     private readonly ContactVerificationApiFactory factory;
@@ -46,7 +53,7 @@ public sealed class ContactVerificationHttpTests : IClassFixture<ContactVerifica
     }
 
     [Fact]
-    public async Task ConfirmEmail_WithoutToken_Returns501_WithCatalogCode()
+    public async Task ConfirmEmail_UnknownSession_Returns404_WithSessionNotFoundCode()
     {
         using var client = factory.CreateAnonymousClient();
 
@@ -54,10 +61,10 @@ public sealed class ContactVerificationHttpTests : IClassFixture<ContactVerifica
             "/api/contact-verification/email/confirm",
             new { SessionId = Guid.NewGuid(), Code = "123456" });
 
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(
-            "ContactVerification.NotImplemented",
+            "ContactVerification.SessionNotFound",
             document.RootElement.GetProperty("code").GetString());
     }
 }
@@ -82,7 +89,14 @@ public sealed class ContactVerificationApiFactory : WebApplicationFactory<AuthCo
             ["Jwt__KeyId"] = "contact-verification-test-key",
             ["Jwt__AccessTokenMinutes"] = "15",
             ["Jwt__RefreshTokenDays"] = "7",
-            ["Jwt__ClockSkewSeconds"] = "0"
+            ["Jwt__ClockSkewSeconds"] = "0",
+            ["Email__Enabled"] = "false",
+            ["Twilio__Enabled"] = "false",
+            ["Telegram__Enabled"] = "false",
+            ["ContactVerification__OtpTtlMinutes"] = "10",
+            ["ContactVerification__OtpMaximumAttempts"] = "5",
+            ["ContactVerification__OtpResendSeconds"] = "60",
+            ["ContactVerification__ProofTtlMinutes"] = "15"
         };
 
         foreach (var setting in environment)
@@ -99,8 +113,18 @@ public sealed class ContactVerificationApiFactory : WebApplicationFactory<AuthCo
             BaseAddress = new Uri("https://localhost")
         });
 
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
         builder.UseEnvironment("Testing");
+        builder.ConfigureTestServices(services =>
+        {
+            var sessions = Substitute.For<IContactVerificationSessionRepository>();
+            sessions.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                .Returns((ContactVerificationSession?)null);
+            services.RemoveAll<IContactVerificationSessionRepository>();
+            services.AddSingleton(sessions);
+        });
+    }
 
     protected override void Dispose(bool disposing)
     {
