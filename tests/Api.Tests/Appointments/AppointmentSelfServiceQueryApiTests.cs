@@ -1,7 +1,4 @@
-using System.Security.Claims;
-using Api.Appointments.Controllers;
 using Api.Appointments.Mappings;
-using Application.Appointments.UseCases;
 using Domain.Appointments.Entities;
 using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
@@ -12,10 +9,6 @@ using Domain.Species.Entities;
 using Domain.StatusAppointments.Entities;
 using Domain.Users.Entities;
 using Domain.Veterinarians.Entities;
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using NSubstitute;
 using Xunit;
 using UserEntity = Domain.Users.Entities.Users;
 
@@ -23,9 +16,6 @@ namespace Api.Tests.Appointments;
 
 public sealed class AppointmentSelfServiceQueryApiTests
 {
-    private static readonly Guid UserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private readonly ISender sender = Substitute.For<ISender>();
-
     [Fact]
     public void ToResponse_includes_display_names_and_marks_oracle_dates_as_utc()
     {
@@ -39,57 +29,6 @@ public sealed class AppointmentSelfServiceQueryApiTests
         Assert.Equal("AGENDADA", response.StatusName);
         Assert.Equal(DateTimeKind.Utc, response.ScheduledStart.Kind);
         Assert.Equal(DateTimeKind.Utc, response.ScheduledEnd.Kind);
-    }
-
-    [Fact]
-    public async Task GetMine_forwards_authenticated_identity_and_scope()
-    {
-        sender.Send(Arg.Any<GetMyAppointmentsQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<Appointment>());
-        var controller = CreateController();
-
-        await controller.GetMine(AppointmentQueryScope.Upcoming, CancellationToken.None);
-
-        await sender.Received(1).Send(
-            Arg.Is<GetMyAppointmentsQuery>(query =>
-                query.UserAccountId == UserAccountId
-                && query.Scope == AppointmentQueryScope.Upcoming),
-            CancellationToken.None);
-    }
-
-    [Fact]
-    public async Task GetMineById_forwards_authenticated_identity_and_appointment_id()
-    {
-        var appointment = CreateAppointmentWithDetails();
-        sender.Send(Arg.Any<GetMyAppointmentByIdQuery>(), Arg.Any<CancellationToken>())
-            .Returns(appointment);
-        var controller = CreateController();
-
-        var result = await controller.GetMineById(appointment.Id, CancellationToken.None);
-
-        Assert.IsType<OkObjectResult>(result.Result);
-        await sender.Received(1).Send(
-            Arg.Is<GetMyAppointmentByIdQuery>(query =>
-                query.UserAccountId == UserAccountId
-                && query.AppointmentId == appointment.Id),
-            CancellationToken.None);
-    }
-
-    private AppointmentsController CreateController()
-    {
-        var identity = new ClaimsIdentity(
-            new[] { new Claim("sub", UserAccountId.ToString()) },
-            "TestAuth");
-        return new AppointmentsController(sender)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(identity)
-                }
-            }
-        };
     }
 
     private static Appointment CreateAppointmentWithDetails()

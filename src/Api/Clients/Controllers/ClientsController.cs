@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Api.Clients.Dtos;
 using Api.Clients.Mappings;
 using Api.Common.Security;
@@ -17,26 +16,6 @@ namespace Api.Clients.Controllers;
 [Route("api/[controller]")]
 public class ClientsController(ISender sender, IRegisterOwnerFromStaff registerOwnerFromStaff) : ControllerBase
 {
-    // GET /api/clients/me
-    [HttpGet("me")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene el perfil del cliente autenticado")]
-    [EndpointDescription("Retorna los datos del cliente asociado al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ClientResponseDto>> GetMe(CancellationToken ct)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var client = await sender.Send(new GetMyClientQuery(userAccountId), ct);
-        return Ok(client.ToDto());
-    }
-
     // GET /api/clients/by-identification/{identificationNumber}
     [HttpGet("by-identification/{identificationNumber}")]
     [AllowAnonymous]

@@ -7,42 +7,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Claims;
 using System.Text.Json;
 
 namespace Api.Appointments.Controllers;
 
-// Autoservicio de citas: JWT (mine) y OTP sin JWT (chatbot).
+// Autoservicio de citas: OTP sin JWT (chatbot). Tarea 5.2 cerró la variante JWT (CancelMine).
 [ApiController]
 [Route("api/appointments/mine")]
 public sealed class MyAppointmentsController(ISender sender) : ControllerBase
 {
-    [HttpPatch("{id:guid}/cancel")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Cancela una cita propia (cliente autenticado)")]
-    [EndpointDescription("Soft-cancel: cambia el estado a CANCELADA y conserva el historial. No borra la fila.")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CancelMine(
-        Guid id,
-        [FromBody] CancelMyAppointmentRequest? request,
-        CancellationToken cancellationToken)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        await sender.Send(
-            new CancelMyAppointmentCommand(id, userAccountId, request?.Comment),
-            cancellationToken);
-        return NoContent();
-    }
-
     [HttpPost("{id:guid}/request-code")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AppointmentOtpRequest)]

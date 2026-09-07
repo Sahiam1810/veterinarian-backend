@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Pets.Dtos;
@@ -20,91 +19,6 @@ public class PetsController : ControllerBase
     public PetsController(IMediator mediator)
     {
         _mediator = mediator;
-    }
-
-    // GET /api/pets/mine
-    [HttpGet("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene las mascotas del cliente autenticado")]
-    [EndpointDescription("Retorna las mascotas asociadas al cliente correspondiente al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<OwnedPetProfileResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyCollection<OwnedPetProfileResponseDto>>> GetMine(CancellationToken ct)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var pets = await _mediator.Send(new GetMyPetsQuery(userAccountId), ct);
-        return Ok(pets.Select(p => p.ToDto()).ToList());
-    }
-
-    [HttpPost("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Registra una mascota para el cliente autenticado")]
-    [EndpointDescription("Crea la mascota y la asociación de propietario principal usando exclusivamente la identidad del JWT.")]
-    [ProducesResponseType(typeof(OwnedPetProfileResponseDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OwnedPetProfileResponseDto>> RegisterMine(
-        [FromBody] CreateOwnedPetDto dto,
-        CancellationToken ct)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var profile = await _mediator.Send(new RegisterMyPetCommand(
-            userAccountId,
-            dto.Name,
-            dto.Age,
-            dto.Gender,
-            dto.Weight,
-            dto.Observations,
-            dto.SpeciesId,
-            dto.RaceId), ct);
-
-        return CreatedAtAction(nameof(GetMine), profile.ToDto());
-    }
-
-    [HttpPatch("mine/{petId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Actualiza parcialmente una mascota del cliente autenticado")]
-    [EndpointDescription("Solo permite modificar mascotas vinculadas al cliente del JWT y exige la versión consultada.")]
-    [ProducesResponseType(typeof(OwnedPetProfileResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<OwnedPetProfileResponseDto>> UpdateMine(
-        Guid petId,
-        [FromBody] UpdateOwnedPetProfileDto dto,
-        CancellationToken ct)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-            return Unauthorized();
-
-        var profile = await _mediator.Send(new UpdateMyPetProfileCommand(
-            userAccountId,
-            petId,
-            dto.Name,
-            dto.Age,
-            dto.Gender,
-            dto.Weight,
-            dto.Observations,
-            dto.ChangeObservations,
-            dto.SpeciesId,
-            dto.RaceId,
-            dto.ExpectedUpdatedAt), ct);
-        return Ok(profile.ToDto());
     }
 
     // GET /api/pets
