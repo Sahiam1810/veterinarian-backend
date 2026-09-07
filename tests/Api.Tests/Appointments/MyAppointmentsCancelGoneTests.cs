@@ -20,7 +20,7 @@ public sealed class MyAppointmentsCancelGoneTests
         Assert.NotNull(method!.GetCustomAttribute<AllowAnonymousAttribute>());
         Assert.DoesNotContain(
             method.GetCustomAttributes<AuthorizeAttribute>(true),
-            a => a.Policy == Api.Common.Security.AuthorizationPolicies.ClientOnly);
+            a => a.Policy == "ClientOnly");
     }
 
     [Fact]

@@ -22,7 +22,7 @@ public sealed class ClientsMeGoneTests
 
         Assert.NotNull(method!.GetCustomAttribute<AllowAnonymousAttribute>());
         var authorize = method.GetCustomAttributes<AuthorizeAttribute>(inherit: true);
-        Assert.DoesNotContain(authorize, a => a.Policy == Api.Common.Security.AuthorizationPolicies.ClientOnly);
+        Assert.DoesNotContain(authorize, a => a.Policy == "ClientOnly");
     }
 
     [Fact]

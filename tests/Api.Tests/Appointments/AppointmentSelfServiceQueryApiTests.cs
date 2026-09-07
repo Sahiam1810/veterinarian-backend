@@ -48,7 +48,7 @@ public sealed class AppointmentSelfServiceQueryApiTests
         Assert.NotNull(method!.GetCustomAttribute<AllowAnonymousAttribute>());
         Assert.DoesNotContain(
             method.GetCustomAttributes<AuthorizeAttribute>(inherit: true),
-            a => a.Policy == Api.Common.Security.AuthorizationPolicies.ClientOnly);
+            a => a.Policy == "ClientOnly");
     }
 
     [Fact]

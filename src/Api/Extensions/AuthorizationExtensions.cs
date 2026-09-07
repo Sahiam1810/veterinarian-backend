@@ -35,9 +35,7 @@ public static class AuthorizationExtensions
             options.AddPolicy(
                 AuthorizationPolicies.AssistantOnly,
                 RoleOrSuperAdmin("Auxiliar"));
-            options.AddPolicy(
-                AuthorizationPolicies.ClientOnly,
-                RoleOrSuperAdmin("Cliente"));
+
             options.AddPolicy(
                 AuthorizationPolicies.StaffOnly,
                 RoleOrSuperAdmin(

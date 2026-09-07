@@ -7,7 +7,6 @@ public static class AuthorizationPolicies
     public const string VeterinarianOnly = "VeterinarianOnly";
     public const string ReceptionistOnly = "ReceptionistOnly";
     public const string AssistantOnly = "AssistantOnly";
-    public const string ClientOnly = "ClientOnly";
     public const string StaffOnly = "StaffOnly";
 
     // Políticas combinadas para acciones que corresponden a más de un rol.

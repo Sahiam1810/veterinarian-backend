@@ -14,7 +14,6 @@ public sealed class ClienteRolePermissionsSeedTests
         var seedPath = FindSeedPath();
         var sql = File.ReadAllText(seedPath);
 
-        // ensure_permission(id, roleId, module, canView, canCreate, canEdit, canDelete)
         var matches = Regex.Matches(
             sql,
             @"ensure_permission\s*\(\s*'[^']+'\s*,\s*'([^']+)'\s*,",
@@ -27,7 +26,9 @@ public sealed class ClienteRolePermissionsSeedTests
             Assert.NotEqual(ClienteRoleId, roleId);
         }
 
-        Assert.Contains("No se asignan filas en ROLE_PERMISSIONS", sql, StringComparison.OrdinalIgnoreCase);
+        // Regla documentada: borrar residuales; no reinsertar permisos de plataforma.
+        Assert.Contains("DELETE FROM ROLE_PERMISSIONS", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("77777777-7777-7777-7777-777777777777", sql, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string FindSeedPath()
