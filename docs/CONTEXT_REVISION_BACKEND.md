@@ -16,7 +16,7 @@
 - El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es el canal real y activo del Cliente — ahí aplica el peso de revisión y corrección.
 - Las rutas JWT del portal dueño (`ClientOnly` / `/me` / `/mine` de panel) **quedaron retiradas en la tarea 5.2** (eliminación de endpoints; no 410 en este slice). Política residual `ClientOnly` puede vivir hasta 5.5 si no hay consumidores.
 - **Excepción explícita (única):** `POST /api/appointments/mine/{id}/request-code|confirm-code` — OTP anónimo + rate limit (teléfono de la cita); no es portal JWT ni OTP Gmail.
-- WhatsApp sigue **fuera de alcance** (Etapas 3–5).
+- WhatsApp sigue **fuera de alcance** (Etapas 3–6). **Canal de dueño = Telegram.**
 
 **Estado del frontend (para contexto, no accionable desde el backend):** SuperAdmin, Veterinario y Auxiliar ya están **100% conectados** al frontend real (no es solo backend con Swagger — hay UI consumiéndolos en producción/staging). Tenerlo en cuenta al estimar impacto de un cambio: romper un contrato de esos tres roles es visible para usuarios reales ahora mismo, no solo teórico.
 
@@ -36,6 +36,10 @@ ADR: [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-0
 ### Coherencia teléfono cita ↔ dueño (tarea 5.1)
 Regla ADR: si el dueño tiene `Clients.PhoneNumber`, Create/Update staff (y CreateMy) **copian** ese valor normalizado a `Appointment.RequesterPhoneNumber` e **ignoran** un requester divergente del body. Sin teléfono en perfil, se usa el request (solo dígitos, VO 7–20). Política: `AppointmentRequesterPhonePolicy`. OTP `request-code` sigue matcheando contra requester de la cita. Tests: `AppointmentRequesterPhonePolicyTests` + handlers Create/Update/CreateMy. No toca ContactVerification ni Telegram registration.
 
+
+### Etapa 6 (kickoff) — rate limit, logs y codes
+ADR: [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md). Catálogo: [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md). Smoke: [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md).
+Inventario de rutas anónimas/bot con rate limit (Anexo A del ADR). Logs: nunca teléfono, cédula, OTP, proof ni cuerpo de correo en claro. Front staff traduce solo por `code`. **Canal = Telegram; WhatsApp fuera de alcance.** Dueños de archivo: RL (`RateLimitingExtensions` / `Program.cs` rate limit), LOG, CODE, CTX, SMOKE. Cero código de producto en el kickoff; 6.1–6.5 no se esperan entre sí.
 ---
 
 ## 1. Arquitectura y patrones establecidos
