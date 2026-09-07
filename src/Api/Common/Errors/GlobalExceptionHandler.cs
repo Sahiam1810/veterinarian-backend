@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentValidation;
 using Application.Agent.Errors;
 using Application.Common.Exceptions;
+using Application.ContactVerification.Errors;
 using Application.Telegram.Errors;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,23 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                     title = "Forbidden",
                     status = StatusCodes.Status403Forbidden,
                     code
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is ContactVerificationNotImplementedException notImplemented)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status501NotImplemented;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status501NotImplemented}",
+                    title = "Not Implemented",
+                    status = StatusCodes.Status501NotImplemented,
+                    code = notImplemented.Code
                 },
                 cancellationToken: cancellationToken);
             return true;

@@ -20,4 +20,8 @@ public sealed class RateLimitOptions
     public int AppointmentOtpRequestWindowSeconds { get; init; } = 60;
     public int AppointmentOtpConfirmPermitLimit { get; init; } = 10;
     public int AppointmentOtpConfirmWindowSeconds { get; init; } = 60;
+    public int ContactEmailRequestPermitLimit { get; init; } = 5;
+    public int ContactEmailRequestWindowSeconds { get; init; } = 60;
+    public int ContactEmailConfirmPermitLimit { get; init; } = 10;
+    public int ContactEmailConfirmWindowSeconds { get; init; } = 60;
 }

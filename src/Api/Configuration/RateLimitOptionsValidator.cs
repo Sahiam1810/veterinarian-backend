@@ -26,7 +26,11 @@ public sealed class RateLimitOptionsValidator
             options.AppointmentOtpRequestPermitLimit,
             options.AppointmentOtpRequestWindowSeconds,
             options.AppointmentOtpConfirmPermitLimit,
-            options.AppointmentOtpConfirmWindowSeconds
+            options.AppointmentOtpConfirmWindowSeconds,
+            options.ContactEmailRequestPermitLimit,
+            options.ContactEmailRequestWindowSeconds,
+            options.ContactEmailConfirmPermitLimit,
+            options.ContactEmailConfirmWindowSeconds
         };
 
         return values.All(value => value > 0)
