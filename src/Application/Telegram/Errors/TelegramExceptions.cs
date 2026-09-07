@@ -13,5 +13,8 @@ public sealed class TelegramLinkCodeInvalidException()
 public sealed class TelegramIdentityConflictException()
     : TelegramIntegrationException("The Telegram identity is linked to another account.");
 
+public sealed class TelegramRegistrationConflictException()
+    : TelegramIntegrationException("The Telegram registration data already exists.");
+
 public sealed class TelegramDeliveryException(Exception? innerException = null)
     : TelegramIntegrationException("Telegram delivery failed.", innerException);

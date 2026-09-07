@@ -1,4 +1,5 @@
 using Application.Telegram.Abstractions;
+using Application.Telegram.Errors;
 using Application.Telegram.Identity;
 using Application.Telegram.Models;
 using Application.Verification.Abstractions;
@@ -164,6 +165,30 @@ public sealed class TelegramIdentityAccessServiceTests
         await fixture.UnitOfWork.Received(1).ExecuteInTransactionAsync(
             Arg.Any<Func<CancellationToken, Task>>(),
             default);
+    }
+
+    [Fact]
+    public async Task Registration_conflict_after_valid_otp_returns_controlled_reply()
+    {
+        var fixture = CreateFixture();
+        var session = RegistrationOtpSession();
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Otp.Verify("123456", Hash).Returns(true);
+        fixture.Clients.StageRegistrationAsync(
+                Arg.Any<TelegramClientRegistration>(),
+                default)
+            .Returns<Task<TelegramClientIdentity>>(_ =>
+                throw new TelegramRegistrationConflictException());
+
+        var outcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(47, "123456"), default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Contains("ya corresponden a una cuenta", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(TelegramIdentitySessionStatus.Cancelled, session.Status);
+        Assert.Null(outcome.VerifiedPersonId);
+        Assert.Null(outcome.ResumeInboundUpdateId);
+        await fixture.Sessions.Received(1).UpdateAsync(session, default);
     }
 
     [Fact]

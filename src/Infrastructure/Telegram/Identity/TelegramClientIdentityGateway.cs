@@ -63,7 +63,7 @@ public sealed class TelegramClientIdentityGateway(
             await accounts.ExistsByMailAsync(email, cancellationToken) ||
             await clients.ExistsByIdentificationNumberAsync(identification, cancellationToken))
         {
-            throw new TelegramIdentityConflictException();
+            throw new TelegramRegistrationConflictException();
         }
 
         string username;

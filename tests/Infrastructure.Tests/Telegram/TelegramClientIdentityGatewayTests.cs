@@ -1,5 +1,6 @@
 using Application.Clients.Abstraction;
 using Application.Roles.Abstraction;
+using Application.Telegram.Errors;
 using Application.Telegram.Models;
 using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
@@ -85,5 +86,23 @@ public sealed class TelegramClientIdentityGatewayTests
         await clients.Received(1).AddAsync(
             Arg.Is<ClientEntity>(client => client.UserId == result.PersonId),
             default);
+    }
+
+    [Fact]
+    public async Task Registration_with_existing_identity_raises_registration_conflict()
+    {
+        var clients = Substitute.For<IClientRepository>();
+        var users = Substitute.For<IUsersRepository>();
+        var accounts = Substitute.For<IUserAccountsRepository>();
+        var roles = Substitute.For<IRolesRepository>();
+        roles.GetByNameAsync("Cliente", default).Returns(new RoleEntity("Cliente", null));
+        clients.ExistsByIdentificationNumberAsync("123456789", default).Returns(true);
+        var gateway = new TelegramClientIdentityGateway(clients, users, accounts, roles);
+
+        var action = () => gateway.StageRegistrationAsync(
+            new TelegramClientRegistration("123456789", "Ana Pérez", "ana@example.test"),
+            default);
+
+        await Assert.ThrowsAsync<TelegramRegistrationConflictException>(action);
     }
 }

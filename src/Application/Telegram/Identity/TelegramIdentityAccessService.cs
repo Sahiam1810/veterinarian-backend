@@ -341,28 +341,41 @@ public sealed class TelegramIdentityAccessService(
         var pendingMessage = dataProtector.Unprotect(
             PendingMessagePurpose,
             session.ProtectedPendingMessage!);
-        await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
+        try
         {
-            var identity = session.PersonId is not null
-                ? new TelegramClientIdentity(session.PersonId.Value, Guid.Empty, string.Empty)
-                : await clients.StageRegistrationAsync(
-                    new TelegramClientRegistration(
-                        dataProtector.Unprotect(
-                            IdentificationPurpose,
-                            session.ProtectedIdentification!),
-                        dataProtector.Unprotect(FullNamePurpose, session.ProtectedFullName!),
-                        dataProtector.Unprotect(EmailPurpose, session.ProtectedEmail!)),
-                    transactionToken);
-            await EnsureUserLinkAsync(session, identity.PersonId, now.UtcDateTime, transactionToken);
-            session.Verify(
-                identity.PersonId,
-                now.Add(settings.PrivateAccessAbsoluteLifetime).UtcDateTime,
-                now.Add(settings.PrivateAccessIdleLifetime).UtcDateTime,
-                now.UtcDateTime);
-            pendingUpdateId = session.TakePendingInboundUpdate(now.UtcDateTime);
-            personId = identity.PersonId;
-            await unitOfWork.IdentitySessionsRepository.UpdateAsync(session, transactionToken);
-        }, cancellationToken);
+            await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
+            {
+                var identity = session.PersonId is not null
+                    ? new TelegramClientIdentity(session.PersonId.Value, Guid.Empty, string.Empty)
+                    : await clients.StageRegistrationAsync(
+                        new TelegramClientRegistration(
+                            dataProtector.Unprotect(
+                                IdentificationPurpose,
+                                session.ProtectedIdentification!),
+                            dataProtector.Unprotect(FullNamePurpose, session.ProtectedFullName!),
+                            dataProtector.Unprotect(EmailPurpose, session.ProtectedEmail!)),
+                        transactionToken);
+                await EnsureUserLinkAsync(session, identity.PersonId, now.UtcDateTime, transactionToken);
+                session.Verify(
+                    identity.PersonId,
+                    now.Add(settings.PrivateAccessAbsoluteLifetime).UtcDateTime,
+                    now.Add(settings.PrivateAccessIdleLifetime).UtcDateTime,
+                    now.UtcDateTime);
+                pendingUpdateId = session.TakePendingInboundUpdate(now.UtcDateTime);
+                personId = identity.PersonId;
+                await unitOfWork.IdentitySessionsRepository.UpdateAsync(session, transactionToken);
+            }, cancellationToken);
+        }
+        catch (TelegramRegistrationConflictException)
+        {
+            session.Cancel(now.UtcDateTime);
+            await PersistSessionAsync(session, cancellationToken);
+            return new TelegramIdentityAccessOutcome(
+                true,
+                "Los datos ingresados ya corresponden a una cuenta de Huellitas, " +
+                "pero no pudimos habilitarla para Telegram. " +
+                "Repite la solicitud con la cédula correcta o solicita soporte.");
+        }
 
         return new TelegramIdentityAccessOutcome(
             true,
