@@ -17,7 +17,9 @@ acceso sin identidad conocida:
 2. Revocar la vinculación obsoleta mediante `TelegramUserLink.Revoke`.
 3. Persistir una `TelegramIdentitySession` en estado `AwaitingIdentification`.
 4. Solicitar la cédula al usuario.
-5. Si la cédula corresponde a un cliente activo, enviar el OTP al correo registrado.
+5. Si la cédula corresponde a un cliente con usuario y cuenta activos, enviar el OTP al correo
+   registrado sin exigir que su rol sea `Cliente`. La autorización posterior conserva el rol real
+   y los permisos del JWT.
 6. Si la cédula no existe, recopilar confirmación, nombre completo y correo; enviar OTP y crear el
    usuario, la cuenta y el perfil de cliente dentro de la transacción existente.
 7. Al verificar el OTP, crear o reactivar el enlace y reanudar automáticamente el mensaje original.
@@ -29,13 +31,19 @@ acceso sin identidad conocida:
 - `/vincular` y `/registrar` no forman parte del flujo nuevo ni se muestran al usuario.
 - Los componentes heredados de vinculación permanecen sin cambios para evitar una eliminación
   incompatible en esta corrección.
+- `Administrador` y `SuperAdmin` pueden usar mascotas y citas cuando también tienen un perfil en
+  `CLIENTS`; no se cambia su rol.
+- Un conflicto residual de correo o cédula durante un registro se convierte en una respuesta
+  controlada y cancela esa sesión, en vez de agotar reintentos del worker.
 - No cambia ningún endpoint, contrato HTTP, tabla ni migración.
 
 ## Capas afectadas
 
 - Domain: sin cambios; se reutiliza `TelegramUserLink.Revoke`.
-- Application: cambia `TelegramIdentityAccessService.BeginPrivateAccessAsync`.
-- Infrastructure: sin cambios; se reutilizan los repositorios existentes.
+- Application: cambia `TelegramIdentityAccessService.BeginPrivateAccessAsync`, agrega un error
+  específico para conflictos de registro y lo maneja en `ProcessOtpAsync`.
+- Infrastructure: `TelegramClientIdentityGateway` deja de confundir rol con identidad y emite el
+  error específico cuando los datos de registro ya existen.
 - Api: sin cambios; Telegram continúa entrando por el webhook actual.
 
 ## Errores y consistencia
@@ -47,7 +55,7 @@ el correo.
 
 ## Verificación
 
-Una prueba de Application reproducirá una vinculación activa cuyo `PersonId` no resuelve a una
-identidad de cliente. Debe comprobar que el enlace queda revocado, se crea la sesión de
-identificación, se guarda el mensaje pendiente y la respuesta solicita la cédula. También se
-ejecutarán las pruebas existentes de `TelegramIdentityAccessService` y una compilación sin restore.
+Las pruebas cubrirán una vinculación obsoleta, un cliente activo con rol administrativo y un
+conflicto residual después de validar el OTP. Deben comprobar la solicitud de cédula, la resolución
+de identidad sin cambiar roles y una respuesta controlada sin reintentos. También se ejecutarán las
+pruebas enfocadas de identidad de Telegram y una compilación sin restore.
