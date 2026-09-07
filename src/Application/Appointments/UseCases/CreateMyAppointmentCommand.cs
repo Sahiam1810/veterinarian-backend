@@ -71,11 +71,14 @@ public sealed class CreateMyAppointmentCommandHandler(
             throw new BadRequestException("El veterinario no esta disponible.");
         }
 
-        var phone = client.PhoneNumber?.Value ?? request.RequesterPhoneNumber;
-        if (string.IsNullOrWhiteSpace(phone))
-        {
-            throw new BadRequestException("El telefono del solicitante es requerido.");
-        }
+        // Misma regla que Create/Update staff: perfil gana sobre request divergente.
+        var phone = await AppointmentRequesterPhonePolicy.ResolveAsync(
+            unitOfWork,
+            clientPet.Id,
+            request.RequesterPhoneNumber,
+            requirePhone: true,
+            cancellationToken);
+
         var endUtc = request.ScheduledStartUtc.AddMinutes(service.DurationMinutes);
         var availability = await ResolveAvailabilityAsync(
             request.VeterinarianId,

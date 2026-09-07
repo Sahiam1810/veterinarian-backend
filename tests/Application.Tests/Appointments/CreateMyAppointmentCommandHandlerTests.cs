@@ -44,6 +44,17 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_prefers_profile_phone_over_divergent_request()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        var command = fixture.Command with { RequesterPhoneNumber = "+57 301 999 8888" };
+
+        var result = await fixture.Sut.Handle(command, CancellationToken.None);
+
+        Assert.Equal("3001234567", result.RequesterPhoneNumber?.Value);
+    }
+
+    [Fact]
     public async Task Handle_uses_request_phone_only_when_profile_phone_is_missing()
     {
         var fixture = new Fixture(withClientPhone: false);
@@ -228,6 +239,10 @@ public sealed class CreateMyAppointmentCommandHandlerTests
                 .Returns(client);
             UnitOfWork.ClientPetsRepository.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
                 .Returns(new[] { ClientPet });
+            UnitOfWork.ClientPetsRepository.GetByIdAsync(ClientPet.Id, Arg.Any<CancellationToken>())
+                .Returns(ClientPet);
+            UnitOfWork.ClientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>())
+                .Returns(client);
             UnitOfWork.ServicesRepository.GetByIdAsync(Service.Id, Arg.Any<CancellationToken>())
                 .Returns(Service);
             UnitOfWork.VeterinariansRepository.GetByIdAsync(
