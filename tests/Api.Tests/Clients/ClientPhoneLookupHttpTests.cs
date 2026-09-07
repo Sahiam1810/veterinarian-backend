@@ -17,6 +17,7 @@ using Xunit;
 namespace Api.Tests.Clients;
 
 // Tarea 2.2: GET /api/clients/by-phone/{phone} anónimo + rate limit.
+[Collection(EnvironmentVariablesCollection.Name)]
 public sealed class ClientPhoneLookupHttpTests : IClassFixture<ClientPhoneLookupApiFactory>
 {
     private readonly ClientPhoneLookupApiFactory factory;
@@ -52,6 +53,7 @@ public sealed class ClientPhoneLookupHttpTests : IClassFixture<ClientPhoneLookup
     }
 }
 
+[Collection(EnvironmentVariablesCollection.Name)]
 public sealed class ClientPhoneLookupRateLimitHttpTests
     : IClassFixture<ClientPhoneLookupRateLimitedApiFactory>
 {
@@ -80,6 +82,8 @@ public sealed class ClientPhoneLookupRateLimitHttpTests
         Assert.Equal(
             "application/problem+json",
             rejected.Content.Headers.ContentType?.MediaType);
+        using var document = JsonDocument.Parse(await rejected.Content.ReadAsStringAsync());
+        Assert.Equal("RateLimit.Exceeded", document.RootElement.GetProperty("code").GetString());
     }
 }
 
@@ -159,6 +163,9 @@ public sealed class ClientPhoneLookupApiFactory : WebApplicationFactory<AuthCont
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Email__Enabled"] = "false",
+            ["Twilio__Enabled"] = "false",
+            ["Telegram__Enabled"] = "false",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.phone-lookup-tests",
             ["Jwt__Audience"] = "huellitas-api-phone-lookup-tests",

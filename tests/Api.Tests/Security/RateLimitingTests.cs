@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Api.Auth.Controllers;
 using Application.Common.Results;
 using Application.Security.Abstractions;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Api.Tests.Support;
 using Xunit;
 
 namespace Api.Tests.Security;
@@ -19,6 +21,7 @@ namespace Api.Tests.Security;
 // RateLimitingExtensions.AddApiRateLimiting nunca se conectaba. Estas
 // pruebas confirman que ahora sí está conectada y produce la respuesta
 // 429 con el formato problem+json esperado.
+[Collection(EnvironmentVariablesCollection.Name)]
 public sealed class RateLimitingTests : IClassFixture<RateLimitedApiFactory>
 {
     private readonly RateLimitedApiFactory factory;
@@ -55,6 +58,8 @@ public sealed class RateLimitingTests : IClassFixture<RateLimitedApiFactory>
             "application/problem+json",
             rejected.Content.Headers.ContentType?.MediaType);
         Assert.True(rejected.Headers.Contains("Retry-After"));
+        using var document = JsonDocument.Parse(await rejected.Content.ReadAsStringAsync());
+        Assert.Equal("RateLimit.Exceeded", document.RootElement.GetProperty("code").GetString());
     }
 }
 
@@ -70,6 +75,9 @@ public sealed class RateLimitedApiFactory : WebApplicationFactory<AuthController
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Email__Enabled"] = "false",
+            ["Twilio__Enabled"] = "false",
+            ["Telegram__Enabled"] = "false",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.test",
             ["Jwt__Audience"] = "huellitas-api-ratelimit-tests",
