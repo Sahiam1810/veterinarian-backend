@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using System.Text.Json;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.Appointments.Controllers;
 
@@ -17,31 +19,20 @@ namespace Api.Appointments.Controllers;
 [Route("api/appointments/mine")]
 public sealed class MyAppointmentsController(ISender sender) : ControllerBase
 {
+    // Portal Cliente JWT retirado (Etapa 5): cancel JWT -> 410; OTP anonimo intacto.
     [HttpPatch("{id:guid}/cancel")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Cancela una cita propia (cliente autenticado)")]
-    [EndpointDescription("Soft-cancel: cambia el estado a CANCELADA y conserva el historial. No borra la fila.")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CancelMine(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy CancelMine. Responde 410 Gone (ClientPortal.Gone). Usar OTP anonimo.")] 
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<IActionResult> CancelMine(
         Guid id,
         [FromBody] CancelMyAppointmentRequest? request,
         CancellationToken cancellationToken)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        await sender.Send(
-            new CancelMyAppointmentCommand(id, userAccountId, request?.Comment),
-            cancellationToken);
-        return NoContent();
+        throw new GoneException(ClientPortalErrors.Gone);
     }
+
 
     [HttpPost("{id:guid}/request-code")]
     [AllowAnonymous]
