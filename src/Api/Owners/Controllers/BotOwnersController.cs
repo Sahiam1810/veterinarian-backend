@@ -22,6 +22,8 @@ public sealed class BotOwnersController(IRegisterOwnerFromBot registerOwner) : C
     [EndpointDescription(
         "Endpoint anónimo rate-limited para bot. Exige proof Email (sessionId + proof). " +
         "RequireContactProofs queda forzado por el canal Bot en Application; no se acepta desde el body. " +
+        "No envía OTP ni crea password/USER_ACCOUNTS: el login web de ese email sigue denegado. " +
+        "Tras 201, el Client es localizable por los lookups Etapa 2 (cédula/teléfono) con los mismos datos. " +
         "Errores de negocio: application/problem+json con `code` estable (400/409/429). " +
         "El front/bot mapea por code, no por mensajes ni formato legacy.")]
     [ProducesResponseType(typeof(RegisterOwnerBotResponse), StatusCodes.Status201Created)]

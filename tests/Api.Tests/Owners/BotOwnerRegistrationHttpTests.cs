@@ -387,6 +387,30 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
         Assert.Null(typeof(RegisterOwnerFromBotRequest).GetProperty("Password"));
     }
 
+    [Fact]
+    public async Task Register_ExceedsRateLimit_Returns429_WithProblemJson()
+    {
+        using var limitedFactory = new BotOwnerRegistrationRateLimitedApiFactory();
+        using var client = limitedFactory.CreateAnonymousClient();
+
+        using var first = await client.PostAsJsonAsync(
+            "/api/owners/bot",
+            ValidBody(Guid.NewGuid(), "proof-token"));
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+
+        using var second = await client.PostAsJsonAsync(
+            "/api/owners/bot",
+            ValidBody(Guid.NewGuid(), "proof-token-2"));
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, second.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            second.Content.Headers.ContentType?.MediaType);
+        using var document = JsonDocument.Parse(await second.Content.ReadAsStringAsync());
+        Assert.Equal(429, document.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal("RateLimit.Exceeded", document.RootElement.GetProperty("code").GetString());
+    }
+
     private static object ValidBody(Guid sessionId, string proof) => new
     {
         FullName = "Ana Bot",
@@ -606,4 +630,41 @@ public sealed class BotOwnerRegistrationChannelApiFactory : WebApplicationFactor
             }
         }
     }
+}
+
+// Factory con permit=1 para ejercitar HTTP 429 del endpoint bot (sin Oracle/Gmail).
+public sealed class BotOwnerRegistrationRateLimitedApiFactory : BotOwnerRegistrationApiFactory
+{
+    private static readonly RsaTestKeys RateLimitKeys = RsaTestKeys.Create();
+
+    public BotOwnerRegistrationRateLimitedApiFactory()
+        : base(CreateRateLimitedEnvironment())
+    {
+        ResetRegisterOwner();
+    }
+
+    private static Dictionary<string, string> CreateRateLimitedEnvironment() =>
+        new()
+        {
+            ["ConnectionStrings__DefaultConnection"] =
+                "User Id=unused;Password=unused;Data Source=unused",
+            ["Agent__Enabled"] = "false",
+            ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
+            ["Jwt__Issuer"] = "https://issuer.huellitas.bot-owner-rate-limit-tests",
+            ["Jwt__Audience"] = "huellitas-api-bot-owner-rate-limit-tests",
+            ["Jwt__PrivateKeyPemBase64"] = RateLimitKeys.PrivateKeyPemBase64,
+            ["Jwt__PublicKeyPemBase64"] = RateLimitKeys.PublicKeyPemBase64,
+            ["Jwt__KeyId"] = "bot-owner-rate-limit-test-key",
+            ["Jwt__AccessTokenMinutes"] = "15",
+            ["Jwt__RefreshTokenDays"] = "7",
+            ["Jwt__ClockSkewSeconds"] = "0",
+            ["Email__Enabled"] = "false",
+            ["Twilio__Enabled"] = "false",
+            ["Telegram__Enabled"] = "false",
+            ["RegisterOwner__RequireContactProofs"] = "false",
+            ["RateLimiting__GlobalPermitLimit"] = "1000",
+            ["RateLimiting__GlobalWindowSeconds"] = "60",
+            ["RateLimiting__BotOwnerRegistrationPermitLimit"] = "1",
+            ["RateLimiting__BotOwnerRegistrationWindowSeconds"] = "60"
+        };
 }

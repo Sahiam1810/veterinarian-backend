@@ -1,3 +1,4 @@
+using Application.Clients.UseCases;
 using Application.Common.Exceptions;
 using Application.ContactVerification.Errors;
 using Application.Owners.Abstractions;
@@ -77,6 +78,32 @@ public sealed class RegisterOwnerStage4AcceptanceTests
         Assert.Equal(issued.SessionId, Assert.Single(harness.ConsumeProof.ConsumedSessionIds));
         Assert.Null(Assert.Single(harness.Users.Items).PasswordHash);
         Assert.Empty(harness.Accounts.Items);
+    }
+
+    // Tras alta bot, cédula/teléfono deben resolver por los mismos queries de lookup Etapa 2.
+    [Fact]
+    public async Task Acceptance_BotAdapter_RegisteredOwner_IsFindableByPhoneAndIdentification()
+    {
+        var harness = new RegisterOwnerAcceptanceHarness();
+        var issued = harness.IssueRegisterProof(Email);
+        var adapter = new RegisterOwnerFromBot(ForwardingSender(harness, requireStaffProof: false));
+
+        var result = await adapter.RegisterAsync(
+            new RegisterOwnerFromBotRequest(
+                FullName, Email, Identification, Phone, issued.SessionId, issued.Proof),
+            CancellationToken.None);
+
+        var byPhone = await new GetClientByPhoneQueryHandler(harness.UnitOfWork).Handle(
+            new GetClientByPhoneQuery(Phone),
+            CancellationToken.None);
+        var byLookup = await new GetClientLookupQueryHandler(harness.Clients).Handle(
+            new GetClientLookupQuery(Identification, Phone),
+            CancellationToken.None);
+
+        Assert.Equal(result.ClientId, byPhone.Id);
+        Assert.Equal(result.ClientId, byLookup.Id);
+        Assert.Equal(result.UserId, byPhone.UserId);
+        Assert.Equal(result.UserId, byLookup.UserId);
     }
 
     [Fact]
