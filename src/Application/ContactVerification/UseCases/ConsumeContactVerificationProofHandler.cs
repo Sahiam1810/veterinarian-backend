@@ -55,6 +55,7 @@ public sealed class ConsumeContactVerificationProofHandler(
         var proofHash = session.ProofHash;
         var purpose = session.Purpose;
         var subjectUserId = session.SubjectUserId;
+        var destinationHash = session.DestinationHash;
 
         var consumed = await sessions.TryConsumeProofAsync(
             session.Id,
@@ -79,6 +80,10 @@ public sealed class ConsumeContactVerificationProofHandler(
             throw new ContactVerificationException(ContactVerificationErrors.ProofInvalid);
         }
 
-        return new ConsumedContactVerificationProof(session.Id, purpose, subjectUserId);
+        return new ConsumedContactVerificationProof(
+            session.Id,
+            purpose,
+            subjectUserId,
+            destinationHash);
     }
 }

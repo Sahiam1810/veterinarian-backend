@@ -158,6 +158,7 @@ using Infrastructure.Messaging.Configuration;
 using Application.Verification.Abstractions;
 using Application.ContactVerification.Abstractions;
 using Application.ContactVerification.UseCases;
+using Application.Owners.Abstractions;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
@@ -165,6 +166,8 @@ using Infrastructure.Verification.Security;
 using Infrastructure.ContactVerification;
 using Infrastructure.ContactVerification.Configuration;
 using Infrastructure.ContactVerification.Repositories;
+using Infrastructure.Owners;
+using Infrastructure.Owners.Configuration;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -342,6 +345,9 @@ public static class DependencyInjection
         services.AddOptions<ContactVerificationOptions>()
             .Bind(configuration.GetSection(ContactVerificationOptions.SectionName))
             .ValidateOnStart();
+        services.AddOptions<RegisterOwnerOptions>()
+            .Bind(configuration.GetSection(RegisterOwnerOptions.SectionName));
+        services.AddScoped<IRegisterOwnerSettings, ConfiguredRegisterOwnerSettings>();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
