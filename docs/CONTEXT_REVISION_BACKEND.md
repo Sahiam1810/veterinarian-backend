@@ -14,8 +14,8 @@
 
 **Qué implica esto para el backend:**
 - El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es el canal real y activo del Cliente — ahí aplica el peso de revisión y corrección.
-- Las rutas `[Authorize(Policy = ClientOnly)]` del panel JWT son **legado a retirar** en **Etapa 5** (no producto). Inventario, 410/`ClientPortal.Gone`, OTP anónimo de citas y política de teléfono: ver `docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`.
-- El OTP de citas (`POST /api/appointments/mine/{id}/request-code|confirm-code`) **sigue anónimo** (teléfono de la cita); no es portal JWT ni OTP Gmail.
+- Las rutas JWT del portal dueño (`ClientOnly` / `/me` / `/mine` de panel) **quedaron retiradas en la tarea 5.2** (eliminación de endpoints; no 410 en este slice). Política residual `ClientOnly` puede vivir hasta 5.5 si no hay consumidores.
+- **Excepción explícita (única):** `POST /api/appointments/mine/{id}/request-code|confirm-code` — OTP anónimo + rate limit (teléfono de la cita); no es portal JWT ni OTP Gmail.
 - WhatsApp sigue **fuera de alcance** (Etapas 3–5).
 
 **Estado del frontend (para contexto, no accionable desde el backend):** SuperAdmin, Veterinario y Auxiliar ya están **100% conectados** al frontend real (no es solo backend con Swagger — hay UI consumiéndolos en producción/staging). Tenerlo en cuenta al estimar impacto de un cambio: romper un contrato de esos tres roles es visible para usuarios reales ahora mismo, no solo teórico.
@@ -25,7 +25,10 @@ El path legacy `ClientAccountRegistration` / `ClientAccountRegistrationService` 
 
 ### Etapa 5 (kickoff) — retiro portal Cliente JWT
 ADR: [`docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`](adr/2026-09-07-etapa-5-client-portal-retirement.md). Smoke kickoff: [`docs/smoke/etapa-5-kickoff-gate.md`](smoke/etapa-5-kickoff-gate.md).
-Decisiones ya escritas: política `RequesterPhoneNumber` ↔ `Clients.PhoneNumber`; inventario ClientOnly → 410/`ClientPortal.Gone`; OTP citas anónimo; seed Cliente sin módulos de escritorio; WhatsApp fuera. **No** implementar los cinco slices en el mismo PR que el kickoff.
+Decisiones ya escritas: política `RequesterPhoneNumber` ↔ `Clients.PhoneNumber`; inventario ClientOnly → eliminar/410; OTP citas anónimo; seed Cliente sin módulos de escritorio; WhatsApp fuera.
+
+### Cierre superficie JWT ClientOnly (tarea 5.2)
+Eliminados: `/api/clients/me`, `/api/pets/mine*`, `/api/appointments/mine` (GET/POST JWT), booking JWT, `PATCH .../cancel` JWT, `/api/vaccinations/mine`, `/api/accountstatements/mine`. **Excepción en CONTEXT:** solo OTP `request-code`/`confirm-code` en `MyAppointmentsController` (AllowAnonymous). Tests: `ClientOnlyPortalClosureTests`.
 
 ### Seed permisos rol Cliente (tarea 5.3)
 ADR: [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — **Opción A**: cero filas de módulos de plataforma en `ROLE_PERMISSIONS` para `77777777-…`. El seed borra residuales al reejecutar. Staff (Admin/Vet/Recep/Aux) intacto. Cliente = chatbot, no web.
@@ -95,10 +98,10 @@ Forma de la respuesta (login/refresh/revoke fallidos, JWT challenge/forbidden):
 
 No hardcodear mensajes de UX distintos por endpoint en español: el `Description` del `Error` es respaldo genérico en inglés; la copia visible la resuelve el front con el `code`.
 
-### Patrón "ver solo lo propio" (`/mine`)
-Ya existen `GET /api/clients/me`, `GET /api/pets/mine`, `GET /api/appointments/mine` — todos resuelven la identidad desde el JWT (`sub`/`NameIdentifier` → `UserAccountsRepository` → `ClientsRepository.GetByUserIdAsync` → `ClientPetsRepository.GetByClientIdAsync`) y devuelven solo lo del cliente autenticado.
+### Patrón "ver solo lo propio" (histórico `/mine` JWT)
+El portal dueño con JWT (`ClientOnly` + `/clients/me`, `/pets/mine`, `/appointments/mine`, etc.) **ya no existe** (tarea 5.2). El dueño opera por chatbot + OTP de cita anónimo; el staff usa endpoints generales con `RequirePermission` / `StaffOnly`.
 
-**Por qué el `GetAll` general (`GET /api/pets`, `GET /api/clientspets`, etc.) no filtra por dueño**: esos endpoints son para el personal (Admin/Vet/Recepcionista/Auxiliar) y devuelven todo sin filtrar a propósito — el filtrado por dueño vive en el endpoint `/mine` separado. Migrar el `GetAll` general al mismo permiso que le da acceso a Cliente (`"Mascotas": View`) sin agregar filtrado real sería un hueco de privacidad — por eso, en varios módulos (Pets, ClientsPets, Appointments, AppointmentStatusHistories, Availabilities, AccountStatements), el `GetAll`/`GetById` general se dejó deliberadamente en la policy vieja (`StaffOnly`, basada en rol) en vez de migrarlo a `RequirePermission`, porque Cliente nunca estuvo en `StaffOnly` — así no gana acceso sin querer. Ver el detalle exacto por controller en la sección 2.
+**Por qué el `GetAll` general (`GET /api/pets`, `GET /api/clientspets`, etc.) no filtra por dueño**: esos endpoints son para el personal (Admin/Vet/Recepcionista/Auxiliar) y devuelven todo sin filtrar a propósito. Ver el detalle exacto por controller en la sección 2.
 
 **Excepción importante — `MedicalRecords`/`Vaccinations`**: ahí el `GetAll`/`GetById` general **sí** está en `RequirePermission`, pero el *handler* (no el controller) hace el filtrado: si el `UserAccountId` resuelve a un `Client`, filtra por sus `ClientPetId`; si no (personal), devuelve todo. Ver `GetAllMedicalRecordsQueryHandler`/`GetAllVaccinationsQueryHandler` como referencia si necesitas replicar este patrón en otro módulo.
 
