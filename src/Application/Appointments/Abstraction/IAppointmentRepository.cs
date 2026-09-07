@@ -41,6 +41,12 @@ public interface IAppointmentRepository
         DateTime toUtc,
         CancellationToken cancellationToken);
 
+    // Citas AGENDADA con consultorio en la ventana (para choques de sala).
+    Task<IReadOnlyCollection<Appointment>> GetScheduledRoomOverlapsAsync(
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken);
+
     Task<Appointment?> GetByBookingRequestKeyHashAsync(
         string bookingRequestKeyHash,
         CancellationToken cancellationToken);
@@ -55,6 +61,28 @@ public interface IAppointmentRepository
     Task<bool> HasOverlappingAppointmentAsync(
         Guid clientPetId,
         Guid veterinarianId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
+
+    // Choque de sala AGENDADA, comparacion case-insensitive.
+    Task<bool> HasConsultingRoomOverlapAsync(
+        string consultingRoom,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountScheduledOverlapsForVeterinarianAsync(
+        Guid veterinarianId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> HasClientPetOverlapAsync(
+        Guid clientPetId,
         DateTime start,
         DateTime end,
         Guid? excludeAppointmentId = null,

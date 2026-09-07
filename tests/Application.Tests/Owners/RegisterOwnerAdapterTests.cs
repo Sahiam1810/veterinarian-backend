@@ -52,18 +52,20 @@ public sealed class RegisterOwnerAdapterTests
     }
 
     [Fact]
-    public async Task Telegram_adapter_sends_telegram_channel()
+    public async Task Telegram_adapter_sends_telegram_channel_without_requiring_proof()
     {
         var adapter = new RegisterOwnerFromTelegram(sender);
 
         await adapter.RegisterAsync(
             new RegisterOwnerFromTelegramRequest(
-                "Ana", "ana@huellitas.test", "123", "3001234567",
-                Guid.NewGuid(), "proof", TelegramUserId: 99),
+                "Ana", "ana@huellitas.test", "123", "3001234567", TelegramUserId: 99),
             CancellationToken.None);
 
         await sender.Received(1).Send(
-            Arg.Is<RegisterOwnerCommand>(c => c.Channel == RegisterOwnerChannel.Telegram),
+            Arg.Is<RegisterOwnerCommand>(c =>
+                c.Channel == RegisterOwnerChannel.Telegram &&
+                c.ContactProofSessionId == null &&
+                c.ContactProof == null),
             Arg.Any<CancellationToken>());
     }
 

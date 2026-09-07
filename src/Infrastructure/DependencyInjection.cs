@@ -2,6 +2,7 @@ using Application.AccountStatements.Abstraction;
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
+using Application.VeterinarianAbsences.Abstraction;
 using Application.Appointments.Abstraction;
 using Infrastructure.Appointments.BackgroundServices;
 using Infrastructure.Appointments.Configuration;
@@ -51,6 +52,7 @@ using Infrastructure.Agent.Conversations;
 using Infrastructure.Agent.Http;
 using Infrastructure.Notifications.Repositories;
 using Infrastructure.Availabilities.Repositories;
+using Infrastructure.VeterinarianAbsences.Repositories;
 using Infrastructure.Appointments.Repositories;
 using Infrastructure.AppointmentStatusHistories.Repositories;
 using Infrastructure.MedicalRecords.Repositories;
@@ -98,7 +100,6 @@ using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
-using Application.Security.Registration;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
@@ -159,6 +160,7 @@ using Application.Verification.Abstractions;
 using Application.ContactVerification.Abstractions;
 using Application.ContactVerification.UseCases;
 using Application.Owners.Abstractions;
+using Application.Owners.Adapters;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
@@ -231,6 +233,7 @@ public static class DependencyInjection
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
         services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+        services.AddScoped<IVeterinarianAbsenceRepository, VeterinarianAbsenceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IAppointmentBookingSettings, ConfiguredAppointmentBookingSettings>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
@@ -348,6 +351,8 @@ public static class DependencyInjection
         services.AddOptions<RegisterOwnerOptions>()
             .Bind(configuration.GetSection(RegisterOwnerOptions.SectionName));
         services.AddScoped<IRegisterOwnerSettings, ConfiguredRegisterOwnerSettings>();
+        // 4.1: adaptador staff sobre el RegisterOwnerCommand ya existente (sin User/Account/Credentials extra).
+        services.AddScoped<IRegisterOwnerFromStaff, RegisterOwnerFromStaff>();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
@@ -426,7 +431,6 @@ public static class DependencyInjection
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<IClientAccountRegistrationService, ClientAccountRegistrationService>();
 
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()

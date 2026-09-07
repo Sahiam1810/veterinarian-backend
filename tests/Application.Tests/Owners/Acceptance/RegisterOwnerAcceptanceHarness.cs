@@ -81,7 +81,7 @@ internal sealed class RegisterOwnerAcceptanceHarness
         public bool RequireContactProofs { get; } = requireStaffProof;
 
         public bool RequiresContactProof(RegisterOwnerChannel channel) =>
-            channel is RegisterOwnerChannel.Bot or RegisterOwnerChannel.Telegram
+            channel is RegisterOwnerChannel.Bot
             || RequireContactProofs;
     }
 }
@@ -243,19 +243,43 @@ internal sealed class InMemoryClients : IClientRepository
     public Task<ClientEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
+    // Misma normalización que ClientRepository: lookup Etapa 2 tras RegisterOwner.
     public Task<ClientEntity?> GetByIdentificationNumberAsync(
-        string identificationNumber, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
+        string identificationNumber, CancellationToken cancellationToken)
+    {
+        var expected = ClientIdentificationNumber.Create(identificationNumber).Value;
+        return Task.FromResult(Items.FirstOrDefault(client =>
+            client.IdentificationNumber.Value == expected));
+    }
 
-    public Task<ClientEntity?> GetByPhoneAsync(string phoneNumber, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
+    public Task<ClientEntity?> GetByPhoneAsync(string phoneNumber, CancellationToken cancellationToken)
+    {
+        var expected = ClientPhoneNumber.Create(phoneNumber).Value;
+        return Task.FromResult(Items.FirstOrDefault(client =>
+            client.PhoneNumber?.Value == expected));
+    }
 
     public Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
+        Task.FromResult(Items.FirstOrDefault(client => client.UserId == userId));
 
     public Task<ClientEntity?> GetByLookupAsync(
-        string? identificationNumber, string? phoneNumber, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
+        string? identificationNumber, string? phoneNumber, CancellationToken cancellationToken)
+    {
+        IEnumerable<ClientEntity> query = Items;
+        if (!string.IsNullOrWhiteSpace(identificationNumber))
+        {
+            var idVo = ClientIdentificationNumber.Create(identificationNumber).Value;
+            query = query.Where(client => client.IdentificationNumber.Value == idVo);
+        }
+
+        if (!string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            var phoneVo = ClientPhoneNumber.Create(phoneNumber).Value;
+            query = query.Where(client => client.PhoneNumber?.Value == phoneVo);
+        }
+
+        return Task.FromResult(query.FirstOrDefault());
+    }
 
     public Task UpdateAsync(ClientEntity client, CancellationToken cancellationToken) =>
         throw new NotSupportedException();

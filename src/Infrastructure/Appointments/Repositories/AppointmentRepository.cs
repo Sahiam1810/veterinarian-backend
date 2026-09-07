@@ -210,6 +210,85 @@ public sealed class AppointmentRepository : IAppointmentRepository
             cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Appointment>> GetScheduledRoomOverlapsAsync(
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken)
+        => await _context.Set<Appointment>()
+            .Include(x => x.Status)
+            .Where(x => x.Status!.Name == "AGENDADA"
+                && x.ConsultingRoom != null
+                && x.ScheduledStart < toUtc
+                && x.ScheduledEnd > fromUtc)
+            .AsNoTracking()
+            .OrderBy(x => x.ScheduledStart)
+            .ToListAsync(cancellationToken);
+
+    public Task<bool> HasConsultingRoomOverlapAsync(
+        string consultingRoom,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var room = consultingRoom.Trim().ToUpper();
+        var query = _context.Set<Appointment>().AsQueryable();
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeAppointmentId.Value);
+        }
+
+        return query.AnyAsync(
+            x => x.Status!.Name == "AGENDADA"
+                && x.ConsultingRoom != null
+                && x.ConsultingRoom.ToUpper() == room
+                && x.ScheduledStart < end
+                && x.ScheduledEnd > start,
+            cancellationToken);
+    }
+
+    public Task<int> CountScheduledOverlapsForVeterinarianAsync(
+        Guid veterinarianId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<Appointment>().AsQueryable();
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeAppointmentId.Value);
+        }
+
+        return query.CountAsync(
+            x => x.VeterinarianId == veterinarianId
+                && x.Status!.Name == "AGENDADA"
+                && x.ScheduledStart < end
+                && x.ScheduledEnd > start,
+            cancellationToken);
+    }
+
+    public Task<bool> HasClientPetOverlapAsync(
+        Guid clientPetId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<Appointment>().AsQueryable();
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeAppointmentId.Value);
+        }
+
+        return query.AnyAsync(
+            x => x.ClientPetId == clientPetId
+                && x.Status!.Name == "AGENDADA"
+                && x.ScheduledStart < end
+                && x.ScheduledEnd > start,
+            cancellationToken);
+    }
+
     public async Task AddAsync(
         Appointment appointment,
         CancellationToken cancellationToken = default)

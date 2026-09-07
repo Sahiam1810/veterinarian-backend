@@ -15,4 +15,6 @@ public sealed record AppointmentResponse(
     DateTime ScheduledEnd,
     string? Notes,
     string? RequesterPhoneNumber,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    Guid? PetId,
+    string? ConsultingRoom);

@@ -1,6 +1,8 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Application.Common.Exceptions;
 using Application.UserAccounts.Abstraction;
 using Application.Veterinarians.Abstraction;
@@ -32,6 +34,8 @@ public sealed class UpdateAppointmentOwnershipTests
     private readonly IVeterinarianRepository veterinariansRepository = Substitute.For<IVeterinarianRepository>();
     private readonly Application.Availabilities.Abstraction.IAvailabilityRepository availabilitiesRepository
         = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
+    private readonly IVeterinarianAbsenceRepository absences
+        = Substitute.For<IVeterinarianAbsenceRepository>();
     private readonly UpdateAppointmentCommandHandler sut;
 
     public UpdateAppointmentOwnershipTests()
@@ -40,6 +44,9 @@ public sealed class UpdateAppointmentOwnershipTests
         unitOfWork.UserAccountsRepository.Returns(userAccountsRepository);
         unitOfWork.VeterinariansRepository.Returns(veterinariansRepository);
         unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
+        absences.GetOverlappingAsync(
+                Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<VeterinarianAbsence>());
         availabilitiesRepository.LockByIdAsync(AvailabilityId, Arg.Any<CancellationToken>())
             .Returns(new Availability(
                 OwnVeterinarianId,
@@ -50,7 +57,7 @@ public sealed class UpdateAppointmentOwnershipTests
                 Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                 call.ArgAt<CancellationToken>(1)));
-        sut = new UpdateAppointmentCommandHandler(unitOfWork);
+        sut = new UpdateAppointmentCommandHandler(unitOfWork, absences);
     }
 
     [Fact]

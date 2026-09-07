@@ -13,7 +13,7 @@ Fuera de alcance: Gmail/SMTP, Twilio, WhatsApp, request OTP (Etapa 3), borrar Te
 
 | Clave | Rol |
 |-------|-----|
-| `RegisterOwner__RequireContactProofs` | Solo **staff**. Default `false` (ADR: escritorio). `true` exige proof Email. Bot/Telegram siempre exigen proof. |
+| `RegisterOwner__RequireContactProofs` | Solo **staff**. Default `false` (ADR: escritorio). `true` exige proof Email. Bot siempre ConsumeProof. Telegram: equivalencia OTP de sesión (sin ContactVerification). |
 
 ## Matriz de aceptación
 
@@ -22,7 +22,7 @@ Fuera de alcance: Gmail/SMTP, Twilio, WhatsApp, request OTP (Etapa 3), borrar Te
 | A | Staff, flag false (ADR) | User Cliente, `PASSWORD_HASH` null, 0 accounts/creds, sin ConsumeProof | `Acceptance_Staff_WithoutProofFlag_CreatesClienteWithoutPasswordOrLogin` |
 | B | Staff, flag true + proof Register | ConsumeProof 1 vez, hash null, 0 accounts | `Acceptance_Staff_WithProofFlag_ConsumesEmailProofAndDoesNotCreateLogin` |
 | C | Bot + proof | ConsumeProof; canal Bot | `Acceptance_BotAdapter_AlwaysConsumesRegisterProof` |
-| D | Telegram + proof | ConsumeProof; canal Telegram | `Acceptance_TelegramAdapter_AlwaysConsumesRegisterProof` |
+| D | Telegram sin ContactProof (equivalencia sesión) | sin ConsumeProof; hash null; 0 accounts | `Acceptance_TelegramAdapter_UsesSessionEquivalence_WithoutContactProof` |
 | E | Login del email registrado (0 accounts) | Sin JWT | `Acceptance_RegisteredEmail_LoginWithoutAccount_DoesNotIssueJwt` |
 | F | Login Cliente si hubiera account+password | `Authentication.PlatformAccessDenied` | `Acceptance_ClienteWithLegacyLogin_IsPlatformAccessDenied` |
 | G | Alta de account sobre el user registrado | `Authentication.PlatformAccessDenied` | `Acceptance_CreateUserAccount_ForRegisteredCliente_IsPlatformAccessDenied` |

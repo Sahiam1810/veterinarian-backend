@@ -32,6 +32,7 @@ using Domain.MessageTypes.Entities;
 
 using Domain.EscalationStatuses.Entities;
 using Domain.Availabilities.Entities;
+using Domain.VeterinarianAbsences.Entities;
 using Domain.Appointments.Entities;
 using Domain.AppointmentStatusHistories.Entities;
 using Domain.MedicalRecords.Entities;
@@ -96,6 +97,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<EscalationStatusEntity> EscalationStatuses => Set<EscalationStatusEntity>();
 
     public DbSet<Availability> Availabilities => Set<Availability>();
+
+    public DbSet<VeterinarianAbsence> VeterinarianAbsences => Set<VeterinarianAbsence>();
 
     public DbSet<Appointment> Appointments => Set<Appointment>();
 

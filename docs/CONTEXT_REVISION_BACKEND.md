@@ -13,11 +13,19 @@
 **El Cliente nunca tiene interfaz propia ni login.** Se había planeado en algún momento un panel de cliente (self-service web/app con JWT, viendo sus citas/mascotas/etc.) — **esa idea se descartó**, indicación explícita de la líder: el Cliente **solo** interactúa con el sistema a través del chatbot (Telegram por ahora). Todo lo que el cliente necesita — agendar cita, cancelar, reprogramar, consultar sus mascotas — pasa por el chatbot, no por un frontend propio del cliente.
 
 **Qué implica esto para el backend:**
-- Todo el trabajo ya hecho para Cliente (`ClientOnly`, `/clients/me`, `/pets/mine`, `/appointments/mine`, el flujo OTP de auto-servicio de citas sin JWT, etc.) **se deja tal cual está, quieto** — no se retira ni se completa activamente. Queda catalogado como **mejora futura**, no como pendiente de esta ronda. No reportar como "hallazgo" el hecho de que el panel de Cliente esté incompleto o inconsistente con el resto — es simplemente un camino que no se va a seguir desarrollando por ahora.
-- **No tocar nada de lo que es exclusivamente de Cliente** (rutas `ClientOnly`, controllers `/mine`) salvo que el hallazgo sea de seguridad real explotable por otro rol, o que se pida explícitamente.
-- El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es, en cambio, el canal real y activo del Cliente — ahí sí aplica todo el peso de la revisión y corrección.
+- El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es el canal real y activo del Cliente — ahí aplica el peso de revisión y corrección.
+- Las rutas `[Authorize(Policy = ClientOnly)]` del panel JWT son **legado a retirar** en **Etapa 5** (no producto). Inventario, 410/`ClientPortal.Gone`, OTP anónimo de citas y política de teléfono: ver `docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`.
+- El OTP de citas (`POST /api/appointments/mine/{id}/request-code|confirm-code`) **sigue anónimo** (teléfono de la cita); no es portal JWT ni OTP Gmail.
+- WhatsApp sigue **fuera de alcance** (Etapas 3–5).
 
 **Estado del frontend (para contexto, no accionable desde el backend):** SuperAdmin, Veterinario y Auxiliar ya están **100% conectados** al frontend real (no es solo backend con Swagger — hay UI consumiéndolos en producción/staging). Tenerlo en cuenta al estimar impacto de un cambio: romper un contrato de esos tres roles es visible para usuarios reales ahora mismo, no solo teórico.
+
+### Alta de dueño (Etapa 4) — sin login de Cliente
+El path legacy `ClientAccountRegistration` / `ClientAccountRegistrationService` (User + Account + Credentials + Client con password) **fue eliminado** (tarea 4.4). El alta de dueño pasa solo por `RegisterOwner` (staff/bot/Telegram): User rol Cliente **sin** `PASSWORD_HASH`, perfil Client, **cero** `USER_ACCOUNTS` / `USER_CREDENTIALS`. No reintroducir StageAsync con password ni registrar ese servicio en DI.
+
+### Etapa 5 (kickoff) — retiro portal Cliente JWT
+ADR: [`docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`](adr/2026-09-07-etapa-5-client-portal-retirement.md). Smoke kickoff: [`docs/smoke/etapa-5-kickoff-gate.md`](smoke/etapa-5-kickoff-gate.md).
+Decisiones ya escritas: política `RequesterPhoneNumber` ↔ `Clients.PhoneNumber`; inventario ClientOnly → 410/`ClientPortal.Gone`; OTP citas anónimo; seed Cliente sin módulos de escritorio; WhatsApp fuera. **No** implementar los cinco slices en el mismo PR que el kickoff.
 
 ---
 
