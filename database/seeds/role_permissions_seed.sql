@@ -1,6 +1,7 @@
 -- Matriz inicial de permisos por rol y módulo.
 -- Requiere roles_seed.sql y modules_seed.sql.
--- Solo inserta permisos faltantes: no sobrescribe ajustes administrativos existentes.
+-- Solo inserta permisos faltantes de staff: no sobrescribe ajustes administrativos existentes.
+-- Cliente (Opción A / ADR 2026-09-07): sin filas de plataforma; se borran residuales al reejecutar.
 SET DEFINE OFF;
 
 DECLARE
@@ -83,10 +84,10 @@ BEGIN
     ensure_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
     ensure_permission('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-6666-666666666666', 'Estados de Cita', 1, 0, 0, 0);
 
-    -- Cliente (77777777-7777-7777-7777-777777777777):
-    -- No se asignan filas en ROLE_PERMISSIONS (Opción A - ADR 2026-09-07).
-    -- El Cliente (dueño de mascota) opera exclusivamente vía Chatbot / Telegram y OTP de autoservicio.
-    -- No accede a la plataforma web ni opera módulos del staff, por lo que no requiere entradas en ROLE_PERMISSIONS.
+    -- Cliente = chatbot / Telegram / OTP autoservicio; NO plataforma web (ADR Opción A).
+    -- ensure_permission solo inserta: sin DELETE, DBs ya sembradas conservarían canView de menú.
+    DELETE FROM ROLE_PERMISSIONS
+    WHERE ROLE_ID = '77777777-7777-7777-7777-777777777777';
 END;
 /
 
