@@ -75,6 +75,24 @@ public sealed class ClientRepository : IClientRepository
         return await query.AnyAsync(cancellationToken);
     }
 
+    public async Task<bool> ExistsByPhoneAsync(
+        string normalizedPhoneNumber,
+        Guid? excludingClientId,
+        CancellationToken cancellationToken)
+    {
+        var phoneVo = ClientPhoneNumber.Create(normalizedPhoneNumber);
+
+        var query = _context.Set<ClientEntity>()
+            .Where(c => c.PhoneNumber == phoneVo);
+
+        if (excludingClientId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludingClientId.Value);
+        }
+
+        return await query.AnyAsync(cancellationToken);
+    }
+
     public async Task AddAsync(ClientEntity client, CancellationToken cancellationToken)
     {
         await _context.Set<ClientEntity>().AddAsync(client, cancellationToken);

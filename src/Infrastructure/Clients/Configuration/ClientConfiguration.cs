@@ -61,6 +61,11 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => ClientPhoneNumber.CreateOptional(str))
             .IsRequired(false);
 
+        // UNIQUE nullable: Oracle permite varios NULL; solo valores no nulos son únicos.
+        builder.HasIndex(client => client.PhoneNumber)
+            .IsUnique()
+            .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER");
+
         builder.Property(client => client.RegistrationDate)
             .HasColumnName("REGISTRATION_DATE")
             .IsRequired();

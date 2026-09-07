@@ -29,6 +29,12 @@ public interface IClientRepository
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 
+    // normalizedPhoneNumber: dígitos ya normalizados por ClientPhoneNumber.
+    Task<bool> ExistsByPhoneAsync(
+        string normalizedPhoneNumber,
+        Guid? excludingClientId,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         ClientEntity client,
         CancellationToken cancellationToken);

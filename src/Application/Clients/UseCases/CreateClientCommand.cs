@@ -1,6 +1,8 @@
+using Application.Clients.Errors;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Domain.Clients.Entities;
+using Domain.Clients.ValueObjects;
 using MediatR;
 
 namespace Application.Clients.UseCases;
@@ -45,6 +47,22 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
         if (userAlreadyHasClient)
         {
             throw new ConflictException("Ese usuario ya tiene un perfil de cliente asociado.");
+        }
+
+        var phone = ClientPhoneNumber.CreateOptional(request.PhoneNumber);
+        if (phone is not null)
+        {
+            var phoneTaken = await _uow.ClientsRepository.ExistsByPhoneAsync(
+                phone.Value,
+                excludingClientId: null,
+                cancellationToken);
+
+            if (phoneTaken)
+            {
+                throw new ConflictException(
+                    "Ya existe un cliente con ese número de teléfono.",
+                    ClientErrorCodes.PhoneNumberAlreadyExists);
+            }
         }
 
         var client = new ClientEntity(
