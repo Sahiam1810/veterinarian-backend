@@ -46,8 +46,12 @@ public sealed class MyAppointmentsController(ISender sender) : ControllerBase
     [HttpPost("{id:guid}/request-code")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AppointmentOtpRequest)]
-    [EndpointSummary("Solicita código OTP para actuar sobre una cita")]
-    [EndpointDescription("Compara el teléfono entrante con RequesterPhoneNumber y envía el código por SMS.")]
+    [EndpointSummary("OTP de cita (chatbot/autoservicio): solicita código")]
+    [EndpointDescription(
+        "Flujo anónimo rate-limited para cancelar o reagendar una cita vía chatbot/autoservicio. " +
+        "Compara el teléfono del body con Appointment.RequesterPhoneNumber y despacha OTP por el canal SMS de verificación de citas " +
+        "(sesión propia APPOINTMENT_ACTION_VERIFICATION_SESSIONS). " +
+        "No es ContactVerification: no verifica correo/Gmail y no crea, consume ni reutiliza ContactVerificationSession.")]
     [ProducesResponseType(typeof(RequestAppointmentActionCodeResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -93,8 +97,12 @@ public sealed class MyAppointmentsController(ISender sender) : ControllerBase
     [HttpPost("{id:guid}/confirm-code")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AppointmentOtpConfirm)]
-    [EndpointSummary("Confirma el código OTP y ejecuta la acción")]
-    [EndpointDescription("Valida el OTP y cancela o reagenda la cita. Nunca borra la fila.")]
+    [EndpointSummary("OTP de cita (chatbot/autoservicio): confirma código y ejecuta acción")]
+    [EndpointDescription(
+        "Confirma el OTP de la sesión de cita (AppointmentActionVerificationSession) y cancela o reagenda. " +
+        "Anónimo y rate-limited; el teléfono del body debe coincidir con RequesterPhoneNumber de la cita. " +
+        "Independiente de ContactVerification Email/Gmail: no usa ni consume ContactVerificationSession. " +
+        "Nunca borra la fila de la cita.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
