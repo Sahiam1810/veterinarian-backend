@@ -109,6 +109,22 @@ public sealed class TelegramIdentitySessionTests
     }
 
     [Fact]
+    public void Inactive_account_email_can_recover_identification_before_otp()
+    {
+        var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
+        session.CapturePendingMessage("protected-private-message", Now);
+        session.RequireRegistration("protected-id", Now.AddSeconds(1));
+        session.ConfirmRegistration(Now.AddSeconds(2));
+        session.CaptureFullName("protected-name", Now.AddSeconds(3));
+
+        session.RecoverIdentification(Now.AddSeconds(4));
+
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingIdentification, session.Status);
+        Assert.Equal(42, session.PendingInboundUpdateId);
+        Assert.Equal("protected-private-message", session.ProtectedPendingMessage);
+    }
+
+    [Fact]
     public void Invalid_otp_attempts_block_the_session_at_the_configured_limit()
     {
         var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);

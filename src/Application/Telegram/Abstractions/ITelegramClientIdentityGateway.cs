@@ -12,7 +12,8 @@ public interface ITelegramClientIdentityGateway
         Guid personId,
         CancellationToken cancellationToken);
 
-    Task<TelegramClientIdentity> StageRegistrationAsync(
+    Task<TelegramClientIdentity> CompleteRegistrationAsync(
         TelegramClientRegistration registration,
+        Guid? existingPersonId,
         CancellationToken cancellationToken);
 }

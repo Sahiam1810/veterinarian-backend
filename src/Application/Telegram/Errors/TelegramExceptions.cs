@@ -16,5 +16,8 @@ public sealed class TelegramIdentityConflictException()
 public sealed class TelegramRegistrationConflictException()
     : TelegramIntegrationException("The Telegram registration data already exists.");
 
+public sealed class TelegramClientIdentificationMismatchException()
+    : TelegramIntegrationException("The verified account does not match the client identification.");
+
 public sealed class TelegramDeliveryException(Exception? innerException = null)
     : TelegramIntegrationException("Telegram delivery failed.", innerException);

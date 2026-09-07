@@ -33,6 +33,7 @@ public interface ITelegramIdentityAccessService
 public sealed class TelegramIdentityAccessService(
     ITelegramUnitOfWork unitOfWork,
     ITelegramClientIdentityGateway clients,
+    ITelegramRegistrationAccountLookup accountLookup,
     IVerificationCodeDispatcher verificationCodeDispatcher,
     IOtpProtector otpProtector,
     ITelegramIdentityDataProtector dataProtector,
@@ -218,13 +219,21 @@ public sealed class TelegramIdentityAccessService(
         CancellationToken cancellationToken)
     {
         await RedactAsync(update, now.UtcDateTime, cancellationToken);
+        var normalizedIdentification = identification.Trim();
+        if (normalizedIdentification.Length is < 5 or > 20)
+        {
+            return new TelegramIdentityAccessOutcome(
+                true,
+                "Escribe una cédula válida de entre 5 y 20 caracteres o usa /cancelar.");
+        }
+
         var identity = await clients.FindActiveByIdentificationAsync(
-            identification,
+            normalizedIdentification,
             cancellationToken);
         if (identity is null)
         {
             session.RequireRegistration(
-                dataProtector.Protect(IdentificationPurpose, identification),
+                dataProtector.Protect(IdentificationPurpose, normalizedIdentification),
                 now.UtcDateTime);
             await PersistSessionAsync(session, cancellationToken);
             return new TelegramIdentityAccessOutcome(
@@ -296,13 +305,28 @@ public sealed class TelegramIdentityAccessService(
             return new TelegramIdentityAccessOutcome(true, "Escribe un correo electrónico válido.");
         }
 
+        var account = await accountLookup.FindByEmailAsync(normalizedEmail, cancellationToken);
+        if (account.Kind == TelegramRegistrationAccountKind.Inactive ||
+            account.Kind == TelegramRegistrationAccountKind.Active && account.PersonId is null)
+        {
+            session.RecoverIdentification(now.UtcDateTime);
+            await PersistSessionAsync(session, cancellationToken);
+            return new TelegramIdentityAccessOutcome(
+                true,
+                "La cuenta asociada a ese correo está inactiva. " +
+                "Escribe la cédula de otra cuenta activa o usa /cancelar y solicita soporte.");
+        }
+
         var otp = otpProtector.Create();
-        await SendOtpAsync(normalizedEmail, otp.Code, now, cancellationToken);
+        await SendOtpAsync(account.NormalizedEmail, otp.Code, now, cancellationToken);
         session.BeginRegistrationOtp(
-            dataProtector.Protect(EmailPurpose, normalizedEmail),
+            dataProtector.Protect(EmailPurpose, account.NormalizedEmail),
             otp.Hash,
             now.Add(settings.OtpLifetime).UtcDateTime,
-            now.UtcDateTime);
+            now.UtcDateTime,
+            account.Kind == TelegramRegistrationAccountKind.Active
+                ? account.PersonId
+                : null);
         await PersistSessionAsync(session, cancellationToken);
         return new TelegramIdentityAccessOutcome(
             true,
@@ -345,15 +369,19 @@ public sealed class TelegramIdentityAccessService(
         {
             await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
             {
-                var identity = session.PersonId is not null
-                    ? new TelegramClientIdentity(session.PersonId.Value, Guid.Empty, string.Empty)
-                    : await clients.StageRegistrationAsync(
+                var identity = session.ProtectedIdentification is null
+                    ? new TelegramClientIdentity(
+                        session.PersonId ?? throw new TelegramAccountUnavailableException(),
+                        Guid.Empty,
+                        string.Empty)
+                    : await clients.CompleteRegistrationAsync(
                         new TelegramClientRegistration(
                             dataProtector.Unprotect(
                                 IdentificationPurpose,
                                 session.ProtectedIdentification!),
                             dataProtector.Unprotect(FullNamePurpose, session.ProtectedFullName!),
                             dataProtector.Unprotect(EmailPurpose, session.ProtectedEmail!)),
+                        session.PersonId,
                         transactionToken);
                 await EnsureUserLinkAsync(session, identity.PersonId, now.UtcDateTime, transactionToken);
                 session.Verify(
@@ -366,15 +394,16 @@ public sealed class TelegramIdentityAccessService(
                 await unitOfWork.IdentitySessionsRepository.UpdateAsync(session, transactionToken);
             }, cancellationToken);
         }
-        catch (TelegramRegistrationConflictException)
+        catch (TelegramIntegrationException exception) when (
+            exception is TelegramRegistrationConflictException or
+                TelegramClientIdentificationMismatchException)
         {
-            session.Cancel(now.UtcDateTime);
+            session.RecoverIdentification(now.UtcDateTime);
             await PersistSessionAsync(session, cancellationToken);
             return new TelegramIdentityAccessOutcome(
                 true,
-                "Los datos ingresados ya corresponden a una cuenta de Huellitas, " +
-                "pero no pudimos habilitarla para Telegram. " +
-                "Repite la solicitud con la cédula correcta o solicita soporte.");
+                "El correo pertenece a una cuenta existente, pero la cédula no coincide. " +
+                "Escribe la cédula registrada o usa /cancelar y solicita soporte.");
         }
 
         return new TelegramIdentityAccessOutcome(

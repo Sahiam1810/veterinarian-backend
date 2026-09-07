@@ -91,6 +91,23 @@ public sealed class TelegramIdentityAccessServiceTests
     }
 
     [Fact]
+    public async Task Short_identification_keeps_the_flow_waiting_for_a_valid_value()
+    {
+        var fixture = CreateFixture();
+        var session = TelegramIdentitySession.Start(1001, 1001, 42, Now.UtcDateTime);
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+
+        var outcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(43, "sí"), default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Contains("cédula válida", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingIdentification, session.Status);
+        await fixture.Clients.DidNotReceiveWithAnyArgs()
+            .FindActiveByIdentificationAsync(default!, default);
+    }
+
+    [Fact]
     public async Task Unknown_identification_collects_minimum_registration_data()
     {
         var fixture = CreateFixture();
@@ -122,6 +139,53 @@ public sealed class TelegramIdentityAccessServiceTests
     }
 
     [Fact]
+    public async Task Active_account_email_is_kept_as_the_registration_identity()
+    {
+        var fixture = CreateFixture();
+        var session = AwaitingEmailSession();
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Accounts.FindByEmailAsync("ana@example.test", default)
+            .Returns(new TelegramRegistrationAccount(
+                TelegramRegistrationAccountKind.Active,
+                PersonId,
+                "ana@example.test"));
+
+        var outcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(46, "ana@example.test"), default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingOtp, session.Status);
+        Assert.Equal(PersonId, session.PersonId);
+    }
+
+    [Fact]
+    public async Task Inactive_account_email_returns_to_identification_without_losing_request()
+    {
+        var fixture = CreateFixture();
+        var session = AwaitingEmailSession();
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Accounts.FindByEmailAsync("ana@example.test", default)
+            .Returns(new TelegramRegistrationAccount(
+                TelegramRegistrationAccountKind.Inactive,
+                PersonId,
+                "ana@example.test"));
+
+        var outcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(46, "ana@example.test"), default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Contains("inactiva", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingIdentification, session.Status);
+        Assert.Equal(42, session.PendingInboundUpdateId);
+        await fixture.Sender.DidNotReceiveWithAnyArgs().SendAsync(
+            default,
+            default!,
+            default!,
+            default,
+            default);
+    }
+
+    [Fact]
     public async Task Valid_known_client_otp_links_identity_and_returns_pending_update()
     {
         var fixture = CreateFixture();
@@ -148,8 +212,9 @@ public sealed class TelegramIdentityAccessServiceTests
         var session = RegistrationOtpSession();
         fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
         fixture.Otp.Verify("123456", Hash).Returns(true);
-        fixture.Clients.StageRegistrationAsync(
+        fixture.Clients.CompleteRegistrationAsync(
                 Arg.Any<TelegramClientRegistration>(),
+                null,
                 default)
             .Returns(new TelegramClientIdentity(PersonId, AccountId, "ana@example.test"));
 
@@ -159,8 +224,11 @@ public sealed class TelegramIdentityAccessServiceTests
         Assert.Equal(PersonId, outcome.VerifiedPersonId);
         Assert.Equal(42, outcome.ResumeInboundUpdateId);
         Assert.Equal("quiero ver mis mascotas", outcome.ResumeMessage);
-        await fixture.Clients.Received(1).StageRegistrationAsync(
-            new TelegramClientRegistration("999999999", "Ana Pérez", "ana@example.test"),
+        await fixture.Clients.Received(1).CompleteRegistrationAsync(
+            Arg.Is<TelegramClientRegistration>(registration =>
+                registration.IdentificationNumber == "999999999" &&
+                registration.Email == "ana@example.test"),
+            null,
             default);
         await fixture.UnitOfWork.Received(1).ExecuteInTransactionAsync(
             Arg.Any<Func<CancellationToken, Task>>(),
@@ -168,14 +236,15 @@ public sealed class TelegramIdentityAccessServiceTests
     }
 
     [Fact]
-    public async Task Registration_conflict_after_valid_otp_returns_controlled_reply()
+    public async Task Registration_conflict_after_valid_otp_recovers_pending_flow()
     {
         var fixture = CreateFixture();
         var session = RegistrationOtpSession();
         fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
         fixture.Otp.Verify("123456", Hash).Returns(true);
-        fixture.Clients.StageRegistrationAsync(
+        fixture.Clients.CompleteRegistrationAsync(
                 Arg.Any<TelegramClientRegistration>(),
+                null,
                 default)
             .Returns<Task<TelegramClientIdentity>>(_ =>
                 throw new TelegramRegistrationConflictException());
@@ -184,11 +253,58 @@ public sealed class TelegramIdentityAccessServiceTests
             ProcessingUpdate(47, "123456"), default);
 
         Assert.True(outcome.Consumed);
-        Assert.Contains("ya corresponden a una cuenta", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(TelegramIdentitySessionStatus.Cancelled, session.Status);
+        Assert.Contains("cédula registrada", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingIdentification, session.Status);
+        Assert.Equal(42, session.PendingInboundUpdateId);
         Assert.Null(outcome.VerifiedPersonId);
         Assert.Null(outcome.ResumeInboundUpdateId);
         await fixture.Sessions.Received(1).UpdateAsync(session, default);
+    }
+
+    [Fact]
+    public async Task Existing_account_otp_completes_client_and_resumes_pending_request()
+    {
+        var fixture = CreateFixture();
+        var session = RegistrationOtpSession(PersonId);
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Otp.Verify("123456", Hash).Returns(true);
+        fixture.Clients.CompleteRegistrationAsync(
+                Arg.Any<TelegramClientRegistration>(),
+                PersonId,
+                default)
+            .Returns(new TelegramClientIdentity(PersonId, AccountId, "ana@example.test"));
+
+        var outcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(47, "123456"), default);
+
+        Assert.Equal(PersonId, outcome.VerifiedPersonId);
+        Assert.Equal(42, outcome.ResumeInboundUpdateId);
+        Assert.Equal("quiero ver mis mascotas", outcome.ResumeMessage);
+    }
+
+    [Fact]
+    public async Task Identification_mismatch_after_valid_otp_recovers_pending_flow()
+    {
+        var fixture = CreateFixture();
+        var session = RegistrationOtpSession(PersonId);
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Otp.Verify("123456", Hash).Returns(true);
+        fixture.Clients.CompleteRegistrationAsync(
+                Arg.Any<TelegramClientRegistration>(),
+                PersonId,
+                default)
+            .Returns<Task<TelegramClientIdentity>>(_ =>
+                throw new TelegramClientIdentificationMismatchException());
+
+        var outcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(47, "123456"), default);
+
+        Assert.True(outcome.Consumed);
+        Assert.Contains("cédula registrada", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingIdentification, session.Status);
+        Assert.Equal(42, session.PendingInboundUpdateId);
+        Assert.Null(outcome.VerifiedPersonId);
+        Assert.Null(outcome.ResumeInboundUpdateId);
     }
 
     [Fact]
@@ -223,6 +339,12 @@ public sealed class TelegramIdentityAccessServiceTests
                     call.ArgAt<CancellationToken>(1)));
 
         var clients = Substitute.For<ITelegramClientIdentityGateway>();
+        var accounts = Substitute.For<ITelegramRegistrationAccountLookup>();
+        accounts.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => new TelegramRegistrationAccount(
+                TelegramRegistrationAccountKind.New,
+                null,
+                call.ArgAt<string>(0)));
         var sender = Substitute.For<IVerificationCodeDispatcher>();
         var otp = Substitute.For<IOtpProtector>();
         otp.Create().Returns(new GeneratedOtp("123456", Hash));
@@ -239,12 +361,21 @@ public sealed class TelegramIdentityAccessServiceTests
         var service = new TelegramIdentityAccessService(
             unitOfWork,
             clients,
+            accounts,
             sender,
             otp,
             protector,
             settings,
             new FixedTimeProvider(Now));
-        return new Fixture(service, unitOfWork, sessions, userLinks, clients, sender, otp);
+        return new Fixture(
+            service,
+            unitOfWork,
+            sessions,
+            userLinks,
+            clients,
+            accounts,
+            sender,
+            otp);
     }
 
     private static TelegramIdentitySession KnownOtpSession()
@@ -257,7 +388,7 @@ public sealed class TelegramIdentityAccessServiceTests
         return session;
     }
 
-    private static TelegramIdentitySession RegistrationOtpSession()
+    private static TelegramIdentitySession AwaitingEmailSession()
     {
         var session = TelegramIdentitySession.Start(1001, 1001, 42, Now.UtcDateTime);
         session.CapturePendingMessage(
@@ -266,11 +397,18 @@ public sealed class TelegramIdentityAccessServiceTests
         session.RequireRegistration("protected:identification:999999999", Now.UtcDateTime);
         session.ConfirmRegistration(Now.UtcDateTime);
         session.CaptureFullName("protected:full-name:Ana Pérez", Now.UtcDateTime);
+        return session;
+    }
+
+    private static TelegramIdentitySession RegistrationOtpSession(Guid? personId = null)
+    {
+        var session = AwaitingEmailSession();
         session.BeginRegistrationOtp(
             "protected:email:ana@example.test",
             Hash,
             Now.AddMinutes(5).UtcDateTime,
-            Now.UtcDateTime);
+            Now.UtcDateTime,
+            personId);
         return session;
     }
 
@@ -294,6 +432,7 @@ public sealed class TelegramIdentityAccessServiceTests
         ITelegramIdentitySessionRepository Sessions,
         ITelegramUserLinkRepository UserLinks,
         ITelegramClientIdentityGateway Clients,
+        ITelegramRegistrationAccountLookup Accounts,
         IVerificationCodeDispatcher Sender,
         IOtpProtector Otp);
 

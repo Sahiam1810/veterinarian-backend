@@ -164,7 +164,13 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
 
     public void RecoverIdentification(DateTime now)
     {
-        EnsureStatus(TelegramIdentitySessionStatus.AwaitingOtp);
+        if (Status is not (
+            TelegramIdentitySessionStatus.AwaitingEmail or
+            TelegramIdentitySessionStatus.AwaitingOtp))
+        {
+            throw new InvalidOperationException("La transición de sesión no es válida.");
+        }
+
         PersonId = null;
         ProtectedIdentification = null;
         ProtectedFullName = null;
