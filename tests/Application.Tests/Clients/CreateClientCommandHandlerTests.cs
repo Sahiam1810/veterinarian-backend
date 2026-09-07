@@ -38,7 +38,8 @@ public sealed class CreateClientCommandHandlerTests
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(true);
 
-        var command = new CreateClientCommand(user.Id, "1234567890", "Calle Falsa 123");
+        var command = new CreateClientCommand(
+            user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
 
@@ -54,8 +55,11 @@ public sealed class CreateClientCommandHandlerTests
         clientsRepository.ExistsByIdentificationNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
+        clientsRepository.ExistsByPhoneAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
 
-        var command = new CreateClientCommand(user.Id, "1234567890", "Calle Falsa 123");
+        var command = new CreateClientCommand(
+            user.Id, "1234567890", "Calle Falsa 123", PhoneNumber: "3001234567");
 
         var id = await sut.Handle(command, CancellationToken.None);
 
@@ -64,7 +68,7 @@ public sealed class CreateClientCommandHandlerTests
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
-    // Etapa 2 / tarea 2.1 -- create con phone normalizado (solo dígitos).
+    // Etapa 2 / 2.1+2.4: el handler pasa por ClientPhoneNumber.Create (solo dígitos).
     [Fact]
     public async Task Handle_persists_the_client_with_a_normalized_phone_number()
     {
@@ -73,7 +77,8 @@ public sealed class CreateClientCommandHandlerTests
         clientsRepository.ExistsByIdentificationNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
-        clientsRepository.ExistsByPhoneAsync("573001234567", null, Arg.Any<CancellationToken>()).Returns(false);
+        clientsRepository.ExistsByPhoneAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
 
         ClientEntity? created = null;
         clientsRepository.AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>())
@@ -91,25 +96,26 @@ public sealed class CreateClientCommandHandlerTests
         Assert.NotNull(created);
         Assert.Equal("573001234567", created!.PhoneNumber?.Value);
         await clientsRepository.Received(1).ExistsByPhoneAsync(
-            "573001234567", null, Arg.Any<CancellationToken>());
+            "573001234567", Arg.Any<CancellationToken>(), Arg.Any<Guid?>());
     }
 
     [Fact]
-    public async Task Handle_throws_typed_conflict_when_phone_already_exists()
+    public async Task Handle_throws_conflict_when_phone_is_already_in_use()
     {
         var user = new UserEntity("Ana Cliente", "ana3@huellitas.test", "hash", Guid.NewGuid());
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         clientsRepository.ExistsByIdentificationNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
-        clientsRepository.ExistsByPhoneAsync("3001234567", null, Arg.Any<CancellationToken>()).Returns(true);
+        clientsRepository.ExistsByPhoneAsync("573001234567", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(true);
 
         var command = new CreateClientCommand(
-            user.Id, "1234567892", "Calle Falsa 123", PhoneNumber: "3001234567");
+            user.Id, "1234567892", "Calle Falsa 123", PhoneNumber: "+57 (300) 123-4567");
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
 
-        Assert.Equal(ClientErrorCodes.PhoneNumberAlreadyExists, ex.Code);
+        Assert.Equal(ClientErrorCodes.PhoneAlreadyInUse, ex.Code);
         await clientsRepository.DidNotReceive().AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
     }
 
@@ -121,34 +127,14 @@ public sealed class CreateClientCommandHandlerTests
         clientsRepository.ExistsByIdentificationNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
         clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
-        clientsRepository.ExistsByPhoneAsync("573001234567", null, Arg.Any<CancellationToken>()).Returns(true);
+        clientsRepository.ExistsByPhoneAsync("573001234567", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(true);
 
         var command = new CreateClientCommand(
             user.Id, "1234567893", "Calle Falsa 123", PhoneNumber: "+57-300-123-4567");
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
 
-        Assert.Equal(ClientErrorCodes.PhoneNumberAlreadyExists, ex.Code);
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task Handle_skips_phone_uniqueness_when_phone_is_null_or_whitespace(string? phone)
-    {
-        var user = new UserEntity("Ana Cliente", "ana5@huellitas.test", "hash", Guid.NewGuid());
-        usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
-        clientsRepository.ExistsByIdentificationNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
-            .Returns(false);
-        clientsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
-
-        var command = new CreateClientCommand(user.Id, "1234567894", "Calle Falsa 123", PhoneNumber: phone);
-
-        await sut.Handle(command, CancellationToken.None);
-
-        await clientsRepository.DidNotReceive().ExistsByPhoneAsync(
-            Arg.Any<string>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
-        await clientsRepository.Received(1).AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
+        Assert.Equal(ClientErrorCodes.PhoneAlreadyInUse, ex.Code);
     }
 }

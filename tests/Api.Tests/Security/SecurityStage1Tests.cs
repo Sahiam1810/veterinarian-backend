@@ -15,6 +15,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Api.Tests.Support;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
@@ -28,6 +29,7 @@ using Infrastructure.Security;
 using Infrastructure.Security.Authentication;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
+using MediatR;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
@@ -51,6 +53,7 @@ public sealed class SecurityStage1Tests : IDisposable
     private readonly IUsersRepository _usersRepository = Substitute.For<IUsersRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IRolesRepository _rolesRepository = Substitute.For<IRolesRepository>();
+    private readonly ISender _sender = Substitute.For<ISender>();
 
     private readonly IPasswordHasher _passwordHasher = new PasswordHasher();
     private readonly JwtRsaKeyMaterial _keyMaterial;
@@ -84,6 +87,10 @@ public sealed class SecurityStage1Tests : IDisposable
                 Arg.Any<Func<CancellationToken, Task>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(CancellationToken.None));
+        _sender.Send(
+                Arg.Any<GetUserPermissionClaimsQuery>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<string>());
 
         _authService = new AuthenticationService(
             _userAccountRepository,
@@ -91,6 +98,7 @@ public sealed class SecurityStage1Tests : IDisposable
             _userTokenRepository,
             _usersRepository,
             _unitOfWork,
+            _sender,
             jwtTokenIssuer,
             new RefreshTokenProtector(),
             _passwordHasher,

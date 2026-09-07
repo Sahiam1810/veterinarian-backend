@@ -31,4 +31,27 @@ public sealed class ClientMappingsExtensionsTests
         Assert.DoesNotContain("Address", responseProperties);
         Assert.DoesNotContain("PhoneNumber", responseProperties);
     }
+
+    // Tarea 2.2: mismo recorte de PII que by-identification.
+    [Fact]
+    public void ToPhoneLookupResponse_never_exposes_address_or_phone_number()
+    {
+        var client = new ClientEntity(
+            userId: Guid.NewGuid(),
+            identificationNumber: "1234567890",
+            address: "Calle Falsa 123",
+            registrationDate: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+            phoneNumber: "3001234567");
+
+        var response = client.ToPhoneLookupResponse();
+
+        Assert.Equal(client.Id, response.Id);
+        Assert.Equal(client.UserId, response.UserId);
+        Assert.Equal("1234567890", response.IdentificationNumber);
+        Assert.Equal(client.RegistrationDate, response.RegistrationDate);
+
+        var responseProperties = response.GetType().GetProperties().Select(p => p.Name);
+        Assert.DoesNotContain("Address", responseProperties);
+        Assert.DoesNotContain("PhoneNumber", responseProperties);
+    }
 }

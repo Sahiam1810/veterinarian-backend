@@ -1,3 +1,4 @@
+using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Models;
 using Application.Telegram.Abstractions;
@@ -6,6 +7,8 @@ using Application.Telegram.Models;
 using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Security.Tokens;
+using Domain.Roles;
+using MediatR;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,6 +18,7 @@ public sealed class AgentDelegatedIdentityProvider(
     IUsersRepository usersRepository,
     IUserAccountsRepository userAccountsRepository,
     IRolesRepository rolesRepository,
+    ISender sender,
     ITelegramRuntimeSettings settings,
     JwtTokenIssuer tokenIssuer) : IAgentDelegatedIdentityProvider
 {
@@ -39,7 +43,7 @@ public sealed class AgentDelegatedIdentityProvider(
             "telegram_guest",
             "guest@telegram.invalid",
             "Invitado");
-        var token = tokenIssuer.Issue(identity, settings.DelegatedTokenLifetime);
+        var token = tokenIssuer.Issue(identity, settings.DelegatedTokenLifetime, []);
         return new AgentDelegatedIdentity(personId, GuestRole, token.Token);
     }
 
@@ -70,7 +74,15 @@ public sealed class AgentDelegatedIdentityProvider(
             account.Username.Value,
             account.Mail.Value,
             account.Status);
-        var token = tokenIssuer.Issue(identity, settings.DelegatedTokenLifetime);
+        var permissions = SystemRoles.IsSuperAdmin(identity.RoleId)
+            ? Array.Empty<string>()
+            : await sender.Send(
+                new GetUserPermissionClaimsQuery(identity.RoleId, identity.PersonId),
+                cancellationToken);
+        var token = tokenIssuer.Issue(
+            identity,
+            settings.DelegatedTokenLifetime,
+            permissions);
         return new AgentDelegatedIdentity(user.Id, role.Name.Value, token.Token);
     }
 

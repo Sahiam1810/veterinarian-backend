@@ -1,83 +1,62 @@
 using System.Security.Claims;
 using Api.Common.Security.Permissions;
-using Application.Permissions.UseCases;
+using Application.Permissions.Claims;
 using Domain.Roles;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using NSubstitute;
 using Xunit;
 
 namespace Api.Tests.Security;
 
 public sealed class PermissionAuthorizationHandlerTests
 {
-    private static readonly Guid RoleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid PersonId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-
-    private readonly ISender sender = Substitute.For<ISender>();
-    private readonly PermissionAuthorizationHandler sut;
-
-    public PermissionAuthorizationHandlerTests()
-    {
-        sut = new PermissionAuthorizationHandler(sender);
-    }
+    private readonly PermissionAuthorizationHandler sut = new();
 
     [Fact]
-    public async Task HandleAsync_succeeds_for_super_admin_without_consulting_effective_permissions()
+    public async Task HandleAsync_succeeds_for_super_admin_without_permission_claims()
     {
         var context = CreateContext(
-            requirement: new PermissionRequirement("Citas", PermissionAction.Delete),
-            claims: [new Claim("role_id", SystemRoles.SuperAdminId.ToString())]);
+            new PermissionRequirement("Citas", PermissionAction.Delete),
+            [new Claim("role_id", SystemRoles.SuperAdminId.ToString())]);
 
         await sut.HandleAsync(context);
 
         Assert.True(context.HasSucceeded);
-        await sender.DidNotReceive().Send(Arg.Any<GetEffectivePermissionQuery>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task HandleAsync_fails_closed_when_there_is_no_role_id_claim()
+    public async Task HandleAsync_succeeds_for_the_exact_permission_claim()
     {
         var context = CreateContext(
-            requirement: new PermissionRequirement("Citas", PermissionAction.View),
-            claims: []);
+            new PermissionRequirement("Citas", PermissionAction.Edit),
+            [new Claim(PermissionClaimValue.ClaimType, "perm:Citas:Edit")]);
+
+        await sut.HandleAsync(context);
+
+        Assert.True(context.HasSucceeded);
+    }
+
+    [Fact]
+    public async Task HandleAsync_fails_closed_when_the_permission_claim_is_missing()
+    {
+        var context = CreateContext(
+            new PermissionRequirement("Citas", PermissionAction.View),
+            []);
 
         await sut.HandleAsync(context);
 
         Assert.False(context.HasSucceeded);
-        await sender.DidNotReceive().Send(Arg.Any<GetEffectivePermissionQuery>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task HandleAsync_succeeds_when_the_effective_permission_grants_the_requested_action()
+    [Theory]
+    [InlineData("perm:Mascotas:Edit")]
+    [InlineData("perm:Citas:View")]
+    [InlineData("perm:citas:Edit")]
+    [InlineData("prefix-perm:Citas:Edit-suffix")]
+    public async Task HandleAsync_rejects_non_exact_permission_values(string permission)
     {
-        sender
-            .Send(Arg.Is<GetEffectivePermissionQuery>(q => q.RoleId == RoleId && q.UserId == PersonId && q.ModuleName == "Citas"), Arg.Any<CancellationToken>())
-            .Returns(new EffectivePermission(CanView: true, CanCreate: false, CanEdit: false, CanDelete: false));
-
         var context = CreateContext(
-            requirement: new PermissionRequirement("Citas", PermissionAction.View),
-            claims:
-            [
-                new Claim("role_id", RoleId.ToString()),
-                new Claim("person_id", PersonId.ToString())
-            ]);
-
-        await sut.HandleAsync(context);
-
-        Assert.True(context.HasSucceeded);
-    }
-
-    [Fact]
-    public async Task HandleAsync_does_not_succeed_when_the_effective_permission_denies_the_requested_action()
-    {
-        sender
-            .Send(Arg.Any<GetEffectivePermissionQuery>(), Arg.Any<CancellationToken>())
-            .Returns(new EffectivePermission(CanView: true, CanCreate: false, CanEdit: false, CanDelete: false));
-
-        var context = CreateContext(
-            requirement: new PermissionRequirement("Citas", PermissionAction.Delete),
-            claims: [new Claim("role_id", RoleId.ToString())]);
+            new PermissionRequirement("Citas", PermissionAction.Edit),
+            [new Claim(PermissionClaimValue.ClaimType, permission)]);
 
         await sut.HandleAsync(context);
 
@@ -89,8 +68,9 @@ public sealed class PermissionAuthorizationHandlerTests
         IEnumerable<Claim> claims)
     {
         var identity = new ClaimsIdentity(claims, authenticationType: "TestAuth");
-        var user = new ClaimsPrincipal(identity);
-
-        return new AuthorizationHandlerContext([requirement], user, resource: null);
+        return new AuthorizationHandlerContext(
+            [requirement],
+            new ClaimsPrincipal(identity),
+            resource: null);
     }
 }

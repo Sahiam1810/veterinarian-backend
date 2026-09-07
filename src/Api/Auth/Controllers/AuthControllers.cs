@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Api.Common.Security;
 using MediatR;
 using Application.Security.Profile;
-using Application.Permissions.UseCases;
+using Application.Permissions.Claims;
 using Application.Modules.UseCases;
 
 
@@ -146,39 +146,48 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Permissions(CancellationToken cancellationToken)
     {
-        if (User.IsSuperAdmin())
+        var isSuperAdmin = User.IsSuperAdmin();
+        if (!isSuperAdmin && !Guid.TryParse(User.FindFirstValue("role_id"), out _))
         {
-            var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
+            return Unauthorized();
+        }
 
+        var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
+
+        if (isSuperAdmin)
+        {
             return Ok(new UserPermissionsResponseDto(
                 modules.ToDictionary(
                     module => module.Name.Value,
                     _ => new ModulePermissionDto(true, true, true, true))));
         }
 
-        var roleIdClaim = User.FindFirstValue("role_id");
+        var permissions = modules.ToDictionary(
+            module => module.Name.Value,
+            _ => new ModulePermissionDto(false, false, false, false));
 
-        if (!Guid.TryParse(roleIdClaim, out var roleId))
+        foreach (var claim in User.FindAll(PermissionClaimValue.ClaimType))
         {
-            return Unauthorized();
+            if (!PermissionClaimValue.TryParse(
+                    claim.Value,
+                    out var moduleName,
+                    out var action) ||
+                !permissions.TryGetValue(moduleName, out var current))
+            {
+                continue;
+            }
+
+            permissions[moduleName] = action switch
+            {
+                "View" => current with { CanView = true },
+                "Create" => current with { CanCreate = true },
+                "Edit" => current with { CanEdit = true },
+                "Delete" => current with { CanDelete = true },
+                _ => current
+            };
         }
 
-        Guid.TryParse(User.FindFirstValue("person_id"), out var userId);
-
-        var permissions = await sender.Send(
-            new GetUserEffectivePermissionsQuery(roleId, userId),
-            cancellationToken);
-
-        var dto = new UserPermissionsResponseDto(
-            permissions.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new ModulePermissionDto(
-                    kvp.Value.CanView,
-                    kvp.Value.CanCreate,
-                    kvp.Value.CanEdit,
-                    kvp.Value.CanDelete)));
-
-        return Ok(dto);
+        return Ok(new UserPermissionsResponseDto(permissions));
     }
 
     [Authorize]

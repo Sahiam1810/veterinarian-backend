@@ -22,7 +22,7 @@ public sealed class ClientPhoneConflictHttpMappingTests
             httpContext,
             new ConflictException(
                 "Ya existe un cliente con ese número de teléfono.",
-                ClientErrorCodes.PhoneNumberAlreadyExists),
+                ClientErrorCodes.PhoneAlreadyInUse),
             CancellationToken.None);
 
         Assert.True(handled);
@@ -32,7 +32,7 @@ public sealed class ClientPhoneConflictHttpMappingTests
         using var document = await JsonDocument.ParseAsync(httpContext.Response.Body);
         Assert.Equal(StatusCodes.Status409Conflict, document.RootElement.GetProperty("status").GetInt32());
         Assert.Equal(
-            ClientErrorCodes.PhoneNumberAlreadyExists,
+            ClientErrorCodes.PhoneAlreadyInUse,
             document.RootElement.GetProperty("error").GetString());
         Assert.Equal(
             "Ya existe un cliente con ese número de teléfono.",

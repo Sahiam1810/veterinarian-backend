@@ -18,7 +18,7 @@ public static class OracleClientPhoneConflictMapper
         {
             conflict = new ConflictException(
                 "Ya existe un cliente con ese número de teléfono.",
-                ClientErrorCodes.PhoneNumberAlreadyExists);
+                ClientErrorCodes.PhoneAlreadyInUse);
             return true;
         }
 

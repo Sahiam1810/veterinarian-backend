@@ -1,3 +1,4 @@
+using Application.Clients.Errors;
 using Domain.Clients.Entities;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +36,7 @@ public sealed class ClientPhoneUniquenessPersistenceTests
 
         Assert.True(mapped);
         Assert.NotNull(conflict);
-        Assert.Equal("Client.PhoneNumberAlreadyExists", conflict!.Code);
+        Assert.Equal(ClientErrorCodes.PhoneAlreadyInUse, conflict!.Code);
     }
 
     [Fact]

@@ -1,7 +1,6 @@
 using Application.Clients.Errors;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Domain.Clients.Entities;
 using Domain.Clients.ValueObjects;
 using MediatR;
 
@@ -58,20 +57,18 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
             throw new ConflictException("Ese usuario ya tiene otro perfil de cliente asociado.");
         }
 
-        var phone = ClientPhoneNumber.CreateOptional(request.PhoneNumber);
-        if (phone is not null)
-        {
-            var phoneTaken = await _uow.ClientsRepository.ExistsByPhoneAsync(
-                phone.Value,
-                excludingClientId: request.Id,
-                cancellationToken);
+        // Update no deja el teléfono vacío: Create exige dígitos válidos.
+        var phoneNumber = ClientPhoneNumber.Create(request.PhoneNumber);
+        var phoneInUse = await _uow.ClientsRepository.ExistsByPhoneAsync(
+            phoneNumber.Value,
+            cancellationToken,
+            request.Id);
 
-            if (phoneTaken)
-            {
-                throw new ConflictException(
-                    "Ya existe un cliente con ese número de teléfono.",
-                    ClientErrorCodes.PhoneNumberAlreadyExists);
-            }
+        if (phoneInUse)
+        {
+            throw new ConflictException(
+                "Ya existe un cliente con ese número de teléfono.",
+                ClientErrorCodes.PhoneAlreadyInUse);
         }
 
         client.Update(
@@ -79,7 +76,7 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
             request.IdentificationNumber,
             request.Address,
             request.RegistrationDate,
-            request.PhoneNumber);
+            phoneNumber.Value);
 
         await _uow.ClientsRepository.UpdateAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
