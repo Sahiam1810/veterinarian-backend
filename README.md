@@ -3,9 +3,12 @@
 Backend del **Sistema de Gestión para Veterinarias "Huellitas"**: la API central que
 sostiene la operación de la clínica (usuarios, roles, dueños, mascotas, agenda,
 citas, historia clínica) y sirve de puerta de entrada única, tanto para el
-frontend web en React como para el agente conversacional en Python
-(LangChain/LangGraph + RAG) que atiende por Telegram. Ambos canales
+**frontend web staff** en React como para el agente conversacional en Python
+(LangChain/LangGraph + RAG) que atiende por **Telegram**. Ambos canales
 comparten la misma base de datos y el mismo calendario a través de esta API.
+
+**Candado de producto:** web = solo staff; dueño = Telegram + teléfono + Gmail OTP;
+sin portal JWT Cliente. Detalle para revisores: [`docs/CONTEXT_REVISION_BACKEND.md`](docs/CONTEXT_REVISION_BACKEND.md) §0.
 
 Proyecto desarrollado por un equipo de 8 personas dividido en frentes de
 backend, frontend, agente/RAG y despliegue.
@@ -24,11 +27,14 @@ El backend sigue Clean Architecture en cuatro proyectos:
 Flujo general del sistema completo:
 
 ```
-Frontend React ──┐
-                  ├──► API .NET (este repo) ──► Oracle Database
-Agente Python ────┘         │
-                             └──► Huellitas ChatBot (Python) ──► Base vectorial (RAG)
+Frontend React (staff) ──┐
+                         ├──► API .NET (este repo) ──► Oracle Database
+Agente Python / Telegram ─┘         │
+                                    └──► Huellitas ChatBot (Python) ──► Base vectorial (RAG)
 ```
+
+El frontend React es **solo para personal de clínica**. El dueño no tiene UI web:
+interactúa por Telegram (y OTP anónimo de cita / Gmail donde aplique).
 
 El agente en Python **no accede directamente a la base de datos**: consulta y
 registra todo a través de esta API, exactamente igual que el personal de la
@@ -42,7 +48,8 @@ citas creadas manualmente y citas creadas por el agente.
 - Endpoints de registro, login, renovación de sesión, revocación de tokens y
   actualización de perfil de usuario.
 - **Roles y permisos configurables** desde base de datos (no quemados en
-  código): Administrador, Veterinario, Recepcionista, Auxiliar y Cliente,
+  código): Administrador, Veterinario, Recepcionista, Auxiliar (web staff) y
+  Cliente (identidad de dueño para chatbot/OTP; **sin** portal web ni login password),
   combinados en políticas de autorización por endpoint.
 - Los permisos efectivos se cargan desde Oracle durante el login o refresh y
   se incluyen en el access token como claims `perm:{Módulo}:{Acción}`. La
@@ -53,8 +60,7 @@ citas creadas manualmente y citas creadas por el agente.
 - Calendario y agenda de citas con validación de solapamiento por
   profesional, historial de estados y notificaciones.
 - Historia clínica de la mascota y control de vacunación.
-- Portal de autoservicio para el cliente (`/me`, `/mine`) para consultar sus
-  propias mascotas y citas.
+- Interacción del cliente (dueño de mascota) exclusiva a través de Telegram Chatbot y verificaciones de autoservicio por OTP (teléfono/correo), sin interfaz ni login web.
 - Gateway hacia el agente conversacional (Huellitas ChatBot): el backend
   deriva la identidad del usuario desde el JWT y reenvía el mensaje, sin
   exponer la base de datos al agente.
