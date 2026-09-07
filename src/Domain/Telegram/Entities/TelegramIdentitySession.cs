@@ -98,10 +98,17 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
         string protectedEmail,
         string otpHash,
         DateTime otpExpiresAt,
-        DateTime now)
+        DateTime now,
+        Guid? personId = null)
     {
         EnsureStatus(TelegramIdentitySessionStatus.AwaitingEmail);
+        if (personId.HasValue)
+        {
+            EnsurePersonId(personId.Value);
+        }
+
         ProtectedEmail = EnsureProtectedValue(protectedEmail, nameof(protectedEmail));
+        PersonId = personId;
         BeginOtp(otpHash, otpExpiresAt, now);
     }
 

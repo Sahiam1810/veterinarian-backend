@@ -90,6 +90,25 @@ public sealed class TelegramIdentitySessionTests
     }
 
     [Fact]
+    public void Existing_account_registration_otp_keeps_person_identity()
+    {
+        var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
+        session.RequireRegistration("protected-id", Now.AddSeconds(1));
+        session.ConfirmRegistration(Now.AddSeconds(2));
+        session.CaptureFullName("protected-name", Now.AddSeconds(3));
+
+        session.BeginRegistrationOtp(
+            "protected-email",
+            OtpHash,
+            Now.AddMinutes(5),
+            Now.AddSeconds(4),
+            PersonId);
+
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingOtp, session.Status);
+        Assert.Equal(PersonId, session.PersonId);
+    }
+
+    [Fact]
     public void Invalid_otp_attempts_block_the_session_at_the_configured_limit()
     {
         var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
