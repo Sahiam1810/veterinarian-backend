@@ -119,11 +119,4 @@ public sealed class Appointment : BaseEntity<Guid>
         ConsultingRoom = Domain.Availabilities.ValueObjects.ConsultingRoom.CreateOptional(consultingRoom)?.Value;
         UpdatedAt = DateTime.UtcNow;
     }
-
-    // Alinea el telefono de la cita al del dueño (o request) tras Create/Update.
-    public void ApplyRequesterPhone(string requesterPhoneNumber)
-    {
-        RequesterPhoneNumber = RequesterPhoneNumber.Create(requesterPhoneNumber);
-        UpdatedAt = DateTime.UtcNow;
-    }
 }

@@ -26,14 +26,6 @@ public sealed class UpdateAppointmentCommandHandler(
             request.EnforceVeterinarianOwnership,
             cancellationToken);
 
-        // Sin campo phone en el comando: si el dueño tiene telefono en perfil, realinear.
-        var requesterPhone = await AppointmentRequesterPhonePolicy.ResolveAsync(
-            unitOfWork,
-            request.ClientPetId,
-            requestPhoneNumber: null,
-            requirePhone: false,
-            cancellationToken);
-
         await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
             var locked = await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
@@ -58,11 +50,6 @@ public sealed class UpdateAppointmentCommandHandler(
                 request.ScheduledEnd,
                 request.Notes,
                 request.ConsultingRoom ?? locked.ConsultingRoom);
-
-            if (requesterPhone is not null)
-            {
-                appointment.ApplyRequesterPhone(requesterPhone);
-            }
 
             await unitOfWork.AppointmentsRepository.UpdateAsync(
                 appointment,

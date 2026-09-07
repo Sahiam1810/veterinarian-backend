@@ -7,14 +7,7 @@ using Application.Common.Exceptions;
 using Application.UserAccounts.Abstraction;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
-using Application.Clients.Abstraction;
-using Application.ClientsPets.Abstraction;
 using Domain.Availabilities.Entities;
-using Domain.Clients.Entities;
-using Domain.ClientsPets.Entities;
-using Domain.Pets.Entities;
-using Domain.Races.Entities;
-using Domain.Species.Entities;
 using Domain.Common;
 using Domain.Veterinarians.Entities;
 using NSubstitute;
@@ -43,25 +36,14 @@ public sealed class UpdateAppointmentOwnershipTests
         = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
     private readonly IVeterinarianAbsenceRepository absences
         = Substitute.For<IVeterinarianAbsenceRepository>();
-    private readonly IClientPetRepository clientPetsRepository = Substitute.For<IClientPetRepository>();
-    private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
     private readonly UpdateAppointmentCommandHandler sut;
 
     public UpdateAppointmentOwnershipTests()
     {
-        var client = new ClientEntity(Guid.NewGuid(), "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
-        var clientPet = new ClientPetEntity(client, pet, true);
-        typeof(ClientPetEntity).GetProperty(nameof(ClientPetEntity.Id))!.SetValue(clientPet, ClientPetId);
-
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
         unitOfWork.UserAccountsRepository.Returns(userAccountsRepository);
         unitOfWork.VeterinariansRepository.Returns(veterinariansRepository);
         unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
-        unitOfWork.ClientPetsRepository.Returns(clientPetsRepository);
-        unitOfWork.ClientsRepository.Returns(clientsRepository);
-        clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>()).Returns(clientPet);
-        clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
         absences.GetOverlappingAsync(
                 Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<VeterinarianAbsence>());

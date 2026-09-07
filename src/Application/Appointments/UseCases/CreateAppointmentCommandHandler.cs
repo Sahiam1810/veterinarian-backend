@@ -14,14 +14,6 @@ public sealed class CreateAppointmentCommandHandler(
         CreateAppointmentCommand request,
         CancellationToken cancellationToken)
     {
-        // Telefono: perfil del dueño gana; si no hay, request obligatorio.
-        var requesterPhone = await AppointmentRequesterPhonePolicy.ResolveAsync(
-            unitOfWork,
-            request.ClientPetId,
-            request.RequesterPhoneNumber,
-            requirePhone: true,
-            cancellationToken);
-
         Guid appointmentId = default;
         await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
@@ -46,7 +38,7 @@ public sealed class CreateAppointmentCommandHandler(
                 request.ScheduledStart,
                 request.ScheduledEnd,
                 request.Notes,
-                requesterPhone,
+                request.RequesterPhoneNumber,
                 consultingRoom: request.ConsultingRoom ?? locked.ConsultingRoom);
 
             await unitOfWork.AppointmentsRepository.AddAsync(
