@@ -155,6 +155,22 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
         UpdatedAt = now;
     }
 
+    public void RecoverIdentification(DateTime now)
+    {
+        EnsureStatus(TelegramIdentitySessionStatus.AwaitingOtp);
+        PersonId = null;
+        ProtectedIdentification = null;
+        ProtectedFullName = null;
+        ProtectedEmail = null;
+        OtpHash = null;
+        OtpExpiresAt = null;
+        OtpAttempts = 0;
+        AbsoluteExpiresAt = null;
+        IdleExpiresAt = null;
+        Status = TelegramIdentitySessionStatus.AwaitingIdentification;
+        UpdatedAt = now;
+    }
+
     public bool IsAccessValid(DateTime now) =>
         Status == TelegramIdentitySessionStatus.Verified &&
         AbsoluteExpiresAt is not null &&
