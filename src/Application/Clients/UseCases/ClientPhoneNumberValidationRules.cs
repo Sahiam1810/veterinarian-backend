@@ -4,6 +4,7 @@ using FluentValidation;
 
 namespace Application.Clients.UseCases;
 
+// Reglas compartidas de teléfono obligatorio y formato (VO ClientPhoneNumber).
 internal static class ClientPhoneNumberValidationRules
 {
     public static IRuleBuilderOptions<T, string?> RequiredPhoneNumber<T>(

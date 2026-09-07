@@ -43,6 +43,11 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.ClientIdentificationLookupPermitLimit,
                     settings.ClientIdentificationLookupWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.ClientPhoneLookup, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.ClientPhoneLookupPermitLimit,
+                    settings.ClientPhoneLookupWindowSeconds));
             options.AddPolicy(RateLimitPolicies.AppointmentOtpRequest, context =>
                 CreatePartition(
                     GetPartitionKey(context),

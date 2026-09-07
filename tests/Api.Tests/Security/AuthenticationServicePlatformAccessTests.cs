@@ -1,5 +1,7 @@
 using Api.Tests.Support;
 using Application.Common.Abstractions;
+using Application.Permissions.Claims;
+using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
@@ -11,6 +13,7 @@ using RoleEntity = Domain.Roles.Entities.Roles;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
 using Microsoft.Extensions.Options;
+using MediatR;
 using NSubstitute;
 using Xunit;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
@@ -34,6 +37,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IRolesRepository rolesRepository = Substitute.For<IRolesRepository>();
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly ISender sender = Substitute.For<ISender>();
     private readonly IPasswordHasher passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly JwtRsaKeyMaterial keyMaterial;
     private readonly AuthenticationService sut;
@@ -61,6 +65,10 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
                 Arg.Any<Func<CancellationToken, Task>>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(CancellationToken.None));
+        sender.Send(
+                Arg.Any<GetUserPermissionClaimsQuery>(),
+                Arg.Any<CancellationToken>())
+            .Returns(["perm:Mascotas:View"]);
 
         sut = new AuthenticationService(
             userAccountRepository,
@@ -68,6 +76,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
             userTokenRepository,
             usersRepository,
             unitOfWork,
+            sender,
             jwtTokenIssuer,
             new RefreshTokenProtector(),
             passwordHasher,
@@ -153,6 +162,12 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.False(string.IsNullOrWhiteSpace(result.Value.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(result.Value.RefreshToken));
+        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
+            .ReadJwtToken(result.Value.AccessToken);
+        Assert.Contains(
+            token.Claims,
+            claim => claim.Type == PermissionClaimValue.ClaimType &&
+                     claim.Value == "perm:Mascotas:View");
         await userTokenRepository.Received(1)
             .AddAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
     }
@@ -212,6 +227,12 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.False(string.IsNullOrWhiteSpace(result.Value.AccessToken));
         Assert.False(string.IsNullOrWhiteSpace(result.Value.RefreshToken));
+        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
+            .ReadJwtToken(result.Value.AccessToken);
+        Assert.Contains(
+            token.Claims,
+            claim => claim.Type == PermissionClaimValue.ClaimType &&
+                     claim.Value == "perm:Mascotas:View");
         await userTokenRepository.Received(1)
             .AddAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
     }

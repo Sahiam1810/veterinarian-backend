@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Api.Auth.Controllers;
 using Api.Auth.Dtos;
 using Application.Modules.UseCases;
+using Application.Permissions.Claims;
 using Application.Permissions.UseCases;
 using Domain.Roles;
 using MediatR;
@@ -52,29 +53,38 @@ public sealed class AuthControllerPermissionsTests
     }
 
     [Fact]
-    public async Task Permissions_still_resolves_the_effective_matrix_for_a_regular_role()
+    public async Task Permissions_reconstructs_the_complete_matrix_from_the_current_token()
     {
-        sender.Send(
-                Arg.Is<GetUserEffectivePermissionsQuery>(q => q.RoleId == RoleId && q.UserId == PersonId),
-                Arg.Any<CancellationToken>())
-            .Returns(new Dictionary<string, EffectivePermission>
+        sender.Send(Arg.Any<GetAllModulesQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new[]
             {
-                ["Clientes"] = new(CanView: true, CanCreate: false, CanEdit: false, CanDelete: false)
+                new ModuleEntity("Clientes", null),
+                new ModuleEntity("Mascotas", null)
             });
 
         var controller = CreateController(claims:
         [
             new Claim("role_id", RoleId.ToString()),
-            new Claim("person_id", PersonId.ToString())
+            new Claim("person_id", PersonId.ToString()),
+            new Claim(PermissionClaimValue.ClaimType, "perm:Clientes:View"),
+            new Claim(PermissionClaimValue.ClaimType, "perm:Clientes:Edit"),
+            new Claim(PermissionClaimValue.ClaimType, "perm:ModuloInexistente:Delete"),
+            new Claim(PermissionClaimValue.ClaimType, "valor-invalido")
         ]);
 
         var result = await controller.Permissions(CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var dto = Assert.IsType<UserPermissionsResponseDto>(ok.Value);
+        Assert.Equal(2, dto.Permissions.Count);
         Assert.True(dto.Permissions["Clientes"].CanView);
         Assert.False(dto.Permissions["Clientes"].CanCreate);
-        await sender.DidNotReceive().Send(Arg.Any<GetAllModulesQuery>(), Arg.Any<CancellationToken>());
+        Assert.True(dto.Permissions["Clientes"].CanEdit);
+        Assert.False(dto.Permissions["Clientes"].CanDelete);
+        Assert.False(dto.Permissions["Mascotas"].CanView);
+        await sender.DidNotReceive().Send(
+            Arg.Any<GetUserEffectivePermissionsQuery>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
