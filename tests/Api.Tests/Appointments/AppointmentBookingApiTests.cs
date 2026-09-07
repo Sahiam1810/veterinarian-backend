@@ -1,107 +1,59 @@
-using System.Security.Claims;
+using System.Reflection;
 using Api.Appointments.Controllers;
 using Api.Appointments.Dtos;
-using Application.Appointments.UseCases;
-using Domain.Appointments.Entities;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
 using Xunit;
 
 namespace Api.Tests.Appointments;
 
+// Etapa 5.2b: rutas portal JWT de AppointmentsController responden Gone.
 public sealed class AppointmentBookingApiTests
 {
-    private static readonly Guid UserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private readonly ISender sender = Substitute.For<ISender>();
+    private readonly AppointmentsController controller = new(Substitute.For<ISender>());
 
-    [Fact]
-    public async Task GetBookingOptions_uses_authenticated_account()
+    [Theory]
+    [InlineData(nameof(AppointmentsController.GetBookingOptions))]
+    [InlineData(nameof(AppointmentsController.GetBookingSlots))]
+    [InlineData(nameof(AppointmentsController.CreateMine))]
+    public void Portal_booking_actions_are_allow_anonymous(string methodName)
     {
-        sender.Send(Arg.Any<GetAppointmentBookingOptionsQuery>(), Arg.Any<CancellationToken>())
-            .Returns(new AppointmentBookingOptionsResult([], [], [], true));
-        var controller = CreateController();
-
-        var result = await controller.GetBookingOptions(CancellationToken.None);
-
-        Assert.IsType<OkObjectResult>(result.Result);
-        await sender.Received(1).Send(
-            Arg.Is<GetAppointmentBookingOptionsQuery>(query =>
-                query.UserAccountId == UserAccountId),
-            CancellationToken.None);
+        var method = typeof(AppointmentsController).GetMethod(methodName);
+        Assert.NotNull(method);
+        Assert.NotNull(method!.GetCustomAttribute<AllowAnonymousAttribute>());
+        Assert.DoesNotContain(
+            method.GetCustomAttributes<AuthorizeAttribute>(inherit: true),
+            a => a.Policy == Api.Common.Security.AuthorizationPolicies.ClientOnly);
     }
 
     [Fact]
-    public async Task GetBookingSlots_forwards_selected_veterinarian_service_and_date()
+    public async Task GetBookingOptions_throws_ClientPortalGone()
     {
-        var veterinarianId = Guid.NewGuid();
-        var serviceId = Guid.NewGuid();
-        var date = new DateOnly(2026, 9, 10);
-        sender.Send(Arg.Any<GetAppointmentBookingSlotsQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<AppointmentBookingSlot>());
-        var controller = CreateController();
-
-        var result = await controller.GetBookingSlots(
-            veterinarianId, serviceId, date, CancellationToken.None);
-
-        Assert.IsType<OkObjectResult>(result.Result);
-        await sender.Received(1).Send(
-            Arg.Is<GetAppointmentBookingSlotsQuery>(query =>
-                query.UserAccountId == UserAccountId
-                && query.VeterinarianId == veterinarianId
-                && query.ServiceId == serviceId
-                && query.Date == date),
-            CancellationToken.None);
+        var ex = await Assert.ThrowsAsync<GoneException>(() =>
+            controller.GetBookingOptions(CancellationToken.None));
+        Assert.Equal(ClientPortalErrors.Gone.Code, ex.Code);
     }
 
     [Fact]
-    public async Task CreateMine_forwards_only_authenticated_identity_and_booking_contract()
+    public async Task GetBookingSlots_throws_ClientPortalGone()
+    {
+        var ex = await Assert.ThrowsAsync<GoneException>(() =>
+            controller.GetBookingSlots(Guid.NewGuid(), Guid.NewGuid(), new DateOnly(2026, 9, 10), CancellationToken.None));
+        Assert.Equal(ClientPortalErrors.Gone.Code, ex.Code);
+    }
+
+    [Fact]
+    public async Task CreateMine_throws_ClientPortalGone()
     {
         var request = new CreateMyAppointmentRequest(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             new DateTime(2026, 9, 10, 15, 0, 0, DateTimeKind.Utc),
-            "Control",
-            "3001234567");
-        var appointment = new Appointment(
-            Guid.NewGuid(), request.VeterinarianId, request.ServiceId, Guid.NewGuid(),
-            Guid.NewGuid(), request.ScheduledStartUtc,
-            request.ScheduledStartUtc.AddMinutes(30), request.Notes, request.RequesterPhoneNumber);
-        sender.Send(Arg.Any<CreateMyAppointmentCommand>(), Arg.Any<CancellationToken>())
-            .Returns(appointment);
-        var controller = CreateController();
-
-        var result = await controller.CreateMine(
-            request, "message-001", CancellationToken.None);
-
-        Assert.IsType<CreatedAtActionResult>(result.Result);
-        await sender.Received(1).Send(
-            Arg.Is<CreateMyAppointmentCommand>(command =>
-                command.UserAccountId == UserAccountId
-                && command.PetId == request.PetId
-                && command.VeterinarianId == request.VeterinarianId
-                && command.ServiceId == request.ServiceId
-                && command.ScheduledStartUtc == request.ScheduledStartUtc
-                && command.IdempotencyKey == "message-001"),
-            CancellationToken.None);
-    }
-
-    private AppointmentsController CreateController()
-    {
-        var identity = new ClaimsIdentity(
-            new[] { new Claim("sub", UserAccountId.ToString()) },
-            "TestAuth");
-        return new AppointmentsController(sender)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(identity),
-                },
-            },
-        };
+            "Control", "3001234567");
+        var ex = await Assert.ThrowsAsync<GoneException>(() =>
+            controller.CreateMine(request, "message-001", CancellationToken.None));
+        Assert.Equal(ClientPortalErrors.Gone.Code, ex.Code);
     }
 }
