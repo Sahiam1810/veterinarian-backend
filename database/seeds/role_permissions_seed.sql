@@ -83,11 +83,10 @@ BEGIN
     ensure_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
     ensure_permission('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-6666-666666666666', 'Estados de Cita', 1, 0, 0, 0);
 
-    -- Cliente: consulta de sus propios datos por medio del chatbot.
-    ensure_permission('c7e2a91b-4d3f-4a8e-9b1c-2f6d8e0a5c47', '77777777-7777-7777-7777-777777777777', 'Clientes', 1, 0, 0, 0);
-    ensure_permission('f0c1f642-fe85-4381-a129-56e7ce82ab1d', '77777777-7777-7777-7777-777777777777', 'Mascotas', 1, 0, 0, 0);
-    ensure_permission('390421e3-3ad7-4eaa-90a3-20a9715b2e2f', '77777777-7777-7777-7777-777777777777', 'Citas', 1, 0, 0, 0);
-    ensure_permission('c6882d60-a8fd-4886-a5f9-bfd1a9d3cf4a', '77777777-7777-7777-7777-777777777777', 'Historiales Clínicos', 1, 0, 0, 0);
+    -- Cliente (77777777-7777-7777-7777-777777777777):
+    -- No se asignan filas en ROLE_PERMISSIONS (Opción A - ADR 2026-09-07).
+    -- El Cliente (dueño de mascota) opera exclusivamente vía Chatbot / Telegram y OTP de autoservicio.
+    -- No accede a la plataforma web ni opera módulos del staff, por lo que no requiere entradas en ROLE_PERMISSIONS.
 END;
 /
 
