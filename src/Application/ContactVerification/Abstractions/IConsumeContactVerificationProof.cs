@@ -8,7 +8,8 @@ public sealed record ConsumeContactVerificationProof(Guid SessionId, string Proo
 public sealed record ConsumedContactVerificationProof(
     Guid SessionId,
     ContactVerificationPurpose Purpose,
-    Guid? SubjectUserId);
+    Guid? SubjectUserId,
+    string DestinationHash);
 
 public interface IConsumeContactVerificationProof
 {

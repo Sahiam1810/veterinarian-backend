@@ -164,6 +164,7 @@ public sealed class ConfirmAndConsumeContactEmailVerificationTests
 
         Assert.Equal(session.Id, result.SessionId);
         Assert.Equal(ContactVerificationPurpose.Register, result.Purpose);
+        Assert.Equal(DestinationHash, result.DestinationHash);
         await sessions.Received(1).TryConsumeProofAsync(
             session.Id, ContactVerificationProof.Hash(proof), Now.UtcDateTime, Arg.Any<CancellationToken>());
     }
