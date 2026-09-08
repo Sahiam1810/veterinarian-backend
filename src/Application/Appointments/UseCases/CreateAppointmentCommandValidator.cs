@@ -38,10 +38,15 @@ public sealed class CreateAppointmentCommandValidator : AbstractValidator<Create
             .MaximumLength(ConsultingRoom.MaxLength)
             .WithMessage($"El consultorio no puede superar los {ConsultingRoom.MaxLength} caracteres.");
 
+        // Vacio permitido: el handler toma el telefono del perfil del dueno.
         RuleFor(x => x.RequesterPhoneNumber)
-            .NotEmpty().WithMessage("El telefono del solicitante es requerido.")
             .Must(phone =>
             {
+                if (string.IsNullOrWhiteSpace(phone))
+                {
+                    return true;
+                }
+
                 try
                 {
                     _ = Domain.Appointments.ValueObjects.RequesterPhoneNumber.Create(phone);
