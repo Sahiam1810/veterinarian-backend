@@ -92,6 +92,32 @@ public sealed class AuthorizationPoliciesTests
         Assert.False(result.Succeeded);
     }
 
+    [Fact]
+    public async Task TelegramAgentOnly_allows_a_verified_delegated_identity()
+    {
+        var delegated = PrincipalWithClaims(new Claim("token_use", "telegram_agent"));
+
+        var result = await authorizationService.AuthorizeAsync(delegated, "TelegramAgentOnly");
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("telegram_guest")]
+    [InlineData("TELEGRAM_AGENT")]
+    public async Task TelegramAgentOnly_rejects_non_delegated_identities(string? tokenUse)
+    {
+        var claims = tokenUse is null
+            ? Array.Empty<Claim>()
+            : new[] { new Claim("token_use", tokenUse) };
+        var principal = PrincipalWithClaims(claims);
+
+        var result = await authorizationService.AuthorizeAsync(principal, "TelegramAgentOnly");
+
+        Assert.False(result.Succeeded);
+    }
+
     private static ClaimsPrincipal PersistedSuperAdmin() =>
         PrincipalWithClaims(
             new Claim("role_id", SystemRoles.SuperAdminId.ToString()),

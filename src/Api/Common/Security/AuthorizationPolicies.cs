@@ -14,6 +14,7 @@ public static class AuthorizationPolicies
     public const string AdminOrVeterinarian = "AdminOrVeterinarian";
     public const string ClinicalStaffOnly = "ClinicalStaffOnly";
     public const string FrontDeskStaffOnly = "FrontDeskStaffOnly";
+    public const string TelegramAgentOnly = "TelegramAgentOnly";
 
     // Consulta de historiales clínicos (historias médicas, vacunas): todos
     // los roles con interés legítimo en ver el historial de una mascota,

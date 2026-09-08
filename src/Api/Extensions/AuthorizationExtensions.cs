@@ -1,5 +1,6 @@
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
+using Application.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Extensions;
@@ -70,6 +71,13 @@ public static class AuthorizationExtensions
                     "Veterinario",
                     "Recepcionista",
                     "Cliente"));
+            options.AddPolicy(
+                AuthorizationPolicies.TelegramAgentOnly,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .RequireClaim(
+                        DelegatedTokenClaims.ClaimType,
+                        DelegatedTokenClaims.TelegramAgent));
         });
 
         // Habilita las policies dinámicas "perm:{módulo}:{acción}" usadas por
