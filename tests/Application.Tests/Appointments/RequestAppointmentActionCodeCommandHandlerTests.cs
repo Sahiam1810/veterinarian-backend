@@ -6,6 +6,7 @@ using Application.Verification.Abstractions;
 using Domain.Appointments.Entities;
 using Domain.Verification.Entities;
 using Domain.Verification.Enums;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
@@ -45,7 +46,13 @@ public sealed class RequestAppointmentActionCodeCommandHandlerTests
         otpProtector.HashPhone(Arg.Any<string>()).Returns(PhoneHash);
 
         sut = new RequestAppointmentActionCodeCommandHandler(
-            unitOfWork, sessions, otpProtector, codeDispatcher, settings, new FixedTimeProvider(Now));
+            unitOfWork,
+            sessions,
+            otpProtector,
+            codeDispatcher,
+            settings,
+            new FixedTimeProvider(Now),
+            NullLogger<RequestAppointmentActionCodeCommandHandler>.Instance);
     }
 
     [Fact]

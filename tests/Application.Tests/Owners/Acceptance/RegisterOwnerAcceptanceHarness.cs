@@ -53,7 +53,12 @@ internal sealed class RegisterOwnerAcceptanceHarness
     }
 
     public RegisterOwnerCommandHandler Handler(bool requireStaffProof) =>
-        new(UnitOfWork, ConsumeProof, new FlagSettings(requireStaffProof), EmailHasher);
+        new(
+            UnitOfWork,
+            ConsumeProof,
+            new FlagSettings(requireStaffProof),
+            EmailHasher,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RegisterOwnerCommandHandler>.Instance);
 
     public IssuedProof IssueRegisterProof(string email)
     {

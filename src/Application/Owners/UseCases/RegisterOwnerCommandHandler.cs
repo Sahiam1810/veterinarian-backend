@@ -12,6 +12,7 @@ using Domain.Clients.ValueObjects;
 using Domain.ContactVerification.Enums;
 using Domain.Users.ValueObjects;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using UserEntity = Domain.Users.Entities.Users;
 
 namespace Application.Owners.UseCases;
@@ -20,7 +21,8 @@ public sealed class RegisterOwnerCommandHandler(
     IUnitOfWork unitOfWork,
     IConsumeContactVerificationProof consumeProof,
     IRegisterOwnerSettings settings,
-    IOtpProtector otpProtector) : IRequestHandler<RegisterOwnerCommand, RegisterOwnerResult>
+    IOtpProtector otpProtector,
+    ILogger<RegisterOwnerCommandHandler> logger) : IRequestHandler<RegisterOwnerCommand, RegisterOwnerResult>
 {
     public async Task<RegisterOwnerResult> Handle(
         RegisterOwnerCommand request,
@@ -91,7 +93,14 @@ public sealed class RegisterOwnerCommandHandler(
             result = new RegisterOwnerResult(user.Id, client.Id);
         }, cancellationToken);
 
-        return result!;
+        // Ids + canal; nunca email, teléfono, cédula ni proof.
+        logger.LogInformation(
+            "Owner registered. UserId={UserId} ClientId={ClientId} Channel={Channel}",
+            result!.UserId,
+            result.ClientId,
+            request.Channel);
+
+        return result;
     }
 
     private async Task ConsumeRegisterProofAsync(

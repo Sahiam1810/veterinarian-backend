@@ -14,7 +14,9 @@ public sealed class GetClientLookupQueryHandlerTests
 
     public GetClientLookupQueryHandlerTests()
     {
-        sut = new GetClientLookupQueryHandler(clientRepository);
+        sut = new GetClientLookupQueryHandler(
+            clientRepository,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GetClientLookupQueryHandler>.Instance);
     }
 
     [Fact]
