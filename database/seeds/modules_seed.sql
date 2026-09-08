@@ -177,4 +177,13 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Catálogos del Chat', 'Estados, tipos y prioridades del subsistema conversacional', SYSTIMESTAMP);
 
+-- 21. Reportes
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000021' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Reportes'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Reportes', 'Reportes y estadísticas del sistema', SYSTIMESTAMP);
+
 COMMIT;
+
