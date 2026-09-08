@@ -62,6 +62,9 @@ public sealed class UpdateMyPetProfileCommandHandler
         if (race is null)
             throw new NotFoundException("Raza no encontrada.");
 
+        if (race.SpeciesId != speciesId)
+            throw new ConflictException("La raza no pertenece a la especie seleccionada.");
+
         pet.Update(
             request.Name ?? pet.Name.Value,
             request.Age ?? pet.Age,

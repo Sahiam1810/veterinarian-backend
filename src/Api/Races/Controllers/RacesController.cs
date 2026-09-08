@@ -17,13 +17,14 @@ public sealed class RacesController(ISender sender) : ControllerBase
     [HttpGet]
     [Authorize]
     [EndpointSummary("Obtiene todas las razas")]
-    [EndpointDescription("Retorna una lista con todas las razas registradas en el sistema.")]
+    [EndpointDescription("Lista razas. Si se envía speciesId, solo las de esa especie.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RaceResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<RaceResponseDto>>> GetAll(
+        [FromQuery] Guid? speciesId,
         CancellationToken cancellationToken)
     {
         var races = await sender.Send(
-            new GetAllRacesQuery(),
+            new GetAllRacesQuery(speciesId),
             cancellationToken);
 
         return Ok(races.ToDto());

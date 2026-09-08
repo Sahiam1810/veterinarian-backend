@@ -13,5 +13,9 @@ public sealed class CreateRaceCommandValidator : AbstractValidator<CreateRaceCom
             .MaximumLength(RaceName.MaxLength)
             .WithMessage(
                 $"El nombre de la raza no puede superar los {RaceName.MaxLength} caracteres.");
+
+        RuleFor(command => command.SpeciesId)
+            .NotEmpty()
+            .WithMessage("Debe indicar la especie de la raza.");
     }
 }

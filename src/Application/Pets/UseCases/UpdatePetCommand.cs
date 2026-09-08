@@ -37,6 +37,9 @@ public sealed class UpdatePetCommandHandler : IRequestHandler<UpdatePetCommand>
         if (race is null)
             throw new NotFoundException("Raza no encontrada.");
 
+        if (race.SpeciesId != request.SpeciesId)
+            throw new ConflictException("La raza no pertenece a la especie seleccionada.");
+
         pet.Update(
             request.Name,
             request.Age,

@@ -41,6 +41,9 @@ public sealed class RegisterMyPetCommandHandler(IUnitOfWork unitOfWork)
             request.RaceId, cancellationToken)
             ?? throw new NotFoundException("Raza no encontrada.");
 
+        if (race.SpeciesId != request.SpeciesId)
+            throw new ConflictException("La raza no pertenece a la especie seleccionada.");
+
         var pet = new PetEntity(
             request.Name,
             request.Age,

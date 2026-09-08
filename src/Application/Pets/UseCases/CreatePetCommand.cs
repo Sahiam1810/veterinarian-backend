@@ -33,6 +33,10 @@ public sealed class CreatePetCommandHandler : IRequestHandler<CreatePetCommand, 
         if (race is null)
             throw new NotFoundException("Raza no encontrada.");
 
+        // La raza debe pertenecer a la especie elegida
+        if (race.SpeciesId != request.SpeciesId)
+            throw new ConflictException("La raza no pertenece a la especie seleccionada.");
+
         var pet = new PetEntity(
             request.Name,
             request.Age,
