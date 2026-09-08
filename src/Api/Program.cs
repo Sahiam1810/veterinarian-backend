@@ -10,9 +10,13 @@ using Application;
 using Infrastructure;
 using Serilog;
 
-DotEnvLoader.Load();
-
 var builder = WebApplication.CreateBuilder(args);
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    DotEnvLoader.Load();
+    builder.Configuration.AddEnvironmentVariables();
+}
 
 builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
     .ReadFrom.Configuration(context.Configuration)
