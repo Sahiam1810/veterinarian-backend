@@ -39,7 +39,7 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.IdentificationNumber == idVo, cancellationToken);
     }
 
-    // Match exacto por VO normalizado (solo dígitos). Sin unicidad en BD aún: FirstOrDefault.
+    // Match exacto por VO normalizado (solo dígitos). Unicidad BD: UX_CLIENTS_PHONE_NUMBER.
     public async Task<ClientEntity?> GetByPhoneAsync(string phoneNumber, CancellationToken cancellationToken)
     {
         var phoneVo = ClientPhoneNumber.Create(phoneNumber);

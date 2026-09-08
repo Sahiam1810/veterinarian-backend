@@ -15,8 +15,8 @@ public sealed class RateLimitOptionsValidator
             options.LoginWindowSeconds,
             options.RefreshPermitLimit,
             options.RefreshWindowSeconds,
-            options.RegisterPermitLimit,
-            options.RegisterWindowSeconds,
+            options.TelegramRegistrationPermitLimit,
+            options.TelegramRegistrationWindowSeconds,
             options.TelegramWebhookPermitLimit,
             options.TelegramWebhookWindowSeconds,
             options.ClientIdentificationLookupPermitLimit,
@@ -26,7 +26,13 @@ public sealed class RateLimitOptionsValidator
             options.AppointmentOtpRequestPermitLimit,
             options.AppointmentOtpRequestWindowSeconds,
             options.AppointmentOtpConfirmPermitLimit,
-            options.AppointmentOtpConfirmWindowSeconds
+            options.AppointmentOtpConfirmWindowSeconds,
+            options.ContactEmailRequestPermitLimit,
+            options.ContactEmailRequestWindowSeconds,
+            options.ContactEmailConfirmPermitLimit,
+            options.ContactEmailConfirmWindowSeconds,
+            options.BotOwnerRegistrationPermitLimit,
+            options.BotOwnerRegistrationWindowSeconds
         };
 
         return values.All(value => value > 0)

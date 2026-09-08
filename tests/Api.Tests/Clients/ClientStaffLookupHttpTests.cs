@@ -11,7 +11,7 @@ using Api.Clients.Controllers;
 using Api.Common.Security.Permissions;
 using Api.Tests.Support;
 using Application.Clients.UseCases;
-using Application.Permissions.UseCases;
+using Application.Permissions.Claims;
 using Domain.Clients.Entities;
 using Domain.Roles;
 using MediatR;
@@ -114,7 +114,6 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
 
     private readonly Dictionary<string, string?> originalEnvironment = [];
     private readonly ISender sender = Substitute.For<ISender>();
-    private bool clientesViewGranted = true;
 
     public ClientStaffLookupApiFactory()
     {
@@ -152,10 +151,9 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
 
     public HttpClient CreateAuthenticatedClient(bool withClientesView, Guid? roleId = null)
     {
-        clientesViewGranted = withClientesView;
         var client = CreateGuestClient();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", CreateToken(roleId ?? StaffRoleId));
+            new AuthenticationHeaderValue("Bearer", CreateToken(roleId ?? StaffRoleId, withClientesView));
         return client;
     }
 
@@ -194,16 +192,14 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
 
         sender.Send(Arg.Any<GetClientLookupQuery>(), Arg.Any<CancellationToken>())
             .Returns(clientEntity);
-
-        sender.Send(Arg.Any<GetEffectivePermissionQuery>(), Arg.Any<CancellationToken>())
-            .Returns(_ => new EffectivePermission(
-                CanView: clientesViewGranted,
-                CanCreate: false,
-                CanEdit: false,
-                CanDelete: false));
     }
 
-    private string CreateToken(Guid roleId)
+    // El claim "permissions" (JwtTokenIssuer.BuildToken) es el que evalúa
+    // PermissionAuthorizationHandler; lo incrustamos igual que el emisor real
+    // en lugar de mockear GetEffectivePermissionQuery, que ningún código de
+    // producción invoca (los permisos viajan en el JWT, no se resuelven por
+    // consulta en vivo).
+    private string CreateToken(Guid roleId, bool withClientesView)
     {
         using var rsa = RSA.Create();
         rsa.ImportFromPem(Encoding.UTF8.GetString(
@@ -228,6 +224,15 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
             now.AddMinutes(-1),
             now.AddMinutes(5),
             new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
+
+        if (withClientesView)
+        {
+            token.Payload[PermissionClaimValue.ClaimType] = new[]
+            {
+                PermissionClaimValue.Create("Clientes", "View")
+            };
+        }
+
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

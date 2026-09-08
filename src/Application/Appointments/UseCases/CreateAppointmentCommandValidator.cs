@@ -1,4 +1,5 @@
 using Application.Common.Abstractions;
+using Domain.Availabilities.ValueObjects;
 using FluentValidation;
 
 namespace Application.Appointments.UseCases;
@@ -8,7 +9,7 @@ public sealed class CreateAppointmentCommandValidator : AbstractValidator<Create
     public CreateAppointmentCommandValidator(IUnitOfWork unitOfWork)
     {
         RuleFor(x => x.ClientPetId)
-            .NotEmpty().WithMessage("La relación cliente-mascota es requerida.");
+            .NotEmpty().WithMessage("La relacion cliente-mascota es requerida.");
 
         RuleFor(x => x.VeterinarianId)
             .NotEmpty().WithMessage("El veterinario es requerido.");
@@ -33,8 +34,12 @@ public sealed class CreateAppointmentCommandValidator : AbstractValidator<Create
         RuleFor(x => x.Notes)
             .MaximumLength(100).WithMessage("Las notas no pueden exceder 100 caracteres.");
 
+        RuleFor(x => x.ConsultingRoom)
+            .MaximumLength(ConsultingRoom.MaxLength)
+            .WithMessage($"El consultorio no puede superar los {ConsultingRoom.MaxLength} caracteres.");
+
         RuleFor(x => x.RequesterPhoneNumber)
-            .NotEmpty().WithMessage("El teléfono del solicitante es requerido.")
+            .NotEmpty().WithMessage("El telefono del solicitante es requerido.")
             .Must(phone =>
             {
                 try
@@ -47,7 +52,7 @@ public sealed class CreateAppointmentCommandValidator : AbstractValidator<Create
                     return false;
                 }
             })
-            .WithMessage("El teléfono del solicitante no es válido.");
+            .WithMessage("El telefono del solicitante no es valido.");
 
         RuleFor(x => x)
             .MustAsync(async (command, cancellationToken) =>

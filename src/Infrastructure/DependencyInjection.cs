@@ -2,6 +2,7 @@ using Application.AccountStatements.Abstraction;
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
+using Application.VeterinarianAbsences.Abstraction;
 using Application.Appointments.Abstraction;
 using Infrastructure.Appointments.BackgroundServices;
 using Infrastructure.Appointments.Configuration;
@@ -51,6 +52,7 @@ using Infrastructure.Agent.Conversations;
 using Infrastructure.Agent.Http;
 using Infrastructure.Notifications.Repositories;
 using Infrastructure.Availabilities.Repositories;
+using Infrastructure.VeterinarianAbsences.Repositories;
 using Infrastructure.Appointments.Repositories;
 using Infrastructure.AppointmentStatusHistories.Repositories;
 using Infrastructure.MedicalRecords.Repositories;
@@ -98,7 +100,6 @@ using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
-using Application.Security.Registration;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
@@ -156,10 +157,19 @@ using Infrastructure.Email.Configuration;
 using Infrastructure.Messaging;
 using Infrastructure.Messaging.Configuration;
 using Application.Verification.Abstractions;
+using Application.ContactVerification.Abstractions;
+using Application.ContactVerification.UseCases;
+using Application.Owners.Abstractions;
+using Application.Owners.Adapters;
 using Infrastructure.Verification;
 using Infrastructure.Verification.Configuration;
 using Infrastructure.Verification.Repositories;
 using Infrastructure.Verification.Security;
+using Infrastructure.ContactVerification;
+using Infrastructure.ContactVerification.Configuration;
+using Infrastructure.ContactVerification.Repositories;
+using Infrastructure.Owners;
+using Infrastructure.Owners.Configuration;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -178,6 +188,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Oracle connection string is not configured.");
 
+        // Etapa 6.2: nunca EnableSensitiveDataLogging (ni en Development): evita SQL con PII en claro.
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString, oracle =>
                 // XE 21c no soporta booleanos nativos (default del provider 23).
@@ -223,6 +234,7 @@ public static class DependencyInjection
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
         services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+        services.AddScoped<IVeterinarianAbsenceRepository, VeterinarianAbsenceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IAppointmentBookingSettings, ConfiguredAppointmentBookingSettings>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
@@ -274,6 +286,12 @@ public static class DependencyInjection
             provider.GetRequiredService<TelegramRegistrationProtector>());
         services.AddSingleton<IOtpProtector>(provider =>
         {
+            var contactOptions = provider.GetRequiredService<IOptions<ContactVerificationOptions>>().Value;
+            if (!string.IsNullOrWhiteSpace(contactOptions.OtpPepperBase64))
+            {
+                return new OtpProtector(contactOptions.OtpPepperBase64);
+            }
+
             var appointmentOptions = provider.GetRequiredService<IOptions<AppointmentVerificationOptions>>().Value;
             if (!string.IsNullOrWhiteSpace(appointmentOptions.OtpPepperBase64))
             {
@@ -286,7 +304,7 @@ public static class DependencyInjection
                 return new OtpProtector(telegramOptions.OtpPepperBase64);
             }
 
-            // Pepper de desarrollo cuando Telegram y AppointmentVerification están apagados.
+            // Pepper de desarrollo cuando los OTP de contacto/cita/Telegram están apagados.
             return new OtpProtector(Convert.ToBase64String(new byte[32]));
         });
         services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
@@ -298,6 +316,11 @@ public static class DependencyInjection
         services.AddScoped<IVerificationCodeDispatcher, VerificationCodeDispatcher>();
         services.AddScoped<IAppointmentActionVerificationSessionRepository, AppointmentActionVerificationSessionRepository>();
         services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
+        services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
+        services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
+        services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestHandler>();
+        services.AddScoped<IConfirmContactEmailVerification, ConfirmContactEmailVerificationHandler>();
+        services.AddScoped<IConsumeContactVerificationProof, ConsumeContactVerificationProofHandler>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddHttpClient(nameof(TwilioSmsVerificationCodeSender));
         services.AddHttpClient(nameof(TwilioWhatsAppVerificationCodeSender));
@@ -322,6 +345,15 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddOptions<AppointmentVerificationOptions>()
             .Bind(configuration.GetSection(AppointmentVerificationOptions.SectionName));
+        services.AddSingleton<IValidateOptions<ContactVerificationOptions>, ContactVerificationOptionsValidator>();
+        services.AddOptions<ContactVerificationOptions>()
+            .Bind(configuration.GetSection(ContactVerificationOptions.SectionName))
+            .ValidateOnStart();
+        services.AddOptions<RegisterOwnerOptions>()
+            .Bind(configuration.GetSection(RegisterOwnerOptions.SectionName));
+        services.AddScoped<IRegisterOwnerSettings, ConfiguredRegisterOwnerSettings>();
+        // 4.1: adaptador staff sobre el RegisterOwnerCommand ya existente (sin User/Account/Credentials extra).
+        services.AddScoped<IRegisterOwnerFromStaff, RegisterOwnerFromStaff>();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
@@ -400,7 +432,6 @@ public static class DependencyInjection
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<IClientAccountRegistrationService, ClientAccountRegistrationService>();
 
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()

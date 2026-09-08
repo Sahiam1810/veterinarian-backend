@@ -1,6 +1,8 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Application.Common.Exceptions;
 using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
@@ -39,6 +41,17 @@ public sealed class CreateMyAppointmentCommandHandlerTests
         Assert.NotNull(result.BookingRequestKeyHash);
         await fixture.Appointments.Received(1)
             .AddAsync(result, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_prefers_profile_phone_over_divergent_request()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        var command = fixture.Command with { RequesterPhoneNumber = "+57 301 999 8888" };
+
+        var result = await fixture.Sut.Handle(command, CancellationToken.None);
+
+        Assert.Equal("3001234567", result.RequesterPhoneNumber?.Value);
     }
 
     [Fact]
@@ -182,6 +195,7 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     {
         public IUnitOfWork UnitOfWork { get; } = Substitute.For<IUnitOfWork>();
         public IAppointmentRepository Appointments { get; } = Substitute.For<IAppointmentRepository>();
+        public IVeterinarianAbsenceRepository Absences { get; } = Substitute.For<IVeterinarianAbsenceRepository>();
         public Application.Availabilities.Abstraction.IAvailabilityRepository Availabilities { get; }
             = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
         public ClientPetEntity ClientPet { get; }
@@ -226,6 +240,10 @@ public sealed class CreateMyAppointmentCommandHandlerTests
                 .Returns(client);
             UnitOfWork.ClientPetsRepository.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
                 .Returns(new[] { ClientPet });
+            UnitOfWork.ClientPetsRepository.GetByIdAsync(ClientPet.Id, Arg.Any<CancellationToken>())
+                .Returns(ClientPet);
+            UnitOfWork.ClientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>())
+                .Returns(client);
             UnitOfWork.ServicesRepository.GetByIdAsync(Service.Id, Arg.Any<CancellationToken>())
                 .Returns(Service);
             UnitOfWork.VeterinariansRepository.GetByIdAsync(
@@ -238,6 +256,9 @@ public sealed class CreateMyAppointmentCommandHandlerTests
                 .Returns(new[] { Availability });
             Availabilities.LockByIdAsync(Availability.Id, Arg.Any<CancellationToken>())
                 .Returns(Availability);
+            Absences.GetOverlappingAsync(
+                    Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+                .Returns(Array.Empty<VeterinarianAbsence>());
             UnitOfWork.ExecuteInTransactionAsync(
                     Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
                 .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
@@ -252,7 +273,7 @@ public sealed class CreateMyAppointmentCommandHandlerTests
             Appointments.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                 .Returns(_ => added);
             Sut = new CreateMyAppointmentCommandHandler(
-                UnitOfWork, new Settings(), new FixedTimeProvider(Now));
+                UnitOfWork, Absences, new Settings(), new FixedTimeProvider(Now));
         }
 
         public Appointment MatchingAppointment(string phone = "3001234567")

@@ -8,6 +8,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.Vaccinations.Controllers;
 
@@ -52,29 +54,18 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
         return Ok(vaccinations.ToResponse());
     }
 
+    // Portal Cliente JWT retirado (Etapa 5).
     [HttpGet("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [RequirePermission("Historiales Clínicos", PermissionAction.View)]
-    [EndpointSummary("Obtiene las vacunaciones de las mascotas del cliente")]
-    [EndpointDescription("Deriva la cuenta desde el JWT y retorna únicamente las vacunas de las mascotas del cliente autenticado.")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<VaccinationResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyCollection<VaccinationResponse>>> GetMine(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<VaccinationResponse>>> GetMine(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var vaccinations = await sender.Send(
-            new GetMyVaccinationsQuery(userAccountId),
-            cancellationToken);
-
-        return Ok(vaccinations.ToResponse());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
+
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.ClinicalStaffOnly)]

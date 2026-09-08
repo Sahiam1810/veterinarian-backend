@@ -29,4 +29,6 @@ dotnet test --filter "FullyQualifiedName~ClientsStage2AcceptanceTests|FullyQuali
 
 ## Nota Oracle
 
-La unicidad de teléfono se valida en Application (`ExistsByPhoneAsync`). Un índice único en BD puede añadirse en un follow-up tras limpiar duplicados legacy.
+Unicidad en Application (`ExistsByPhoneAsync` + `Clients.PhoneAlreadyInUse`) y en BD (`UX_CLIENTS_PHONE_NUMBER`).
+Antes de aplicar la migración: ejecutar `docs/sql/clients-phone-duplicates-cleanup.sql`.
+Carreras concurrentes: `OracleClientPhoneConflictMapper` traduce `ORA-00001` al mismo code.

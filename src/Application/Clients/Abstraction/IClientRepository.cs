@@ -34,7 +34,7 @@ public interface IClientRepository
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 
-    // Unicidad operativa de teléfono (null/vacío no cuenta como duplicado).
+    // Unicidad operativa de teléfono (valor ya normalizado por ClientPhoneNumber).
     Task<bool> ExistsByPhoneAsync(
         string phoneNumber,
         CancellationToken cancellationToken,

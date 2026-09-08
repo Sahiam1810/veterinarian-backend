@@ -17,7 +17,7 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -239,6 +239,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("CLIENT_PET_ID");
 
+                    b.Property<string>("ConsultingRoom")
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("CONSULTING_ROOM");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("CREATED_AT");
@@ -306,6 +311,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("AVAILABILITY_ID");
 
+                    b.Property<string>("ConsultingRoom")
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("CONSULTING_ROOM");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("CREATED_AT");
@@ -324,6 +334,23 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("CHAR(1)")
                         .HasColumnName("IS_ACTIVE");
+
+                    b.Property<int>("MaxConcurrentAppointments")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(1)
+                        .HasColumnName("MAX_CONCURRENT_APPOINTMENTS");
+
+                    b.Property<string>("ShiftName")
+                        .HasMaxLength(30)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("SHIFT_NAME");
+
+                    b.Property<int>("SlotDurationMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(30)
+                        .HasColumnName("SLOT_DURATION_MINUTES");
 
                     b.Property<string>("StartTime")
                         .IsRequired()
@@ -989,6 +1016,11 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IdentificationNumber")
                         .IsUnique();
 
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER")
+                        .HasFilter("\"PHONE_NUMBER\" IS NOT NULL");
+
                     b.HasIndex("UserId")
                         .IsUnique();
 
@@ -1033,6 +1065,81 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CLIENTS_PETS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.ContactVerification.Entities.ContactVerificationSession", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ATTEMPTS");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("CHANNEL");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("DESTINATION_HASH");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("EXPIRES_AT");
+
+                    b.Property<string>("OtpHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("OTP_HASH");
+
+                    b.Property<DateTime?>("ProofExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("PROOF_EXPIRES_AT");
+
+                    b.Property<string>("ProofHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("PROOF_HASH");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("PURPOSE");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<string>("SubjectUserId")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("SUBJECT_USER_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProofHash")
+                        .HasDatabaseName("IX_CONTACT_VERIF_PROOF");
+
+                    b.HasIndex("Purpose", "DestinationHash", "Status")
+                        .HasDatabaseName("IX_CONTACT_VERIF_ACTIVE");
+
+                    b.ToTable("CONTACT_VERIFICATION_SESSIONS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.ConversationStatuses.Entities.ConversationStatusEntity", b =>
@@ -2532,6 +2639,52 @@ namespace Infrastructure.Migrations
                     b.ToTable("APPOINTMENT_ACTION_VERIFICATION_SESSIONS", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.VeterinarianAbsences.Entities.VeterinarianAbsence", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ABSENCE_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<DateTime>("EndAtUtc")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("END_AT");
+
+                    b.Property<string>("IsFullDay")
+                        .IsRequired()
+                        .HasColumnType("CHAR(1)")
+                        .HasColumnName("IS_FULL_DAY");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("REASON");
+
+                    b.Property<DateTime>("StartAtUtc")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("START_AT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.Property<string>("VeterinarianId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("VETERINARIAN_ID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VeterinarianId");
+
+                    b.HasIndex("VeterinarianId", "StartAtUtc", "EndAtUtc");
+
+                    b.ToTable("VETERINARIAN_ABSENCES", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>
                 {
                     b.Property<string>("Id")
@@ -3187,6 +3340,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("ClientPet");
 
                     b.Navigation("Record");
+                });
+
+            modelBuilder.Entity("Domain.VeterinarianAbsences.Entities.VeterinarianAbsence", b =>
+                {
+                    b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
+                        .WithMany()
+                        .HasForeignKey("VeterinarianId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Veterinarian");
                 });
 
             modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>

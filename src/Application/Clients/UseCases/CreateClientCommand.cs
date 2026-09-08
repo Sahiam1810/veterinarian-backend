@@ -1,6 +1,6 @@
+using Application.Clients.Errors;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.Clients.Errors;
 using Domain.Clients.Entities;
 using Domain.Clients.ValueObjects;
 using MediatR;
@@ -49,20 +49,17 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
             throw new ConflictException("Ese usuario ya tiene un perfil de cliente asociado.");
         }
 
-        // Teléfono normalizado: un dueño por número cuando no es null.
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-        {
-            var normalized = ClientPhoneNumber.Create(request.PhoneNumber).Value;
-            var phoneInUse = await _uow.ClientsRepository.ExistsByPhoneAsync(
-                normalized,
-                cancellationToken);
+        // Normaliza y persiste dígitos; unicidad en app + índice UX_CLIENTS_PHONE_NUMBER en BD.
+        var phoneNumber = ClientPhoneNumber.Create(request.PhoneNumber);
+        var phoneInUse = await _uow.ClientsRepository.ExistsByPhoneAsync(
+            phoneNumber.Value,
+            cancellationToken);
 
-            if (phoneInUse)
-            {
-                throw new ConflictException(
-                    "Ya existe un cliente con ese número de teléfono.",
-                    ClientErrorCodes.PhoneAlreadyInUse);
-            }
+        if (phoneInUse)
+        {
+            throw new ConflictException(
+                "Ya existe un cliente con ese número de teléfono.",
+                ClientErrorCodes.PhoneAlreadyInUse);
         }
 
         var client = new ClientEntity(
@@ -70,7 +67,7 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
             request.IdentificationNumber,
             request.Address,
             request.RegistrationDate,
-            request.PhoneNumber);
+            phoneNumber.Value);
 
         await _uow.ClientsRepository.AddAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

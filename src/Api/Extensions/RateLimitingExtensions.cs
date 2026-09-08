@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using Application.Security.Errors;
 using Api.Common.Security;
 using Api.Configuration;
 using Microsoft.AspNetCore.RateLimiting;
@@ -37,7 +38,10 @@ public static class RateLimitingExtensions
             options.AddPolicy(RateLimitPolicies.TelegramWebhook, context =>
                 CreatePartition(GetPartitionKey(context), settings.TelegramWebhookPermitLimit, settings.TelegramWebhookWindowSeconds));
             options.AddPolicy(RateLimitPolicies.TelegramRegistration, context =>
-                CreatePartition(GetPartitionKey(context), settings.RegisterPermitLimit, settings.RegisterWindowSeconds));
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.TelegramRegistrationPermitLimit,
+                    settings.TelegramRegistrationWindowSeconds));
             options.AddPolicy(RateLimitPolicies.ClientIdentificationLookup, context =>
                 CreatePartition(
                     GetPartitionKey(context),
@@ -58,6 +62,21 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.AppointmentOtpConfirmPermitLimit,
                     settings.AppointmentOtpConfirmWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.ContactEmailRequest, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.ContactEmailRequestPermitLimit,
+                    settings.ContactEmailRequestWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.ContactEmailConfirm, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.ContactEmailConfirmPermitLimit,
+                    settings.ContactEmailConfirmWindowSeconds));
+            options.AddPolicy(RateLimitPolicies.BotOwnerRegistration, context =>
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.BotOwnerRegistrationPermitLimit,
+                    settings.BotOwnerRegistrationWindowSeconds));
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = async (context, cancellationToken) =>
             {
@@ -76,7 +95,7 @@ public static class RateLimitingExtensions
                         type = "https://httpstatuses.com/429",
                         title = "Too Many Requests",
                         status = StatusCodes.Status429TooManyRequests,
-                        code = "RateLimit.Exceeded"
+                        code = RateLimitErrors.Exceeded.Code
                     },
                     cancellationToken: cancellationToken);
             };

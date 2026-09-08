@@ -3,7 +3,7 @@
 //
 // A Create con phone normalizado -> CUBIERTA
 //   CreateClientCommandHandlerTests.Handle_persists_the_client_with_a_normalized_phone_number
-// B Phone duplicado al crear -> CUBIERTA
+// B Phone duplicado al crear -> CUBIERTA (tarea 2.1 + índice BD)
 //   CreateClientCommandHandlerTests.Handle_throws_conflict_when_phone_is_already_in_use
 // C by-phone anónimo -> CUBIERTA (tarea 2.2)
 //   GetClientByPhoneQueryHandlerTests + ClientPhoneLookupHttpTests

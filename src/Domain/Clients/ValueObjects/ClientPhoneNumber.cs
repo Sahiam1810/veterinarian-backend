@@ -1,8 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Domain.Clients.ValueObjects;
 
-// Teléfono de contacto general del cliente (opcional, distinto del de la cita).
+// Teléfono de contacto general del cliente (opcional en persistencia histórica,
+// distinto del de la cita). Create/Update de API lo exigen vía validador.
 public sealed record ClientPhoneNumber
 {
+    public const int MinLength = 7;
     public const int MaxLength = 20;
 
     private ClientPhoneNumber(string value)
@@ -22,7 +26,7 @@ public sealed record ClientPhoneNumber
         return Create(value);
     }
 
-    public static ClientPhoneNumber Create(string value)
+    public static ClientPhoneNumber Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -31,15 +35,32 @@ public sealed record ClientPhoneNumber
                 nameof(value));
         }
 
-        var normalized = Normalize(value);
-        if (normalized.Length < 7 || normalized.Length > MaxLength)
+        if (!TryCreate(value, out var phone))
         {
             throw new ArgumentException(
-                $"El teléfono debe tener entre 7 y {MaxLength} dígitos.",
+                $"El teléfono debe tener entre {MinLength} y {MaxLength} dígitos.",
                 nameof(value));
         }
 
-        return new ClientPhoneNumber(normalized);
+        return phone;
+    }
+
+    public static bool TryCreate(string? value, [NotNullWhen(true)] out ClientPhoneNumber? phone)
+    {
+        phone = null;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = Normalize(value);
+        if (normalized.Length < MinLength || normalized.Length > MaxLength)
+        {
+            return false;
+        }
+
+        phone = new ClientPhoneNumber(normalized);
+        return true;
     }
 
     // Conserva solo dígitos para comparar y persistir de forma estable.

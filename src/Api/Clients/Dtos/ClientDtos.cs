@@ -13,10 +13,10 @@ public record CreateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null,
+    // Obligatoriedad y formato los resuelve FluentValidation (codes Clients.Phone*).
+    string? PhoneNumber,
 
-    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
-    string? PhoneNumber = null
+    DateTime? RegistrationDate = null
 );
 
 public record UpdateClientDto(
@@ -30,10 +30,10 @@ public record UpdateClientDto(
     [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
     string? Address,
 
-    DateTime? RegistrationDate = null,
+    // Update no deja el teléfono vacío: misma regla FluentValidation que Create.
+    string? PhoneNumber,
 
-    [MaxLength(20, ErrorMessage = "El teléfono no puede superar los 20 caracteres.")]
-    string? PhoneNumber = null
+    DateTime? RegistrationDate = null
 );
 
 public record ClientResponseDto(
@@ -45,6 +45,31 @@ public record ClientResponseDto(
     DateTime RegistrationDate,
     DateTime CreatedAt,
     DateTime? UpdatedAt
+);
+
+// Tarea 4.1: alta staff de dueño/cliente. Sin password/credentials -- no otorga acceso.
+public record RegisterOwnerDto(
+    [Required(ErrorMessage = "El nombre completo es obligatorio.")]
+    [MaxLength(150, ErrorMessage = "El nombre completo no puede superar los 150 caracteres.")]
+    string FullName,
+
+    [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
+    [MaxLength(150, ErrorMessage = "El correo electrónico no puede superar los 150 caracteres.")]
+    string Email,
+
+    [Required(ErrorMessage = "El número de identificación es obligatorio.")]
+    [MaxLength(20, ErrorMessage = "El número de identificación no puede superar los 20 caracteres.")]
+    string IdentificationNumber,
+
+    // Obligatoriedad y formato los resuelve FluentValidation (RegisterOwnerCommandValidator).
+    string PhoneNumber,
+
+    [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
+    string? Address = null,
+
+    // Solo se consume si RegisterOwner:RequireContactProofs está activo (hoy false para Staff).
+    Guid? ContactProofSessionId = null,
+    string? ContactProof = null
 );
 
 // Respuesta acotada para el lookup anónimo por cédula: sin Address/PhoneNumber.
