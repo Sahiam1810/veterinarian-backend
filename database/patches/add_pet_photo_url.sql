@@ -44,7 +44,7 @@ BEGIN
    WHERE "MigrationId" = '20260908150000_AddPetPhotoUrl';
   IF v_count = 0 THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-    VALUES ('20260908150000_AddPetPhotoUrl', '10.0.0');
+    VALUES ('20260908150000_AddPetPhotoUrl', '10.0.11');
     DBMS_OUTPUT.PUT_LINE('OK: migration history');
   END IF;
 END;
