@@ -1,5 +1,6 @@
 using Application.Appointments.Abstraction;
 using Application.Common.Models;
+using Application.Reports.Models;
 using Domain.Appointments.Entities;
 using Domain.Appointments.ValueObjects;
 using Infrastructure.Persistence;
@@ -141,6 +142,19 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Where(x => x.ScheduledStart >= fromUtc && x.ScheduledStart <= toUtc)
             .AsNoTracking()
             .OrderBy(x => x.ScheduledStart)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<AppointmentVeterinarianReportEntry>> GetForVeterinarianReportAsync(
+        DateTime fromInclusive,
+        DateTime toExclusive,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusive && x.ScheduledStart < toExclusive)
+            .Select(x => new AppointmentVeterinarianReportEntry(
+                x.VeterinarianId,
+                x.Veterinarian!.User!.FullName,
+                x.Status!.Name))
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
