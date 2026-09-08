@@ -4,8 +4,10 @@ using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
 using Application.VeterinarianAbsences.Abstraction;
 using Application.Appointments.Abstraction;
+using Application.Reports.Abstraction;
 using Infrastructure.Appointments.BackgroundServices;
 using Infrastructure.Appointments.Configuration;
+using Infrastructure.Reports.Repositories;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
@@ -235,6 +237,7 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
         services.AddScoped<IVeterinarianAbsenceRepository, VeterinarianAbsenceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<IReportsReadRepository, ReportsReadRepository>();
         services.AddScoped<IAppointmentBookingSettings, ConfiguredAppointmentBookingSettings>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
         services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
