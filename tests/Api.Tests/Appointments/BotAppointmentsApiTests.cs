@@ -10,8 +10,8 @@ using Xunit;
 
 namespace Api.Tests.Appointments;
 
+[Collection(TelegramAgentApiCollection.Name)]
 public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
-    : IClassFixture<TelegramAgentApiFactory>
 {
     [Fact]
     public async Task Ordinary_authenticated_token_cannot_access_bot_appointments()

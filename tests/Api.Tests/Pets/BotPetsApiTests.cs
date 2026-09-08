@@ -22,8 +22,8 @@ using Xunit;
 
 namespace Api.Tests.Pets;
 
+[Collection(TelegramAgentApiCollection.Name)]
 public sealed class BotPetsApiTests(TelegramAgentApiFactory factory)
-    : IClassFixture<TelegramAgentApiFactory>
 {
     [Fact]
     public async Task Ordinary_authenticated_token_cannot_access_bot_pets()
@@ -151,6 +151,7 @@ public sealed class TelegramAgentApiFactory : WebApplicationFactory<AuthControll
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Telegram__Enabled"] = "false",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = Issuer,
             ["Jwt__Audience"] = Audience,
@@ -241,4 +242,10 @@ public sealed class TelegramAgentApiFactory : WebApplicationFactory<AuthControll
             new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+}
+
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class TelegramAgentApiCollection : ICollectionFixture<TelegramAgentApiFactory>
+{
+    public const string Name = "TelegramAgentApi";
 }
