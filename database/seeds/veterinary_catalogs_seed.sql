@@ -1,5 +1,5 @@
 -- Catálogos veterinarios mínimos para una instalación nueva.
--- No crea servicios con precio, razas ni diagnósticos clínicos.
+-- No crea servicios con precio ni diagnósticos clínicos.
 SET DEFINE OFF;
 
 MERGE INTO TYPE_SERVICES target
@@ -31,6 +31,38 @@ ON (UPPER(target.NAME) = UPPER(source.NAME))
 WHEN NOT MATCHED THEN
     INSERT (SPECIES_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+MERGE INTO RACES target
+USING (
+    SELECT '8a000000-0000-0000-0000-000000000001' ID,
+           species.SPECIES_ID, 'Mestizo' NAME
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000002', species.SPECIES_ID, 'Labrador Retriever'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000003', species.SPECIES_ID, 'Golden Retriever'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000004', species.SPECIES_ID, 'Bulldog'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000005', species.SPECIES_ID, 'Poodle'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000006', species.SPECIES_ID, 'Mestizo'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000007', species.SPECIES_ID, 'Siamés'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000008', species.SPECIES_ID, 'Persa'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000009', species.SPECIES_ID, 'Maine Coon'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000010', species.SPECIES_ID, 'No especificada'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'OTRO'
+) source
+ON (
+    target.SPECIES_ID = source.SPECIES_ID
+    AND UPPER(target.NAME) = UPPER(source.NAME)
+)
+WHEN NOT MATCHED THEN
+    INSERT (RACE_ID, SPECIES_ID, NAME, CREATED_AT)
+    VALUES (source.ID, source.SPECIES_ID, source.NAME, SYSTIMESTAMP);
 
 MERGE INTO SPECIALTIES target
 USING (

@@ -200,9 +200,10 @@ public sealed class CreateMyAppointmentCommandHandlerTests
             var client = new ClientEntity(
                 userId, "1234567890", null,
                 phoneNumber: withClientPhone ? "3001234567" : null);
+            var species = new SpeciesEntity("Canino");
             var pet = new PetEntity(
                 "Luna", 4, "F", 12m, null,
-                new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+                species, new RaceEntity("Mestizo", species));
             ClientPet = new ClientPetEntity(client, pet, true);
             Service = new Service(Guid.NewGuid(), "Consulta", 30, 50000m);
             var veterinarianUser = new UserEntity(
