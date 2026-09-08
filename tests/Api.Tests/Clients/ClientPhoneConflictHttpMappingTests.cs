@@ -33,9 +33,8 @@ public sealed class ClientPhoneConflictHttpMappingTests
         Assert.Equal(StatusCodes.Status409Conflict, document.RootElement.GetProperty("status").GetInt32());
         Assert.Equal(
             ClientErrorCodes.PhoneAlreadyInUse,
-            document.RootElement.GetProperty("error").GetString());
-        Assert.Equal(
-            "Ya existe un cliente con ese número de teléfono.",
-            document.RootElement.GetProperty("message").GetString());
+            document.RootElement.GetProperty("code").GetString());
+        Assert.False(document.RootElement.TryGetProperty("error", out _));
+        Assert.False(document.RootElement.TryGetProperty("message", out _));
     }
 }

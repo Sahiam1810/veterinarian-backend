@@ -30,7 +30,7 @@ El ejecutor nunca llama `cleanup_seeds.sql` ni scripts de `database/test_seeds`.
 |---|---:|
 | Roles | 6 |
 | Modules | 20 |
-| Role permissions | 44 |
+| Role permissions | 40 |
 | Appointment statuses | 6 |
 | Conversation statuses | 4 |
 | Sender types | 4 |
