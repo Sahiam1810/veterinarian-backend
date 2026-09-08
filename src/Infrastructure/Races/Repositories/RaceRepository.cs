@@ -26,6 +26,7 @@ public sealed class RaceRepository : IRaceRepository
         }
 
         return await query
+            .Include(race => race.Species)
             .OrderBy(race => race.Name)
             .ToListAsync(cancellationToken);
     }
@@ -33,6 +34,7 @@ public sealed class RaceRepository : IRaceRepository
     public async Task<RaceEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _context.Set<RaceEntity>()
+            .Include(race => race.Species)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 

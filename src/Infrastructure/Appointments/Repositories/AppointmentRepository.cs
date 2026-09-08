@@ -310,4 +310,48 @@ public sealed class AppointmentRepository : IAppointmentRepository
         _context.Set<Appointment>().Remove(appointment);
         return Task.CompletedTask;
     }
+
+    public async Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (clientPetIds.Count == 0)
+        {
+            return;
+        }
+
+        var appointmentIds = await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        if (appointmentIds.Count == 0)
+        {
+            return;
+        }
+
+        var histories = await _context.Set<Domain.AppointmentStatusHistories.Entities.AppointmentStatusHistory>()
+            .Where(x => appointmentIds.Contains(x.AppointmentId))
+            .ToListAsync(cancellationToken);
+
+        if (histories.Count > 0)
+        {
+            _context.Set<Domain.AppointmentStatusHistories.Entities.AppointmentStatusHistory>()
+                .RemoveRange(histories);
+        }
+
+        var appointments = await _context.Set<Appointment>()
+            .Where(x => appointmentIds.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        _context.Set<Appointment>().RemoveRange(appointments);
+    }
+
+    public Task<bool> ExistsByServiceIdAsync(
+        Guid serviceId,
+        CancellationToken cancellationToken = default)
+        => _context.Set<Appointment>()
+            .AsNoTracking()
+            .AnyAsync(x => x.ServiceId == serviceId, cancellationToken);
 }

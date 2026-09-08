@@ -99,4 +99,14 @@ public interface IAppointmentRepository
     Task DeleteAsync(
         Appointment appointment,
         CancellationToken cancellationToken);
+
+    // Borra citas (e historiales) de vínculos dueño-mascota sin Include(User)
+    Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken);
+
+    // True si alguna cita usa este servicio (impide borrado físico)
+    Task<bool> ExistsByServiceIdAsync(
+        Guid serviceId,
+        CancellationToken cancellationToken);
 }

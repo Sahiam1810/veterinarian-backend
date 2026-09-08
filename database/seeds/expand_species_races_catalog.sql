@@ -1,27 +1,7 @@
--- Catálogos veterinarios mínimos para una instalación nueva.
--- No crea servicios con precio ni diagnósticos clínicos.
+-- Amplía especies/razas reales (idempotente). Ejecutar en Oracle local.
+-- Comprueba primero: SELECT NAME FROM SPECIES; SELECT s.NAME, r.NAME FROM RACES r JOIN SPECIES s ON s.SPECIES_ID = r.SPECIES_ID;
 SET DEFINE OFF;
 
-MERGE INTO TYPE_SERVICES target
-USING (
-    SELECT '87000000-0000-0000-0000-000000000001' ID, 'Consulta' NAME,
-           'Valoración veterinaria general o especializada' DESCRIPTION FROM DUAL UNION ALL
-    SELECT '87000000-0000-0000-0000-000000000002', 'Vacunación',
-           'Aplicación y seguimiento de vacunas' FROM DUAL UNION ALL
-    SELECT '87000000-0000-0000-0000-000000000003', 'Procedimiento',
-           'Procedimiento ambulatorio o quirúrgico' FROM DUAL UNION ALL
-    SELECT '87000000-0000-0000-0000-000000000004', 'Diagnóstico',
-           'Pruebas y ayudas diagnósticas' FROM DUAL UNION ALL
-    SELECT '87000000-0000-0000-0000-000000000005', 'Urgencia',
-           'Atención veterinaria prioritaria' FROM DUAL
-) source
-ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN MATCHED THEN UPDATE SET target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (TYPE_SERVICE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
--- Especies habituales en clínica (nombres ≤ 20 caracteres)
 MERGE INTO SPECIES target
 USING (
     SELECT '88000000-0000-0000-0000-000000000001' ID, 'Perro' NAME FROM DUAL UNION ALL
@@ -35,12 +15,9 @@ WHEN NOT MATCHED THEN
     INSERT (SPECIES_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
 
--- Razas reales por especie (nombres ≤ 20 caracteres del dominio)
 MERGE INTO RACES target
 USING (
-    -- Perro
-    SELECT '8a000000-0000-0000-0000-000000000001' ID,
-           species.SPECIES_ID, 'Mestizo' NAME
+    SELECT '8a000000-0000-0000-0000-000000000001' ID, species.SPECIES_ID, 'Mestizo' NAME
     FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000002', species.SPECIES_ID, 'Labrador Retriever'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
@@ -64,7 +41,6 @@ USING (
     FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000017', species.SPECIES_ID, 'Schnauzer'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
-    -- Gato
     SELECT '8a000000-0000-0000-0000-000000000006', species.SPECIES_ID, 'Mestizo'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000007', species.SPECIES_ID, 'Siamés'
@@ -81,7 +57,6 @@ USING (
     FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000021', species.SPECIES_ID, 'Angora'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
-    -- Ave
     SELECT '8a000000-0000-0000-0000-000000000022', species.SPECIES_ID, 'Periquito'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000023', species.SPECIES_ID, 'Canario'
@@ -90,42 +65,24 @@ USING (
     FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000025', species.SPECIES_ID, 'Loro'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' UNION ALL
-    -- Conejo
     SELECT '8a000000-0000-0000-0000-000000000026', species.SPECIES_ID, 'Holandés'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000027', species.SPECIES_ID, 'Mini Rex'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000028', species.SPECIES_ID, 'Cabeza de León'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' UNION ALL
-    -- Otro
     SELECT '8a000000-0000-0000-0000-000000000010', species.SPECIES_ID, 'No especificada'
     FROM SPECIES species WHERE UPPER(species.NAME) = 'OTRO'
 ) source
-ON (
-    target.SPECIES_ID = source.SPECIES_ID
-    AND UPPER(target.NAME) = UPPER(source.NAME)
-)
+ON (target.SPECIES_ID = source.SPECIES_ID AND UPPER(target.NAME) = UPPER(source.NAME))
 WHEN NOT MATCHED THEN
     INSERT (RACE_ID, SPECIES_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.SPECIES_ID, source.NAME, SYSTIMESTAMP);
 
-MERGE INTO SPECIALTIES target
-USING (
-    SELECT '89000000-0000-0000-0000-000000000001' ID, 'Medicina general' NAME,
-           'Atención veterinaria general' DESCRIPTION FROM DUAL UNION ALL
-    SELECT '89000000-0000-0000-0000-000000000002', 'Cirugía',
-           'Procedimientos quirúrgicos veterinarios' FROM DUAL UNION ALL
-    SELECT '89000000-0000-0000-0000-000000000003', 'Dermatología',
-           'Diagnóstico y tratamiento dermatológico' FROM DUAL UNION ALL
-    SELECT '89000000-0000-0000-0000-000000000004', 'Medicina interna',
-           'Diagnóstico y tratamiento de enfermedades internas' FROM DUAL UNION ALL
-    SELECT '89000000-0000-0000-0000-000000000005', 'Urgencias',
-           'Atención clínica veterinaria prioritaria' FROM DUAL
-) source
-ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN MATCHED THEN UPDATE SET target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (SPECIALTY_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
 COMMIT;
+
+-- Verificación rápida
+SELECT species.NAME SPECIES, race.NAME RACE
+FROM RACES race
+INNER JOIN SPECIES species ON species.SPECIES_ID = race.SPECIES_ID
+ORDER BY species.NAME, race.NAME;

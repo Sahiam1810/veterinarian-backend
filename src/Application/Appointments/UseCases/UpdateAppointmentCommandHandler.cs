@@ -26,6 +26,20 @@ public sealed class UpdateAppointmentCommandHandler(
             request.EnforceVeterinarianOwnership,
             cancellationToken);
 
+        // No reasignar a un servicio inactivo (las citas que ya lo tenían se conservan).
+        if (request.ServiceId != appointment.ServiceId)
+        {
+            var service = await unitOfWork.ServicesRepository.GetByIdAsync(
+                request.ServiceId,
+                cancellationToken)
+                ?? throw new NotFoundException("Servicio no encontrado.");
+            if (!service.IsActive)
+            {
+                throw new BadRequestException(
+                    "El servicio no está disponible para citas nuevas.");
+            }
+        }
+
         // Sin campo phone en el comando: si el dueño tiene telefono en perfil, realinear.
         var requesterPhone = await AppointmentRequesterPhonePolicy.ResolveAsync(
             unitOfWork,
