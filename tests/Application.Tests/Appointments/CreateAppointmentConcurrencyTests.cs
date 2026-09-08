@@ -34,7 +34,8 @@ public sealed class CreateAppointmentConcurrencyTests
             veterinarianId, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(18, 0));
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
         var command = new CreateAppointmentCommand(
             clientPet.Id, veterinarianId, Guid.NewGuid(), Guid.NewGuid(), availability.Id,

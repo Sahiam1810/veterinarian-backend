@@ -85,7 +85,7 @@ public sealed class RegisterMyPetCommandHandlerTests
             var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Active");
             Client = new ClientEntity(userId, "1234567890", null);
             var species = new SpeciesEntity("Canino");
-            var race = new RaceEntity("Mestizo");
+            var race = new RaceEntity("Mestizo", species);
 
             var accounts = Substitute.For<IUserAccountsRepository>();
             var clients = Substitute.For<IClientRepository>();

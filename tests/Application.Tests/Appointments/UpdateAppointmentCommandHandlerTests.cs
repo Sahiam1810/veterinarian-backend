@@ -44,7 +44,8 @@ public sealed class UpdateAppointmentCommandHandlerTests
     {
         var userId = Guid.NewGuid();
         ownedClient = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         ownedClientPet = new ClientPetEntity(ownedClient, pet, true);
         typeof(ClientPetEntity).GetProperty(nameof(ClientPetEntity.Id))!
             .SetValue(ownedClientPet, ClientPetId);

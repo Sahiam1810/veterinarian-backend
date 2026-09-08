@@ -20,6 +20,8 @@ public sealed class PetEntity : BaseEntity<Guid>
         SpeciesEntity speciesEntity,
         RaceEntity raceEntity)
     {
+        EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
+
         Id = Guid.NewGuid();
         Name = PetName.Create(name);
         Age = age;
@@ -53,6 +55,8 @@ public sealed class PetEntity : BaseEntity<Guid>
         SpeciesEntity speciesEntity,
         RaceEntity raceEntity)
     {
+        EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
+
         Name = PetName.Create(name);
         Age = age;
         Gender = PetGender.Create(gender);
@@ -63,5 +67,18 @@ public sealed class PetEntity : BaseEntity<Guid>
         SpeciesId = speciesEntity.Id;
         RaceId = raceEntity.Id;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static void EnsureRaceBelongsToSpecies(
+        SpeciesEntity species,
+        RaceEntity race)
+    {
+        ArgumentNullException.ThrowIfNull(species);
+        ArgumentNullException.ThrowIfNull(race);
+
+        if (race.SpeciesId != species.Id)
+        {
+            throw new ArgumentException("La raza no pertenece a la especie seleccionada.", nameof(race));
+        }
     }
 }

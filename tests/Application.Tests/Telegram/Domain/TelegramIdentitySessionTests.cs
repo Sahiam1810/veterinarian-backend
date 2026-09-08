@@ -60,6 +60,71 @@ public sealed class TelegramIdentitySessionTests
     }
 
     [Fact]
+    public void Registration_conflict_recovers_identification_without_losing_pending_request()
+    {
+        var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
+        session.CapturePendingMessage("protected-private-message", Now);
+        session.RequireRegistration("protected-id", Now.AddSeconds(1));
+        session.ConfirmRegistration(Now.AddSeconds(2));
+        session.CaptureFullName("protected-name", Now.AddSeconds(3));
+        session.BeginRegistrationOtp(
+            "protected-email",
+            OtpHash,
+            Now.AddMinutes(5),
+            Now.AddSeconds(4));
+
+        session.RecoverIdentification(Now.AddSeconds(5));
+
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingIdentification, session.Status);
+        Assert.Equal(42, session.PendingInboundUpdateId);
+        Assert.Equal("protected-private-message", session.ProtectedPendingMessage);
+        Assert.Null(session.PersonId);
+        Assert.Null(session.ProtectedIdentification);
+        Assert.Null(session.ProtectedFullName);
+        Assert.Null(session.ProtectedEmail);
+        Assert.Null(session.OtpHash);
+        Assert.Null(session.OtpExpiresAt);
+        Assert.Null(session.AbsoluteExpiresAt);
+        Assert.Null(session.IdleExpiresAt);
+        Assert.Equal(0, session.OtpAttempts);
+    }
+
+    [Fact]
+    public void Existing_account_registration_otp_keeps_person_identity()
+    {
+        var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
+        session.RequireRegistration("protected-id", Now.AddSeconds(1));
+        session.ConfirmRegistration(Now.AddSeconds(2));
+        session.CaptureFullName("protected-name", Now.AddSeconds(3));
+
+        session.BeginRegistrationOtp(
+            "protected-email",
+            OtpHash,
+            Now.AddMinutes(5),
+            Now.AddSeconds(4),
+            PersonId);
+
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingOtp, session.Status);
+        Assert.Equal(PersonId, session.PersonId);
+    }
+
+    [Fact]
+    public void Inactive_account_email_can_recover_identification_before_otp()
+    {
+        var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
+        session.CapturePendingMessage("protected-private-message", Now);
+        session.RequireRegistration("protected-id", Now.AddSeconds(1));
+        session.ConfirmRegistration(Now.AddSeconds(2));
+        session.CaptureFullName("protected-name", Now.AddSeconds(3));
+
+        session.RecoverIdentification(Now.AddSeconds(4));
+
+        Assert.Equal(TelegramIdentitySessionStatus.AwaitingIdentification, session.Status);
+        Assert.Equal(42, session.PendingInboundUpdateId);
+        Assert.Equal("protected-private-message", session.ProtectedPendingMessage);
+    }
+
+    [Fact]
     public void Invalid_otp_attempts_block_the_session_at_the_configured_limit()
     {
         var session = TelegramIdentitySession.Start(1001, 2002, 42, Now);
