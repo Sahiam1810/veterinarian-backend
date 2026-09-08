@@ -59,6 +59,15 @@ public sealed class PetConfiguration : IEntityTypeConfiguration<PetEntity>
                 str => PetObservations.Create(str))
             .IsRequired(false);
 
+        // URL de foto externa; opcional
+        builder.Property(pet => pet.PhotoUrl)
+            .HasColumnName("PHOTO_URL")
+            .HasMaxLength(PetPhotoUrl.MaxLength)
+            .HasConversion(
+                photo => photo.Value,
+                str => PetPhotoUrl.Create(str))
+            .IsRequired(false);
+
         builder.Property(pet => pet.SpeciesId)
             .HasColumnName("SPECIES_ID")
             .HasColumnType("VARCHAR2(36)")

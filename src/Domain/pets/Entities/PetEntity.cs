@@ -18,7 +18,8 @@ public sealed class PetEntity : BaseEntity<Guid>
         decimal weight,
         string? observations,
         SpeciesEntity speciesEntity,
-        RaceEntity raceEntity)
+        RaceEntity raceEntity,
+        string? photoUrl = null)
     {
         EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
 
@@ -28,6 +29,7 @@ public sealed class PetEntity : BaseEntity<Guid>
         Gender = PetGender.Create(gender);
         Weight = PetWeight.Create(weight);
         Observations = PetObservations.Create(observations);
+        PhotoUrl = PetPhotoUrl.Create(photoUrl);
         Species = speciesEntity;
         Race = raceEntity;
         SpeciesId = speciesEntity.Id;
@@ -39,6 +41,8 @@ public sealed class PetEntity : BaseEntity<Guid>
     public PetGender Gender { get; private set; } = null!;
     public PetWeight Weight { get; private set; } = null!;
     public PetObservations Observations { get; private set; } = null!;
+    // Foto externa por URL; nullable en Oracle
+    public PetPhotoUrl PhotoUrl { get; private set; } = null!;
     public Guid SpeciesId { get; private set; }
     public Guid RaceId { get; private set; }
 
@@ -53,7 +57,8 @@ public sealed class PetEntity : BaseEntity<Guid>
         decimal weight,
         string? observations,
         SpeciesEntity speciesEntity,
-        RaceEntity raceEntity)
+        RaceEntity raceEntity,
+        string? photoUrl = null)
     {
         EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
 
@@ -62,6 +67,7 @@ public sealed class PetEntity : BaseEntity<Guid>
         Gender = PetGender.Create(gender);
         Weight = PetWeight.Create(weight);
         Observations = PetObservations.Create(observations);
+        PhotoUrl = PetPhotoUrl.Create(photoUrl);
         Species = speciesEntity;
         Race = raceEntity;
         SpeciesId = speciesEntity.Id;

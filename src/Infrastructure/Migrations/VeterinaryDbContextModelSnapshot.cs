@@ -1439,6 +1439,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("NVARCHAR2(500)")
                         .HasColumnName("OBSERVATIONS");
 
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("PHOTO_URL");
+
                     b.Property<string>("RaceId")
                         .IsRequired()
                         .HasColumnType("VARCHAR2(36)")
