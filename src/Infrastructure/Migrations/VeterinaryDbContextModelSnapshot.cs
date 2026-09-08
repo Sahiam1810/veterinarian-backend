@@ -1547,11 +1547,18 @@ namespace Infrastructure.Migrations
                         .HasColumnType("NVARCHAR2(20)")
                         .HasColumnName("NAME");
 
+                    b.Property<string>("SpeciesId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("SPECIES_ID");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("UPDATED_AT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SpeciesId");
 
                     b.ToTable("RACES", (string)null);
                 });
@@ -3159,6 +3166,17 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Race");
+
+                    b.Navigation("Species");
+                });
+
+            modelBuilder.Entity("Domain.Races.Entities.RaceEntity", b =>
+                {
+                    b.HasOne("Domain.Species.Entities.SpeciesEntity", "Species")
+                        .WithMany()
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Species");
                 });

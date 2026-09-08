@@ -1,5 +1,6 @@
 using Domain.Races.Entities;
 using Domain.Races.ValueObjects;
+using Domain.Species.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -29,6 +30,15 @@ public sealed class RacesConfiguration : IEntityTypeConfiguration<RaceEntity>
                 str => RaceName.Create(str))
             .IsRequired();
 
+        // FK obligatoria: cada raza pertenece a una especie
+        builder.Property(race => race.SpeciesId)
+            .HasColumnName("SPECIES_ID")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.ToString(),
+                str => Guid.Parse(str))
+            .IsRequired();
+
         builder.Property(race => race.CreatedAt)
             .HasColumnName("CREATED_AT")
             .IsRequired();
@@ -36,5 +46,10 @@ public sealed class RacesConfiguration : IEntityTypeConfiguration<RaceEntity>
         builder.Property(race => race.UpdatedAt)
             .HasColumnName("UPDATED_AT")
             .IsRequired(false);
+
+        builder.HasOne(race => race.Species)
+            .WithMany()
+            .HasForeignKey(race => race.SpeciesId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

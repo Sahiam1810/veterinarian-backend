@@ -7,12 +7,18 @@ public interface IRaceRepository
     Task<IReadOnlyCollection<RaceEntity>> GetAllAsync(
         CancellationToken cancellationToken);
 
+    // Razas de una especie (para el combo del formulario)
+    Task<IReadOnlyCollection<RaceEntity>> GetBySpeciesIdAsync(
+        Guid speciesId,
+        CancellationToken cancellationToken);
+
     Task<RaceEntity?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken);
 
-    Task<bool> ExistsByNameAsync(
+    Task<bool> ExistsByNameInSpeciesAsync(
         string name,
+        Guid speciesId,
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 

@@ -17,19 +17,39 @@ public sealed class RaceRepository : IRaceRepository
 
     public async Task<IReadOnlyCollection<RaceEntity>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await _context.Set<RaceEntity>().ToListAsync(cancellationToken);
+        return await _context.Set<RaceEntity>()
+            .Include(r => r.Species)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<RaceEntity>> GetBySpeciesIdAsync(
+        Guid speciesId,
+        CancellationToken cancellationToken)
+    {
+        return await _context.Set<RaceEntity>()
+            .Include(r => r.Species)
+            .AsNoTracking()
+            .Where(r => r.SpeciesId == speciesId)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<RaceEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _context.Set<RaceEntity>()
+            .Include(r => r.Species)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 
-    public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken, Guid? excludedId = null)
+    public async Task<bool> ExistsByNameInSpeciesAsync(
+        string name,
+        Guid speciesId,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null)
     {
         var nameVo = RaceName.Create(name);
-        var query = _context.Set<RaceEntity>().Where(r => r.Name == nameVo);
+        var query = _context.Set<RaceEntity>()
+            .Where(r => r.Name == nameVo && r.SpeciesId == speciesId);
         if (excludedId.HasValue)
         {
             query = query.Where(r => r.Id != excludedId.Value);
