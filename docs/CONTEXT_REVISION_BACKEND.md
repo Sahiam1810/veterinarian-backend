@@ -61,6 +61,9 @@ Regla ADR: si el dueño tiene `Clients.PhoneNumber`, Create/Update staff (y Crea
 ADR: [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md). Catálogo: [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md). Smoke: [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md).
 Inventario de rutas anónimas/bot con rate limit (Anexo A del ADR). Logs: nunca teléfono, cédula, OTP, proof ni cuerpo de correo en claro. Front staff traduce solo por `code`. **Canal = Telegram; WhatsApp fuera de alcance.** Dueños de archivo: RL (`RateLimitingExtensions` / `Program.cs` rate limit), LOG, CODE, CTX, SMOKE. Cero código de producto en el kickoff; 6.1–6.5 no se esperan entre sí.
 
+### Etapa 6.1 — rate limit canales anónimos / Telegram
+Anexo A del ADR Etapa 6 cubierto al 100%: Login/Refresh, lookup phone/cédula, Gmail request/confirm, bot RegisterOwner, Telegram registration + webhook, OTP cita request/confirm. Cada ruta tiene policy + `appsettings` (`RateLimiting`) + `[EnableRateLimiting]` + 429 `application/problem+json` con `code=RateLimit.Exceeded`. Tests: `AnonymousChannelRateLimitCoverageTests` + HTTP 429 por canal (sin SMTP/Telegram reales).
+
 ### Etapa 6.2 — logs sin PII del dueño
 Política: [`docs/security/pii-logging-policy.md`](security/pii-logging-policy.md). Trazas con ids + `ErrorCode` / modo; **sin** teléfono, cédula, OTP, proof ni correo. EF: sin `EnableSensitiveDataLogging`. Tests: `PiiInLogsTests` (logger fake + escaneo de plantillas).
 

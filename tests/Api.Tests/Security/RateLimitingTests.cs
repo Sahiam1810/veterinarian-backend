@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Api.Auth.Controllers;
@@ -16,10 +16,10 @@ using Xunit;
 namespace Api.Tests.Security;
 
 // Antes de este fix, Program.cs armaba el rate limiting con
-// AddFixedWindowLimiter sin partición (un único contador global compartido
-// por todos los clientes) y la implementación particionada/configurable de
+// AddFixedWindowLimiter sin particiÃ³n (un Ãºnico contador global compartido
+// por todos los clientes) y la implementaciÃ³n particionada/configurable de
 // RateLimitingExtensions.AddApiRateLimiting nunca se conectaba. Estas
-// pruebas confirman que ahora sí está conectada y produce la respuesta
+// pruebas confirman que ahora sÃ­ estÃ¡ conectada y produce la respuesta
 // 429 con el formato problem+json esperado.
 [Collection(EnvironmentVariablesCollection.Name)]
 public sealed class RateLimitingTests : IClassFixture<RateLimitedApiFactory>
@@ -91,8 +91,8 @@ public sealed class RateLimitedApiFactory : WebApplicationFactory<AuthController
             ["RateLimiting__GlobalWindowSeconds"] = "60",
             ["RateLimiting__LoginPermitLimit"] = $"{LoginPermitLimit}",
             ["RateLimiting__LoginWindowSeconds"] = "60",
-            ["RateLimiting__RegisterPermitLimit"] = "1000",
-            ["RateLimiting__RegisterWindowSeconds"] = "60",
+            ["RateLimiting__TelegramRegistrationPermitLimit"] = "1000",
+            ["RateLimiting__TelegramRegistrationWindowSeconds"] = "60",
             ["RateLimiting__RefreshPermitLimit"] = "1000",
             ["RateLimiting__RefreshWindowSeconds"] = "60",
             ["RateLimiting__TelegramWebhookPermitLimit"] = "1000",

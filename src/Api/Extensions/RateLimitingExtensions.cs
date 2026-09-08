@@ -38,7 +38,10 @@ public static class RateLimitingExtensions
             options.AddPolicy(RateLimitPolicies.TelegramWebhook, context =>
                 CreatePartition(GetPartitionKey(context), settings.TelegramWebhookPermitLimit, settings.TelegramWebhookWindowSeconds));
             options.AddPolicy(RateLimitPolicies.TelegramRegistration, context =>
-                CreatePartition(GetPartitionKey(context), settings.RegisterPermitLimit, settings.RegisterWindowSeconds));
+                CreatePartition(
+                    GetPartitionKey(context),
+                    settings.TelegramRegistrationPermitLimit,
+                    settings.TelegramRegistrationWindowSeconds));
             options.AddPolicy(RateLimitPolicies.ClientIdentificationLookup, context =>
                 CreatePartition(
                     GetPartitionKey(context),

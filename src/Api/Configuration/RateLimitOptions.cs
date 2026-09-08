@@ -8,8 +8,8 @@ public sealed class RateLimitOptions
     public int LoginWindowSeconds { get; init; }
     public int RefreshPermitLimit { get; init; }
     public int RefreshWindowSeconds { get; init; }
-    public int RegisterPermitLimit { get; init; }
-    public int RegisterWindowSeconds { get; init; }
+    public int TelegramRegistrationPermitLimit { get; init; } = 5;
+    public int TelegramRegistrationWindowSeconds { get; init; } = 60;
     public int TelegramWebhookPermitLimit { get; init; }
     public int TelegramWebhookWindowSeconds { get; init; }
     public int ClientIdentificationLookupPermitLimit { get; init; } = 20;

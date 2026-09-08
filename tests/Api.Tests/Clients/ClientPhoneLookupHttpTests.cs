@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using Api.Auth.Controllers;
 using Api.Tests.Support;
@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Api.Tests.Clients;
 
-// Tarea 2.2: GET /api/clients/by-phone/{phone} anónimo + rate limit.
+// Tarea 2.2: GET /api/clients/by-phone/{phone} anÃ³nimo + rate limit.
 [Collection(EnvironmentVariablesCollection.Name)]
 public sealed class ClientPhoneLookupHttpTests : IClassFixture<ClientPhoneLookupApiFactory>
 {
@@ -179,8 +179,8 @@ public sealed class ClientPhoneLookupApiFactory : WebApplicationFactory<AuthCont
             ["RateLimiting__GlobalWindowSeconds"] = "60",
             ["RateLimiting__LoginPermitLimit"] = "1000",
             ["RateLimiting__LoginWindowSeconds"] = "60",
-            ["RateLimiting__RegisterPermitLimit"] = "1000",
-            ["RateLimiting__RegisterWindowSeconds"] = "60",
+            ["RateLimiting__TelegramRegistrationPermitLimit"] = "1000",
+            ["RateLimiting__TelegramRegistrationWindowSeconds"] = "60",
             ["RateLimiting__RefreshPermitLimit"] = "1000",
             ["RateLimiting__RefreshWindowSeconds"] = "60",
             ["RateLimiting__TelegramWebhookPermitLimit"] = "1000",
