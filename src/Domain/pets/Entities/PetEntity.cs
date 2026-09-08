@@ -41,8 +41,13 @@ public sealed class PetEntity : BaseEntity<Guid>
     public PetGender Gender { get; private set; } = null!;
     public PetWeight Weight { get; private set; } = null!;
     public PetObservations Observations { get; private set; } = null!;
-    // Foto externa por URL; nullable en Oracle
-    public PetPhotoUrl PhotoUrl { get; private set; } = null!;
+    // EF deja null si PHOTO_URL es NULL; el getter garantiza VO vacío
+    private PetPhotoUrl? _photoUrl;
+    public PetPhotoUrl PhotoUrl
+    {
+        get => _photoUrl ?? PetPhotoUrl.Create(null);
+        private set => _photoUrl = value;
+    }
     public Guid SpeciesId { get; private set; }
     public Guid RaceId { get; private set; }
 
