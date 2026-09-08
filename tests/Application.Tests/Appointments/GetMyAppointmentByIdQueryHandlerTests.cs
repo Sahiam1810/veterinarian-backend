@@ -68,14 +68,7 @@ public sealed class GetMyAppointmentByIdQueryHandlerTests
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(UserId, "1234567890", "Calle 1");
-        var pet = new PetEntity(
-            "Luna",
-            4,
-            "F",
-            12m,
-            null,
-            new SpeciesEntity("Canino"),
-            new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
         var appointment = new Appointment(
             clientPet.Id,

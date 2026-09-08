@@ -1,4 +1,4 @@
-using Application.Appointments.Abstraction;
+﻿using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
 using Application.VeterinarianAbsences.Abstraction;
@@ -44,7 +44,7 @@ public sealed class UpdateAppointmentCommandHandlerTests
     {
         var userId = Guid.NewGuid();
         ownedClient = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         ownedClientPet = new ClientPetEntity(ownedClient, pet, true);
         typeof(ClientPetEntity).GetProperty(nameof(ClientPetEntity.Id))!
             .SetValue(ownedClientPet, ClientPetId);

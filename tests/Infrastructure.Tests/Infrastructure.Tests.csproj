@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Shared\TestPets.cs" Link="Shared\TestPets.cs" />
+  </ItemGroup>
+
 </Project>

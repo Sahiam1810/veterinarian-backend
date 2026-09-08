@@ -63,21 +63,36 @@ WHEN NOT MATCHED THEN
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
 
 -- =============================================================================
--- 3. RACES
+-- 3. RACES (cada raza pertenece a una especie)
+-- Canino: ...0001 | Felino: ...0002 | Ave: ...0003 | Conejo: ...0004
 -- =============================================================================
 MERGE INTO RACES target
 USING (
-    SELECT 'bbbb0003-0000-0000-0000-000000000001' AS ID, 'Golden Retriever' AS NAME FROM DUAL UNION ALL
-    SELECT 'bbbb0003-0000-0000-0000-000000000002' AS ID, 'Bulldog Francés' AS NAME FROM DUAL UNION ALL
-    SELECT 'bbbb0003-0000-0000-0000-000000000003' AS ID, 'Pastor Alemán' AS NAME FROM DUAL UNION ALL
-    SELECT 'bbbb0003-0000-0000-0000-000000000004' AS ID, 'Siamés' AS NAME FROM DUAL UNION ALL
-    SELECT 'bbbb0003-0000-0000-0000-000000000005' AS ID, 'Persa' AS NAME FROM DUAL UNION ALL
-    SELECT 'bbbb0003-0000-0000-0000-000000000006' AS ID, 'Criollo / Mestizo' AS NAME FROM DUAL
+    SELECT 'bbbb0003-0000-0000-0000-000000000001' AS ID, 'Golden Retriever' AS NAME,
+           'bbbb0002-0000-0000-0000-000000000001' AS SPECIES_ID FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000002', 'Bulldog Francés',
+           'bbbb0002-0000-0000-0000-000000000001' FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000003', 'Pastor Alemán',
+           'bbbb0002-0000-0000-0000-000000000001' FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000004', 'Siamés',
+           'bbbb0002-0000-0000-0000-000000000002' FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000005', 'Persa',
+           'bbbb0002-0000-0000-0000-000000000002' FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000006', 'Criollo / Mestizo',
+           'bbbb0002-0000-0000-0000-000000000001' FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000007', 'Holandés Enano',
+           'bbbb0002-0000-0000-0000-000000000004' FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000008', 'Rex',
+           'bbbb0002-0000-0000-0000-000000000004' FROM DUAL UNION ALL
+    SELECT 'bbbb0003-0000-0000-0000-000000000009', 'Cabeza de León',
+           'bbbb0002-0000-0000-0000-000000000004' FROM DUAL
 ) source
 ON (target.RACE_ID = source.ID)
+WHEN MATCHED THEN
+    UPDATE SET target.NAME = source.NAME, target.SPECIES_ID = source.SPECIES_ID
 WHEN NOT MATCHED THEN
-    INSERT (RACE_ID, NAME, CREATED_AT)
-    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+    INSERT (RACE_ID, NAME, SPECIES_ID, CREATED_AT)
+    VALUES (source.ID, source.NAME, source.SPECIES_ID, SYSTIMESTAMP);
 
 -- =============================================================================
 -- 4. USERS (1 Usuario por cada Rol canónico)

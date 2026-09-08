@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Api.Appointments.Controllers;
 using Api.Appointments.Mappings;
 using Application.Common.Exceptions;
@@ -70,9 +70,7 @@ public sealed class AppointmentSelfServiceQueryApiTests
     private static Appointment CreateAppointmentWithDetails()
     {
         var client = new ClientEntity(Guid.NewGuid(), "1234567890", "Calle 1");
-        var pet = new PetEntity(
-            "Luna", 4, "F", 12m, null,
-            new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
         typeof(ClientPetEntity).GetProperty(nameof(ClientPetEntity.Pet))!.SetValue(clientPet, pet);
         var veterinarian = new Veterinarian(Guid.NewGuid(), Guid.NewGuid(), "VET-001");

@@ -1,4 +1,4 @@
-using Application.Appointments.Abstraction;
+﻿using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
@@ -49,7 +49,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(UserId, "1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
-        var race = new RaceEntity("Mestizo");
+        var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Firulais", 3, "M", 10m, null, species, race);
         var clientPet = new ClientPetEntity(client, pet, true);
         var expectedAppointments = new[]
@@ -124,7 +124,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
         var account = new UserAccountEntity(UserId, "vet", "vet@test.com", "Active");
         var otherClient = new ClientEntity(OtherUserId, "0987654321", "Calle 2");
         var species = new SpeciesEntity("Canino");
-        var race = new RaceEntity("Mestizo");
+        var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Otro", 2, "F", 8m, null, species, race);
         var otherClientPet = new ClientPetEntity(otherClient, pet, true);
         var otherClientAppointments = new[]
@@ -161,7 +161,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(UserId, "1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
-        var race = new RaceEntity("Mestizo");
+        var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Firulais", 3, "M", 10m, null, species, race);
         var clientPet = new ClientPetEntity(client, pet, true);
         var expectedAppointments = new[]
@@ -246,14 +246,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(UserId, "1234567890", "Calle 1");
-        var pet = new PetEntity(
-            "Firulais",
-            3,
-            "M",
-            10m,
-            null,
-            new SpeciesEntity("Canino"),
-            new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Firulais", 3, "M", 10m);
         var clientPet = new ClientPetEntity(client, pet, true);
 
         userAccountsRepository.GetByIdAsync(UserAccountId, Arg.Any<CancellationToken>())

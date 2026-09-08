@@ -24,4 +24,8 @@
     <ProjectReference Include="..\..\src\Domain\Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Shared\TestPets.cs" Link="Shared\TestPets.cs" />
+  </ItemGroup>
+
 </Project>

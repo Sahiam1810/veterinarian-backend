@@ -1,4 +1,4 @@
-using Application.Clients.Abstraction;
+﻿using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
 using Application.Common.Abstractions;
 using Application.Pets.Abstraction;
@@ -25,7 +25,7 @@ public sealed class GetMyPetsQueryHandlerTests
         var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(userId, "1234567890", null);
         var species = new SpeciesEntity("Canino");
-        var race = new RaceEntity("Mestizo");
+        var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Luna", 4, "F", 12.5m, "Sana", species, race);
         var relation = new ClientPetEntity(client, pet, true);
 

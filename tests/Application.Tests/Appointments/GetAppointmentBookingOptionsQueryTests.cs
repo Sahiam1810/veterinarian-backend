@@ -1,4 +1,4 @@
-using Application.Appointments.UseCases;
+﻿using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Domain.Clients.Entities;
@@ -27,11 +27,10 @@ public sealed class GetAppointmentBookingOptionsQueryTests
         var userId = Guid.NewGuid();
         var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: null);
-        var pet = new PetEntity(
-            "Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
         var activeService = new Service(Guid.NewGuid(), "Consulta", 30, 50000m);
-        var inactiveService = new Service(Guid.NewGuid(), "Baño", 60, 40000m, false);
+        var inactiveService = new Service(Guid.NewGuid(), "BaÃ±o", 60, 40000m, false);
         var veterinarian = CreateVeterinarian("Dra. Ana", true);
         var inactiveVeterinarian = CreateVeterinarian("Dr. Inactivo", false);
         Configure(accountId, account, client, clientPet, pet, activeService, inactiveService,

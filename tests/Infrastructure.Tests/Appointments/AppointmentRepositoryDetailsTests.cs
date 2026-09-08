@@ -1,4 +1,4 @@
-using Domain.Appointments.Entities;
+﻿using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
 using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
@@ -82,7 +82,7 @@ public sealed class AppointmentRepositoryDetailsTests
 
         var loaded = Assert.Single(result);
         Assert.Equal("Luna", loaded.ClientPet!.Pet.Name.Value);
-        Assert.Equal("Dra. Ana Pérez", loaded.Veterinarian!.User!.FullName);
+        Assert.Equal("Dra. Ana PÃ©rez", loaded.Veterinarian!.User!.FullName);
         Assert.Equal(appointment.Id, loaded.Id);
     }
 
@@ -100,25 +100,18 @@ public sealed class AppointmentRepositoryDetailsTests
 
         Assert.NotNull(loaded);
         Assert.Equal("Luna", loaded.ClientPet!.Pet.Name.Value);
-        Assert.Equal("Dra. Ana Pérez", loaded.Veterinarian!.User!.FullName);
+        Assert.Equal("Dra. Ana PÃ©rez", loaded.Veterinarian!.User!.FullName);
     }
 
     private static (Appointment Appointment, ClientPetEntity ClientPet) AddAppointmentGraph(
         VeterinaryDbContext context,
         string? bookingRequestKeyHash = null)
     {
-        var clientUser = new UserEntity("Samuel Calderón", "samuel@example.com", "hash", Guid.NewGuid());
+        var clientUser = new UserEntity("Samuel CalderÃ³n", "samuel@example.com", "hash", Guid.NewGuid());
         var veterinarianUser = new UserEntity(
-            "Dra. Ana Pérez", "ana@example.com", "hash", Guid.NewGuid());
+            "Dra. Ana PÃ©rez", "ana@example.com", "hash", Guid.NewGuid());
         var client = new ClientEntity(clientUser.Id, "1234567890", "Calle 1");
-        var pet = new PetEntity(
-            "Luna",
-            4,
-            "F",
-            12m,
-            null,
-            new SpeciesEntity("Canino"),
-            new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
         var specialty = new SpecialtyEntity("Medicina general", null);
         var veterinarian = new Veterinarian(

@@ -1,4 +1,4 @@
-using Application.Appointments.Abstraction;
+﻿using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Application.Tests.Appointments;
 
-// Política Etapa 5.1: perfil del dueño gana; sin perfil usa request normalizado.
+// PolÃ­tica Etapa 5.1: perfil del dueÃ±o gana; sin perfil usa request normalizado.
 public sealed class AppointmentRequesterPhonePolicyTests
 {
     [Fact]
@@ -70,7 +70,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
 
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
 
         unitOfWork.ClientPetsRepository.Returns(clientPets);
@@ -97,7 +97,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
 
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: null);
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
 
         unitOfWork.ClientPetsRepository.Returns(clientPets);
@@ -130,7 +130,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
             veterinarianId, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(18, 0));
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
 
         var appointment = new Appointment(
@@ -197,7 +197,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
 
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: profilePhone);
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Luna", 4, "F", 12m);
         var clientPet = new ClientPetEntity(client, pet, true);
 
         var command = new CreateAppointmentCommand(

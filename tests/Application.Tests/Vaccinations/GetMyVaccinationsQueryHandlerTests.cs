@@ -1,4 +1,4 @@
-using Application.Clients.Abstraction;
+﻿using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
@@ -43,14 +43,7 @@ public sealed class GetMyVaccinationsQueryHandlerTests
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(UserId, "1234567890", "Calle 1");
-        var pet = new PetEntity(
-            "Firulais",
-            3,
-            "M",
-            10m,
-            null,
-            new SpeciesEntity("Canino"),
-            new RaceEntity("Mestizo"));
+        var pet = TestPets.NewCaninoPet("Firulais", 3, "M", 10m);
         var clientPet = new ClientPetEntity(client, pet, true);
         var expected = new[]
         {
