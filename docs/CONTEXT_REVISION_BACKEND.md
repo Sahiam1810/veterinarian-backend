@@ -36,7 +36,8 @@
 - **ADR 5.3 (Permisos Cliente):** [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — Opción A: cero filas web en `ROLE_PERMISSIONS` para Cliente.
 - **ADR 6 (Hardening):** [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md) — Rate limit anónimo/bot, logs sin PII, catálogo `code`.
 - **Catálogo de codes:** [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md) — el front staff traduce solo por `code` (sin OTP en UI).
-- **Humo Etapa 6 (tarea 6.4):** [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md) — matriz kickoff/humo (rate limit, logs, codes, OTP cita ≠ Gmail).
+- **Humo Etapa 6 (tarea 6.4):** [`docs/smoke/etapa-6-objetivo-exit-gate.md`](smoke/etapa-6-objetivo-exit-gate.md) — checklist ejecutable post-seed + filtros `dotnet test` (staff web, dueño Telegram/Gmail/OTP, portal 410).
+- **Kickoff Etapa 6:** [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md) — solo decisiones/ADR.
 - **Salida Etapa 5 (410):** [`docs/smoke/etapa-5-exit-gate.md`](smoke/etapa-5-exit-gate.md) — checklist portal → 410 y OTP cita intacto.
 
 ---
@@ -58,7 +59,7 @@ ADR: [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-0
 Regla ADR: si el dueño tiene `Clients.PhoneNumber`, Create/Update staff (y CreateMy) **copian** ese valor normalizado a `Appointment.RequesterPhoneNumber` e **ignoran** un requester divergente del body. Sin teléfono en perfil, se usa el request (solo dígitos, VO 7–20). Política: `AppointmentRequesterPhonePolicy`. OTP `request-code` sigue matcheando contra requester de la cita. Tests: `AppointmentRequesterPhonePolicyTests` + handlers Create/Update/CreateMy. No toca ContactVerification ni Telegram registration.
 
 ### Etapa 6 (kickoff) — rate limit, logs y codes
-ADR: [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md). Catálogo: [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md). Smoke: [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md).
+ADR: [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md). Catálogo: [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md). Kickoff: [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md). **Salida producto:** [`docs/smoke/etapa-6-objetivo-exit-gate.md`](smoke/etapa-6-objetivo-exit-gate.md).
 Inventario de rutas anónimas/bot con rate limit (Anexo A del ADR). Logs: nunca teléfono, cédula, OTP, proof ni cuerpo de correo en claro. Front staff traduce solo por `code`. **Canal = Telegram; WhatsApp fuera de alcance.** Dueños de archivo: RL (`RateLimitingExtensions` / `Program.cs` rate limit), LOG, CODE, CTX, SMOKE. Cero código de producto en el kickoff; 6.1–6.5 no se esperan entre sí.
 
 ### Etapa 6.1 — rate limit canales anónimos / Telegram
@@ -69,7 +70,12 @@ Política: [`docs/security/pii-logging-policy.md`](security/pii-logging-policy.m
 
 ### Etapa 6.3 — catálogo de codes (staff y Telegram)
 Tabla única por familia (`Authentication.*`, `ContactVerification.*`, alta dueño, `ClientPortal.Gone`, `AppointmentAction.*` OTP cita, `RateLimit.Exceeded`). Distinguir Gmail vs OTP de cita. Codes nuevos mínimos: `RateLimitErrors`, `AppointmentActionErrors`; `GlobalExceptionHandler` emite problem+json cuando la excepción trae `Code`.
----
+
+### Etapa 6.4 — humo de cierre (post-seed)
+Doc: [`docs/smoke/etapa-6-objetivo-exit-gate.md`](smoke/etapa-6-objetivo-exit-gate.md). Checklist S1–S7 + filtros `dotnet test` reutilizando suites 3–5/6.1–6.2. Login staff con seed = manual; resto CI con fakes (sin Gmail/Telegram reales).
+
+### Etapa 6.5 — CONTEXT final del programa
+Este documento (§ índice humo + §0 etapas 6.x): candado staff web vs dueño Telegram; sin portal Cliente JWT; OTP cita anónimo distinto de Gmail; rate limit / logs / codes. No cambia `Program.cs` rate limit.
 
 ## 1. Arquitectura y patrones establecidos
 

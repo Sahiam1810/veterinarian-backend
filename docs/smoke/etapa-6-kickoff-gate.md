@@ -43,4 +43,6 @@ Implementar 6.1–6.5. WhatsApp. Reabrir portal Cliente. OTP en UI staff.
 
 ## Comando
 
-Gate documental: revisión humana del checklist K*. El humo H* corre cuando el entorno tenga seed aplicado (tarea 6.5 / ops).
+Gate documental: revisión humana del checklist K*.
+
+Humo de **cierre de producto** (post-seed + filtros de test): ver [`etapa-6-objetivo-exit-gate.md`](etapa-6-objetivo-exit-gate.md) (tarea 6.4).

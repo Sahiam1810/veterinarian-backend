@@ -115,8 +115,8 @@ Notas:
 | **6.1** | Cubrir Anexo A (policies + límites + tests 429) | No inventa codes; no WhatsApp |
 | **6.2** | Cumplir convención de logs (§2) | No toca RateLimitingExtensions |
 | **6.3** | Completar/alinear catálogo `code` | No reabre portal Cliente |
-| **6.4** | CONTEXT / docs operativos | No cambia Program.cs rate limit |
-| **6.5** | Humo post-seed con usuarios reales del seed | No usa placeholders de tutorial |
+| **6.4** | Humo post-seed / exit gate objetivo | No reimplementa producto; reusa suites 3–5 |
+| **6.5** | CONTEXT final del programa | No cambia Program.cs rate limit |
 
 ## Alternativas descartadas
 
