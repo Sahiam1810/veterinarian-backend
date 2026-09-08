@@ -37,6 +37,15 @@ public sealed class UpdatePetCommandValidator : AbstractValidator<UpdatePetComma
             .WithMessage(
                 $"Las observaciones no pueden superar los {PetObservations.MaxLength} caracteres.");
 
+        RuleFor(command => command.PhotoUrl)
+            .MaximumLength(PetPhotoUrl.MaxLength)
+            .WithMessage($"La URL de la foto no puede superar los {PetPhotoUrl.MaxLength} caracteres.")
+            .Must(url =>
+                string.IsNullOrWhiteSpace(url)
+                || (Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri)
+                    && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)))
+            .WithMessage("La URL de la foto debe ser una dirección http o https válida.");
+
         RuleFor(command => command.SpeciesId)
             .NotEmpty()
             .WithMessage("La especie es obligatoria.");

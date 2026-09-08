@@ -16,7 +16,8 @@ public static class PetMappings
             entity.Weight.Value,
             entity.Observations.Value,
             entity.SpeciesId,
-            entity.RaceId
+            entity.RaceId,
+            entity.PhotoUrl.Value
         );
     }
 
@@ -31,5 +32,6 @@ public static class PetMappings
         profile.SpeciesName,
         profile.RaceId,
         profile.RaceName,
-        profile.UpdatedAt);
+        profile.UpdatedAt,
+        profile.PhotoUrl);
 }
