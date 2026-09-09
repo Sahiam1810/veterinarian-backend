@@ -144,6 +144,16 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .OrderBy(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
 
+
+    public async Task<IReadOnlyCollection<AppointmentDayReportEntry>> GetForDayReportAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
+            .Select(x => new AppointmentDayReportEntry(x.ScheduledStart, x.Status!.Name))
+
     public async Task<IReadOnlyCollection<AppointmentVeterinarianReportEntry>> GetForVeterinarianReportAsync(
         DateTime fromInclusive,
         DateTime toExclusive,
@@ -155,6 +165,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
                 x.VeterinarianId,
                 x.Veterinarian!.User!.FullName,
                 x.Status!.Name))
+
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
