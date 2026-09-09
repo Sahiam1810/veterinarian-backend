@@ -1,3 +1,4 @@
+using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using MediatR;
 
@@ -7,31 +8,36 @@ public sealed class GetAppointmentsByStatusReportQueryHandler
     : IRequestHandler<GetAppointmentsByStatusReportQuery, IReadOnlyCollection<AppointmentStatusReportItemResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAppointmentBookingSettings _bookingSettings;
 
-    public GetAppointmentsByStatusReportQueryHandler(IUnitOfWork unitOfWork)
+    public GetAppointmentsByStatusReportQueryHandler(
+        IUnitOfWork unitOfWork,
+        IAppointmentBookingSettings bookingSettings)
     {
         _unitOfWork = unitOfWork;
+        _bookingSettings = bookingSettings;
     }
 
     public async Task<IReadOnlyCollection<AppointmentStatusReportItemResponse>> Handle(
         GetAppointmentsByStatusReportQuery request,
         CancellationToken cancellationToken)
     {
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(_bookingSettings.TimeZoneId);
+
+        var fromLocal = request.From.ToDateTime(TimeOnly.MinValue);
+        var toLocalExclusive = request.To.AddDays(1).ToDateTime(TimeOnly.MinValue);
+
+        var fromInclusiveUtc = TimeZoneInfo.ConvertTimeToUtc(fromLocal, timeZone);
+        var toExclusiveUtc = TimeZoneInfo.ConvertTimeToUtc(toLocalExclusive, timeZone);
+
         var statuses = await _unitOfWork.StatusAppointmentsRepository.GetAllAsync(cancellationToken);
 
-        var fromUtc = request.From.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var toUtc = request.To.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
-
-        var appointments = await _unitOfWork.AppointmentsRepository.GetScheduledBetweenAsync(
-            fromUtc,
-            toUtc,
+        var countsByStatusId = await _unitOfWork.AppointmentsRepository.GetStatusCountsBetweenAsync(
+            fromInclusiveUtc,
+            toExclusiveUtc,
             cancellationToken);
 
-        var totalPeriod = appointments.Count;
-
-        var countsByStatusId = appointments
-            .GroupBy(a => a.StatusId)
-            .ToDictionary(g => g.Key, g => g.Count());
+        var totalPeriod = countsByStatusId.Values.Sum();
 
         var reportItems = statuses
             .Select(status =>

@@ -35,6 +35,12 @@ public interface IAppointmentRepository
         DateTime toUtc,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<Guid, int>> GetStatusCountsBetweenAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default);
+
+
     Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
         Guid veterinarianId,
         DateTime fromUtc,

@@ -143,6 +143,21 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .OrderBy(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyDictionary<Guid, int>> GetStatusCountsBetweenAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var counts = await _context.Set<Appointment>()
+            .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
+            .GroupBy(x => x.StatusId)
+            .Select(g => new { StatusId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.StatusId, x => x.Count, cancellationToken);
+
+        return counts;
+    }
+
+
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
         Guid veterinarianId,
         DateTime fromUtc,

@@ -2,7 +2,6 @@ using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Reports.UseCases;
 using Application.StatusAppointments.Abstraction;
-using Domain.Appointments.Entities;
 using Domain.StatusAppointments.Entities;
 using NSubstitute;
 using Xunit;
@@ -13,14 +12,16 @@ public sealed class GetAppointmentsByStatusReportQueryHandlerTests
 {
     private readonly IStatusAppointmentRepository _statusAppointmentRepository = Substitute.For<IStatusAppointmentRepository>();
     private readonly IAppointmentRepository _appointmentRepository = Substitute.For<IAppointmentRepository>();
+    private readonly IAppointmentBookingSettings _bookingSettings = Substitute.For<IAppointmentBookingSettings>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly GetAppointmentsByStatusReportQueryHandler _sut;
 
     public GetAppointmentsByStatusReportQueryHandlerTests()
     {
+        _bookingSettings.TimeZoneId.Returns("America/Bogota");
         _unitOfWork.StatusAppointmentsRepository.Returns(_statusAppointmentRepository);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepository);
-        _sut = new GetAppointmentsByStatusReportQueryHandler(_unitOfWork);
+        _sut = new GetAppointmentsByStatusReportQueryHandler(_unitOfWork, _bookingSettings);
     }
 
     [Fact]
@@ -38,17 +39,17 @@ public sealed class GetAppointmentsByStatusReportQueryHandlerTests
         var from = new DateOnly(2026, 9, 1);
         var to = new DateOnly(2026, 9, 30);
 
-        var appt1 = CreateAppointment(statusAgendada.Id, new DateTime(2026, 9, 5, 10, 0, 0, DateTimeKind.Utc));
-        var appt2 = CreateAppointment(statusAgendada.Id, new DateTime(2026, 9, 10, 11, 0, 0, DateTimeKind.Utc));
-        var appt3 = CreateAppointment(statusAtendida.Id, new DateTime(2026, 9, 15, 12, 0, 0, DateTimeKind.Utc));
+        var counts = new Dictionary<Guid, int>
+        {
+            { statusAgendada.Id, 2 },
+            { statusAtendida.Id, 1 }
+        };
 
-        var appointments = new List<Appointment> { appt1, appt2, appt3 };
-
-        _appointmentRepository.GetScheduledBetweenAsync(
+        _appointmentRepository.GetStatusCountsBetweenAsync(
             Arg.Any<DateTime>(),
             Arg.Any<DateTime>(),
             Arg.Any<CancellationToken>())
-            .Returns(appointments);
+            .Returns(counts);
 
         var query = new GetAppointmentsByStatusReportQuery(from, to);
 
@@ -84,11 +85,11 @@ public sealed class GetAppointmentsByStatusReportQueryHandlerTests
         _statusAppointmentRepository.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(new List<StatusAppointment> { statusAgendada, statusAtendida });
 
-        _appointmentRepository.GetScheduledBetweenAsync(
+        _appointmentRepository.GetStatusCountsBetweenAsync(
             Arg.Any<DateTime>(),
             Arg.Any<DateTime>(),
             Arg.Any<CancellationToken>())
-            .Returns(new List<Appointment>());
+            .Returns(new Dictionary<Guid, int>());
 
         var query = new GetAppointmentsByStatusReportQuery(new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30));
 
@@ -114,14 +115,16 @@ public sealed class GetAppointmentsByStatusReportQueryHandlerTests
         _statusAppointmentRepository.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(new List<StatusAppointment> { status1, status2 });
 
-        var appt1 = CreateAppointment(status2.Id, new DateTime(2026, 9, 5, 10, 0, 0, DateTimeKind.Utc));
-        var appt2 = CreateAppointment(status2.Id, new DateTime(2026, 9, 6, 10, 0, 0, DateTimeKind.Utc));
+        var counts = new Dictionary<Guid, int>
+        {
+            { status2.Id, 2 }
+        };
 
-        _appointmentRepository.GetScheduledBetweenAsync(
+        _appointmentRepository.GetStatusCountsBetweenAsync(
             Arg.Any<DateTime>(),
             Arg.Any<DateTime>(),
             Arg.Any<CancellationToken>())
-            .Returns(new List<Appointment> { appt1, appt2 });
+            .Returns(counts);
 
         var query = new GetAppointmentsByStatusReportQuery(new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30));
 
@@ -136,18 +139,5 @@ public sealed class GetAppointmentsByStatusReportQueryHandlerTests
         var last = result.Last();
         Assert.Equal("CANCELADA", last.StatusName);
         Assert.Equal(0, last.Count);
-    }
-
-    private static Appointment CreateAppointment(Guid statusId, DateTime scheduledStart)
-    {
-        return new Appointment(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            statusId,
-            Guid.NewGuid(),
-            scheduledStart,
-            scheduledStart.AddMinutes(30),
-            "Notas de prueba");
     }
 }
