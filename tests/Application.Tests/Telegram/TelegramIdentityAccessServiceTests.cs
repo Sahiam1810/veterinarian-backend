@@ -28,7 +28,7 @@ public sealed class TelegramIdentityAccessServiceTests
         var fixture = CreateFixture();
         var update = ProcessingUpdate(42, "quiero ver mis mascotas");
 
-        var outcome = await fixture.Service.BeginPrivateAccessAsync(update, default);
+        var outcome = await fixture.Service.BeginPrivateAccessAsync(update, null, default);
 
         Assert.True(outcome.Consumed);
         Assert.Contains("cédula", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
@@ -37,6 +37,36 @@ public sealed class TelegramIdentityAccessServiceTests
                 session.Status == TelegramIdentitySessionStatus.AwaitingIdentification &&
                 session.PendingInboundUpdateId == 42),
             default);
+    }
+
+    [Fact]
+    public async Task Private_access_uses_canonical_resume_message_instead_of_confirmation()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(42, "sí, por favor");
+
+        await fixture.Service.BeginPrivateAccessAsync(
+            update,
+            "  Quiero agendar una cita  ",
+            default);
+
+        await fixture.Sessions.Received(1).AddAsync(
+            Arg.Is<TelegramIdentitySession>(session =>
+                session.ProtectedPendingMessage ==
+                "protected:pending-message:Quiero agendar una cita"),
+            default);
+    }
+
+    [Fact]
+    public async Task Private_access_rejects_resume_message_over_contract_limit()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(42, "sí");
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            fixture.Service.BeginPrivateAccessAsync(update, new string('a', 501), default));
+
+        await fixture.Sessions.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
     }
 
     [Fact]
@@ -53,7 +83,7 @@ public sealed class TelegramIdentityAccessServiceTests
         fixture.Clients.FindActiveByPersonIdAsync(PersonId, default)
             .Returns((TelegramClientIdentity?)null);
 
-        var outcome = await fixture.Service.BeginPrivateAccessAsync(update, default);
+        var outcome = await fixture.Service.BeginPrivateAccessAsync(update, null, default);
 
         Assert.True(outcome.Consumed);
         Assert.Contains("cédula", outcome.Reply!, StringComparison.OrdinalIgnoreCase);

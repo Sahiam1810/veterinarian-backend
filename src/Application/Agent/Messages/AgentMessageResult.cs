@@ -16,4 +16,5 @@ public sealed record AgentMessageResult(
     AgentTokenUsage? Usage,
     string? Module,
     AgentRagResult Rag,
-    AgentAccessRequirement AccessRequirement = AgentAccessRequirement.None);
+    AgentAccessRequirement AccessRequirement = AgentAccessRequirement.None,
+    string? ResumeMessage = null);

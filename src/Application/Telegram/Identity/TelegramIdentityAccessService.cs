@@ -13,6 +13,7 @@ public interface ITelegramIdentityAccessService
 {
     Task<TelegramIdentityAccessOutcome> BeginPrivateAccessAsync(
         TelegramInboundUpdate update,
+        string? resumeMessage,
         CancellationToken cancellationToken);
 
     Task<TelegramIdentityAccessOutcome> HandleActiveFlowAsync(
@@ -44,11 +45,24 @@ public sealed class TelegramIdentityAccessService(
     private const string FullNamePurpose = "full-name";
     private const string EmailPurpose = "email";
     private const string PendingMessagePurpose = "pending-message";
+    private const int MaximumResumeMessageLength = 500;
 
     public async Task<TelegramIdentityAccessOutcome> BeginPrivateAccessAsync(
         TelegramInboundUpdate update,
+        string? resumeMessage,
         CancellationToken cancellationToken)
     {
+        var pendingMessage = string.IsNullOrWhiteSpace(resumeMessage)
+            ? update.MessageText?.Trim()
+            : resumeMessage.Trim();
+        if (string.IsNullOrWhiteSpace(pendingMessage) ||
+            pendingMessage.Length > MaximumResumeMessageLength)
+        {
+            throw new ArgumentException(
+                $"Resume message must contain between 1 and {MaximumResumeMessageLength} characters.",
+                nameof(resumeMessage));
+        }
+
         var now = timeProvider.GetUtcNow();
         var existing = await unitOfWork.IdentitySessionsRepository
             .GetCurrentByTelegramUserIdAsync(update.TelegramUserId, cancellationToken);
@@ -68,7 +82,7 @@ public sealed class TelegramIdentityAccessService(
             update.Id,
             now.UtcDateTime);
         session.CapturePendingMessage(
-            dataProtector.Protect(PendingMessagePurpose, update.MessageText!),
+            dataProtector.Protect(PendingMessagePurpose, pendingMessage),
             now.UtcDateTime);
         var link = await unitOfWork.UserLinksRepository.GetByTelegramUserIdAsync(
             update.TelegramUserId,
