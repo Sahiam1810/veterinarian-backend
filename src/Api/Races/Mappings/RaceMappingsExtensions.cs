@@ -21,7 +21,8 @@ public static class RaceMappings
         return new RaceResponseDto(
             entity.Id,
             entity.Name.Value,
-            entity.SpeciesId
+            entity.SpeciesId,
+            entity.Species?.Name.Value ?? string.Empty
         );
     }
 

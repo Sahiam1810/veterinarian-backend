@@ -56,4 +56,14 @@ public interface IClientRepository
     Task DeleteAsync(
         ClientEntity client,
         CancellationToken cancellationToken);
+
+    // Id del dueño por user, sin Include(User)
+    Task<Guid?> GetIdByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
+    // Borra el perfil Client sin Include(User) (evita tracking conflict)
+    Task DeleteByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
 }

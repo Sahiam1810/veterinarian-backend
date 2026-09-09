@@ -22,4 +22,9 @@ public interface IVaccinationRepository
     Task UpdateAsync(
         Vaccination vaccination,
         CancellationToken cancellationToken);
+
+    // Borra vacunas de esos vínculos dueño-mascota sin Include
+    Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken);
 }

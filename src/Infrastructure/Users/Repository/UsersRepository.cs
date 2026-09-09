@@ -56,4 +56,12 @@ public sealed class UsersRepository : IUsersRepository
         _context.Set<UserEntity>().Update(user);
         return Task.CompletedTask;
     }
+
+    public Task DeleteAsync(
+        UserEntity user,
+        CancellationToken cancellationToken = default)
+    {
+        _context.Set<UserEntity>().Remove(user);
+        return Task.CompletedTask;
+    }
 }

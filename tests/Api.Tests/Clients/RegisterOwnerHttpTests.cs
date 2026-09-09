@@ -157,7 +157,8 @@ public sealed class RegisterOwnerHttpTests : IClassFixture<RegisterOwnerApiFacto
             document.RootElement.GetProperty("status").GetInt32());
         Assert.Equal(
             OwnerRegistrationErrors.IdentificationAlreadyInUse.Code,
-            document.RootElement.GetProperty("error").GetString());
+            document.RootElement.GetProperty("code").GetString());
+        Assert.False(document.RootElement.TryGetProperty("error", out _));
     }
 }
 

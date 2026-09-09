@@ -51,6 +51,8 @@ BEGIN
     ensure_permission('07a733f3-3a97-42be-82d7-7aeb39366eca', '11111111-1111-1111-1111-111111111111', 'Usuarios', 1, 1, 1, 1);
     ensure_permission('7fb38b70-ac2f-4998-b64a-a769f27fdf7b', '11111111-1111-1111-1111-111111111111', 'Roles', 1, 1, 1, 1);
 
+    ensure_permission('d1e3a202-1e6c-4a86-94c3-289de0ca7c21', '11111111-1111-1111-1111-111111111111', 'Reportes', 1, 0, 0, 0);
+
     -- Veterinario
     ensure_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
     ensure_permission('13b24e43-926a-4680-adee-0230ddb26c79', '44444444-4444-4444-4444-444444444444', 'Mascotas', 1, 0, 0, 0);

@@ -14,7 +14,7 @@ public static class PetMappings
             entity.Age,
             entity.Gender.Value,
             entity.Weight.Value,
-            entity.Observations.Value,
+            entity.Observations?.Value,
             entity.SpeciesId,
             entity.RaceId,
             entity.PhotoUrl.Value
