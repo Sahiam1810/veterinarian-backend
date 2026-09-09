@@ -23,8 +23,11 @@ public sealed class SwaggerBasicAuthMiddleware
             return;
         }
 
-        var expectedUser = configuration["SWAGGER_USER"] ?? "admin";
-        var expectedPassword = configuration["SWAGGER_PASSWORD"] ?? "admin123";
+        var expectedUser = configuration["SWAGGER_USER"]
+            ?? throw new InvalidOperationException("SWAGGER_USER no está configurado.");
+        var expectedPassword = configuration["SWAGGER_PASSWORD"]
+            ?? throw new InvalidOperationException("SWAGGER_PASSWORD no está configurado.");
+
 
         if (context.Request.Headers.TryGetValue("Authorization", out var authHeaderValues) &&
             AuthenticationHeaderValue.TryParse(authHeaderValues.ToString(), out var authHeader) &&

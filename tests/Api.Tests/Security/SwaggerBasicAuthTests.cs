@@ -116,4 +116,22 @@ public sealed class SwaggerBasicAuthTests
         Assert.True(nextCalled);
         Assert.NotEqual(StatusCodes.Status401Unauthorized, httpContext.Response.StatusCode);
     }
+
+    [Fact]
+    public async Task InvokeAsync_MissingSwaggerUserOrPassword_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        RequestDelegate next = (ctx) => Task.CompletedTask;
+        var middleware = new SwaggerBasicAuthMiddleware(next);
+
+        var emptyConfig = new ConfigurationBuilder().Build();
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Path = "/swagger/index.html";
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => middleware.InvokeAsync(httpContext, emptyConfig));
+
+        Assert.Contains("SWAGGER_USER", ex.Message);
+    }
 }
