@@ -37,6 +37,19 @@ Objetivo de etapa: **cero rutas que exijan JWT rol Cliente** para un panel web. 
 
 El canal real del dueño sigue siendo chatbot + staff. Lookup anónimo por teléfono (`GET /api/clients/by-phone/{phone}`) y OTP de citas **no** son portal JWT.
 
+### 2.1. API delegada del bot
+
+El retiro del portal no impide que Telegram ejecute casos de uso del dueño. Esa integración usa rutas separadas y no reutiliza los paths legacy:
+
+```text
+GET|POST|PATCH  /api/bot/pets...
+GET|POST|PATCH  /api/bot/appointments...
+```
+
+Estas rutas exigen un JWT interno con el claim exacto `token_use=telegram_agent`. El backend solo lo emite después de verificar la identidad de Telegram, deriva el `UserAccountId` desde el `sub` firmado y nunca acepta el identificador de cuenta desde el cuerpo o la URL. Un JWT ordinario, aun autenticado, recibe `403`.
+
+Los controllers delegados reutilizan los handlers de autoservicio y sus validaciones de propiedad. Los endpoints legacy del Anexo A continúan respondiendo `410`; no se reabre el portal Cliente.
+
 ### 3. OTP de citas — anónimo + teléfono de la cita
 
 | Ruta | Auth |

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Api.Auth.Controllers;
@@ -114,8 +114,8 @@ public sealed class PlatformAccessDeniedAuthContractApiFactory : WebApplicationF
             ["RateLimiting__GlobalWindowSeconds"] = "60",
             ["RateLimiting__LoginPermitLimit"] = "1000",
             ["RateLimiting__LoginWindowSeconds"] = "60",
-            ["RateLimiting__RegisterPermitLimit"] = "1000",
-            ["RateLimiting__RegisterWindowSeconds"] = "60",
+            ["RateLimiting__TelegramRegistrationPermitLimit"] = "1000",
+            ["RateLimiting__TelegramRegistrationWindowSeconds"] = "60",
             ["RateLimiting__RefreshPermitLimit"] = "1000",
             ["RateLimiting__RefreshWindowSeconds"] = "60",
             ["RateLimiting__TelegramWebhookPermitLimit"] = "1000",

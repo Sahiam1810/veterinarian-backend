@@ -31,6 +31,27 @@ public sealed class ClienteRolePermissionsSeedTests
         Assert.Contains("77777777-7777-7777-7777-777777777777", sql, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void Catalog_seeds_use_utf8_without_bom_and_share_the_same_module_name()
+    {
+        var permissionPath = FindSeedPath();
+        var seedDirectory = Path.GetDirectoryName(permissionPath)!;
+        var modulePath = Path.Combine(seedDirectory, "modules_seed.sql");
+        var verificationPath = Path.Combine(seedDirectory, "verify_seeds.sql");
+        var permissionSql = File.ReadAllText(permissionPath);
+        var moduleSql = File.ReadAllText(modulePath);
+
+        foreach (var path in new[] { permissionPath, modulePath, verificationPath })
+        {
+            Assert.False(
+                File.ReadAllBytes(path).AsSpan().StartsWith(new byte[] { 0xEF, 0xBB, 0xBF }),
+                $"SQL*Plus interpreta el BOM de {Path.GetFileName(path)} como parte del primer comando.");
+        }
+
+        Assert.Contains("'Historiales Clínicos'", permissionSql, StringComparison.Ordinal);
+        Assert.Contains("'Historiales Clínicos'", moduleSql, StringComparison.Ordinal);
+    }
+
     private static string FindSeedPath()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

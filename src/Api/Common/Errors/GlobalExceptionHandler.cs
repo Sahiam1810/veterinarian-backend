@@ -86,10 +86,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             return true;
         }
 
-        // Solo POST /api/owners/bot (path exacto): conflictos tipados → problem+json con `code`.
-        // Prefijos futuros /api/owners/bot/... y otros métodos conservan ApiErrorResponse legacy.
-        if (exception is ConflictException { Code: { Length: > 0 } ownerConflictCode }
-            && IsExactBotOwnerRegistrationEndpoint(httpContext))
+        // Excepciones de negocio con code estable → problem+json (staff/Telegram traducen por code).
+        if (exception is ConflictException { Code: { Length: > 0 } conflictCode })
         {
             httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
             httpContext.Response.ContentType = "application/problem+json";
@@ -98,9 +96,60 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 new
                 {
                     type = $"https://httpstatuses.com/{StatusCodes.Status409Conflict}",
-                    title = "Owner registration conflict",
+                    title = "Conflict",
                     status = StatusCodes.Status409Conflict,
-                    code = ownerConflictCode
+                    code = conflictCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is UnauthorizedException { Code: { Length: > 0 } unauthorizedCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status401Unauthorized}",
+                    title = "Unauthorized",
+                    status = StatusCodes.Status401Unauthorized,
+                    code = unauthorizedCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is BadRequestException { Code: { Length: > 0 } badRequestCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status400BadRequest}",
+                    title = "Bad Request",
+                    status = StatusCodes.Status400BadRequest,
+                    code = badRequestCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is NotFoundException { Code: { Length: > 0 } notFoundCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status404NotFound}",
+                    title = "Not Found",
+                    status = StatusCodes.Status404NotFound,
+                    code = notFoundCode
                 },
                 cancellationToken: cancellationToken);
             return true;
@@ -208,14 +257,11 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             "ContactVerification.DeliveryFailed" => StatusCodes.Status409Conflict,
             "ContactVerification.ProofExpired" => StatusCodes.Status409Conflict,
             "ContactVerification.ProofAlreadyConsumed" => StatusCodes.Status409Conflict,
+            // RegisterOwner reusa ContactVerificationException con codes de Owner/Auth/Clients.
+            "Authentication.UserAlreadyExists" => StatusCodes.Status409Conflict,
+            "Authentication.IdentificationNumberAlreadyExists" => StatusCodes.Status409Conflict,
+            "Clients.PhoneAlreadyInUse" => StatusCodes.Status409Conflict,
+            "OwnerRegistration.ClientRoleMissing" => StatusCodes.Status409Conflict,
             _ => StatusCodes.Status400BadRequest
         };
-
-    // Contrato especial bot: únicamente POST con path exacto /api/owners/bot.
-    private static bool IsExactBotOwnerRegistrationEndpoint(HttpContext httpContext) =>
-        HttpMethods.IsPost(httpContext.Request.Method)
-        && string.Equals(
-            httpContext.Request.Path.Value,
-            "/api/owners/bot",
-            StringComparison.OrdinalIgnoreCase);
 }

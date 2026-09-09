@@ -173,7 +173,12 @@ public sealed class RegisterOwnerLoginDeniedAcceptanceTests : IDisposable
         var settings = Substitute.For<IRegisterOwnerSettings>();
         settings.RequiresContactProof(RegisterOwnerChannel.Staff).Returns(false);
 
-        var handler = new RegisterOwnerCommandHandler(unitOfWork, consumeProof, settings, otp);
+        var handler = new RegisterOwnerCommandHandler(
+            unitOfWork,
+            consumeProof,
+            settings,
+            otp,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RegisterOwnerCommandHandler>.Instance);
         await handler.Handle(
             new RegisterOwnerCommand("Ana Dueña", Email, "1234567890", "3001234567", RegisterOwnerChannel.Staff),
             CancellationToken.None);

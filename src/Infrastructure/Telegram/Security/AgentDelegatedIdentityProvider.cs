@@ -1,6 +1,7 @@
 using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Models;
+using Application.Security.Claims;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
 using Application.Telegram.Models;
@@ -79,10 +80,11 @@ public sealed class AgentDelegatedIdentityProvider(
             : await sender.Send(
                 new GetUserPermissionClaimsQuery(identity.RoleId, identity.PersonId),
                 cancellationToken);
-        var token = tokenIssuer.Issue(
+        var token = tokenIssuer.IssueDelegated(
             identity,
             settings.DelegatedTokenLifetime,
-            permissions);
+            permissions,
+            DelegatedTokenClaims.TelegramAgent);
         return new AgentDelegatedIdentity(user.Id, role.Name.Value, token.Token);
     }
 

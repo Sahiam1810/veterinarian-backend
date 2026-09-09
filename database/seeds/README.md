@@ -30,7 +30,7 @@ El ejecutor nunca llama `cleanup_seeds.sql` ni scripts de `database/test_seeds`.
 |---|---:|
 | Roles | 6 |
 | Modules | 20 |
-| Role permissions | 44 |
+| Role permissions | 40 |
 | Appointment statuses | 6 |
 | Conversation statuses | 4 |
 | Sender types | 4 |
@@ -40,6 +40,7 @@ El ejecutor nunca llama `cleanup_seeds.sql` ni scripts de `database/test_seeds`.
 | AI run statuses | 5 |
 | Type services | 5 |
 | Species | 3 |
+| Races | 10 |
 | Specialties | 5 |
 
 Las cantidades reales pueden ser mayores si la clínica agregó valores propios. `verify_seeds.sql` permite inspeccionar el resultado.

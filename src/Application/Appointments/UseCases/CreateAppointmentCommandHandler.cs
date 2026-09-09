@@ -1,4 +1,5 @@
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Application.VeterinarianAbsences.Abstraction;
 using Domain.Appointments.Entities;
 using MediatR;
@@ -21,6 +22,17 @@ public sealed class CreateAppointmentCommandHandler(
             request.RequesterPhoneNumber,
             requirePhone: true,
             cancellationToken);
+
+        // Servicio inactivo: citas viejas siguen; no se asigna a nuevas.
+        var service = await unitOfWork.ServicesRepository.GetByIdAsync(
+            request.ServiceId,
+            cancellationToken)
+            ?? throw new NotFoundException("Servicio no encontrado.");
+        if (!service.IsActive)
+        {
+            throw new BadRequestException(
+                "El servicio no está disponible para citas nuevas.");
+        }
 
         Guid appointmentId = default;
         await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>

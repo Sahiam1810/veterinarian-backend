@@ -111,14 +111,15 @@ public sealed class AppointmentRepositoryDetailsTests
         var veterinarianUser = new UserEntity(
             "Dra. Ana Pérez", "ana@example.com", "hash", Guid.NewGuid());
         var client = new ClientEntity(clientUser.Id, "1234567890", "Calle 1");
+        var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna",
             4,
             "F",
             12m,
             null,
-            new SpeciesEntity("Canino"),
-            new RaceEntity("Mestizo"));
+            species,
+            new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
         var specialty = new SpecialtyEntity("Medicina general", null);
         var veterinarian = new Veterinarian(

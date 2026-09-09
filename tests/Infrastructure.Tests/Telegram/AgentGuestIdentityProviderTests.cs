@@ -53,6 +53,7 @@ public sealed class AgentGuestIdentityProviderTests
         Assert.Equal(first.PersonId.ToString(), token.Claims.Single(x => x.Type == "person_id").Value);
         Assert.True(Guid.TryParse(token.Claims.Single(x => x.Type == "role_id").Value, out _));
         Assert.Equal("TelegramGuest", token.Claims.Single(x => x.Type == "role").Value);
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "token_use");
         Assert.DoesNotContain(token.Claims, claim => claim.Type == PermissionClaimValue.ClaimType);
         await sender.DidNotReceive().Send(
             Arg.Any<GetUserPermissionClaimsQuery>(),
@@ -113,6 +114,9 @@ public sealed class AgentGuestIdentityProviderTests
             token.Claims,
             claim => claim.Type == PermissionClaimValue.ClaimType &&
                      claim.Value == "perm:Mascotas:View");
+        Assert.Equal(
+            "telegram_agent",
+            token.Claims.Single(claim => claim.Type == "token_use").Value);
     }
 
     private static string Encode(string pem) =>

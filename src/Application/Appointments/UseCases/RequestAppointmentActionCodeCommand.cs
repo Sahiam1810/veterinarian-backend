@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Application.Appointments.Errors;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Verification.Abstractions;
@@ -6,6 +7,7 @@ using Domain.Appointments.ValueObjects;
 using Domain.Verification.Entities;
 using Domain.Verification.Enums;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Appointments.UseCases;
 
@@ -22,7 +24,8 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
     IOtpProtector otpProtector,
     IVerificationCodeDispatcher codeDispatcher,
     IAppointmentVerificationSettings settings,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    ILogger<RequestAppointmentActionCodeCommandHandler> logger)
     : IRequestHandler<RequestAppointmentActionCodeCommand, Guid>
 {
     public async Task<Guid> Handle(
@@ -39,7 +42,9 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
         if (request.Action is not AppointmentVerificationAction.Cancel
             and not AppointmentVerificationAction.Reschedule)
         {
-            throw new BadRequestException("La acción de verificación no es válida.");
+            throw new BadRequestException(
+                "La acción de verificación no es válida.",
+                AppointmentActionErrors.InvalidAction.Code);
         }
 
         if (request.Action == AppointmentVerificationAction.Reschedule
@@ -69,7 +74,8 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
             if (active.ExpiresAt > now.UtcDateTime && now.UtcDateTime < resendAllowedAt)
             {
                 throw new ConflictException(
-                    "El código ya fue enviado. Espera un momento antes de solicitar otro.");
+                    "El código ya fue enviado. Espera un momento antes de solicitar otro.",
+                    AppointmentActionErrors.ResendTooSoon.Code);
             }
 
             active.Cancel(now.UtcDateTime);
@@ -92,8 +98,16 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            // Traza útil sin teléfono ni OTP en claro.
+            logger.LogWarning(
+                exception,
+                "Appointment OTP delivery failed. AppointmentId={AppointmentId} Action={Action} ErrorCode={ErrorCode}",
+                request.AppointmentId,
+                request.Action,
+                AppointmentActionErrors.DeliveryFailed.Code);
             throw new ConflictException(
-                "No fue posible enviar el código en este momento. Intenta de nuevo.");
+                "No fue posible enviar el código en este momento. Intenta de nuevo.",
+                AppointmentActionErrors.DeliveryFailed.Code);
         }
 
         var session = AppointmentActionVerificationSession.Start(
@@ -108,6 +122,13 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
 
         await sessions.AddAsync(session, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Appointment OTP requested. AppointmentId={AppointmentId} SessionId={SessionId} Action={Action}",
+            request.AppointmentId,
+            session.Id,
+            request.Action);
+
         return session.Id;
     }
 
@@ -119,7 +140,8 @@ public sealed class RequestAppointmentActionCodeCommandHandler(
             || !appointment.RequesterPhoneNumber.Matches(phoneNumber))
         {
             throw new UnauthorizedException(
-                "El teléfono no coincide con el registrado al crear la cita.");
+                "El teléfono no coincide con el registrado al crear la cita.",
+                AppointmentActionErrors.PhoneMismatch.Code);
         }
     }
 }

@@ -1,5 +1,6 @@
 using Application.Appointments.Abstraction;
 using Application.Common.Models;
+using Application.Reports.Models;
 using Domain.Appointments.Entities;
 using Domain.Appointments.ValueObjects;
 using Infrastructure.Persistence;
@@ -143,20 +144,38 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .OrderBy(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<AppointmentDayReportEntry>> GetForDayReportAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
+            .Select(x => new AppointmentDayReportEntry(x.ScheduledStart, x.Status!.Name))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<AppointmentVeterinarianReportEntry>> GetForVeterinarianReportAsync(
+        DateTime fromInclusive,
+        DateTime toExclusive,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusive && x.ScheduledStart < toExclusive)
+            .Select(x => new AppointmentVeterinarianReportEntry(
+                x.VeterinarianId,
+                x.Veterinarian!.User!.FullName,
+                x.Status!.Name))
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyDictionary<Guid, int>> GetStatusCountsBetweenAsync(
         DateTime fromInclusiveUtc,
         DateTime toExclusiveUtc,
         CancellationToken cancellationToken = default)
-    {
-        var counts = await _context.Set<Appointment>()
+        => await _context.Set<Appointment>()
             .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
             .GroupBy(x => x.StatusId)
             .Select(g => new { StatusId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.StatusId, x => x.Count, cancellationToken);
-
-        return counts;
-    }
-
 
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
         Guid veterinarianId,
@@ -325,4 +344,48 @@ public sealed class AppointmentRepository : IAppointmentRepository
         _context.Set<Appointment>().Remove(appointment);
         return Task.CompletedTask;
     }
+
+    public async Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (clientPetIds.Count == 0)
+        {
+            return;
+        }
+
+        var appointmentIds = await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        if (appointmentIds.Count == 0)
+        {
+            return;
+        }
+
+        var histories = await _context.Set<Domain.AppointmentStatusHistories.Entities.AppointmentStatusHistory>()
+            .Where(x => appointmentIds.Contains(x.AppointmentId))
+            .ToListAsync(cancellationToken);
+
+        if (histories.Count > 0)
+        {
+            _context.Set<Domain.AppointmentStatusHistories.Entities.AppointmentStatusHistory>()
+                .RemoveRange(histories);
+        }
+
+        var appointments = await _context.Set<Appointment>()
+            .Where(x => appointmentIds.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        _context.Set<Appointment>().RemoveRange(appointments);
+    }
+
+    public Task<bool> ExistsByServiceIdAsync(
+        Guid serviceId,
+        CancellationToken cancellationToken = default)
+        => _context.Set<Appointment>()
+            .AsNoTracking()
+            .AnyAsync(x => x.ServiceId == serviceId, cancellationToken);
 }

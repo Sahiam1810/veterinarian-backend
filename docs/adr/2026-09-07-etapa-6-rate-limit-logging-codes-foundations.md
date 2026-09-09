@@ -72,30 +72,32 @@ Las cinco tareas **no se esperan entre sí** tras mergear este kickoff.
 
 Inventario verificado en código (2026-09-07). Policy actual entre paréntesis si ya existe.
 
+**Estado 6.1 (2026-09-08): cubierto al 100%.** Sin excepciones escritas. Tests de atributo + HTTP 429 por canal.
+
 ```text
 # Login / refresh staff
-POST   /api/auth/login                                          (Login)
-POST   /api/auth/refresh                                        (Refresh)
+POST   /api/auth/login                                          (Login) ✅
+POST   /api/auth/refresh                                        (Refresh) ✅
 
 # Lookup dueño (anónimo)
-GET    /api/clients/by-phone/{phone}                            (ClientPhoneLookup)
-GET    /api/clients/by-identification/{identificationNumber}    (ClientIdentificationLookup)
+GET    /api/clients/by-phone/{phone}                            (ClientPhoneLookup) ✅
+GET    /api/clients/by-identification/{identificationNumber}    (ClientIdentificationLookup) ✅
 
 # Gmail request / confirm (ContactVerification Email)
-POST   /api/contact-verification/email/request                  (ContactEmailRequest)
-POST   /api/contact-verification/email/confirm                  (ContactEmailConfirm)
+POST   /api/contact-verification/email/request                  (ContactEmailRequest) ✅
+POST   /api/contact-verification/email/confirm                  (ContactEmailConfirm) ✅
 
 # RegisterOwner bot / Telegram
-POST   /api/owners/bot                                          (BotOwnerRegistration)
-GET    /telegram/registration/complete                          (TelegramRegistration)
-POST   /telegram/registration/complete                          (TelegramRegistration)
+POST   /api/owners/bot                                          (BotOwnerRegistration) ✅
+GET    /telegram/registration/complete                          (TelegramRegistration) ✅
+POST   /telegram/registration/complete                          (TelegramRegistration) ✅
 
 # Webhook Telegram
-POST   /api/integrations/telegram/webhook                       (TelegramWebhook)
+POST   /api/integrations/telegram/webhook                       (TelegramWebhook) ✅
 
 # OTP de cita (anónimo; no es Gmail)
-POST   /api/appointments/mine/{id}/request-code                 (AppointmentOtpRequest)
-POST   /api/appointments/mine/{id}/confirm-code                 (AppointmentOtpConfirm)
+POST   /api/appointments/mine/{id}/request-code                 (AppointmentOtpRequest) ✅
+POST   /api/appointments/mine/{id}/confirm-code                 (AppointmentOtpConfirm) ✅
 ```
 
 Notas:
@@ -103,6 +105,8 @@ Notas:
 - OTP cita ≠ OTP Gmail (ADR límites OTP + Etapa 5).
 - `POST /api/clients/register-owner` (staff autenticado) no está en el anexo mínimo; si 6.1 lo añade, documentarlo en la PR sin pelear el anexo.
 - `POST /api/integrations/telegram/link-codes` no está en el anexo de kickoff; no expandir alcance sin actualizar este ADR.
+- Config Telegram registration: `TelegramRegistrationPermitLimit` / `TelegramRegistrationWindowSeconds` (ya no se reutiliza `RegisterPermitLimit`).
+- 429 estable: `RateLimit.Exceeded` vía `OnRejected` en `RateLimitingExtensions`.
 
 ## Mapa orientativo 6.1–6.5 (post-kickoff)
 
@@ -111,8 +115,8 @@ Notas:
 | **6.1** | Cubrir Anexo A (policies + límites + tests 429) | No inventa codes; no WhatsApp |
 | **6.2** | Cumplir convención de logs (§2) | No toca RateLimitingExtensions |
 | **6.3** | Completar/alinear catálogo `code` | No reabre portal Cliente |
-| **6.4** | CONTEXT / docs operativos | No cambia Program.cs rate limit |
-| **6.5** | Humo post-seed con usuarios reales del seed | No usa placeholders de tutorial |
+| **6.4** | Humo post-seed / exit gate objetivo | No reimplementa producto; reusa suites 3–5 |
+| **6.5** | CONTEXT final del programa | No cambia Program.cs rate limit |
 
 ## Alternativas descartadas
 

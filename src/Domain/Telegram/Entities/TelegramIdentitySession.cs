@@ -98,10 +98,17 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
         string protectedEmail,
         string otpHash,
         DateTime otpExpiresAt,
-        DateTime now)
+        DateTime now,
+        Guid? personId = null)
     {
         EnsureStatus(TelegramIdentitySessionStatus.AwaitingEmail);
+        if (personId.HasValue)
+        {
+            EnsurePersonId(personId.Value);
+        }
+
         ProtectedEmail = EnsureProtectedValue(protectedEmail, nameof(protectedEmail));
+        PersonId = personId;
         BeginOtp(otpHash, otpExpiresAt, now);
     }
 
@@ -152,6 +159,28 @@ public sealed class TelegramIdentitySession : BaseEntity<Guid>
         ProtectedIdentification = null;
         ProtectedFullName = null;
         ProtectedEmail = null;
+        UpdatedAt = now;
+    }
+
+    public void RecoverIdentification(DateTime now)
+    {
+        if (Status is not (
+            TelegramIdentitySessionStatus.AwaitingEmail or
+            TelegramIdentitySessionStatus.AwaitingOtp))
+        {
+            throw new InvalidOperationException("La transición de sesión no es válida.");
+        }
+
+        PersonId = null;
+        ProtectedIdentification = null;
+        ProtectedFullName = null;
+        ProtectedEmail = null;
+        OtpHash = null;
+        OtpExpiresAt = null;
+        OtpAttempts = 0;
+        AbsoluteExpiresAt = null;
+        IdleExpiresAt = null;
+        Status = TelegramIdentitySessionStatus.AwaitingIdentification;
         UpdatedAt = now;
     }
 

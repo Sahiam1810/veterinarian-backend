@@ -188,6 +188,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Oracle connection string is not configured.");
 
+        // Etapa 6.2: nunca EnableSensitiveDataLogging (ni en Development): evita SQL con PII en claro.
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString, oracle =>
                 // XE 21c no soporta booleanos nativos (default del provider 23).

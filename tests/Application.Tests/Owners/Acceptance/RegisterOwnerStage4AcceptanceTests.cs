@@ -96,7 +96,9 @@ public sealed class RegisterOwnerStage4AcceptanceTests
         var byPhone = await new GetClientByPhoneQueryHandler(harness.UnitOfWork).Handle(
             new GetClientByPhoneQuery(Phone),
             CancellationToken.None);
-        var byLookup = await new GetClientLookupQueryHandler(harness.Clients).Handle(
+        var byLookup = await new GetClientLookupQueryHandler(
+            harness.Clients,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GetClientLookupQueryHandler>.Instance).Handle(
             new GetClientLookupQuery(Identification, Phone),
             CancellationToken.None);
 

@@ -1,4 +1,5 @@
 using Application.Permissions.Claims;
+using Application.Security.Claims;
 using Application.Security.Models;
 using Domain.Roles;
 using Infrastructure.Security.Options;
@@ -32,6 +33,29 @@ public sealed class JwtTokenIssuer(
         TimeSpan lifetime,
         IReadOnlyCollection<string> permissions)
     {
+        return Issue(identity, lifetime, permissions, tokenUse: null);
+    }
+
+    public IssuedAccessToken IssueDelegated(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        string tokenUse)
+    {
+        if (string.IsNullOrWhiteSpace(tokenUse))
+        {
+            throw new ArgumentException("Delegated token use is required.", nameof(tokenUse));
+        }
+
+        return Issue(identity, lifetime, permissions, tokenUse);
+    }
+
+    private IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        string? tokenUse)
+    {
         if (lifetime <= TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(lifetime));
@@ -63,6 +87,11 @@ public sealed class JwtTokenIssuer(
                 JwtRegisteredClaimNames.Email,
                 identity.Email)
         };
+
+        if (tokenUse is not null)
+        {
+            claims.Add(new Claim(DelegatedTokenClaims.ClaimType, tokenUse));
+        }
 
         string[] normalizedPermissions = SystemRoles.IsSuperAdmin(identity.RoleId)
             ? []

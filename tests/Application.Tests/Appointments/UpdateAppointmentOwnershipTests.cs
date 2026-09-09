@@ -50,7 +50,8 @@ public sealed class UpdateAppointmentOwnershipTests
     public UpdateAppointmentOwnershipTests()
     {
         var client = new ClientEntity(Guid.NewGuid(), "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
         typeof(ClientPetEntity).GetProperty(nameof(ClientPetEntity.Id))!.SetValue(clientPet, ClientPetId);
 

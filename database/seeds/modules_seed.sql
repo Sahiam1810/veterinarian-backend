@@ -183,7 +183,7 @@ USING (SELECT 'a1000000-0000-0000-0000-000000000021' AS ID FROM DUAL) source
 ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Reportes'))
 WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, 'Reportes', 'Reportes y estadísticas del sistema', SYSTIMESTAMP);
+    VALUES (source.ID, 'Reportes', 'Reportes operativos y de gestión', SYSTIMESTAMP);
 
 COMMIT;
 

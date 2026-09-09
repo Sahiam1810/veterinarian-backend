@@ -8,19 +8,21 @@ public static class RaceMappings
 {
     public static CreateRaceCommand ToCommand(this CreateRaceDto dto)
     {
-        return new CreateRaceCommand(dto.Name);
+        return new CreateRaceCommand(dto.Name, dto.SpeciesId);
     }
 
     public static UpdateRaceCommand ToCommand(this UpdateRaceDto dto, Guid id)
     {
-        return new UpdateRaceCommand(id, dto.Name);
+        return new UpdateRaceCommand(id, dto.Name, dto.SpeciesId);
     }
 
     public static RaceResponseDto ToDto(this RaceEntity entity)
     {
         return new RaceResponseDto(
             entity.Id,
-            entity.Name.Value
+            entity.Name.Value,
+            entity.SpeciesId,
+            entity.Species?.Name.Value ?? string.Empty
         );
     }
 

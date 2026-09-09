@@ -36,4 +36,14 @@ public interface IVeterinarianRepository
     Task DeleteAsync(
         Veterinarian veterinarian,
         CancellationToken cancellationToken);
+
+    // Id del vet por user, sin navegaciones (para validar citas antes de borrar)
+    Task<Guid?> GetIdByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
+    // Carga sin Include(User) para poder borrar sin conflicto de tracking
+    Task DeleteByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
 }

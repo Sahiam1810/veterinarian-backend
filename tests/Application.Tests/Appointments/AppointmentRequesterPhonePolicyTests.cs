@@ -70,7 +70,8 @@ public sealed class AppointmentRequesterPhonePolicyTests
 
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
 
         unitOfWork.ClientPetsRepository.Returns(clientPets);
@@ -97,7 +98,8 @@ public sealed class AppointmentRequesterPhonePolicyTests
 
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: null);
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
 
         unitOfWork.ClientPetsRepository.Returns(clientPets);
@@ -130,7 +132,8 @@ public sealed class AppointmentRequesterPhonePolicyTests
             veterinarianId, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(18, 0));
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
 
         var appointment = new Appointment(
@@ -190,6 +193,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
         var absences = Substitute.For<IVeterinarianAbsenceRepository>();
         var clientPets = Substitute.For<IClientPetRepository>();
         var clients = Substitute.For<IClientRepository>();
+        var services = Substitute.For<Application.Services.Abstraction.IServiceRepository>();
 
         var veterinarianId = Guid.NewGuid();
         var availability = new Availability(
@@ -197,7 +201,8 @@ public sealed class AppointmentRequesterPhonePolicyTests
 
         var userId = Guid.NewGuid();
         var client = new ClientEntity(userId, "1234567890", null, phoneNumber: profilePhone);
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
 
         var command = new CreateAppointmentCommand(
@@ -210,8 +215,11 @@ public sealed class AppointmentRequesterPhonePolicyTests
         unitOfWork.AvailabilitiesRepository.Returns(availabilities);
         unitOfWork.ClientPetsRepository.Returns(clientPets);
         unitOfWork.ClientsRepository.Returns(clients);
+        unitOfWork.ServicesRepository.Returns(services);
         clientPets.GetByIdAsync(clientPet.Id, Arg.Any<CancellationToken>()).Returns(clientPet);
         clients.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
+        services.GetByIdAsync(command.ServiceId, Arg.Any<CancellationToken>())
+            .Returns(new Domain.Services.Entities.Service(Guid.NewGuid(), "Consulta general", 30, 50000m));
         absences.GetOverlappingAsync(
                 Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<VeterinarianAbsence>());

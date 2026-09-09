@@ -105,7 +105,8 @@ public class PetsController : ControllerBase
             dto.Weight,
             dto.Observations,
             dto.SpeciesId,
-            dto.RaceId), ct);
+            dto.RaceId,
+            dto.PhotoUrl), ct);
 
         var pet = await _mediator.Send(new GetPetByIdQuery(id), ct);
         return CreatedAtAction(nameof(GetById), new { id }, pet.ToDto());
@@ -129,7 +130,8 @@ public class PetsController : ControllerBase
             dto.Weight,
             dto.Observations,
             dto.SpeciesId,
-            dto.RaceId), ct);
+            dto.RaceId,
+            dto.PhotoUrl), ct);
 
         return NoContent();
     }
