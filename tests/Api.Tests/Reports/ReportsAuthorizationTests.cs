@@ -24,6 +24,17 @@ public sealed class ReportsAuthorizationTests
         Assert.Null(action.GetCustomAttribute<AllowAnonymousAttribute>());
     }
 
+    [Fact]
+    public void GetAppointmentsByStatus_requires_Reportes_View_permission()
+    {
+        var method = typeof(ReportsController).GetMethod(nameof(ReportsController.GetAppointmentsByStatus));
+        Assert.NotNull(method);
+
+        var attr = method.GetCustomAttribute<RequirePermissionAttribute>();
+        Assert.NotNull(attr);
+        Assert.Equal($"perm:Reportes:{PermissionAction.View}", attr.Policy);
+    }
+
     // Sin JWT: la falta de autenticación la corta el middleware de JwtBearer antes de
     // llegar acá (401, ver JwtBearerAuthenticationTests). Este handler cubre el otro
     // criterio: autenticado pero sin el permiso puntual (403).

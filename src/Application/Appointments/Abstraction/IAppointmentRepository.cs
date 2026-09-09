@@ -54,6 +54,15 @@ public interface IAppointmentRepository
         DateTime toExclusive,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Conteo de citas por StatusId dentro del periodo (límite inferior inclusivo,
+    /// superior exclusivo). Agrega en la base sin materializar filas de citas.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, int>> GetStatusCountsBetweenAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
         Guid veterinarianId,
         DateTime fromUtc,

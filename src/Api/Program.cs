@@ -57,6 +57,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 // Solo redirige si hay HTTPS configurado (evita WRN en perfil http local)
