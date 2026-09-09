@@ -10,6 +10,7 @@ using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
+using Domain.Services.Entities;
 using Domain.Species.Entities;
 using Domain.VeterinarianAbsences.Entities;
 using NSubstitute;
@@ -193,6 +194,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
         var absences = Substitute.For<IVeterinarianAbsenceRepository>();
         var clientPets = Substitute.For<IClientPetRepository>();
         var clients = Substitute.For<IClientRepository>();
+        var services = Substitute.For<Application.Services.Abstraction.IServiceRepository>();
 
         var veterinarianId = Guid.NewGuid();
         var availability = new Availability(
@@ -214,8 +216,11 @@ public sealed class AppointmentRequesterPhonePolicyTests
         unitOfWork.AvailabilitiesRepository.Returns(availabilities);
         unitOfWork.ClientPetsRepository.Returns(clientPets);
         unitOfWork.ClientsRepository.Returns(clients);
+        unitOfWork.ServicesRepository.Returns(services);
         clientPets.GetByIdAsync(clientPet.Id, Arg.Any<CancellationToken>()).Returns(clientPet);
         clients.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
+        services.GetByIdAsync(command.ServiceId, Arg.Any<CancellationToken>())
+            .Returns(new Service(Guid.NewGuid(), "Consulta general", 30, 50000m));
         absences.GetOverlappingAsync(
                 Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<VeterinarianAbsence>());
