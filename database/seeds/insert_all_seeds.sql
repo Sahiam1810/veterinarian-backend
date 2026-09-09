@@ -1,14 +1,6 @@
 -- =============================================================================
--- INSERT ALL SEEDS - Inserción unificada de todos los catálogos del sistema
+-- INSERT ALL SEEDS (CORREGIDO Y BLINDADO CONTRA ORA-02291)
 -- Base de datos: Oracle Database
---
--- Este script combina todos los seeds de inserción en un solo archivo
--- en el orden correcto de dependencias para evitar errores de FK.
---
--- NOTA: cleanup_seeds.sql debe ejecutarse por separado ANTES de este script
---       si se necesita limpiar datos existentes.
---
--- Contraseña general para usuarios de prueba: Huellitas2024!
 -- =============================================================================
 
 WHENEVER SQLERROR EXIT SQL.SQLCODE ROLLBACK;
@@ -20,87 +12,25 @@ ALTER SESSION SET NLS_TERRITORY = 'SPAIN';
 -- Nivel 1: Catálogos base (sin dependencias)
 -- =============================================================================
 
--- 1. ROLES (roles_seed.sql)
+-- 1. ROLES (Compara por NAME para sincronizar con los IDs canónicos)
 MERGE INTO ROLES target
 USING (
-    SELECT '99999999-9999-9999-9999-999999999999' AS ID,
-           'SuperAdmin' AS NAME,
-           'Rol de sistema con autoridad no delegable para seguridad y permisos' AS DESCRIPTION
-    FROM DUAL
+    SELECT '99999999-9999-9999-9999-999999999999' AS ID, 'SuperAdmin' AS NAME,
+           'Rol de sistema con autoridad no delegable para seguridad y permisos' AS DESCRIPTION FROM DUAL UNION ALL
+    SELECT '11111111-1111-1111-1111-111111111111' AS ID, 'Administrador' AS NAME,
+           'Configura el sistema, gestiona usuarios, roles y permisos; ve toda la operación' AS DESCRIPTION FROM DUAL UNION ALL
+    SELECT '44444444-4444-4444-4444-444444444444' AS ID, 'Veterinario' AS NAME,
+           'Consulta su agenda, atiende citas y registra la historia clínica de la mascota' AS DESCRIPTION FROM DUAL UNION ALL
+    SELECT '55555555-5555-5555-5555-555555555555' AS ID, 'Recepcionista' AS NAME,
+           'Registra dueños y mascotas, agenda, reprograma y cancela citas' AS DESCRIPTION FROM DUAL UNION ALL
+    SELECT '66666666-6666-6666-6666-666666666666' AS ID, 'Auxiliar' AS NAME,
+           'Apoya el registro y la preparación de la atención, según permisos asignados' AS DESCRIPTION FROM DUAL UNION ALL
+    SELECT '77777777-7777-7777-7777-777777777777' AS ID, 'Cliente' AS NAME,
+           'Cliente (dueño de mascota) que interactúa con el sistema a través del chatbot' AS DESCRIPTION FROM DUAL
 ) source
-ON (target.ROLE_ID = source.ID)
+ON (UPPER(target.NAME) = UPPER(source.NAME))
 WHEN MATCHED THEN
-    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
-MERGE INTO ROLES target
-USING (
-    SELECT '11111111-1111-1111-1111-111111111111' AS ID,
-           'Administrador' AS NAME,
-           'Configura el sistema, gestiona usuarios, roles y permisos; ve toda la operación' AS DESCRIPTION
-    FROM DUAL
-) source
-ON (target.ROLE_ID = source.ID)
-WHEN MATCHED THEN
-    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
-MERGE INTO ROLES target
-USING (
-    SELECT '44444444-4444-4444-4444-444444444444' AS ID,
-           'Veterinario' AS NAME,
-           'Consulta su agenda, atiende citas y registra la historia clínica de la mascota' AS DESCRIPTION
-    FROM DUAL
-) source
-ON (target.ROLE_ID = source.ID)
-WHEN MATCHED THEN
-    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
-MERGE INTO ROLES target
-USING (
-    SELECT '55555555-5555-5555-5555-555555555555' AS ID,
-           'Recepcionista' AS NAME,
-           'Registra dueños y mascotas, agenda, reprograma y cancela citas' AS DESCRIPTION
-    FROM DUAL
-) source
-ON (target.ROLE_ID = source.ID)
-WHEN MATCHED THEN
-    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
-MERGE INTO ROLES target
-USING (
-    SELECT '66666666-6666-6666-6666-666666666666' AS ID,
-           'Auxiliar' AS NAME,
-           'Apoya el registro y la preparación de la atención, según permisos asignados' AS DESCRIPTION
-    FROM DUAL
-) source
-ON (target.ROLE_ID = source.ID)
-WHEN MATCHED THEN
-    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
-MERGE INTO ROLES target
-USING (
-    SELECT '77777777-7777-7777-7777-777777777777' AS ID,
-           'Cliente' AS NAME,
-           'Cliente (dueño de mascota) que interactúa con el sistema a través del chatbot' AS DESCRIPTION
-    FROM DUAL
-) source
-ON (target.ROLE_ID = source.ID)
-WHEN MATCHED THEN
-    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
+    UPDATE SET target.ROLE_ID = source.ID, target.DESCRIPTION = source.DESCRIPTION
 WHEN NOT MATCHED THEN
     INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
@@ -267,6 +197,7 @@ USING (
     SELECT '88000000-0000-0000-0000-000000000003', 'Otro' FROM DUAL
 ) source
 ON (UPPER(target.NAME) = UPPER(source.NAME))
+WHEN MATCHED THEN UPDATE SET target.SPECIES_ID = source.ID
 WHEN NOT MATCHED THEN
     INSERT (SPECIES_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
@@ -288,7 +219,7 @@ USING (
            'Atención clínica veterinaria prioritaria' FROM DUAL
 ) source
 ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN MATCHED THEN UPDATE SET target.DESCRIPTION = source.DESCRIPTION
+WHEN MATCHED THEN UPDATE SET target.SPECIALTY_ID = source.ID, target.DESCRIPTION = source.DESCRIPTION
 WHEN NOT MATCHED THEN
     INSERT (SPECIALTY_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
@@ -310,7 +241,7 @@ USING (
            'Atención veterinaria prioritaria' FROM DUAL
 ) source
 ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN MATCHED THEN UPDATE SET target.DESCRIPTION = source.DESCRIPTION
+WHEN MATCHED THEN UPDATE SET target.TYPE_SERVICE_ID = source.ID, target.DESCRIPTION = source.DESCRIPTION
 WHEN NOT MATCHED THEN
     INSERT (TYPE_SERVICE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
@@ -320,60 +251,15 @@ COMMIT;
 -- 6. STATUS_APPOINTMENTS (status_appointments_seed.sql)
 MERGE INTO STATUS_APPOINTMENTS target
 USING (
-    SELECT 'aaaaaaaa-0000-0000-0000-000000000001' AS ID, 'AGENDADA' AS NAME
-    FROM DUAL
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000001' AS ID, 'AGENDADA' AS NAME FROM DUAL UNION ALL
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000002' AS ID, 'ATENDIDA' AS NAME FROM DUAL UNION ALL
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000005' AS ID, 'CONFIRMADA' AS NAME FROM DUAL UNION ALL
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000006' AS ID, 'EN_PROGRESO' AS NAME FROM DUAL UNION ALL
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000003' AS ID, 'CANCELADA' AS NAME FROM DUAL UNION ALL
+    SELECT 'aaaaaaaa-0000-0000-0000-000000000004' AS ID, 'NO_ASISTIO' AS NAME FROM DUAL
 ) source
 ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN NOT MATCHED THEN
-    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
-    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
-
-MERGE INTO STATUS_APPOINTMENTS target
-USING (
-    SELECT 'aaaaaaaa-0000-0000-0000-000000000002' AS ID, 'ATENDIDA' AS NAME
-    FROM DUAL
-) source
-ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN NOT MATCHED THEN
-    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
-    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
-
-MERGE INTO STATUS_APPOINTMENTS target
-USING (
-    SELECT 'aaaaaaaa-0000-0000-0000-000000000005' AS ID, 'CONFIRMADA' AS NAME
-    FROM DUAL
-) source
-ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN NOT MATCHED THEN
-    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
-    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
-
-MERGE INTO STATUS_APPOINTMENTS target
-USING (
-    SELECT 'aaaaaaaa-0000-0000-0000-000000000006' AS ID, 'EN_PROGRESO' AS NAME
-    FROM DUAL
-) source
-ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN NOT MATCHED THEN
-    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
-    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
-
-MERGE INTO STATUS_APPOINTMENTS target
-USING (
-    SELECT 'aaaaaaaa-0000-0000-0000-000000000003' AS ID, 'CANCELADA' AS NAME
-    FROM DUAL
-) source
-ON (UPPER(target.NAME) = UPPER(source.NAME))
-WHEN NOT MATCHED THEN
-    INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
-    VALUES (source.ID, source.NAME, SYSTIMESTAMP);
-
-MERGE INTO STATUS_APPOINTMENTS target
-USING (
-    SELECT 'aaaaaaaa-0000-0000-0000-000000000004' AS ID, 'NO_ASISTIO' AS NAME
-    FROM DUAL
-) source
-ON (UPPER(target.NAME) = UPPER(source.NAME))
+WHEN MATCHED THEN UPDATE SET target.STATUS_APPOINTMENT_ID = source.ID
 WHEN NOT MATCHED THEN
     INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
@@ -518,74 +404,73 @@ WHEN NOT MATCHED THEN
 COMMIT;
 
 -- =============================================================================
--- Nivel 2: Catálogos que dependen de otros catálogos base
+-- Nivel 2: RACES (depende de SPECIES)
 -- =============================================================================
 
--- 13. RACES (veterinary_catalogs_seed.sql) - depende de SPECIES
+-- 13. RACES (veterinary_catalogs_seed.sql)
 MERGE INTO RACES target
 USING (
     -- Perro
-    SELECT '8a000000-0000-0000-0000-000000000001' ID,
-           species.SPECIES_ID, 'Mestizo' NAME
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    SELECT '8a000000-0000-0000-0000-000000000001' ID, species.SPECIES_ID, 'Mestizo' NAME
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000002', species.SPECIES_ID, 'Labrador Retriever'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000003', species.SPECIES_ID, 'Golden Retriever'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000004', species.SPECIES_ID, 'Bulldog'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000005', species.SPECIES_ID, 'Poodle'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000011', species.SPECIES_ID, 'Pastor Alemán'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000012', species.SPECIES_ID, 'Beagle'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000013', species.SPECIES_ID, 'Chihuahua'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000014', species.SPECIES_ID, 'Husky Siberiano'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000015', species.SPECIES_ID, 'Boxer'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000016', species.SPECIES_ID, 'Cocker Spaniel'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000017', species.SPECIES_ID, 'Schnauzer'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'PERRO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('PERRO', 'CANINO') AND ROWNUM = 1 UNION ALL
     -- Gato
     SELECT '8a000000-0000-0000-0000-000000000006', species.SPECIES_ID, 'Mestizo'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000007', species.SPECIES_ID, 'Siamés'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000008', species.SPECIES_ID, 'Persa'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000009', species.SPECIES_ID, 'Maine Coon'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000018', species.SPECIES_ID, 'Bengalí'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000019', species.SPECIES_ID, 'Ragdoll'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000020', species.SPECIES_ID, 'Azul Ruso'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000021', species.SPECIES_ID, 'Angora'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'GATO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) IN ('GATO', 'FELINO') AND ROWNUM = 1 UNION ALL
     -- Ave
     SELECT '8a000000-0000-0000-0000-000000000022', species.SPECIES_ID, 'Periquito'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000023', species.SPECIES_ID, 'Canario'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000024', species.SPECIES_ID, 'Cacatúa'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000025', species.SPECIES_ID, 'Loro'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'AVE' AND ROWNUM = 1 UNION ALL
     -- Conejo
     SELECT '8a000000-0000-0000-0000-000000000026', species.SPECIES_ID, 'Holandés'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000027', species.SPECIES_ID, 'Mini Rex'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' AND ROWNUM = 1 UNION ALL
     SELECT '8a000000-0000-0000-0000-000000000028', species.SPECIES_ID, 'Cabeza de León'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' UNION ALL
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'CONEJO' AND ROWNUM = 1 UNION ALL
     -- Otro
     SELECT '8a000000-0000-0000-0000-000000000010', species.SPECIES_ID, 'No especificada'
-    FROM SPECIES species WHERE UPPER(species.NAME) = 'OTRO'
+    FROM SPECIES species WHERE UPPER(species.NAME) = 'OTRO' AND ROWNUM = 1
 ) source
 ON (
     target.SPECIES_ID = source.SPECIES_ID
@@ -598,13 +483,9 @@ WHEN NOT MATCHED THEN
 COMMIT;
 
 -- =============================================================================
--- Nivel 3: Permisos (depende de ROLES y MODULES)
+-- Nivel 3: Permisos (ROLE_PERMISSIONS con resolución dinámica segura)
 -- =============================================================================
 
--- Commit explícito para asegurar que ROLES y MODULES estén persistidos
-COMMIT;
-
--- 14. ROLE_PERMISSIONS (role_permissions_seed.sql)
 DECLARE
     PROCEDURE ensure_permission(
         p_id VARCHAR2,
@@ -614,27 +495,68 @@ DECLARE
         p_can_create NUMBER,
         p_can_edit NUMBER,
         p_can_delete NUMBER) IS
+        v_actual_role_id VARCHAR2(36);
+        v_module_id VARCHAR2(36);
     BEGIN
-        MERGE INTO ROLE_PERMISSIONS target
-        USING (
-            SELECT p_id ID,
-                   p_role_id ROLE_ID,
-                   (SELECT MODULE_ID FROM MODULES WHERE NAME = p_module_name) MODULE_ID,
-                   p_can_view CAN_VIEW,
-                   p_can_create CAN_CREATE,
-                   p_can_edit CAN_EDIT,
-                   p_can_delete CAN_DELETE
-            FROM DUAL
-        ) source
-        ON (target.ROLE_ID = source.ROLE_ID AND target.MODULE_ID = source.MODULE_ID)
-        WHEN NOT MATCHED THEN
-            INSERT (
-                ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID,
-                CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
-            VALUES (
-                source.ID, source.ROLE_ID, source.MODULE_ID,
-                source.CAN_VIEW, source.CAN_CREATE,
-                source.CAN_EDIT, source.CAN_DELETE, SYSTIMESTAMP);
+        -- 1. Resuelve el ROLE_ID real en la tabla ROLES (evita ORA-02291)
+        BEGIN
+            SELECT ROLE_ID INTO v_actual_role_id
+            FROM ROLES
+            WHERE ROLE_ID = p_role_id
+               OR UPPER(NAME) = CASE
+                    WHEN p_role_id = '11111111-1111-1111-1111-111111111111' THEN 'ADMINISTRADOR'
+                    WHEN p_role_id = '44444444-4444-4444-4444-444444444444' THEN 'VETERINARIO'
+                    WHEN p_role_id = '55555555-5555-5555-5555-555555555555' THEN 'RECEPCIONISTA'
+                    WHEN p_role_id = '66666666-6666-6666-6666-666666666666' THEN 'AUXILIAR'
+                    WHEN p_role_id = '77777777-7777-7777-7777-777777777777' THEN 'CLIENTE'
+                    WHEN p_role_id = '99999999-9999-9999-9999-999999999999' THEN 'SUPERADMIN'
+                    ELSE 'DESCONOCIDO'
+                  END
+            FETCH FIRST 1 ROWS ONLY;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                v_actual_role_id := NULL;
+        END;
+
+        -- 2. Resuelve el MODULE_ID real en la tabla MODULES
+        BEGIN
+            SELECT MODULE_ID INTO v_module_id
+            FROM MODULES
+            WHERE UPPER(NAME) = UPPER(p_module_name)
+            FETCH FIRST 1 ROWS ONLY;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                v_module_id := NULL;
+        END;
+
+        -- 3. Solo inserta si ambos existen
+        IF v_actual_role_id IS NOT NULL AND v_module_id IS NOT NULL THEN
+            MERGE INTO ROLE_PERMISSIONS target
+            USING (
+                SELECT p_id AS ID,
+                       v_actual_role_id AS ROLE_ID,
+                       v_module_id AS MODULE_ID,
+                       p_can_view AS CAN_VIEW,
+                       p_can_create AS CAN_CREATE,
+                       p_can_edit AS CAN_EDIT,
+                       p_can_delete AS CAN_DELETE
+                FROM DUAL
+            ) source
+            ON (target.ROLE_ID = source.ROLE_ID AND target.MODULE_ID = source.MODULE_ID)
+            WHEN MATCHED THEN
+                UPDATE SET target.CAN_VIEW = source.CAN_VIEW,
+                           target.CAN_CREATE = source.CAN_CREATE,
+                           target.CAN_EDIT = source.CAN_EDIT,
+                           target.CAN_DELETE = source.CAN_DELETE
+            WHEN NOT MATCHED THEN
+                INSERT (
+                    ROLE_PERMISSION_ID, ROLE_ID, MODULE_ID,
+                    CAN_VIEW, CAN_CREATE, CAN_EDIT, CAN_DELETE, CREATED_AT)
+                VALUES (
+                    source.ID, source.ROLE_ID, source.MODULE_ID,
+                    source.CAN_VIEW, source.CAN_CREATE,
+                    source.CAN_EDIT, source.CAN_DELETE, SYSTIMESTAMP);
+        END IF;
     END;
 BEGIN
     -- Administrador
@@ -654,61 +576,58 @@ BEGIN
     ensure_permission('d1e3a202-1e6c-4a86-94c3-289de0ca7c21', '11111111-1111-1111-1111-111111111111', 'Reportes', 1, 0, 0, 0);
 
     -- Veterinario
-    ensure_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
-    ensure_permission('13b24e43-926a-4680-adee-0230ddb26c79', '44444444-4444-4444-444444444444', 'Mascotas', 1, 0, 0, 0);
-    ensure_permission('79093a43-37c7-414b-8795-f8cd6873eb7b', '44444444-4444-4444-444444444444', 'Especies y Razas', 1, 0, 0, 0);
-    ensure_permission('97dfa9c2-1cb2-4294-9f14-a6a226817f8c', '44444444-4444-4444-444444444444', 'Especialidades', 1, 0, 0, 0);
-    ensure_permission('adca595a-367f-45a5-8100-bd61f316bbc5', '44444444-4444-4444-444444444444', 'Veterinarios', 1, 0, 0, 0);
-    ensure_permission('017ae40b-1d25-4e20-984a-258e0e2f1fe5', '44444444-4444-4444-444444444444', 'Citas', 1, 0, 1, 0);
-    ensure_permission('1ab5c377-ad36-48db-bd3b-db02eecf2d64', '44444444-4444-4444-444444444444', 'Historiales Clínicos', 1, 1, 1, 0);
-    ensure_permission('80f53cfa-0ecf-42aa-a9d7-38731f00f599', '44444444-4444-4444-444444444444', 'Servicios', 1, 0, 0, 0);
-    ensure_permission('bc33442d-6bee-4b34-87b6-4e521551c8a7', '44444444-4444-4444-444444444444', 'Estados de Cita', 1, 0, 0, 0);
+    ensure_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
+    ensure_permission('13b24e43-926a-4680-adee-0230ddb26c79', '44444444-4444-4444-4444-444444444444', 'Mascotas', 1, 0, 0, 0);
+    ensure_permission('79093a43-37c7-414b-8795-f8cd6873eb7b', '44444444-4444-4444-4444-444444444444', 'Especies y Razas', 1, 0, 0, 0);
+    ensure_permission('97dfa9c2-1cb2-4294-9f14-a6a226817f8c', '44444444-4444-4444-4444-444444444444', 'Especialidades', 1, 0, 0, 0);
+    ensure_permission('adca595a-367f-45a5-8100-bd61f316bbc5', '44444444-4444-4444-4444-444444444444', 'Veterinarios', 1, 0, 0, 0);
+    ensure_permission('017ae40b-1d25-4e20-984a-258e0e2f1fe5', '44444444-4444-4444-4444-444444444444', 'Citas', 1, 0, 1, 0);
+    ensure_permission('1ab5c377-ad36-48db-bd3b-db02eecf2d64', '44444444-4444-4444-4444-444444444444', 'Historiales Clínicos', 1, 1, 1, 0);
+    ensure_permission('80f53cfa-0ecf-42aa-a9d7-38731f00f599', '44444444-4444-4444-4444-444444444444', 'Servicios', 1, 0, 0, 0);
+    ensure_permission('bc33442d-6bee-4b34-87b6-4e521551c8a7', '44444444-4444-4444-4444-444444444444', 'Estados de Cita', 1, 0, 0, 0);
 
     -- Recepcionista
-    ensure_permission('76be45ca-8349-410a-ab5c-ce4825bef0e0', '55555555-5555-5555-555555555555', 'Clientes', 1, 1, 1, 0);
-    ensure_permission('4d7f8f54-0364-4afb-8049-121136dc5595', '55555555-5555-5555-555555555555', 'Mascotas', 1, 1, 1, 0);
-    ensure_permission('1955bd98-c522-4377-84d1-9b1f2fec7d7b', '55555555-5555-5555-555555555555', 'Especies y Razas', 1, 0, 0, 0);
-    ensure_permission('57d716b1-2c4e-4949-8cda-276d1d8d0cb4', '55555555-5555-5555-555555555555', 'Especialidades', 1, 0, 0, 0);
-    ensure_permission('9a6c1378-c3b5-414f-a7ce-49e1ed565a8d', '55555555-5555-5555-555555555555', 'Veterinarios', 1, 0, 0, 0);
-    ensure_permission('d0e6df49-4072-4159-9b1c-54fbb6866b57', '55555555-5555-5555-555555555555', 'Citas', 1, 1, 1, 1);
-    ensure_permission('2f85e7b7-1b66-4c71-8195-75dd77a5cf7c', '55555555-5555-5555-555555555555', 'Historiales Clínicos', 1, 0, 0, 0);
-    ensure_permission('3642d164-4871-4982-b679-27fe48cd3e38', '55555555-5555-5555-555555555555', 'Servicios', 1, 0, 0, 0);
-    ensure_permission('73869746-0660-4d14-b298-e11b28258231', '55555555-5555-5555-555555555555', 'Estados de Cita', 1, 0, 0, 0);
-    ensure_permission('352fc580-3c6f-4ab4-b491-8a535e21b0d6', '55555555-5555-5555-555555555555', 'Cuentas y Pagos', 1, 1, 0, 0);
+    ensure_permission('76be45ca-8349-410a-ab5c-ce4825bef0e0', '55555555-5555-5555-5555-555555555555', 'Clientes', 1, 1, 1, 0);
+    ensure_permission('4d7f8f54-0364-4afb-8049-121136dc5595', '55555555-5555-5555-5555-555555555555', 'Mascotas', 1, 1, 1, 0);
+    ensure_permission('1955bd98-c522-4377-84d1-9b1f2fec7d7b', '55555555-5555-5555-5555-555555555555', 'Especies y Razas', 1, 0, 0, 0);
+    ensure_permission('57d716b1-2c4e-4949-8cda-276d1d8d0cb4', '55555555-5555-5555-5555-555555555555', 'Especialidades', 1, 0, 0, 0);
+    ensure_permission('9a6c1378-c3b5-414f-a7ce-49e1ed565a8d', '55555555-5555-5555-5555-555555555555', 'Veterinarios', 1, 0, 0, 0);
+    ensure_permission('d0e6df49-4072-4159-9b1c-54fbb6866b57', '55555555-5555-5555-5555-555555555555', 'Citas', 1, 1, 1, 1);
+    ensure_permission('2f85e7b7-1b66-4c71-8195-75dd77a5cf7c', '55555555-5555-5555-5555-555555555555', 'Historiales Clínicos', 1, 0, 0, 0);
+    ensure_permission('3642d164-4871-4982-b679-27fe48cd3e38', '55555555-5555-5555-5555-555555555555', 'Servicios', 1, 0, 0, 0);
+    ensure_permission('73869746-0660-4d14-b298-e11b28258231', '55555555-5555-5555-5555-555555555555', 'Estados de Cita', 1, 0, 0, 0);
+    ensure_permission('352fc580-3c6f-4ab4-b491-8a535e21b0d6', '55555555-5555-5555-5555-555555555555', 'Cuentas y Pagos', 1, 1, 0, 0);
 
     -- Auxiliar
-    ensure_permission('b7540f8f-7ac3-4479-a46e-b0efc34d588c', '66666666-6666-6666-666666666666', 'Clientes', 1, 0, 0, 0);
-    ensure_permission('72686e74-29b0-46f6-b4bf-63fd6430ada9', '66666666-6666-6666-666666666666', 'Mascotas', 1, 0, 0, 0);
-    ensure_permission('86aef2cc-1b8b-4dd3-bffa-3ca04e4b5fcd', '66666666-6666-6666-666666666666', 'Especies y Razas', 1, 0, 0, 0);
-    ensure_permission('f0088433-eb22-419c-979d-900114049b96', '66666666-6666-6666-666666666666', 'Especialidades', 1, 0, 0, 0);
-    ensure_permission('83b9375a-6dff-4ef7-b727-53e648364ba6', '66666666-6666-6666-666666666666', 'Citas', 1, 0, 0, 0);
-    ensure_permission('8fee0f45-2c62-4aef-aae8-63a59df078a6', '66666666-6666-6666-666666666666', 'Historiales Clínicos', 1, 0, 0, 0);
-    ensure_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
-    ensure_permission('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-666666666666', 'Estados de Cita', 1, 0, 0, 0);
+    ensure_permission('b7540f8f-7ac3-4479-a46e-b0efc34d588c', '66666666-6666-6666-6666-666666666666', 'Clientes', 1, 0, 0, 0);
+    ensure_permission('72686e74-29b0-46f6-b4bf-63fd6430ada9', '66666666-6666-6666-6666-666666666666', 'Mascotas', 1, 0, 0, 0);
+    ensure_permission('86aef2cc-1b8b-4dd3-bffa-3ca04e4b5fcd', '66666666-6666-6666-6666-666666666666', 'Especies y Razas', 1, 0, 0, 0);
+    ensure_permission('f0088433-eb22-419c-979d-900114049b96', '66666666-6666-6666-6666-666666666666', 'Especialidades', 1, 0, 0, 0);
+    ensure_permission('83b9375a-6dff-4ef7-b727-53e648364ba6', '66666666-6666-6666-6666-666666666666', 'Citas', 1, 0, 0, 0);
+    ensure_permission('8fee0f45-2c62-4aef-aae8-63a59df078a6', '66666666-6666-6666-6666-666666666666', 'Historiales Clínicos', 1, 0, 0, 0);
+    ensure_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
+    ensure_permission('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-6666-666666666666', 'Estados de Cita', 1, 0, 0, 0);
 
-    -- Cliente = chatbot / Telegram / OTP autoservicio; NO plataforma web (ADR Opción A).
-    -- ensure_permission solo inserta: sin DELETE, DBs ya sembradas conservarían canView de menú.
+    -- Cliente = sin permisos de plataforma web
     DELETE FROM ROLE_PERMISSIONS
-    WHERE ROLE_ID = '77777777-7777-7777-777777777777';
+    WHERE ROLE_ID IN (SELECT ROLE_ID FROM ROLES WHERE UPPER(NAME) = 'CLIENTE');
 END;
 /
 
 COMMIT;
 
 -- =============================================================================
--- Nivel 4: Usuarios de prueba por rol (contraseña: Huellitas2024!)
+-- Nivel 4: Usuarios de prueba por rol (contraseña: Password123!)
 -- =============================================================================
 
--- Hash de contraseña: Huellitas2024! (debe generarse con el mismo algoritmo que la aplicación)
--- NOTA: En producción, este hash debe ser generado por la aplicación, no hardcodeado
 DECLARE
-    v_password_hash VARCHAR2(255) := '$2a$10$XyZzXyZzXyZzXyZzXyZzXyZzXyZzXyZzXyZzXyZ'; -- Placeholder - debe ser el hash real
+    v_password_hash VARCHAR2(255) := '100000.uDRzSo2R4QKRRm5lFo9i4w==.j6rbqW/M2w062GPACpVAwwn4cBEni67eUHwlh8VIbN4=';
 BEGIN
     -- SuperAdmin
     MERGE INTO USERS target
     USING (
         SELECT 'user-superadmin-001' AS ID,
-               '99999999-9999-9999-9999-999999999999' AS ROLE_ID,
+               (SELECT ROLE_ID FROM ROLES WHERE UPPER(NAME) = 'SUPERADMIN') AS ROLE_ID,
                'SuperAdmin Sistema' AS FULL_NAME,
                'superadmin@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -723,7 +642,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-admin-001' AS ID,
-               '11111111-1111-1111-1111-111111111111' AS ROLE_ID,
+               (SELECT ROLE_ID FROM ROLES WHERE UPPER(NAME) = 'ADMINISTRADOR') AS ROLE_ID,
                'Administrador Sistema' AS FULL_NAME,
                'admin@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -738,7 +657,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-vet-001' AS ID,
-               '44444444-4444-4444-4444-444444444444' AS ROLE_ID,
+               (SELECT ROLE_ID FROM ROLES WHERE UPPER(NAME) = 'VETERINARIO') AS ROLE_ID,
                'Dr. Carlos Veterinario' AS FULL_NAME,
                'vet.carlos@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -753,7 +672,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-recep-001' AS ID,
-               '55555555-5555-5555-5555-555555555555' AS ROLE_ID,
+               (SELECT ROLE_ID FROM ROLES WHERE UPPER(NAME) = 'RECEPCIONISTA') AS ROLE_ID,
                'María Recepcionista' AS FULL_NAME,
                'recep.maria@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -768,7 +687,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-aux-001' AS ID,
-               '66666666-6666-6666-6666-666666666666' AS ROLE_ID,
+               (SELECT ROLE_ID FROM ROLES WHERE UPPER(NAME) = 'AUXILIAR') AS ROLE_ID,
                'Juan Auxiliar' AS FULL_NAME,
                'aux.juan@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -783,7 +702,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-client-001' AS ID,
-               '77777777-7777-7777-777777777777' AS ROLE_ID,
+               (SELECT ROLE_ID FROM ROLES WHERE UPPER(NAME) = 'CLIENTE') AS ROLE_ID,
                'Cliente Prueba' AS FULL_NAME,
                'cliente.prueba@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -801,4 +720,3 @@ COMMIT;
 -- =============================================================================
 -- Fin de inserciones
 -- =============================================================================
-EXIT SUCCESS;
