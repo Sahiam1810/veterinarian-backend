@@ -243,3 +243,4 @@ La solución incluye pruebas unitarias y de integración en `tests/Application.T
 - [Aprovisionamiento de SuperAdmin](docs/SUPERADMIN_PROVISIONING.md)
 - [Contexto funcional y de revisión](docs/CONTEXT_REVISION_BACKEND.md)
 - [Política de PII en logs](docs/security/pii-logging-policy.md)
+- [Documentación de la API](docs/API.md)
