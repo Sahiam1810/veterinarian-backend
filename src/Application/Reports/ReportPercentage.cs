@@ -2,7 +2,7 @@ namespace Application.Reports;
 
 internal static class ReportPercentage
 {
-    private const int Scale = 2;
+    private const int Scale = 1;
 
     public static decimal OfTotal(int count, int total)
     {

@@ -56,7 +56,7 @@ public sealed class ReportAppointmentStatusTotalsTests
     }
 
     [Fact]
-    public void From_does_not_count_CONFIRMADA_or_EN_PROGRESO_as_scheduled()
+    public void From_counts_AGENDADA_CONFIRMADA_and_EN_PROGRESO_as_scheduled()
     {
         var bucket = ReportAppointmentStatusTotals.From(
         [
@@ -65,7 +65,7 @@ public sealed class ReportAppointmentStatusTotalsTests
             (ReportAppointmentStatusTotals.InProgress, 4)
         ]);
 
-        Assert.Equal(2, bucket.ScheduledCount);
+        Assert.Equal(13, bucket.ScheduledCount);
     }
 }
 
@@ -135,9 +135,9 @@ public sealed class GetTopServicesReportQueryHandlerTests
         var result = await new GetTopServicesReportQueryHandler(repository)
             .Handle(new GetTopServicesReportQuery(Start, End, Take: 2), CancellationToken.None);
 
-        Assert.Equal(25.00m, result[0].Percentage);
-        Assert.Equal(15.00m, result[1].Percentage);
-        Assert.NotEqual(62.50m, result[0].Percentage);
+        Assert.Equal(25.0m, result[0].Percentage);
+        Assert.Equal(15.0m, result[1].Percentage);
+        Assert.NotEqual(62.5m, result[0].Percentage);
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public sealed class GetAppointmentsSummaryReportQueryHandlerTests
         Assert.Equal(2, result.CanceledCount);
         Assert.Equal(3, result.NoShowCount);
         Assert.Equal(1, result.ScheduledCount);
-        Assert.Equal(40.00m, result.AttendanceRate);
+        Assert.Equal(40.0m, result.AttendanceRate);
     }
 
     [Fact]
@@ -323,11 +323,11 @@ public sealed class FakeReportsReadRepositoryPeriodTests
         Assert.Single(result);
         Assert.Equal(ServiceConsulta, result[0].ServiceId);
         Assert.Equal(2, result[0].AppointmentsCount);
-        Assert.Equal(100.00m, result[0].Percentage);
+        Assert.Equal(100.0m, result[0].Percentage);
     }
 
     [Fact]
-    public async Task Summary_scheduledCount_excludes_CONFIRMADA_and_EN_PROGRESO()
+    public async Task Summary_scheduledCount_includes_AGENDADA_CONFIRMADA_and_EN_PROGRESO()
     {
         var repository = new InMemoryReportsReadRepository(
         [
@@ -346,8 +346,8 @@ public sealed class FakeReportsReadRepositoryPeriodTests
         Assert.Equal(1, summary.AttendedCount);
         Assert.Equal(1, summary.CanceledCount);
         Assert.Equal(1, summary.NoShowCount);
-        Assert.Equal(1, summary.ScheduledCount);
-        Assert.Equal(Math.Round(100m / 6m, 2, MidpointRounding.AwayFromZero), summary.AttendanceRate);
+        Assert.Equal(3, summary.ScheduledCount);
+        Assert.Equal(Math.Round(100m / 6m, 1, MidpointRounding.AwayFromZero), summary.AttendanceRate);
     }
 
     [Fact]
@@ -499,5 +499,106 @@ public sealed class ReportsReportQueryValidatorTests
         Assert.False(validator.Validate(new GetAppointmentsSummaryReportQuery(End, Start)).IsValid);
         Assert.False(validator.Validate(new GetAppointmentsSummaryReportQuery(Start, Start)).IsValid);
         Assert.True(validator.Validate(new GetAppointmentsSummaryReportQuery(Start, End)).IsValid);
+    }
+}
+
+public sealed class ReportPercentagePrecisionTests
+{
+    [Fact]
+    public async Task TopServices_percentage_rounds_to_one_decimal()
+    {
+        var repository = Substitute.For<IReportsReadRepository>();
+        var start = DateTime.SpecifyKind(new DateTime(2026, 9, 1), DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(new DateTime(2026, 9, 8), DateTimeKind.Utc);
+        repository.GetTopServicesAsync(start, end, 5, Arg.Any<CancellationToken>())
+            .Returns(new TopServicesReadResult(
+                TotalAppointments: 3,
+                Items: [new ServiceAppointmentCount(Guid.NewGuid(), "Consulta", 1)]));
+
+        var result = await new GetTopServicesReportQueryHandler(repository)
+            .Handle(new GetTopServicesReportQuery(start, end), CancellationToken.None);
+
+        Assert.Equal(33.3m, result[0].Percentage);
+    }
+
+    [Fact]
+    public async Task Summary_attendanceRate_rounds_to_one_decimal()
+    {
+        var repository = Substitute.For<IReportsReadRepository>();
+        var start = DateTime.SpecifyKind(new DateTime(2026, 9, 1), DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(new DateTime(2026, 9, 8), DateTimeKind.Utc);
+        repository.GetSummaryAsync(start, end, Arg.Any<CancellationToken>())
+            .Returns(new AppointmentsSummaryReadResult(3, 2, 0, 0, 1, null));
+
+        var result = await new GetAppointmentsSummaryReportQueryHandler(repository)
+            .Handle(new GetAppointmentsSummaryReportQuery(start, end), CancellationToken.None);
+
+        Assert.Equal(66.7m, result.AttendanceRate);
+    }
+}
+
+public sealed class ReportLocalDateQueryValidatorTests
+{
+    [Fact]
+    public void TopServices_local_rejects_from_after_to()
+    {
+        var validator = new GetTopServicesReportByLocalDateQueryValidator();
+        var from = new DateOnly(2026, 9, 3);
+        var to = new DateOnly(2026, 9, 1);
+
+        Assert.False(validator.Validate(new GetTopServicesReportByLocalDateQuery(from, to)).IsValid);
+    }
+
+    [Fact]
+    public void TopServices_local_rejects_367_inclusive_days_and_accepts_366()
+    {
+        var validator = new GetTopServicesReportByLocalDateQueryValidator();
+        var from = new DateOnly(2025, 1, 1);
+
+        Assert.True(validator.Validate(
+            new GetTopServicesReportByLocalDateQuery(from, from.AddDays(365))).IsValid);
+        Assert.False(validator.Validate(
+            new GetTopServicesReportByLocalDateQuery(from, from.AddDays(366))).IsValid);
+    }
+
+    [Fact]
+    public void TopServices_local_accepts_single_day()
+    {
+        var validator = new GetTopServicesReportByLocalDateQueryValidator();
+        var day = new DateOnly(2026, 9, 1);
+
+        Assert.True(validator.Validate(new GetTopServicesReportByLocalDateQuery(day, day)).IsValid);
+    }
+
+    [Fact]
+    public void Summary_local_rejects_367_inclusive_days_and_accepts_366()
+    {
+        var validator = new GetAppointmentsSummaryReportByLocalDateQueryValidator();
+        var from = new DateOnly(2025, 1, 1);
+
+        Assert.True(validator.Validate(
+            new GetAppointmentsSummaryReportByLocalDateQuery(from, from.AddDays(365))).IsValid);
+        Assert.False(validator.Validate(
+            new GetAppointmentsSummaryReportByLocalDateQuery(from, from.AddDays(366))).IsValid);
+    }
+}
+
+public sealed class ReportLocalUtcRangeTests
+{
+    [Fact]
+    public void ToHalfOpen_converts_bogota_inclusive_start_and_exclusive_end()
+    {
+        var from = new DateOnly(2026, 9, 1);
+        var to = new DateOnly(2026, 9, 3);
+
+        var (startUtc, endExclusiveUtc) = ReportLocalUtcRange.ToHalfOpen(
+            from,
+            to,
+            "America/Bogota");
+
+        Assert.Equal(new DateTime(2026, 9, 1, 5, 0, 0, DateTimeKind.Utc), startUtc);
+        Assert.Equal(new DateTime(2026, 9, 4, 5, 0, 0, DateTimeKind.Utc), endExclusiveUtc);
+        Assert.Equal(DateTimeKind.Utc, startUtc.Kind);
+        Assert.Equal(DateTimeKind.Utc, endExclusiveUtc.Kind);
     }
 }
