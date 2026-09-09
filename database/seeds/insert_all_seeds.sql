@@ -105,6 +105,8 @@ WHEN NOT MATCHED THEN
     INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
 
+COMMIT;
+
 -- 2. MODULES (modules_seed.sql)
 MERGE INTO MODULES target
 USING (SELECT 'a1000000-0000-0000-0000-000000000001' AS ID FROM DUAL) source
@@ -253,6 +255,8 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Reportes', 'Reportes operativos y de gestión', SYSTIMESTAMP);
 
+COMMIT;
+
 -- 3. SPECIES (veterinary_catalogs_seed.sql)
 MERGE INTO SPECIES target
 USING (
@@ -266,6 +270,8 @@ ON (UPPER(target.NAME) = UPPER(source.NAME))
 WHEN NOT MATCHED THEN
     INSERT (SPECIES_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+COMMIT;
 
 -- 4. SPECIALTIES (veterinary_catalogs_seed.sql)
 MERGE INTO SPECIALTIES target
@@ -287,6 +293,8 @@ WHEN NOT MATCHED THEN
     INSERT (SPECIALTY_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
 
+COMMIT;
+
 -- 5. TYPE_SERVICES (veterinary_catalogs_seed.sql)
 MERGE INTO TYPE_SERVICES target
 USING (
@@ -306,6 +314,8 @@ WHEN MATCHED THEN UPDATE SET target.DESCRIPTION = source.DESCRIPTION
 WHEN NOT MATCHED THEN
     INSERT (TYPE_SERVICE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
+
+COMMIT;
 
 -- 6. STATUS_APPOINTMENTS (status_appointments_seed.sql)
 MERGE INTO STATUS_APPOINTMENTS target
@@ -368,6 +378,8 @@ WHEN NOT MATCHED THEN
     INSERT (STATUS_APPOINTMENT_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
 
+COMMIT;
+
 -- 7. CONVERSATIONS_STATUSES (chat_conversation_catalogs_seed.sql)
 MERGE INTO CONVERSATIONS_STATUSES target
 USING (SELECT '81000000-0000-0000-0000-000000000001' ID, 'Abierta' NAME FROM DUAL) source
@@ -400,6 +412,8 @@ WHEN MATCHED THEN UPDATE SET target.NAME_STATUS = source.NAME
 WHEN NOT MATCHED THEN
     INSERT (CONVERSATIONS_STATUSES_ID, NAME_STATUS, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+COMMIT;
 
 -- 8. SENDER_TYPES (chat_conversation_catalogs_seed.sql)
 MERGE INTO SENDER_TYPES target
@@ -434,6 +448,8 @@ WHEN NOT MATCHED THEN
     INSERT (SENDER_TYPES_ID, NAME_TYPE, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
 
+COMMIT;
+
 -- 9. MESSAGE_TYPES (chat_runtime_catalogs_seed.sql)
 MERGE INTO MESSAGE_TYPES target
 USING (
@@ -449,6 +465,8 @@ WHEN NOT MATCHED THEN
     INSERT (MESSAGE_TYPES_ID, NAME_TYPE, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
 
+COMMIT;
+
 -- 10. PRIORITY (chat_runtime_catalogs_seed.sql)
 MERGE INTO PRIORITY target
 USING (
@@ -462,6 +480,8 @@ WHEN MATCHED THEN UPDATE SET target.NAME_PRIORITY = source.NAME
 WHEN NOT MATCHED THEN
     INSERT (PRIORITY_ID, NAME_PRIORITY, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+COMMIT;
 
 -- 11. ESCALATIONS_STATUSES (chat_runtime_catalogs_seed.sql)
 MERGE INTO ESCALATIONS_STATUSES target
@@ -478,6 +498,8 @@ WHEN NOT MATCHED THEN
     INSERT (ESCALATIONS_ID, NAME_STATUS, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
 
+COMMIT;
+
 -- 12. AI_RUNS_STATUSES (chat_runtime_catalogs_seed.sql)
 MERGE INTO AI_RUNS_STATUSES target
 USING (
@@ -492,6 +514,8 @@ WHEN MATCHED THEN UPDATE SET target.NAME_STATUS = source.NAME
 WHEN NOT MATCHED THEN
     INSERT (AI_RUNS_STATUSES_ID, NAME_STATUS, CREATED_AT)
     VALUES (source.ID, source.NAME, SYSTIMESTAMP);
+
+COMMIT;
 
 -- =============================================================================
 -- Nivel 2: Catálogos que dependen de otros catálogos base
@@ -571,9 +595,14 @@ WHEN NOT MATCHED THEN
     INSERT (RACE_ID, SPECIES_ID, NAME, CREATED_AT)
     VALUES (source.ID, source.SPECIES_ID, source.NAME, SYSTIMESTAMP);
 
+COMMIT;
+
 -- =============================================================================
 -- Nivel 3: Permisos (depende de ROLES y MODULES)
 -- =============================================================================
+
+-- Commit explícito para asegurar que ROLES y MODULES estén persistidos
+COMMIT;
 
 -- 14. ROLE_PERMISSIONS (role_permissions_seed.sql)
 DECLARE
@@ -664,6 +693,8 @@ BEGIN
 END;
 /
 
+COMMIT;
+
 -- =============================================================================
 -- Nivel 4: Usuarios de prueba por rol (contraseña: Huellitas2024!)
 -- =============================================================================
@@ -707,7 +738,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-vet-001' AS ID,
-               '44444444-4444-4444-4444444444444' AS ROLE_ID,
+               '44444444-4444-4444-4444-444444444444' AS ROLE_ID,
                'Dr. Carlos Veterinario' AS FULL_NAME,
                'vet.carlos@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -722,7 +753,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-recep-001' AS ID,
-               '55555555-5555-5555-5555555555555' AS ROLE_ID,
+               '55555555-5555-5555-5555-555555555555' AS ROLE_ID,
                'María Recepcionista' AS FULL_NAME,
                'recep.maria@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -737,7 +768,7 @@ BEGIN
     MERGE INTO USERS target
     USING (
         SELECT 'user-aux-001' AS ID,
-               '66666666-6666-6666-6666666666666' AS ROLE_ID,
+               '66666666-6666-6666-6666-666666666666' AS ROLE_ID,
                'Juan Auxiliar' AS FULL_NAME,
                'aux.juan@huellitas.local' AS EMAIL,
                v_password_hash AS PASSWORD_HASH
@@ -768,30 +799,6 @@ END;
 COMMIT;
 
 -- =============================================================================
--- VERIFICACIÓN
+-- Fin de inserciones
 -- =============================================================================
-SET PAGESIZE 100;
-SET LINESIZE 180;
-
-SELECT '=== VERIFICACIÓN DE SEEDS ===' AS VERIFICACION FROM DUAL;
-
-SELECT COUNT(*) ROLE_COUNT FROM ROLES;
-SELECT COUNT(*) MODULES_COUNT FROM MODULES;
-SELECT COUNT(*) ROLE_PERMISSIONS_COUNT FROM ROLE_PERMISSIONS;
-SELECT COUNT(*) STATUS_APPOINTMENTS_COUNT FROM STATUS_APPOINTMENTS;
-SELECT COUNT(*) CONVERSATIONS_STATUSES_COUNT FROM CONVERSATIONS_STATUSES;
-SELECT COUNT(*) SENDER_TYPES_COUNT FROM SENDER_TYPES;
-SELECT COUNT(*) MESSAGE_TYPES_COUNT FROM MESSAGE_TYPES;
-SELECT COUNT(*) PRIORITY_COUNT FROM PRIORITY;
-SELECT COUNT(*) ESCALATIONS_STATUSES_COUNT FROM ESCALATIONS_STATUSES;
-SELECT COUNT(*) AI_RUNS_STATUSES_COUNT FROM AI_RUNS_STATUSES;
-SELECT COUNT(*) TYPE_SERVICES_COUNT FROM TYPE_SERVICES;
-SELECT COUNT(*) SPECIES_COUNT FROM SPECIES;
-SELECT COUNT(*) RACES_COUNT FROM RACES;
-SELECT COUNT(*) SPECIALTIES_COUNT FROM SPECIALTIES;
-SELECT COUNT(*) USERS_COUNT FROM USERS;
-
-SELECT '=== USUARIOS DE PRUEBA CREADOS ===' AS USUARIOS FROM DUAL;
-SELECT USER_ID, FULL_NAME, EMAIL FROM USERS ORDER BY FULL_NAME;
-
 EXIT SUCCESS;
