@@ -74,7 +74,51 @@ public sealed class ReportsPublicApiTests : IClassFixture<ReportsPublicApiFactor
         Assert.Equal("2026-09-01", root.GetProperty("from").GetString());
         Assert.Equal("2026-09-07", root.GetProperty("to").GetString());
         Assert.Equal(0, root.GetProperty("totalAppointments").GetInt32());
-        Assert.Equal(JsonValueKind.Null, root.GetProperty("topService").ValueKind);
+        Assert.Equal(0, root.GetProperty("attendedCount").GetInt32());
+        Assert.Equal(0, root.GetProperty("canceledCount").GetInt32());
+        Assert.Equal(0, root.GetProperty("noShowCount").GetInt32());
+        Assert.Equal(0, root.GetProperty("scheduledCount").GetInt32());
+        Assert.Equal(0.0m, root.GetProperty("attendanceRate").GetDecimal());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("topServiceName").ValueKind);
+        Assert.Equal(0, root.GetProperty("topServiceCount").GetInt32());
+        Assert.Equal(0.0m, root.GetProperty("topServicePercentage").GetDecimal());
+        Assert.False(root.TryGetProperty("topService", out _));
+    }
+
+    [Fact]
+    public async Task GetSummary_authorized_returns_flat_top_service_fields()
+    {
+        var serviceId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000002");
+        factory.Reports.GetSummaryAsync(
+                Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(new AppointmentsSummaryReadResult(
+                TotalAppointments: 60,
+                AttendedCount: 40,
+                CanceledCount: 10,
+                NoShowCount: 5,
+                ScheduledCount: 5,
+                TopService: new ServiceAppointmentCount(serviceId, "Consulta general", 20)));
+
+        using var client = factory.CreateAuthenticatedClient(withReportesView: true);
+
+        using var response = await client.GetAsync(
+            "/api/reports/summary?from=2026-09-01&to=2026-09-07");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = document.RootElement;
+        Assert.Equal("2026-09-01", root.GetProperty("from").GetString());
+        Assert.Equal("2026-09-07", root.GetProperty("to").GetString());
+        Assert.Equal(60, root.GetProperty("totalAppointments").GetInt32());
+        Assert.Equal(40, root.GetProperty("attendedCount").GetInt32());
+        Assert.Equal(10, root.GetProperty("canceledCount").GetInt32());
+        Assert.Equal(5, root.GetProperty("noShowCount").GetInt32());
+        Assert.Equal(5, root.GetProperty("scheduledCount").GetInt32());
+        Assert.Equal(66.7m, root.GetProperty("attendanceRate").GetDecimal());
+        Assert.Equal("Consulta general", root.GetProperty("topServiceName").GetString());
+        Assert.Equal(20, root.GetProperty("topServiceCount").GetInt32());
+        Assert.Equal(33.3m, root.GetProperty("topServicePercentage").GetDecimal());
+        Assert.False(root.TryGetProperty("topService", out _));
     }
 
     [Theory]

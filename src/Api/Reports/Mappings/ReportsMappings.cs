@@ -32,15 +32,6 @@ public static class ReportsMappings
         DateOnly from,
         DateOnly to)
     {
-        ReportTopServiceSummaryResponse? topService = null;
-        if (report.TopServiceId is not null && report.TopServiceName is not null)
-        {
-            topService = new ReportTopServiceSummaryResponse(
-                report.TopServiceName,
-                report.TopServiceCount,
-                report.TopServicePercentage);
-        }
-
         return new AppointmentsSummaryReportResponse(
             from,
             to,
@@ -50,6 +41,8 @@ public static class ReportsMappings
             report.NoShowCount,
             report.ScheduledCount,
             report.AttendanceRate,
-            topService);
+            report.TopServiceName,
+            report.TopServiceCount,
+            report.TopServicePercentage);
     }
 }

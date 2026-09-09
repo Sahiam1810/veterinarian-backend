@@ -6,11 +6,6 @@ public sealed record TopServiceReportResponse(
     int AppointmentsCount,
     decimal Percentage);
 
-public sealed record ReportTopServiceSummaryResponse(
-    string Name,
-    int Count,
-    decimal Percentage);
-
 public sealed record AppointmentsSummaryReportResponse(
     DateOnly From,
     DateOnly To,
@@ -20,4 +15,6 @@ public sealed record AppointmentsSummaryReportResponse(
     int NoShowCount,
     int ScheduledCount,
     decimal AttendanceRate,
-    ReportTopServiceSummaryResponse? TopService);
+    string? TopServiceName,
+    int TopServiceCount,
+    decimal TopServicePercentage);
