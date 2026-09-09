@@ -1,4 +1,5 @@
 using Application.Common.Models;
+using Application.Reports.Models;
 using Domain.Appointments.Entities;
 
 namespace Application.Appointments.Abstraction;
@@ -33,6 +34,15 @@ public interface IAppointmentRepository
     Task<IReadOnlyCollection<Appointment>> GetScheduledBetweenAsync(
         DateTime fromUtc,
         DateTime toUtc,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Obtiene únicamente los campos no sensibles necesarios para el reporte de citas.
+    /// El periodo usa límite inferior inclusivo y superior exclusivo.
+    /// </summary>
+    Task<IReadOnlyCollection<AppointmentVeterinarianReportEntry>> GetForVeterinarianReportAsync(
+        DateTime fromInclusive,
+        DateTime toExclusive,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
