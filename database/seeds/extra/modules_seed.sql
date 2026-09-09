@@ -186,4 +186,3 @@ WHEN NOT MATCHED THEN
     VALUES (source.ID, 'Reportes', 'Reportes operativos y de gestión', SYSTIMESTAMP);
 
 COMMIT;
-

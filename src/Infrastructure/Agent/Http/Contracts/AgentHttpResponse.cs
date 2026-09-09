@@ -8,6 +8,7 @@ internal sealed record AgentHttpResponse(
     [property: JsonPropertyName("correlationId")] Guid CorrelationId,
     [property: JsonPropertyName("responseType")] string ResponseType,
     [property: JsonPropertyName("accessRequirement")] string AccessRequirement,
+    [property: JsonPropertyName("resumeMessage")] string? ResumeMessage,
     [property: JsonPropertyName("provider")] string? Provider,
     [property: JsonPropertyName("model")] string? Model,
     [property: JsonPropertyName("usage")] AgentHttpTokenUsage? Usage,

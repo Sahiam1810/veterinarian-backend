@@ -288,13 +288,17 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 default)
             .Returns(Result(
                 "Necesito verificar tu identidad.",
-                AgentAccessRequirement.IdentityVerification));
-        fixture.Access.BeginPrivateAccessAsync(update, default)
+                AgentAccessRequirement.IdentityVerification,
+                "Quiero agendar una cita"));
+        fixture.Access.BeginPrivateAccessAsync(update, "Quiero agendar una cita", default)
             .Returns(new TelegramIdentityAccessOutcome(true, "Escribe tu cédula."));
 
         await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(60), default);
 
-        await fixture.Access.Received(1).BeginPrivateAccessAsync(update, default);
+        await fixture.Access.Received(1).BeginPrivateAccessAsync(
+            update,
+            "Quiero agendar una cita",
+            default);
         await fixture.Bot.Received(1).SendTextAsync(1001, "Escribe tu cédula.", default);
     }
 
@@ -398,10 +402,12 @@ public sealed class ProcessTelegramUpdateHandlerTests
 
     private static AgentMessageResult Result(
         string message,
-        AgentAccessRequirement accessRequirement = AgentAccessRequirement.None) =>
+        AgentAccessRequirement accessRequirement = AgentAccessRequirement.None,
+        string? resumeMessage = null) =>
         new(message, ConversationId, Guid.NewGuid(), "ai_generated", "openai", "gpt", null, null,
             new AgentRagResult("used", "contextual", 0.9, 1, 1, true, false),
-            accessRequirement);
+            accessRequirement,
+            resumeMessage);
 
     private sealed record Fixture(
         ProcessTelegramUpdateHandler Handler,

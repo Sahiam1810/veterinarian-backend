@@ -136,6 +136,7 @@ public sealed class ProcessTelegramUpdateHandler(
                     {
                         var challenge = await identityAccessService.BeginPrivateAccessAsync(
                             update,
+                            guestResult.ResumeMessage,
                             cancellationToken);
                         await DeliverAsync(
                             update,
@@ -166,6 +167,7 @@ public sealed class ProcessTelegramUpdateHandler(
                 {
                     var challenge = await identityAccessService.BeginPrivateAccessAsync(
                         update,
+                        guestResult.ResumeMessage,
                         cancellationToken);
                     await DeliverAsync(
                         update,

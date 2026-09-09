@@ -16,6 +16,7 @@ public sealed class AgentMessagingHttpClient(
     IOptions<AgentOptions> options) : IAgentMessagingClient
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private const int MaximumResumeMessageLength = 500;
     private readonly AgentOptions agentOptions = options.Value;
 
     public async Task<AgentMessageResult> SendAsync(
@@ -49,6 +50,21 @@ public sealed class AgentMessagingHttpClient(
                 throw new AgentContractException();
             }
 
+            if (payload.ResumeMessage is { Length: > MaximumResumeMessageLength })
+            {
+                throw new AgentContractException();
+            }
+
+            var accessRequirement = ParseAccessRequirement(payload.AccessRequirement);
+            var resumeMessage = string.IsNullOrWhiteSpace(payload.ResumeMessage)
+                ? null
+                : payload.ResumeMessage.Trim();
+            if (resumeMessage is not null &&
+                accessRequirement != AgentAccessRequirement.IdentityVerification)
+            {
+                throw new AgentContractException();
+            }
+
             return new AgentMessageResult(
                 payload.Message,
                 payload.ConversationId,
@@ -70,7 +86,8 @@ public sealed class AgentMessagingHttpClient(
                     payload.Rag.ConversationMatches,
                     payload.Rag.MemoryStored,
                     payload.Rag.KnowledgePublished),
-                ParseAccessRequirement(payload.AccessRequirement));
+                accessRequirement,
+                resumeMessage);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

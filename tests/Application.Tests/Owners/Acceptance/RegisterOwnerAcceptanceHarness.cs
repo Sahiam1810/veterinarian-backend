@@ -204,8 +204,11 @@ internal sealed class InMemoryUsers : IUsersRepository
     public Task UpdateAsync(UserEntity user, CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
-    public Task DeleteAsync(UserEntity user, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
+    public Task DeleteAsync(UserEntity user, CancellationToken cancellationToken)
+    {
+        Items.Remove(user);
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class InMemoryClients : IClientRepository
