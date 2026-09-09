@@ -1,5 +1,6 @@
 using Application.Appointments.Abstraction;
 using Application.Common.Models;
+using Application.Reports.Models;
 using Domain.Appointments.Entities;
 using Domain.Appointments.ValueObjects;
 using Infrastructure.Persistence;
@@ -143,6 +144,39 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .OrderBy(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<AppointmentDayReportEntry>> GetForDayReportAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
+            .Select(x => new AppointmentDayReportEntry(x.ScheduledStart, x.Status!.Name))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<AppointmentVeterinarianReportEntry>> GetForVeterinarianReportAsync(
+        DateTime fromInclusive,
+        DateTime toExclusive,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusive && x.ScheduledStart < toExclusive)
+            .Select(x => new AppointmentVeterinarianReportEntry(
+                x.VeterinarianId,
+                x.Veterinarian!.User!.FullName,
+                x.Status!.Name))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, int>> GetStatusCountsBetweenAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
+            .GroupBy(x => x.StatusId)
+            .Select(g => new { StatusId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.StatusId, x => x.Count, cancellationToken);
+
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
         Guid veterinarianId,
         DateTime fromUtc,
@@ -204,7 +238,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
         }
 
         return await query.AnyAsync(
-            x => (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
+            x => x.Status!.Name == "AGENDADA"
+                 && (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
                  && x.ScheduledStart < end
                  && x.ScheduledEnd > start,
             cancellationToken);

@@ -69,6 +69,44 @@ public sealed class AppointmentRepositoryDetailsTests
     }
 
     [Fact]
+    public async Task HasOverlappingAppointmentAsync_detects_scheduled_conflicts()
+    {
+        await using var context = CreateContext();
+        var (appointment, clientPet) = AddAppointmentGraph(context, statusName: "AGENDADA");
+        await context.SaveChangesAsync();
+
+        var repository = new AppointmentRepository(context);
+        var overlaps = await repository.HasOverlappingAppointmentAsync(
+            clientPet.Id,
+            Guid.NewGuid(),
+            appointment.ScheduledStart.AddMinutes(10),
+            appointment.ScheduledEnd.AddMinutes(10),
+            excludeAppointmentId: null,
+            cancellationToken: CancellationToken.None);
+
+        Assert.True(overlaps);
+    }
+
+    [Fact]
+    public async Task HasOverlappingAppointmentAsync_ignores_cancelled_appointments()
+    {
+        await using var context = CreateContext();
+        var (appointment, clientPet) = AddAppointmentGraph(context, statusName: "CANCELADA");
+        await context.SaveChangesAsync();
+
+        var repository = new AppointmentRepository(context);
+        var overlaps = await repository.HasOverlappingAppointmentAsync(
+            clientPet.Id,
+            Guid.NewGuid(),
+            appointment.ScheduledStart.AddMinutes(10),
+            appointment.ScheduledEnd.AddMinutes(10),
+            excludeAppointmentId: null,
+            cancellationToken: CancellationToken.None);
+
+        Assert.False(overlaps);
+    }
+
+    [Fact]
     public async Task GetByClientPetIdsAsync_loads_pet_and_veterinarian_names()
     {
         await using var context = CreateContext();
@@ -105,7 +143,8 @@ public sealed class AppointmentRepositoryDetailsTests
 
     private static (Appointment Appointment, ClientPetEntity ClientPet) AddAppointmentGraph(
         VeterinaryDbContext context,
-        string? bookingRequestKeyHash = null)
+        string? bookingRequestKeyHash = null,
+        string statusName = "AGENDADA")
     {
         var clientUser = new UserEntity("Samuel Calderón", "samuel@example.com", "hash", Guid.NewGuid());
         var veterinarianUser = new UserEntity(
@@ -127,7 +166,7 @@ public sealed class AppointmentRepositoryDetailsTests
             specialty.Id,
             "VET-001");
         var service = new Service(Guid.NewGuid(), "Consulta general", 30, 55000m);
-        var status = new StatusAppointment("AGENDADA", null);
+        var status = new StatusAppointment(statusName, null);
         var availability = new Availability(
             veterinarian.Id,
             DayOfWeek.Wednesday,

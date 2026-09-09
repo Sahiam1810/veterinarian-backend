@@ -1,563 +1,135 @@
 # Huellitas — Veterinarian Backend
 
-Backend del **Sistema de Gestión para Veterinarias "Huellitas"**: la API central que
-sostiene la operación de la clínica (usuarios, roles, dueños, mascotas, agenda,
-citas, historia clínica) y sirve de puerta de entrada única, tanto para el
-**frontend web staff** en React como para el agente conversacional en Python
-(LangChain/LangGraph + RAG) que atiende por **Telegram**. Ambos canales
-comparten la misma base de datos y el mismo calendario a través de esta API.
+API de Huellitas para la operación de una clínica veterinaria. Centraliza la gestión de personal, dueños, mascotas, agenda, atención clínica, catálogos, notificaciones y la integración con el chatbot.
 
-**Candado de producto:** web = solo staff; dueño = Telegram + teléfono + Gmail OTP;
-sin portal JWT Cliente. Detalle para revisores: [`docs/CONTEXT_REVISION_BACKEND.md`](docs/CONTEXT_REVISION_BACKEND.md) §0.
+Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Domain, Application, Infrastructure y Api.
 
-Proyecto desarrollado por un equipo de 8 personas dividido en frentes de
-backend, frontend, agente/RAG y despliegue.
+> El portal web es solo para el personal de la clínica. Los dueños no tienen contraseña, cuenta de plataforma ni inicio de sesión web: usan el chatbot de Telegram y verifican su identidad mediante cédula y OTP enviado por correo cuando la operación requiere datos privados.
+
+## Capacidades
+
+- Gestión de personal, roles, permisos por módulo y cuentas internas.
+- Dueños, mascotas, especies, razas, especialidades, servicios y diagnósticos.
+- Agenda, disponibilidad, ausencias, prevención de solapamientos, citas, historia clínica, vacunas y recordatorios.
+- Estados de cuenta y notificaciones en tiempo real mediante SignalR (`/hubs/notifications`).
+- JWT RS256 con access token, refresh token rotativo y permisos como claims.
+- Integración opcional con el servicio de agente conversacional, SMTP, Twilio y Telegram.
+- Verificación de correo por OTP para el alta de dueños desde bot y acciones que necesiten comprobar contacto.
+- Administración del runtime conversacional: conversaciones, mensajes, adjuntos, escalaciones, participantes, agentes humanos, modelos y métricas de IA.
+- Swagger en Development, rate limiting, CORS, logging estructurado con Serilog y respuestas de error `application/problem+json`.
 
 ## Arquitectura
 
-El backend sigue Clean Architecture en cuatro proyectos:
-
 | Proyecto | Responsabilidad |
-|---|---|
-| `src/Domain` | Entidades y reglas de negocio puras, sin dependencias externas. |
-| `src/Application` | Casos de uso (CQRS con MediatR), validaciones (FluentValidation) y contratos de repositorios. |
-| `src/Infrastructure` | Implementación de persistencia con EF Core + Oracle, seguridad (JWT), configuración de entidades y migraciones. |
-| `src/Api` | Controladores REST, Swagger, autenticación/autorización, CORS, rate limiting y el gateway hacia el agente conversacional. |
+| --- | --- |
+| `src/Domain` | Entidades, value objects y reglas de negocio sin dependencias de infraestructura. |
+| `src/Application` | Casos de uso con MediatR, validaciones FluentValidation y contratos. |
+| `src/Infrastructure` | EF Core/Oracle, repositorios, seguridad, correo, OTP, Telegram y servicios de fondo. |
+| `src/Api` | Controladores HTTP, autenticación, autorización, Swagger, CORS, SignalR y adaptadores de integración. |
 
-Flujo general del sistema completo:
-
-```
-Frontend React (staff) ──┐
-                         ├──► API .NET (este repo) ──► Oracle Database
-Agente Python / Telegram ─┘         │
-                                    └──► Huellitas ChatBot (Python) ──► Base vectorial (RAG)
+```text
+Frontend web (solo staff) ─┐
+                           ├── API .NET ─── Oracle
+Telegram ─── Bot ──────────┘       │
+                                    └── servicio de agente conversacional (opcional)
 ```
 
-El frontend React es **solo para personal de clínica**. El dueño no tiene UI web:
-interactúa por Telegram (y OTP anónimo de cita / Gmail donde aplique).
+El agente no accede a Oracle directamente. El backend aplica las reglas de negocio, la propiedad de los datos y la disponibilidad de agenda antes de registrar una operación.
 
-El agente en Python **no accede directamente a la base de datos**: consulta y
-registra todo a través de esta API, exactamente igual que el personal de la
-clínica desde el frontend. Esto garantiza que no haya cruces de horario entre
-citas creadas manualmente y citas creadas por el agente.
+## Acceso: personal y dueños
 
-## Características principales
+### Personal de la clínica
 
-- Autenticación basada en tokens **JWT firmados con RS256** (par de llaves
-  pública/privada), con **AccessToken** y **RefreshToken** rotable.
-- Endpoints de registro, login, renovación de sesión, revocación de tokens y
-  actualización de perfil de usuario.
-- **Roles y permisos configurables** desde base de datos (no quemados en
-  código): Administrador, Veterinario, Recepcionista, Auxiliar (web staff) y
-  Cliente (identidad de dueño para chatbot/OTP; **sin** portal web ni login password),
-  combinados en políticas de autorización por endpoint.
-- Los permisos efectivos se cargan desde Oracle durante el login o refresh y
-  se incluyen en el access token como claims `perm:{Módulo}:{Acción}`. La
-  autorización de cada endpoint se resuelve localmente desde el JWT.
-- Gestión completa de dueños, mascotas, especies, razas, veterinarios,
-  especialidades y disponibilidad horaria.
-- Catálogo de servicios, tipos de servicio, diagnósticos y vacunas.
-- Calendario y agenda de citas con validación de solapamiento por
-  profesional, historial de estados y notificaciones.
-- Historia clínica de la mascota y control de vacunación.
-- Interacción del cliente (dueño de mascota) exclusiva a través de Telegram Chatbot y verificaciones de autoservicio por OTP (teléfono/correo), sin interfaz ni login web.
-- Gateway hacia el agente conversacional (Huellitas ChatBot): el backend
-  deriva la identidad del usuario desde el JWT y reenvía el mensaje, sin
-  exponer la base de datos al agente.
-- Módulo de administración del chatbot: conversaciones, mensajes, adjuntos,
-  participantes, asignaciones a agentes humanos, modelos y proveedores de IA.
-- Conexión con la base de datos principal de la compañía (**Oracle**).
-- Rate limiting sobre los endpoints sensibles de autenticación
-  (`register`, `login`, `refresh`).
-- Documentación de cada endpoint en **Swagger/OpenAPI**.
-- Manejo de errores centralizado con respuestas de error consistentes
-  (`ProblemDetails` + violaciones de validación por campo).
-- Logging estructurado con **Serilog**.
+Las cuentas internas inician sesión en `POST /api/auth/login` con correo y contraseña. La API emite access token y refresh token; `POST /api/auth/refresh` rota el refresh token. Los permisos efectivos se calculan en Oracle al iniciar o renovar sesión y se incluyen en el JWT. `SuperAdmin` es un rol persistido, no una variable de entorno.
 
-## Tecnologías utilizadas
+Los endpoints administrativos usan permisos dinámicos por módulo (`Clientes`, `Mascotas`, `Citas`, `Usuarios`, `Reportes`, etc.) y las políticas de rol necesarias. Consulte Swagger para el requisito exacto de cada ruta.
 
-| Componente | Tecnología |
-|---|---|
-| Lenguaje / Framework | C# · .NET 10 (ASP.NET Core Web API) |
-| Base de datos | Oracle Database (EF Core + proveedor Oracle) |
-| Autenticación | JWT RS256 (`Microsoft.AspNetCore.Authentication.JwtBearer`) |
-| Patrón de aplicación | CQRS con MediatR, validaciones con FluentValidation |
-| Documentación de API | Swashbuckle (Swagger / OpenAPI) |
-| Logging | Serilog (consola) |
-| Testing | xUnit, `Microsoft.AspNetCore.Mvc.Testing` |
-| Configuración de secretos | `DotNetEnv` (archivo `.env`, fuera del repositorio) |
+### Dueños: sin contraseña
 
-## Prerrequisitos
+El rol `Cliente` no puede obtener ni renovar un JWT de plataforma, incluso si existen datos de credenciales heredados. Por tanto, no se debe construir un flujo web de registro o login para dueños.
 
-- [.NET SDK 10.0](https://dotnet.microsoft.com/) o superior.
-- Acceso a una instancia de **Oracle Database** (local, en contenedor o
-  remota) con la cadena de conexión correspondiente.
-- Herramienta `dotnet-ef` (versión fijada en `dotnet-tools.json`); se instala
-  con `dotnet tool restore`.
-- Un par de llaves RSA (PKCS#8 privada / SubjectPublicKeyInfo pública),
-  codificadas en Base64, para firmar y validar los JWT.
-- (Opcional, para el agente conversacional) el repositorio `Huellitas_ChatBot`
-  corriendo junto con Qdrant vía `docker compose`.
+El flujo vigente es:
 
-> **Despliegue:** el sistema completo (backend, frontend y agente) se
-> despliega en un **VPS**, expuesto por dominio y subdominios, idealmente
-> mediante contenedores Docker. El VPS y el dominio los provee el
-> coordinador del programa.
+1. En Telegram, las consultas veterinarias generales funcionan en modo invitado, si `Telegram__GuestModeEnabled=true`.
+2. Cuando una solicitud necesita datos u operaciones privadas, el backend pide cédula y verifica un OTP enviado al correo registrado.
+3. Si el dueño aún no existe, confirma sus datos y correo; tras validar el OTP se crea su perfil **sin contraseña** y se vincula el chat.
+4. El enlace de Telegram queda persistido. El acceso privado tiene vencimiento absoluto y por inactividad, por lo que un nuevo OTP solo se solicita cuando corresponde.
 
-## Instalación y configuración
+Las rutas antiguas del portal JWT de cliente (`/api/clients/me`, `/api/pets/mine` y `/api/appointments/mine`) están retiradas y devuelven `410 Gone`. El bot usa las rutas `/api/bot/pets` y `/api/bot/appointments`, protegidas con un JWT delegado interno (`TelegramAgent`) que la API genera; no son endpoints para un navegador ni para llamar con un token de cliente.
 
-1. Clone el repositorio y restaure las herramientas y dependencias:
+## Requisitos
 
-   ```powershell
-   dotnet tool restore
-   dotnet restore
-   ```
+- .NET SDK 10.
+- Una instancia Oracle accesible. El proveedor se configura con compatibilidad Oracle 21c.
+- Acceso a `sqlplus` si se aplicarán los seeds provistos.
+- Un par RSA de al menos 2048 bits, en PEM y codificado en Base64, para JWT.
+- Opcional: bot de Telegram, SMTP y el repositorio/servicio del agente conversacional.
 
-2. Copie `.env.example` como `.env`:
+La versión de `dotnet-ef` está fijada en `dotnet-tools.json`.
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+## Configuración local
 
-3. Complete en `.env`:
-   - `ConnectionStrings__DefaultConnection`: cadena de conexión a Oracle.
-   - `Jwt__PrivateKeyPemBase64` / `Jwt__PublicKeyPemBase64`: par de llaves RSA
-     en Base64, más `Jwt__KeyId`, `Jwt__Issuer`, `Jwt__Audience`,
-     `Jwt__AccessTokenMinutes`, `Jwt__RefreshTokenDays`, `Jwt__ClockSkewSeconds`.
-     Use `Jwt__AccessTokenMinutes=15`: los cambios de rol o permisos quedan
-     persistidos inmediatamente y llegan a una sesión existente al renovar el
-     token, con una demora máxima esperada de 15 minutos.
-   - `Cors__AllowedOrigins__0`: origen del frontend React local (por defecto
-     `http://localhost:5173` con Vite).
-   - Variables `Agent__*` si va a probar la integración con el agente
-     conversacional (ver sección [Gateway del agente conversacional](#gateway-del-agente-conversacional)).
-   - `AppointmentBooking__TimeZoneId`, `AppointmentBooking__MinimumLeadMinutes` y
-     `AppointmentBooking__MaximumAdvanceDays` para controlar el cálculo de horarios ofrecidos.
-   - **Los secretos viven únicamente en `.env`; ese archivo no debe subirse al
-     repositorio.**
+La API carga un archivo `.env` buscando desde el directorio de ejecución hacia arriba y, después, incorpora las variables de entorno del proceso. Los valores del proceso prevalecen. El archivo `.env` está ignorado por Git y no hay una plantilla `.env.example` versionada: cree su archivo local sin compartir secretos.
 
-4. Aplique las migraciones y todos los seeds de producción desde PowerShell,
-   ubicado en la raíz del backend:
+Como mínimo, la aplicación exige Oracle, CORS y JWT. Un ejemplo de estructura es el siguiente; reemplace todos los marcadores por valores reales.
 
-   ```powershell
-   dotnet tool restore
+```dotenv
+ConnectionStrings__DefaultConnection=User Id=VET_APP;Password=<secret>;Data Source=//localhost:1521/FREEPDB1
 
-   dotnet ef database update `
-     --project .\src\Infrastructure\Infrastructure.csproj `
-     --startup-project .\src\Api\Api.csproj `
-     --context VeterinaryDbContext
+Cors__AllowedOrigins__0=http://localhost:5173
 
-   if ($LASTEXITCODE -ne 0) {
-       throw "Falló la aplicación de migraciones"
-   }
+Jwt__Issuer=huellitas-api
+Jwt__Audience=huellitas-web
+Jwt__KeyId=<identificador-de-clave>
+Jwt__PrivateKeyPemBase64=<PEM-privado-en-Base64>
+Jwt__PublicKeyPemBase64=<PEM-publico-en-Base64>
+Jwt__AccessTokenMinutes=15
+Jwt__RefreshTokenDays=7
+Jwt__ClockSkewSeconds=60
 
-   $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
-   $sqlplus = 'C:\app\LENOVO\product\26ai\dbhomeFree\bin\sqlplus.exe'
-
-   & $sqlplus `
-     'VET_APP@//localhost:1521/FREEPDB1' `
-     '@database\seeds\apply_all.sql'
-
-   if ($LASTEXITCODE -ne 0) {
-       throw "Falló la aplicación de seeds"
-   }
-   ```
-
-   SQL*Plus solicitará la contraseña de `VET_APP`; no la escriba en el comando
-   ni la guarde en el repositorio. Si Oracle está instalado en otra ubicación,
-   ajuste únicamente el valor de `$sqlplus`. Los seeds son idempotentes y se
-   pueden volver a ejecutar sin duplicar los catálogos. El detalle del orden y
-   las cantidades esperadas está en
-   [`database/seeds/README.md`](database/seeds/README.md).
-
-### Aprovisionar la primera cuenta SuperAdmin
-
-El seed crea el rol protegido `SuperAdmin`, pero no crea una cuenta ni incluye
-credenciales. Cuando ya exista una cuenta interna activa, promuévala desde la
-raíz del backend con:
-
-```powershell
-$env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
-$sqlplus = 'C:\app\LENOVO\product\26ai\dbhomeFree\bin\sqlplus.exe'
-
-& $sqlplus `
-  'VET_APP@//localhost:1521/FREEPDB1' `
-  '@database\admin\promote_superadmin.sql' `
-  'correo-real-de-la-cuenta@dominio.com'
+# Integraciones desactivadas mientras no se configuren.
+Agent__Enabled=false
+Telegram__Enabled=false
+Email__Enabled=false
+Twilio__Enabled=false
 ```
 
-SQL*Plus solicitará la contraseña de `VET_APP`. El script asigna el rol
-canónico, revoca los refresh tokens anteriores y obliga a iniciar sesión
-nuevamente para obtener un JWT actualizado. Consulte el procedimiento completo
-y sus verificaciones en
-[`docs/SUPERADMIN_PROVISIONING.md`](docs/SUPERADMIN_PROVISIONING.md).
+Las claves privadas, tokens, contraseñas Oracle, credenciales SMTP, OTP y datos personales no deben subirse al repositorio ni imprimirse en logs.
 
-## Ejecución
+### Opciones de negocio disponibles
 
-```powershell
-dotnet run --project src/Api/Api.csproj --launch-profile http
+`src/Api/appsettings.json` aporta los valores no secretos por defecto:
+
+| Sección | Valores relevantes por defecto |
+| --- | --- |
+| `AppointmentBooking` | Zona `America/Bogota`, 60 minutos mínimos de anticipación y 30 días máximos. |
+| `ContactVerification` | OTP de correo: 10 minutos, 5 intentos, reenvío a los 60 s y proof válido 15 minutos. |
+| `RegisterOwner` | `RequireContactProofs=false` para alta hecha por staff; el alta desde bot siempre exige proof. |
+| `RateLimiting` | Límite global y límites específicos para login, refresh, Telegram, lookups y OTP. |
+| `Reminders` | Worker de recordatorios activo por defecto; ventana y frecuencia configurables. |
+
+Puede sobrescribir cualquier valor con el formato `Seccion__Propiedad` en `.env` o en el entorno de despliegue.
+
+### SMTP, verificación de contacto y Twilio
+
+Para enviar OTP por correo habilite y complete:
+
+```dotenv
+Email__Enabled=true
+Email__Host=<smtp-host>
+Email__Port=587
+Email__Username=<smtp-user>
+Email__Password=<smtp-secret-o-app-password>
+Email__FromAddress=no-reply@tu-dominio.example
+Email__FromName=Huellitas
+Email__UseTls=true
 ```
 
-En ambiente `Development`, Swagger está disponible en la URL mostrada por
-ASP.NET Core, agregando `/swagger`.
+`ContactVerification__OtpPepperBase64` es opcional si ya se suministra un pepper en `AppointmentVerification__OtpPepperBase64` o en Telegram. Cuando se habilita Telegram, su pepper es obligatorio. Twilio es opcional y requiere `Twilio__AccountSid`, `Twilio__AuthToken` y `Twilio__FromNumber` además de `Twilio__Enabled=true`.
 
-### Pruebas
+### Servicio del agente
 
-```powershell
-dotnet test
-```
-
-El proyecto incluye pruebas unitarias y de integración en `tests/Api.Tests`,
-`tests/Application.Tests` y `tests/Infrastructure.Tests` (xUnit).
-
-## Roles y políticas de autorización
-
-Los roles se administran desde base de datos (tabla `ROLES`, módulo
-`/api/roles`) y viajan en el claim `role` del JWT. La API expone políticas de
-autorización que combinan uno o más roles por endpoint:
-
-| Política | Rol(es) requerido(s) |
-|---|---|
-| `AdminOnly` | Administrador |
-| `VeterinarianOnly` | Veterinario |
-| `ReceptionistOnly` | Recepcionista |
-| `AssistantOnly` | Auxiliar |
-| `ClientOnly` | Cliente |
-| `StaffOnly` | Administrador, Veterinario, Recepcionista, Auxiliar |
-| `AdminOrReceptionist` | Administrador, Recepcionista |
-| `AdminOrVeterinarian` | Administrador, Veterinario |
-| `ClinicalStaffOnly` | Administrador, Veterinario, Recepcionista |
-| `FrontDeskStaffOnly` | Administrador, Recepcionista, Auxiliar |
-| `ClinicalHistoryReadOnly` | Administrador, Veterinario, Recepcionista, Cliente (lecturas clínicas que implementen además el alcance de propiedad correspondiente) |
-
-Todo endpoint que no declare explícitamente `[Authorize]` ni
-`[AllowAnonymous]` exige de todas formas un JWT válido (política de
-respaldo). Los endpoints públicos son únicamente `register`, `login` y
-`refresh` en `/api/auth`.
-
-En vacunaciones, los contratos de cliente y personal están separados. Un JWT de cliente usa
-`GET /api/vaccinations/mine`; la ausencia de un `sub` válido devuelve `401`. Los endpoints
-generales requieren `ClinicalStaffOnly`, por lo que un cliente autenticado recibe `403`. La API
-deriva siempre la cuenta desde el token y no acepta identificadores de propietario en la petición.
-
-## Modelo de datos (resumen de entidades)
-
-La base de datos se diseñó en equipo, con retroalimentación conjunta sobre
-cada entidad y relación antes de escribir código. Puede sufrir ajustes
-menores a medida que se detecten relaciones o tablas faltantes durante el
-desarrollo.
-
-### Negocio general
-
-| Entidad | Descripción |
-|---|---|
-| `users` | Usuarios base del sistema (veterinario, cliente, cuenta administrativa). |
-| `roles` | Roles disponibles para los usuarios. |
-| `specialties` | Especialidad de cada veterinario. |
-| `veterinarians` | Veterinarios, derivados de `users`. |
-| `availabilities` | Disponibilidad horaria de cada veterinario. |
-| `account_statements` | Estados de cuenta. |
-| `user_accounts` | Cuentas por usuario. |
-| `user_credentials` | Credenciales (usuario/contraseña) de la cuenta. |
-| `user_tokens` | Tokens de sesión (JWT / refresh). |
-| `type_services` | Tipos de servicio. |
-| `services` | Servicios ofrecidos por la clínica. |
-| `diagnostics` | Catálogo de diagnósticos/enfermedades. |
-| `notifications` | Notificaciones para el usuario, generadas a partir de citas. |
-| `race` | Razas de mascotas. |
-| `species` | Especies de mascotas. |
-| `pets` | Mascotas, con su raza y especie. |
-| `clients` | Clientes (dueños) asociados a un usuario. |
-| `clients_pets` | Relación entre clientes y sus mascotas. |
-| `status_appointments` | Estados posibles de una cita. |
-| `appointments` | Información general de la cita. |
-| `appointment_status_histories` | Historial de estados por los que pasó una cita. |
-| `medical_records` | Historia clínica de una mascota atendida. |
-| `vaccinations` | Catálogo y registro de vacunas aplicadas. |
-
-### Chatbot
-
-| Entidad | Descripción |
-|---|---|
-| `provider_models_ai`, `ai_models`, `ai_runs_statuses` | Proveedores y modelos de IA usados por el agente, y estados de sus ejecuciones. |
-| `chat_ai_runs`, `chat_ai_run_metrics`, `chat_ai_run_errors` | Ejecuciones del agente de IA, sus métricas y errores. |
-| `chat_conversation_ai_settings` | Configuración de IA por conversación (habilitada/deshabilitada, modelo por defecto). |
-| `conversations_statuses`, `priority` | Estados y prioridad de una conversación. |
-| `chat_conversations` | Conversaciones del chat. |
-| `sender_types`, `chat_participants`, `chat_user_profiles`, `agent_humans` | Tipos de remitente, participantes de una conversación, perfiles de chat y agentes humanos. |
-| `chat_messages`, `message_types` | Mensajes del chat y su tipo. |
-| `chat_attachments` | Adjuntos de un mensaje. |
-| `chat_conversation_assignments` | Asignación de una conversación a un agente humano. |
-| `chat_escalations`, `chat_escalation_resolution`, `chat_escalation_assignments`, `chat_escalation_status_history`, `escalations_statuses` | Escalamiento de una conversación a un agente humano y su resolución. |
-
-## Listado de endpoints
-
-Todas las rutas están prefijadas con `api/`. Salvo que se indique
-"Anónimo", cada endpoint exige un JWT válido y, cuando aplica, la política de
-autorización indicada.
-
-### Autenticación, usuarios y cuentas
-
-| Método | Ruta | Autorización | Descripción |
-|---|---|---|---|
-| POST | `/api/auth/register` | Anónimo (rate limit) | Registra un nuevo usuario y emite AccessToken/RefreshToken iniciales. |
-| POST | `/api/auth/login` | Anónimo (rate limit) | Valida credenciales y genera tokens de acceso. |
-| POST | `/api/auth/refresh` | Anónimo (rate limit) | Renueva los tokens usando un RefreshToken válido. |
-| GET | `/api/auth/me` | Autenticado | Retorna el perfil del usuario autenticado. |
-| POST | `/api/auth/revoke` | Autenticado | Revoca un RefreshToken y cierra la sesión. |
-| POST | `/api/users` | AdminOnly | Crea un nuevo usuario y le asigna un rol. |
-| GET | `/api/users` | AdminOnly | Lista todos los usuarios. |
-| GET | `/api/users/{id}` | AdminOnly | Obtiene un usuario por ID. |
-| PUT | `/api/users/{id}` | AdminOnly | Actualiza nombre, correo o rol de un usuario. |
-| PATCH | `/api/users/{id}/deactivate` | AdminOnly | Desactiva un usuario. |
-| PATCH | `/api/users/{id}/activate` | AdminOnly | Reactiva un usuario previamente desactivado. |
-| POST | `/api/useraccounts` | AdminOnly | Crea la cuenta de acceso de un usuario existente. |
-| GET | `/api/useraccounts` | AdminOnly | Lista todas las cuentas de usuario. |
-| GET | `/api/useraccounts/{id}` | AdminOnly | Obtiene una cuenta por ID. |
-| PUT | `/api/useraccounts/{id}` | AdminOnly | Actualiza usuario, correo o estado de una cuenta. |
-| DELETE | `/api/useraccounts/{id}` | AdminOnly | Elimina una cuenta de usuario. |
-| POST | `/api/usercredentials` | AdminOnly | Registra la contraseña inicial (hash) de una cuenta. |
-| GET | `/api/usercredentials/{id}` | AdminOnly | Obtiene metadatos de credenciales por ID. |
-| GET | `/api/usercredentials/by-account/{accountId}` | AdminOnly | Obtiene metadatos de credenciales de una cuenta. |
-| PATCH | `/api/usercredentials/{id}/change-password` | AdminOnly | Valida y cambia la contraseña de una cuenta. |
-| POST | `/api/usertokens` | AdminOnly | Registra un nuevo token de sesión. |
-| GET | `/api/usertokens/{id}` | AdminOnly | Obtiene un token por ID. |
-| GET | `/api/usertokens/by-account/{accountId}` | AdminOnly | Lista los tokens de una cuenta. |
-| DELETE | `/api/usertokens/{id}` | AdminOnly | Revoca/elimina un token. |
-| POST | `/api/roles` | AdminOnly | Crea un nuevo rol. |
-| GET | `/api/roles` | AdminOnly | Lista todos los roles. |
-| GET | `/api/roles/{id}` | AdminOnly | Obtiene un rol por ID. |
-| PUT | `/api/roles/{id}` | AdminOnly | Actualiza nombre/descripción de un rol. |
-| DELETE | `/api/roles/{id}` | AdminOnly | Elimina un rol. |
-
-### Dueños, mascotas y profesionales
-
-| Método | Ruta | Autorización | Descripción |
-|---|---|---|---|
-| GET | `/api/clients/me` | ClientOnly | Perfil del cliente autenticado (portal del dueño). |
-| GET | `/api/clients` | StaffOnly | Lista todos los clientes. |
-| GET | `/api/clients/{id}` | StaffOnly | Obtiene un cliente por ID. |
-| POST | `/api/clients` | FrontDeskStaffOnly | Registra un cliente asociado a un usuario existente. |
-| PUT | `/api/clients/{id}` | FrontDeskStaffOnly | Actualiza los datos de un cliente. |
-| DELETE | `/api/clients/{id}` | AdminOnly | Elimina un cliente. |
-| GET | `/api/pets/mine` | ClientOnly | Mascotas del cliente autenticado (portal del dueño). |
-| GET | `/api/pets` | StaffOnly | Lista todas las mascotas. |
-| GET | `/api/pets/{id}` | StaffOnly | Obtiene una mascota por ID. |
-| POST | `/api/pets` | FrontDeskStaffOnly | Registra una mascota con especie y raza. |
-| PUT | `/api/pets/{id}` | FrontDeskStaffOnly | Actualiza los datos de una mascota. |
-| DELETE | `/api/pets/{id}` | AdminOnly | Elimina una mascota. |
-| GET | `/api/clientspets` | StaffOnly | Lista las relaciones cliente-mascota. |
-| GET | `/api/clientspets/{id}` | StaffOnly | Obtiene una relación cliente-mascota por ID. |
-| POST | `/api/clientspets` | FrontDeskStaffOnly | Crea una asociación cliente-mascota. |
-| PUT | `/api/clientspets/{id}` | FrontDeskStaffOnly | Actualiza si el cliente es dueño principal. |
-| DELETE | `/api/clientspets/{id}` | AdminOnly | Elimina una asociación cliente-mascota. |
-| GET | `/api/species` | StaffOnly | Lista las especies. |
-| GET | `/api/species/{id}` | StaffOnly | Obtiene una especie por ID. |
-| POST | `/api/species` | AdminOnly | Crea una especie. |
-| PUT | `/api/species/{id}` | AdminOnly | Actualiza una especie. |
-| DELETE | `/api/species/{id}` | AdminOnly | Elimina una especie. |
-| GET | `/api/races` | StaffOnly | Lista las razas. |
-| GET | `/api/races/{id}` | StaffOnly | Obtiene una raza por ID. |
-| POST | `/api/races` | AdminOnly | Crea una raza. |
-| PUT | `/api/races/{id}` | AdminOnly | Actualiza una raza. |
-| DELETE | `/api/races/{id}` | AdminOnly | Elimina una raza. |
-| POST | `/api/veterinarians` | AdminOnly | Registra un veterinario (usuario, especialidad, matrícula). |
-| GET | `/api/veterinarians` | StaffOnly | Lista todos los veterinarios. |
-| GET | `/api/veterinarians/{id}` | StaffOnly | Obtiene un veterinario por ID. |
-| PUT | `/api/veterinarians/{id}` | AdminOnly | Actualiza un veterinario. |
-| DELETE | `/api/veterinarians/{id}` | AdminOnly | Elimina un veterinario. |
-| GET | `/api/specialties` | StaffOnly | Lista las especialidades. |
-| GET | `/api/specialties/{id}` | StaffOnly | Obtiene una especialidad por ID. |
-| POST | `/api/specialties` | AdminOnly | Crea una especialidad. |
-| PUT | `/api/specialties/{id}` | AdminOnly | Actualiza una especialidad. |
-| DELETE | `/api/specialties/{id}` | AdminOnly | Elimina una especialidad. |
-| POST | `/api/availabilities` | AdminOrReceptionist | Crea un bloque de disponibilidad semanal de un veterinario. |
-| GET | `/api/availabilities` | StaffOnly | Lista todos los bloques de disponibilidad. |
-| GET | `/api/availabilities/{id}` | StaffOnly | Obtiene un bloque de disponibilidad por ID. |
-| GET | `/api/availabilities/by-veterinarian/{veterinarianId}` | StaffOnly | Lista la disponibilidad de un veterinario. |
-| PUT | `/api/availabilities/{id}` | AdminOrReceptionist | Actualiza día/hora/estado de un bloque. |
-| DELETE | `/api/availabilities/{id}` | AdminOrReceptionist | Elimina un bloque de disponibilidad. |
-
-### Servicios y catálogos
-
-| Método | Ruta | Autorización | Descripción |
-|---|---|---|---|
-| POST | `/api/services` | AdminOnly | Crea un servicio veterinario. |
-| GET | `/api/services` | StaffOnly | Lista todos los servicios. |
-| GET | `/api/services/available` | Authenticated | Lista el catálogo público de servicios activos para clientes y el agente. |
-| GET | `/api/services/{id}` | StaffOnly | Obtiene un servicio por ID. |
-| PUT | `/api/services/{id}` | AdminOnly | Actualiza un servicio. |
-| DELETE | `/api/services/{id}` | AdminOnly | Elimina un servicio. |
-| POST | `/api/typeservices` | AdminOnly | Crea un tipo de servicio. |
-| GET | `/api/typeservices` | StaffOnly | Lista los tipos de servicio. |
-| GET | `/api/typeservices/{id}` | StaffOnly | Obtiene un tipo de servicio por ID. |
-| PUT | `/api/typeservices/{id}` | AdminOnly | Actualiza un tipo de servicio. |
-| DELETE | `/api/typeservices/{id}` | AdminOnly | Elimina un tipo de servicio. |
-| GET | `/api/diagnostics?onlyActive=` | StaffOnly | Lista el catálogo de diagnósticos (activos por defecto). |
-| GET | `/api/diagnostics/{id}` | StaffOnly | Obtiene un diagnóstico por ID. |
-| POST | `/api/diagnostics` | AdminOrVeterinarian | Crea un diagnóstico clínico. |
-| PUT | `/api/diagnostics/{id}` | AdminOrVeterinarian | Actualiza código, nombre, descripción o estado de un diagnóstico. |
-| DELETE | `/api/diagnostics/{id}` | AdminOnly | Desactiva (borrado lógico) un diagnóstico. |
-| POST | `/api/vaccinations` | AdminOrVeterinarian | Registra una vacuna aplicada a la mascota de un cliente. |
-| GET | `/api/vaccinations/mine` | ClientOnly + permiso View de Historiales Clínicos | Lista únicamente las vacunas de las mascotas del cliente derivado del `sub` del JWT. |
-| GET | `/api/vaccinations` | ClinicalStaffOnly + permiso View de Historiales Clínicos | Lista todos los registros de vacunación para personal clínico. |
-| GET | `/api/vaccinations/{id}` | ClinicalStaffOnly + permiso View de Historiales Clínicos | Obtiene un registro de vacunación por ID para personal clínico. |
-| PUT | `/api/vaccinations/{id}` | AdminOnly | Corrige un registro de vacunación existente. |
-| POST | `/api/statusappointments` | AdminOnly | Crea un estado de cita (p. ej. Pendiente, Confirmada). |
-| GET | `/api/statusappointments` | StaffOnly | Lista los estados de cita. |
-| GET | `/api/statusappointments/{id}` | StaffOnly | Obtiene un estado de cita por ID. |
-| PUT | `/api/statusappointments/{id}` | AdminOnly | Actualiza un estado de cita. |
-| DELETE | `/api/statusappointments/{id}` | AdminOnly | Elimina un estado de cita. |
-| GET | `/api/airunstatuses` | AdminOnly | Lista los estados de ejecución de IA. |
-| GET | `/api/airunstatuses/{id}` | AdminOnly | Obtiene un estado de ejecución de IA por ID. |
-| POST | `/api/airunstatuses` | AdminOnly | Crea un estado de ejecución de IA. |
-| PUT | `/api/airunstatuses/{id}` | AdminOnly | Actualiza el nombre de un estado de ejecución de IA. |
-| DELETE | `/api/airunstatuses/{id}` | AdminOnly | Elimina un estado de ejecución de IA. |
-| GET | `/api/conversationstatuses` | AdminOnly | Lista los estados de conversación del chat. |
-| GET | `/api/conversationstatuses/{id}` | AdminOnly | Obtiene un estado de conversación por ID. |
-| POST | `/api/conversationstatuses` | AdminOnly | Crea un estado de conversación. |
-| PUT | `/api/conversationstatuses/{id}` | AdminOnly | Actualiza el nombre de un estado de conversación. |
-| DELETE | `/api/conversationstatuses/{id}` | AdminOnly | Elimina un estado de conversación. |
-| GET | `/api/escalationstatuses` | AdminOnly | Lista los estados de escalamiento. |
-| GET | `/api/escalationstatuses/{id}` | AdminOnly | Obtiene un estado de escalamiento por ID. |
-| POST | `/api/escalationstatuses` | AdminOnly | Crea un estado de escalamiento. |
-| PUT | `/api/escalationstatuses/{id}` | AdminOnly | Actualiza el nombre de un estado de escalamiento. |
-| DELETE | `/api/escalationstatuses/{id}` | AdminOnly | Elimina un estado de escalamiento. |
-| GET | `/api/messagetypes` | AdminOnly | Lista los tipos de mensaje del chat. |
-| GET | `/api/messagetypes/{id}` | AdminOnly | Obtiene un tipo de mensaje por ID. |
-| POST | `/api/messagetypes` | AdminOnly | Crea un tipo de mensaje. |
-| PUT | `/api/messagetypes/{id}` | AdminOnly | Actualiza el nombre de un tipo de mensaje. |
-| DELETE | `/api/messagetypes/{id}` | AdminOnly | Elimina un tipo de mensaje. |
-| GET | `/api/priorities` | StaffOnly | Lista los niveles de prioridad. |
-| GET | `/api/priorities/{id}` | StaffOnly | Obtiene un nivel de prioridad por ID. |
-| POST | `/api/priorities` | AdminOnly | Crea un nivel de prioridad. |
-| PUT | `/api/priorities/{id}` | AdminOnly | Actualiza el nombre de un nivel de prioridad. |
-| DELETE | `/api/priorities/{id}` | AdminOnly | Elimina un nivel de prioridad. |
-| GET | `/api/sendertypes` | AdminOnly | Lista los tipos de remitente del chat. |
-| GET | `/api/sendertypes/{id}` | AdminOnly | Obtiene un tipo de remitente por ID. |
-| POST | `/api/sendertypes` | AdminOnly | Crea un tipo de remitente. |
-| PUT | `/api/sendertypes/{id}` | AdminOnly | Actualiza el nombre de un tipo de remitente. |
-| DELETE | `/api/sendertypes/{id}` | AdminOnly | Elimina un tipo de remitente. |
-
-### Citas e historia clínica
-
-| Método | Ruta | Autorización | Descripción |
-|---|---|---|---|
-| GET | `/api/appointments/mine?scope=upcoming\|history\|all` | ClientOnly | Citas propias del cliente autenticado; sin `scope` conserva `all`. |
-| GET | `/api/appointments/mine/{appointmentId}` | ClientOnly | Detalle de una cita propia; una cita ajena se trata como no encontrada. |
-| GET | `/api/appointments/booking/options` | ClientOnly | Mascotas propias, servicios y veterinarios activos para agendamiento. |
-| GET | `/api/appointments/booking/slots?veterinarianId&serviceId&date` | ClientOnly | Horarios UTC libres calculados con duración, agenda, zona y anticipación oficiales. |
-| POST | `/api/appointments/mine` | ClientOnly | Agenda una cita propia; exige `Idempotency-Key` y deriva propiedad, estado, disponibilidad y hora final en el servidor. |
-| POST | `/api/appointments` | AdminOrReceptionist | Crea una cita médica. |
-| GET | `/api/appointments` | StaffOnly | Lista todas las citas. |
-| GET | `/api/appointments/{id}` | StaffOnly | Obtiene una cita por ID. |
-| PUT | `/api/appointments/{id}` | AdminOrReceptionist | Actualiza una cita existente. |
-| DELETE | `/api/appointments/{id}` | AdminOrReceptionist | Elimina una cita. |
-| POST | `/api/appointmentstatushistories` | ClinicalStaffOnly | Registra un cambio de estado de una cita. |
-| GET | `/api/appointmentstatushistories` | StaffOnly | Lista el historial de estados de citas. |
-| GET | `/api/appointmentstatushistories/{id}` | StaffOnly | Obtiene una entrada del historial por ID. |
-| PUT | `/api/appointmentstatushistories/{id}` | ClinicalStaffOnly | Actualiza una entrada del historial. |
-| DELETE | `/api/appointmentstatushistories/{id}` | AdminOnly | Elimina una entrada del historial. |
-| POST | `/api/medicalrecords` | AdminOrVeterinarian | Crea un registro clínico (inmutable) de una mascota. |
-| GET | `/api/medicalrecords` | ClinicalHistoryReadOnly | Lista los registros clínicos. |
-| GET | `/api/medicalrecords/{id}` | ClinicalHistoryReadOnly | Obtiene un registro clínico por ID. |
-
-Las altas, actualizaciones y reprogramaciones bloquean la fila de disponibilidad correspondiente y
-revalidan solapamientos dentro de la misma transacción. Los reintentos de
-`POST /api/appointments/mine` consultan primero la clave idempotente y comparan el pedido original, por lo
-que cambios posteriores en catálogos o perfiles no invalidan una respuesta ya comprometida.
-
-### Notificaciones y estados de cuenta
-
-| Método | Ruta | Autorización | Descripción |
-|---|---|---|---|
-| POST | `/api/notifications` | StaffOnly | Crea una notificación asociada a un usuario y una cita. |
-| GET | `/api/notifications` | StaffOnly | Lista todas las notificaciones. |
-| GET | `/api/notifications/{id}` | StaffOnly | Obtiene una notificación por ID. |
-| GET | `/api/notifications/user/{userId}` | StaffOnly | Lista las notificaciones de un usuario. |
-| GET | `/api/notifications/appointment/{appointmentId}` | StaffOnly | Lista las notificaciones de una cita. |
-| PUT | `/api/notifications/{id}` | StaffOnly | Actualiza una notificación. |
-| DELETE | `/api/notifications/{id}` | StaffOnly | Elimina una notificación. |
-| POST | `/api/accountstatements` | AdminOrReceptionist | Genera un estado de cuenta para una cuenta de usuario. |
-| GET | `/api/accountstatements/{id}` | StaffOnly | Obtiene un estado de cuenta por ID. |
-| GET | `/api/accountstatements/by-account/{accountId}` | StaffOnly | Lista los estados de cuenta de una cuenta. |
-| PATCH | `/api/accountstatements/{id}/status` | AdminOrReceptionist | Cambia el estado de un estado de cuenta (p. ej. pagado). |
-| DELETE | `/api/accountstatements/{id}` | AdminOrReceptionist | Elimina un estado de cuenta. |
-
-### Agente conversacional y agentes humanos
-
-| Método | Ruta | Autorización | Descripción |
-|---|---|---|---|
-| POST | `/api/agent/messages` | Autenticado (identidad tomada del JWT) | Reenvía un mensaje de chat al servicio interno del agente conversacional. Ver detalle abajo. |
-| POST | `/api/chat/agent-humans` | AdminOnly | Registra un agente humano para un usuario existente. |
-| GET | `/api/chat/agent-humans` | AdminOnly | Lista todos los agentes humanos. |
-| GET | `/api/chat/agent-humans/{id}` | AdminOnly | Obtiene un agente humano por ID. |
-| GET | `/api/chat/agent-humans/by-user/{userId}` | AdminOnly | Lista los agentes humanos de un usuario. |
-| PUT | `/api/chat/agent-humans/{id}` | AdminOnly | Actualiza/verifica un agente humano. |
-| PATCH | `/api/chat/agent-humans/{id}/activate` | AdminOnly | Activa un agente humano. |
-| PATCH | `/api/chat/agent-humans/{id}/deactivate` | AdminOnly | Desactiva un agente humano. |
-
-### Administración del chatbot y modelos de IA
-
-| Método | Ruta | Autorización | Descripción |
-|---|---|---|---|
-| POST | `/api/ai/models` | AdminOnly | Crea un modelo de IA bajo un proveedor. |
-| GET | `/api/ai/models/{id}` | AdminOnly | Obtiene un modelo de IA por ID. |
-| GET | `/api/ai/models` | AdminOnly | Lista todos los modelos de IA. |
-| GET | `/api/ai/models/by-provider/{providerId}` | AdminOnly | Lista los modelos de un proveedor. |
-| PUT | `/api/ai/models/{id}` | AdminOnly | Actualiza metadatos, precios y límites de tokens de un modelo. |
-| PATCH | `/api/ai/models/{id}/activate` | AdminOnly | Activa un modelo de IA. |
-| PATCH | `/api/ai/models/{id}/deactivate` | AdminOnly | Desactiva un modelo de IA. |
-| POST | `/api/ai/providers` | AdminOnly | Registra un proveedor de IA. |
-| GET | `/api/ai/providers/{id}` | AdminOnly | Obtiene un proveedor de IA por ID. |
-| GET | `/api/ai/providers` | AdminOnly | Lista todos los proveedores de IA. |
-| PUT | `/api/ai/providers/{id}` | AdminOnly | Actualiza nombre, razón social o sitio web de un proveedor. |
-| PATCH | `/api/ai/providers/{id}/activate` | AdminOnly | Activa un proveedor de IA. |
-| PATCH | `/api/ai/providers/{id}/deactivate` | AdminOnly | Desactiva un proveedor de IA. |
-| POST | `/api/chat/user-profiles` | AdminOnly | Crea un perfil de chat para un usuario existente. |
-| GET | `/api/chat/user-profiles` | AdminOnly | Lista todos los perfiles de chat. |
-| GET | `/api/chat/user-profiles/{id}` | AdminOnly | Obtiene un perfil de chat por ID. |
-| GET | `/api/chat/user-profiles/by-user/{userId}` | AdminOnly | Lista los perfiles de chat de un usuario. |
-| PUT | `/api/chat/user-profiles/{id}` | AdminOnly | Actualiza nombre visible, avatar y biografía de un perfil. |
-| DELETE | `/api/chat/user-profiles/{id}` | AdminOnly | Elimina un perfil de chat. |
-| POST | `/api/chat/conversations` | AdminOnly | Crea una conversación de chat (IA habilitada por defecto). |
-| GET | `/api/chat/conversations` | AdminOnly | Lista todas las conversaciones. |
-| GET | `/api/chat/conversations/{id}` | AdminOnly | Obtiene una conversación por ID. |
-| PATCH | `/api/chat/conversations/{id}/status` | AdminOnly | Cambia el estado de una conversación. |
-| PATCH | `/api/chat/conversations/{id}/priority` | AdminOnly | Define o limpia la prioridad de una conversación. |
-| PATCH | `/api/chat/conversations/{id}/ai-enabled` | AdminOnly | Activa/desactiva el procesamiento por IA de una conversación. |
-| PATCH | `/api/chat/conversations/{id}/close` | AdminOnly | Cierra una conversación. |
-| PATCH | `/api/chat/conversations/{id}/reopen` | AdminOnly | Reabre una conversación cerrada. |
-| POST | `/api/chat/conversation-ai-settings` | AdminOnly | Crea la configuración de IA de una conversación. |
-| GET | `/api/chat/conversation-ai-settings` | AdminOnly | Lista todas las configuraciones de IA por conversación. |
-| GET | `/api/chat/conversation-ai-settings/{id}` | AdminOnly | Obtiene una configuración de IA por ID. |
-| GET | `/api/chat/conversation-ai-settings/by-conversation/{conversationId}` | AdminOnly | Obtiene la última configuración de IA de una conversación. |
-| PUT | `/api/chat/conversation-ai-settings/{id}` | AdminOnly | Actualiza si la IA está habilitada y el modelo por defecto. |
-| DELETE | `/api/chat/conversation-ai-settings/{id}` | AdminOnly | Elimina una configuración de IA. |
-| POST | `/api/chat/conversation-assignments` | AdminOnly | Asigna un agente humano a una conversación. |
-| GET | `/api/chat/conversation-assignments` | AdminOnly | Lista todas las asignaciones. |
-| GET | `/api/chat/conversation-assignments/{chatConversationId}` | AdminOnly | Obtiene la asignación de una conversación. |
-| GET | `/api/chat/conversation-assignments/by-agent/{agentHumanId}` | AdminOnly | Lista las asignaciones de un agente humano. |
-| PUT | `/api/chat/conversation-assignments/{chatConversationId}` | AdminOnly | Actualiza el agente o las fechas de una asignación. |
-| DELETE | `/api/chat/conversation-assignments/{chatConversationId}` | AdminOnly | Elimina una asignación. |
-| POST | `/api/chat/participants` | AdminOnly | Agrega un participante (perfil, agente humano o modelo de IA) a una conversación. |
-| GET | `/api/chat/participants/{id}` | AdminOnly | Obtiene un participante por ID. |
-| GET | `/api/chat/participants/conversation/{chatConversationId}` | AdminOnly | Lista los participantes de una conversación. |
-| PATCH | `/api/chat/participants/{id}/identity` | AdminOnly | Cambia la identidad referenciada por un participante. |
-| POST | `/api/chat/attachments` | AdminOnly | Agrega un adjunto a un mensaje. |
-| GET | `/api/chat/attachments/{id}` | AdminOnly | Obtiene un adjunto por ID. |
-| GET | `/api/chat/attachments/message/{chatMessageId}` | AdminOnly | Lista los adjuntos de un mensaje. |
-| POST | `/api/chat/messages` | AdminOnly | Crea un mensaje dentro de una conversación. |
-| GET | `/api/chat/messages/{id}` | AdminOnly | Obtiene un mensaje por ID. |
-| GET | `/api/chat/messages/conversation/{chatConversationId}` | AdminOnly | Lista los mensajes de una conversación. |
-
-## Gateway del agente conversacional
-
-El módulo `Agent` expone `POST /api/agent/messages`. El cliente llama solamente
-al backend .NET; el backend deriva `person_id` y `role` del JWT validado y
-reenvía internamente la solicitud a Huellitas ChatBot.
-
-Configure estas variables en `.env`:
+La integración está deshabilitada por defecto. Para activarla se requieren los siguientes valores:
 
 ```dotenv
 Agent__Enabled=true
@@ -565,124 +137,109 @@ Agent__BaseUrl=http://localhost:8000
 Agent__MessagesPath=/api/v1/messages
 Agent__RequestTimeoutSeconds=30
 Agent__MaxResponseBytes=1048576
-Agent__InitialConversationStatusId=81000000-0000-0000-0000-000000000001
-Agent__ClientParticipantTypeId=82000000-0000-0000-0000-000000000001
+Agent__InitialConversationStatusId=<GUID-del-catalogo>
+Agent__ClientParticipantTypeId=<GUID-del-catalogo>
 ```
 
-Antes de habilitar el gateway por primera vez, ejecute el seed idempotente
-`database/seeds/chat_conversation_catalogs_seed.sql` en el esquema Oracle del
-backend. El script registra el estado inicial `Abierta` y el tipo de
-participante `Cliente` con los mismos identificadores configurados arriba. No
-incluye credenciales y puede ejecutarse nuevamente sin duplicar esos registros.
+Los dos GUID deben corresponder a los catálogos creados por los seeds. Cuando API y agente comparten una red Docker, use el nombre DNS del servicio en `Agent__BaseUrl`, no `localhost`.
 
-Cuando backend y chatbot estén en la misma red de Docker, use el nombre DNS del
-servicio en lugar de `localhost`, por ejemplo:
+### Telegram
+
+Al habilitar Telegram se inicia un worker que procesa el inbox persistido en Oracle. Además de Oracle, JWT, SMTP y el agente habilitado, configure:
 
 ```dotenv
-Agent__BaseUrl=http://agent-api:8000
+Telegram__Enabled=true
+Telegram__GuestModeEnabled=true
+Telegram__BotToken=<token-de-BotFather>
+Telegram__BotUsername=<nombre-sin-arroba>
+Telegram__WebhookSecret=<solo-letras-numeros-guion-y-guion-bajo>
+Telegram__PublicWebhookUrl=https://<host-publico>
+Telegram__LinkCodeTtlMinutes=10
+Telegram__WorkerPollMilliseconds=30000
+Telegram__ProcessingLeaseSeconds=300
+Telegram__MaxProcessingAttempts=3
+Telegram__DelegatedTokenMinutes=5
+Telegram__OtpTtlMinutes=5
+Telegram__OtpMaximumAttempts=5
+Telegram__OtpResendSeconds=60
+Telegram__OtpPepperBase64=<Base64-de-al-menos-32-bytes-aleatorios>
+Telegram__PrivateAccessAbsoluteTtlHours=24
+Telegram__PrivateAccessIdleTtlMinutes=30
+Telegram__RegistrationProtectionKeyBase64=<Base64-de-exactamente-32-bytes-aleatorios>
 ```
 
-### Prueba desde Swagger
+`Telegram__PublicWebhookUrl` debe ser HTTPS. La clave de protección cifra los datos temporales del flujo de registro; el OTP se guarda como hash. Si se usa el flujo web de finalización de registro, agregue también `Telegram__RegistrationEnabled=true` y una `Telegram__RegistrationCompletionUrl` HTTPS. La guía completa de BotFather, Cloudflare Tunnel, webhook, comandos y diagnóstico está en [docs/integrations/telegram.md](docs/integrations/telegram.md).
 
-1. Inicie Huellitas ChatBot y Qdrant con `docker compose` desde el repositorio
-   `Huellitas_ChatBot`.
-2. Inicie este backend con `Agent__Enabled=true`.
-3. Obtenga un access token mediante `POST /api/auth/login` o
-   `POST /api/auth/register`.
-4. Autorice Swagger con el access token.
-5. Ejecute `POST /api/agent/messages`. Los headers `Idempotency-Key` y
-   `X-Correlation-ID` son opcionales: si se omiten, el backend genera una clave
-   `msg-{UUID}` y un identificador de correlación respectivamente.
-6. Para reintentar de forma controlada una misma operación, reutilice el mismo
-   `Idempotency-Key`; una clave generada por el backend identifica solamente la
-   llamada actual mientras no exista persistencia durable de mensajes.
-7. Reutilice el `conversationId` retornado en los mensajes siguientes del mismo
-   hilo.
+## Base de datos y datos iniciales
 
-Solicitud inicial:
-
-```json
-{
-  "message": "¿Qué vacunas necesita mi mascota?",
-  "conversationId": null,
-  "petId": null,
-  "language": "es-CO"
-}
-```
-
-El contrato público no permite enviar `userId`, `roles`, `channel`,
-`isEscalated` ni `publishAsGlobalKnowledge`. Esos valores son controlados por
-el backend.
-
-La respuesta incluye los metadatos del agente `provider`, `model`, `usage`,
-`module` y `rag`, además del mensaje y los identificadores de conversación y
-correlación. Los campos no aplicables pueden retornar `null`.
-
-### Contexto persistente del agente
-
-`Agent__ConversationContextTtlSeconds` y
-`Agent__ConversationContextCapacity` fueron retiradas porque configuraban el
-proveedor transitorio en memoria. El contexto actual se conserva en Oracle y
-utiliza los catálogos indicados por `Agent__InitialConversationStatusId` y
-`Agent__ClientParticipantTypeId`.
-
-## Canal Telegram
-
-El backend expone un webhook técnico. Al habilitar el canal, un worker procesa
-el inbox de Oracle, reutiliza el dispatcher del agente y devuelve texto al chat
-privado. Las consultas generales funcionan como invitado. Cuando el agente
-clasifica una solicitud como privada, .NET solicita cédula y OTP, conserva
-cifrada la consulta pendiente y la reanuda al verificar la identidad.
-
-Las variables requeridas están documentadas en `.env.example`. La guía de
-BotFather, túnel HTTPS, `setWebhook` y prueba desde Swagger está en
-[`docs/integrations/telegram.md`](docs/integrations/telegram.md).
-
-Si la cédula corresponde a un cliente activo, el OTP se envía al correo que ya
-existe en Huellitas. Si no existe, el chat solicita confirmación, nombre y
-correo; después del OTP crea un perfil de cliente sin contraseña y enlaza
-Telegram. El agente Python nunca recibe cédula, correo ni OTP. El enlace queda
-persistente, pero el acceso privado vence por tiempo absoluto o inactividad y
-vuelve a exigir OTP solo ante otra operación privada.
-
-Para generar la clave local que protege el correo verificado:
+Restaure las herramientas y dependencias:
 
 ```powershell
-[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+dotnet tool restore
+dotnet restore veterinarian_backend.slnx
 ```
 
-Configure el resultado en `Telegram__RegistrationProtectionKeyBase64`; esta
-clave también cifra temporalmente la cédula, el nombre, el correo y la consulta
-pendiente. Es obligatoria cuando Telegram está habilitado. Ajuste la sesión con
-`Telegram__PrivateAccessAbsoluteTtlHours` y
-`Telegram__PrivateAccessIdleTtlMinutes`.
+Con Oracle configurado, aplique las migraciones:
 
-Por ahora, los identificadores generados se mantienen en memoria con TTL y
-capacidad limitada. No representan historial canónico y se pierden al reiniciar
-la API. El futuro módulo especializado de conversaciones reemplazará este
-proveedor mediante inyección de dependencias, sin modificar el endpoint ni el
-caso de uso de `Agent`.
+```powershell
+dotnet ef database update `
+  --project .\src\Infrastructure\Infrastructure.csproj `
+  --startup-project .\src\Api\Api.csproj `
+  --context VeterinaryDbContext
+```
 
-## Repositorios relacionados
+Después, ejecute los seeds idempotentes. Sustituya la ruta y el alias Oracle por los de su entorno; SQL*Plus solicitará la contraseña de la base de datos.
 
-| Repositorio | Rol |
-|---|---|
-| `veterinarian-backend` (este repo) | API .NET — lógica de negocio, datos y seguridad. |
-| `veterinarian-fronted` | Frontend React para el personal de la clínica. |
-| `Huellitas_ChatBot` | Agente conversacional en Python (LangChain/LangGraph) con RAG. |
+```powershell
+$env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
+& 'C:\ruta\a\sqlplus.exe' `
+  'VET_APP@//localhost:1521/FREEPDB1' `
+  '@database\seeds\apply_all.sql'
+```
 
-## Equipo y responsables
+Los seeds crean catálogos, roles, permisos y datos de soporte del chat. No incluyen usuarios, contraseñas, dueños, mascotas, citas ni historias clínicas. No ejecute `database/seeds/cleanup_seeds.sql` como parte de una instalación normal. Más detalle en [database/seeds/README.md](database/seeds/README.md).
 
-| Integrante (usuario) | Rol en el proyecto | Contacto |
-|---|---|---|
-| Sahiam1810 | _Diligenciar_ | esteban.sahiam2017@gmail.com |
-| Jhoan2007MA | _Diligenciar_ | _Diligenciar_ |
-| Ksanti-monsalve | _Diligenciar_ | _Diligenciar_ |
-| Samuek2006 | _Diligenciar_ | _Diligenciar_ |
-| Tomfmp2 | _Diligenciar_ | _Diligenciar_ |
-| santiagoGal7 | _Diligenciar_ | _Diligenciar_ |
-| spostre | _Diligenciar_ | _Diligenciar_ |
+El seed crea el rol protegido `SuperAdmin`, pero no crea una persona ni una contraseña. Promueva una cuenta interna ya existente siguiendo [docs/SUPERADMIN_PROVISIONING.md](docs/SUPERADMIN_PROVISIONING.md).
 
-> Completar rol (líder, backend, frontend, agente/RAG, despliegue) y
-> contacto de cada integrante según el formato de la sección 11 del
-> documento de requerimientos (registro de actividades por integrante).
+## Ejecutar la API
+
+```powershell
+dotnet run --project src/Api/Api.csproj --launch-profile http
+```
+
+El perfil `http` escucha en `http://localhost:5233`; el perfil `https` usa `https://localhost:7107` y también expone HTTP en el puerto 5233. En `Development`, Swagger queda disponible en `/swagger`. No se expone Swagger automáticamente fuera de Development.
+
+La redirección HTTPS solo se activa cuando se configura una URL o puerto HTTPS, lo que permite trabajar con el perfil HTTP local.
+
+## Superficie HTTP
+
+El inventario completo de métodos y rutas está en [docs/API.md](docs/API.md).
+Los DTO, parámetros, respuestas y códigos HTTP vigentes se consultan en
+Swagger. A alto nivel:
+
+| Área | Rutas representativas |
+| --- | --- |
+| Sesión interna | `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me`, `GET /api/auth/permissions`, `PATCH /api/auth/me/password`, `POST /api/auth/revoke` |
+| Operación de staff | `/api/clients`, `/api/pets`, `/api/veterinarians`, `/api/availabilities`, `/api/veterinarian-absences`, `/api/appointments`, `/api/medicalrecords`, `/api/vaccinations`, `/api/reports` |
+| Catálogos y seguridad | `/api/species`, `/api/races`, `/api/services`, `/api/roles`, `/api/role-permissions`, `/api/user-permissions`, `/api/users`, `/api/useraccounts`, `/api/usercredentials` |
+| Dueños/bot | `POST /api/contact-verification/email/request`, `POST /api/contact-verification/email/confirm`, `POST /api/owners/bot`, lookups anónimos de clientes y rutas internas `/api/bot/*` |
+| Integraciones | `POST /api/integrations/telegram/webhook`, `POST /api/integrations/telegram/link-codes`, `POST /api/agent/messages`, `/hubs/notifications` |
+| Administración conversacional | `/api/chat/*`, `/api/ai/models`, `/api/ai/providers` |
+
+La política de respaldo exige autenticación para cualquier endpoint que no sea marcado explícitamente como anónimo. Las rutas públicas tienen rate limiting. Los códigos de error estables se devuelven en `application/problem+json`; los clientes deben interpretar el campo `code`, no el texto del mensaje.
+
+## Pruebas
+
+```powershell
+dotnet test veterinarian_backend.slnx
+```
+
+La solución incluye pruebas unitarias y de integración en `tests/Application.Tests`, `tests/Infrastructure.Tests` y `tests/Api.Tests`.
+
+## Documentación relacionada
+
+- [Integración con Telegram](docs/integrations/telegram.md)
+- [Seeds de producción](database/seeds/README.md)
+- [Aprovisionamiento de SuperAdmin](docs/SUPERADMIN_PROVISIONING.md)
+- [Contexto funcional y de revisión](docs/CONTEXT_REVISION_BACKEND.md)
+- [Política de PII en logs](docs/security/pii-logging-policy.md)
