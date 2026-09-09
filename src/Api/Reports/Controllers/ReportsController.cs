@@ -12,7 +12,7 @@ namespace Api.Reports.Controllers;
 public sealed class ReportsController(ISender sender) : ControllerBase
 {
     [HttpGet("appointments-by-day")]
-    [RequirePermission("Citas", PermissionAction.View)]
+    [RequirePermission("Reportes", PermissionAction.View)]
     [EndpointSummary("Obtiene el volumen de citas por día calendario")]
     [EndpointDescription(
         "Retorna la cantidad de citas agrupadas por día calendario (America/Bogota) dentro del " +

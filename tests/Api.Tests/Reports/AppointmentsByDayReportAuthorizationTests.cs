@@ -6,19 +6,19 @@ using Xunit;
 
 namespace Api.Tests.Reports;
 
-// Mismo requisito de permiso que el resto de lecturas de Citas (p. ej. AppointmentsController.GetMe):
-// no existe un módulo de permisos propio de Reports, así que se reutiliza "Citas" + View.
+// Módulo de permisos "Reportes" (sembrado en B1, ver database/seeds/role_permissions_seed.sql):
+// solo Administrador tiene Reportes:View, a diferencia de Citas:View que tiene todo el staff.
 public sealed class AppointmentsByDayReportAuthorizationTests
 {
     [Fact]
-    public void GetAppointmentsByDay_requires_Citas_View_permission()
+    public void GetAppointmentsByDay_requires_Reportes_View_permission()
     {
         var method = typeof(ReportsController).GetMethod(nameof(ReportsController.GetAppointmentsByDay));
         Assert.NotNull(method);
 
         var permission = method.GetCustomAttribute<RequirePermissionAttribute>();
         Assert.NotNull(permission);
-        Assert.Equal($"perm:Citas:{PermissionAction.View}", permission.Policy);
+        Assert.Equal($"perm:Reportes:{PermissionAction.View}", permission.Policy);
 
         Assert.Empty(method.GetCustomAttributes(typeof(AllowAnonymousAttribute), inherit: true));
     }

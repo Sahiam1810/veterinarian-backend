@@ -10,7 +10,7 @@ using Api.Tests.Support;
 using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Permissions.Claims;
-using Domain.Appointments.Entities;
+using Application.Reports.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -23,8 +23,8 @@ using Xunit;
 namespace Api.Tests.Reports;
 
 // Contrato HTTP de GET /api/reports/appointments-by-day: usa el pipeline real de MediatR
-// (autenticación, RequirePermission("Citas", View), FluentValidation) y solo sustituye el
-// acceso a datos (IUnitOfWork), igual que otros HTTP tests de Reports/Citas.
+// (autenticación, RequirePermission("Reportes", View), FluentValidation) y solo sustituye el
+// acceso a datos (IUnitOfWork), igual que otros HTTP tests de Reports.
 public sealed class AppointmentsByDayReportHttpTests : IClassFixture<AppointmentsByDayReportApiFactory>
 {
     private readonly AppointmentsByDayReportApiFactory factory;
@@ -46,9 +46,9 @@ public sealed class AppointmentsByDayReportHttpTests : IClassFixture<Appointment
     }
 
     [Fact]
-    public async Task GetAppointmentsByDay_without_Citas_View_returns_403()
+    public async Task GetAppointmentsByDay_without_Reportes_View_returns_403()
     {
-        using var client = factory.CreateAuthenticatedClient(withCitasView: false);
+        using var client = factory.CreateAuthenticatedClient(withReportesView: false);
 
         using var response = await client.GetAsync(
             "/api/reports/appointments-by-day?from=2026-09-01&to=2026-09-03");
@@ -59,7 +59,7 @@ public sealed class AppointmentsByDayReportHttpTests : IClassFixture<Appointment
     [Fact]
     public async Task GetAppointmentsByDay_with_from_after_to_returns_400()
     {
-        using var client = factory.CreateAuthenticatedClient(withCitasView: true);
+        using var client = factory.CreateAuthenticatedClient(withReportesView: true);
 
         using var response = await client.GetAsync(
             "/api/reports/appointments-by-day?from=2026-09-03&to=2026-09-01");
@@ -70,7 +70,7 @@ public sealed class AppointmentsByDayReportHttpTests : IClassFixture<Appointment
     [Fact]
     public async Task GetAppointmentsByDay_returns_all_days_ordered_ascending_with_zero_counts()
     {
-        using var client = factory.CreateAuthenticatedClient(withCitasView: true);
+        using var client = factory.CreateAuthenticatedClient(withReportesView: true);
 
         using var response = await client.GetAsync(
             "/api/reports/appointments-by-day?from=2026-09-01&to=2026-09-03");
@@ -128,9 +128,9 @@ public sealed class AppointmentsByDayReportApiFactory : WebApplicationFactory<Au
         }
 
         var appointmentsRepository = Substitute.For<IAppointmentRepository>();
-        appointmentsRepository.GetScheduledBetweenAsync(
+        appointmentsRepository.GetForDayReportAsync(
                 Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<Appointment>());
+            .Returns(Array.Empty<AppointmentDayReportEntry>());
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
     }
 
@@ -141,11 +141,11 @@ public sealed class AppointmentsByDayReportApiFactory : WebApplicationFactory<Au
             BaseAddress = new Uri("https://localhost")
         });
 
-    public HttpClient CreateAuthenticatedClient(bool withCitasView)
+    public HttpClient CreateAuthenticatedClient(bool withReportesView)
     {
         var client = CreateGuestClient();
         client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", CreateToken(withCitasView));
+            new AuthenticationHeaderValue("Bearer", CreateToken(withReportesView));
         return client;
     }
 
@@ -174,7 +174,7 @@ public sealed class AppointmentsByDayReportApiFactory : WebApplicationFactory<Au
         }
     }
 
-    private static string CreateToken(bool withCitasView)
+    private static string CreateToken(bool withReportesView)
     {
         using var rsa = RSA.Create();
         rsa.ImportFromPem(Encoding.UTF8.GetString(
@@ -200,11 +200,11 @@ public sealed class AppointmentsByDayReportApiFactory : WebApplicationFactory<Au
             now.AddMinutes(5),
             new SigningCredentials(key, SecurityAlgorithms.RsaSha256));
 
-        if (withCitasView)
+        if (withReportesView)
         {
             token.Payload[PermissionClaimValue.ClaimType] = new[]
             {
-                PermissionClaimValue.Create("Citas", "View")
+                PermissionClaimValue.Create("Reportes", "View")
             };
         }
 

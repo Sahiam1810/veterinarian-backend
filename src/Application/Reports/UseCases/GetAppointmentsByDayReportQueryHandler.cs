@@ -36,7 +36,7 @@ public sealed class GetAppointmentsByDayReportQueryHandler(
         var fromUtc = ToUtc(request.From.ToDateTime(TimeOnly.MinValue), timeZone);
         var toExclusiveUtc = ToUtc(request.To.AddDays(1).ToDateTime(TimeOnly.MinValue), timeZone);
 
-        var appointments = await unitOfWork.AppointmentsRepository.GetScheduledBetweenAsync(
+        var appointments = await unitOfWork.AppointmentsRepository.GetForDayReportAsync(
             fromUtc,
             toExclusiveUtc,
             cancellationToken);
@@ -54,16 +54,15 @@ public sealed class GetAppointmentsByDayReportQueryHandler(
                     DateTime.SpecifyKind(appointment.ScheduledStart, DateTimeKind.Utc),
                     timeZone));
 
-            // GetScheduledBetweenAsync incluye el borde superior (<=); ese instante
-            // corresponde a las 00:00 del día siguiente a "To" en America/Bogota y
-            // por lo tanto no existe como llave en el diccionario: se descarta aquí.
+            // GetForDayReportAsync usa límite superior exclusivo, así que todo resultado
+            // cae dentro de [From, To]; TryGetValue es solo una salvaguarda defensiva.
             if (!days.TryGetValue(localDate, out var counters))
             {
                 continue;
             }
 
             counters.Total++;
-            var bucket = StatusBuckets.TryGetValue(appointment.Status?.Name ?? string.Empty, out var mapped)
+            var bucket = StatusBuckets.TryGetValue(appointment.StatusName, out var mapped)
                 ? mapped
                 : AppointmentReportBucket.Scheduled;
 
