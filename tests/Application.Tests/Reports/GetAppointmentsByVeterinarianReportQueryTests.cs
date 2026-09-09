@@ -26,7 +26,7 @@ public sealed class GetAppointmentsByVeterinarianReportQueryTests
         var result = new GetAppointmentsByVeterinarianReportQueryValidator().TestValidate(
             new GetAppointmentsByVeterinarianReportQuery(DateOnly.Parse(from), DateOnly.Parse(to)));
 
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrorFor(x => x);
     }
 
     [Fact]
