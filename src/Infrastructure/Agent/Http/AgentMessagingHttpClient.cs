@@ -50,12 +50,16 @@ public sealed class AgentMessagingHttpClient(
                 throw new AgentContractException();
             }
 
+            if (payload.ResumeMessage is { Length: > MaximumResumeMessageLength })
+            {
+                throw new AgentContractException();
+            }
+
             var accessRequirement = ParseAccessRequirement(payload.AccessRequirement);
             var resumeMessage = string.IsNullOrWhiteSpace(payload.ResumeMessage)
                 ? null
                 : payload.ResumeMessage.Trim();
-            if (resumeMessage is { Length: > MaximumResumeMessageLength } ||
-                resumeMessage is not null &&
+            if (resumeMessage is not null &&
                 accessRequirement != AgentAccessRequirement.IdentityVerification)
             {
                 throw new AgentContractException();

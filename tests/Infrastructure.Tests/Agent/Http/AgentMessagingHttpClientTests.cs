@@ -139,11 +139,11 @@ public sealed class AgentMessagingHttpClientTests
     }
 
     [Fact]
-    public async Task Send_rejects_resume_message_above_contract_limit()
+    public async Task Send_rejects_raw_resume_message_above_contract_limit()
     {
         var json = SuccessJson().Replace(
             "Quiero agendar una cita",
-            new string('a', 501),
+            " " + new string('a', 500),
             StringComparison.Ordinal);
         var client = CreateClient(Respond(HttpStatusCode.OK, json));
 
