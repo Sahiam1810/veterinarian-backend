@@ -203,6 +203,12 @@ internal sealed class InMemoryUsers : IUsersRepository
 
     public Task UpdateAsync(UserEntity user, CancellationToken cancellationToken) =>
         throw new NotSupportedException();
+
+    public Task DeleteAsync(UserEntity user, CancellationToken cancellationToken)
+    {
+        Items.Remove(user);
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class InMemoryClients : IClientRepository
@@ -291,6 +297,15 @@ internal sealed class InMemoryClients : IClientRepository
 
     public Task DeleteAsync(ClientEntity client, CancellationToken cancellationToken) =>
         throw new NotSupportedException();
+
+    public Task<Guid?> GetIdByUserIdAsync(Guid userId, CancellationToken cancellationToken) =>
+        Task.FromResult(Items.FirstOrDefault(client => client.UserId == userId)?.Id);
+
+    public Task DeleteByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        Items.RemoveAll(client => client.UserId == userId);
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class InMemoryAccounts : IUserAccountsRepository
