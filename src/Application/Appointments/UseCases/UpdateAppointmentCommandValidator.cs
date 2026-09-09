@@ -35,7 +35,7 @@ public sealed class UpdateAppointmentCommandValidator : AbstractValidator<Update
             .WithMessage("La fecha de fin debe ser posterior a la fecha de inicio.");
 
         RuleFor(x => x.Notes)
-            .MaximumLength(100).WithMessage("Las notas no pueden exceder 100 caracteres.");
+            .MaximumLength(500).WithMessage("Las notas no pueden exceder 500 caracteres.");
 
         RuleFor(x => x.ConsultingRoom)
             .MaximumLength(ConsultingRoom.MaxLength)
