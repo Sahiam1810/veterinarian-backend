@@ -238,7 +238,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
         }
 
         return await query.AnyAsync(
-            x => (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
+            x => x.Status!.Name == "AGENDADA"
+                 && (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
                  && x.ScheduledStart < end
                  && x.ScheduledEnd > start,
             cancellationToken);
