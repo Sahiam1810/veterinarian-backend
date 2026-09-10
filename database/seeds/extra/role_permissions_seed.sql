@@ -64,6 +64,7 @@ BEGIN
     ensure_permission('80f53cfa-0ecf-42aa-a9d7-38731f00f599', '44444444-4444-4444-4444-444444444444', 'Servicios', 1, 0, 0, 0);
     ensure_permission('bc33442d-6bee-4b34-87b6-4e521551c8a7', '44444444-4444-4444-4444-444444444444', 'Estados de Cita', 1, 0, 0, 0);
     ensure_permission('f3a5d424-3a8e-6ca8-b6e5-4b1fd2ec4e43', '44444444-4444-4444-4444-444444444444', 'Plataforma', 1, 0, 0, 0);
+    ensure_permission('c6d8f757-6d1b-9fdb-e9b8-7e4df5bf7b76', '44444444-4444-4444-4444-444444444444', 'Notificaciones', 1, 0, 0, 0);
 
     -- Recepcionista
     ensure_permission('76be45ca-8349-410a-ab5c-ce4825bef0e0', '55555555-5555-5555-5555-555555555555', 'Clientes', 1, 1, 1, 0);
