@@ -20,7 +20,8 @@ $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
 5. `chat_conversation_catalogs_seed.sql`
 6. `chat_runtime_catalogs_seed.sql`
 7. `veterinary_catalogs_seed.sql`
-8. `verify_seeds.sql`
+8. `diagnostics_seed.sql`
+9. `verify_seeds.sql`
 
 El ejecutor nunca llama `cleanup_seeds.sql` ni scripts de `database/test_seeds`.
 
@@ -42,6 +43,7 @@ El ejecutor nunca llama `cleanup_seeds.sql` ni scripts de `database/test_seeds`.
 | Species | 3 |
 | Races | 10 |
 | Specialties | 5 |
+| Diagnostics | 12 |
 
 Las cantidades reales pueden ser mayores si la clínica agregó valores propios. `verify_seeds.sql` permite inspeccionar el resultado.
 

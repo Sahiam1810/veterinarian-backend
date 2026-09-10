@@ -9,6 +9,7 @@ SET DEFINE OFF;
 @@chat_conversation_catalogs_seed.sql
 @@chat_runtime_catalogs_seed.sql
 @@veterinary_catalogs_seed.sql
+@@diagnostics_seed.sql
 @@verify_seeds.sql
 
 EXIT SUCCESS;
