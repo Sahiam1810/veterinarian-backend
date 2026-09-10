@@ -141,6 +141,23 @@ public sealed class AppointmentRepositoryDetailsTests
         Assert.Equal("Dra. Ana Pérez", loaded.Veterinarian!.User!.FullName);
     }
 
+    [Fact]
+    public async Task LockByIdAsync_returns_a_tracked_appointment_with_in_memory_provider()
+    {
+        await using var context = CreateContext();
+        var (appointment, _) = AddAppointmentGraph(context);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var loaded = await new AppointmentRepository(context).LockByIdAsync(
+            appointment.Id,
+            CancellationToken.None);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(appointment.Id, loaded.Id);
+        Assert.Equal(EntityState.Unchanged, context.Entry(loaded).State);
+    }
+
     private static (Appointment Appointment, ClientPetEntity ClientPet) AddAppointmentGraph(
         VeterinaryDbContext context,
         string? bookingRequestKeyHash = null,

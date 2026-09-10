@@ -6,6 +6,7 @@ using Domain.Appointments.Entities;
 using Domain.Appointments.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Infrastructure.Appointments.Repositories;
 
@@ -42,6 +43,48 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Include(x => x.Status)
             .Include(x => x.Availability)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<Appointment?> LockByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (!_context.Database.IsRelational())
+        {
+            return await _context.Set<Appointment>()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        var transaction = _context.Database.CurrentTransaction
+            ?? throw new InvalidOperationException(
+                "La cita solo puede bloquearse dentro de una transacción.");
+        var connection = _context.Database.GetDbConnection();
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction.GetDbTransaction();
+        command.CommandText =
+            "SELECT APPOINTMENT_ID FROM APPOINTMENTS "
+            + "WHERE APPOINTMENT_ID = :appointmentId FOR UPDATE";
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "appointmentId";
+        parameter.Value = id.ToString();
+        command.Parameters.Add(parameter);
+
+        var lockedId = await command.ExecuteScalarAsync(cancellationToken);
+        if (lockedId is null || lockedId is DBNull)
+        {
+            return null;
+        }
+
+        var tracked = _context.Set<Appointment>().Local
+            .FirstOrDefault(appointment => appointment.Id == id);
+        if (tracked is not null)
+        {
+            await _context.Entry(tracked).ReloadAsync(cancellationToken);
+            return tracked;
+        }
+
+        return await _context.Set<Appointment>()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
 
     public async Task<IReadOnlyCollection<Appointment>> GetByClientPetIdsAsync(
         IReadOnlyCollection<Guid> clientPetIds,

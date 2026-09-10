@@ -12,6 +12,7 @@ using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
+using Domain.Services.Entities;
 using Domain.Species.Entities;
 using Domain.StatusAppointments.Entities;
 using Domain.UserAccounts.Entities;
@@ -56,6 +57,12 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
         await fixture.Appointments.DidNotReceive().UpdateAsync(
             Arg.Any<Appointment>(),
             Arg.Any<CancellationToken>());
+        await fixture.Appointments.Received(1).LockByIdAsync(
+            fixture.Appointment.Id,
+            Arg.Any<CancellationToken>());
+        await fixture.Appointments.DidNotReceive().GetByIdAsync(
+            fixture.Appointment.Id,
+            Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -71,6 +78,20 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
 
         await fixture.Appointments.DidNotReceive().UpdateAsync(
             Arg.Any<Appointment>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_a_null_contact_phone_as_bad_request()
+    {
+        var fixture = new Fixture();
+        var command = fixture.Command with { RequesterPhoneNumber = null! };
+
+        await Assert.ThrowsAsync<BadRequestException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+
+        await fixture.Appointments.DidNotReceive().LockByIdAsync(
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -93,6 +114,42 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
         await fixture.Availabilities.Received(1).LockByIdAsync(
             fixture.NewAvailability.Id,
             Arg.Any<CancellationToken>());
+        await fixture.Appointments.DidNotReceive().UpdateAsync(
+            Arg.Any<Appointment>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_a_time_outside_the_selected_availability()
+    {
+        var fixture = new Fixture();
+        var command = fixture.Command with
+        {
+            ScheduledStart = new DateTime(2026, 9, 11, 13, 15, 0, DateTimeKind.Utc),
+            ScheduledEnd = new DateTime(2026, 9, 11, 13, 45, 0, DateTimeKind.Utc),
+        };
+
+        await Assert.ThrowsAsync<ConflictException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+
+        await fixture.Appointments.DidNotReceive().UpdateAsync(
+            Arg.Any<Appointment>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_a_time_outside_the_booking_horizon()
+    {
+        var fixture = new Fixture();
+        var command = fixture.Command with
+        {
+            ScheduledStart = new DateTime(2026, 11, 13, 15, 0, 0, DateTimeKind.Utc),
+            ScheduledEnd = new DateTime(2026, 11, 13, 15, 30, 0, DateTimeKind.Utc),
+        };
+
+        await Assert.ThrowsAsync<BadRequestException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+
         await fixture.Appointments.DidNotReceive().UpdateAsync(
             Arg.Any<Appointment>(),
             Arg.Any<CancellationToken>());
@@ -142,6 +199,7 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
         public ClientPetEntity ClientPet { get; }
         public Appointment Appointment { get; }
         public Availability NewAvailability { get; }
+        public Service Service { get; }
         public RescheduleMyAppointmentCommand Command { get; }
         public RescheduleMyAppointmentCommandHandler Sut { get; }
 
@@ -163,10 +221,11 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
             var veterinarianId = Guid.NewGuid();
             var currentAvailabilityId = Guid.NewGuid();
             var scheduledStatus = new StatusAppointment("AGENDADA", null);
+            Service = new Service(Guid.NewGuid(), "Consulta", 30, 50000m);
             Appointment = new Appointment(
                 ClientPet.Id,
                 veterinarianId,
-                Guid.NewGuid(),
+                Service.Id,
                 scheduledStatus.Id,
                 currentAvailabilityId,
                 new DateTime(2026, 9, 10, 16, 30, 0, DateTimeKind.Utc),
@@ -201,7 +260,7 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
                 .Returns(Client);
             ClientPets.GetByClientIdAsync(Client.Id, Arg.Any<CancellationToken>())
                 .Returns(new[] { ClientPet });
-            Appointments.GetByIdAsync(Appointment.Id, Arg.Any<CancellationToken>())
+            Appointments.LockByIdAsync(Appointment.Id, Arg.Any<CancellationToken>())
                 .Returns(Appointment);
             Statuses.GetByIdAsync(Appointment.StatusId, Arg.Any<CancellationToken>())
                 .Returns(scheduledStatus);
@@ -215,12 +274,33 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
                     Arg.Any<DateTime>(),
                     Arg.Any<CancellationToken>())
                 .Returns(Array.Empty<VeterinarianAbsence>());
+            UnitOfWork.ServicesRepository.GetByIdAsync(
+                    Service.Id,
+                    Arg.Any<CancellationToken>())
+                .Returns(Service);
             UnitOfWork.ExecuteInTransactionAsync(
                     Arg.Any<Func<CancellationToken, Task>>(),
                     Arg.Any<CancellationToken>())
                 .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                     call.ArgAt<CancellationToken>(1)));
-            Sut = new RescheduleMyAppointmentCommandHandler(UnitOfWork, Absences);
+            Sut = new RescheduleMyAppointmentCommandHandler(
+                UnitOfWork,
+                Absences,
+                new BookingSettings(),
+                new FixedTimeProvider(
+                    new DateTimeOffset(2026, 9, 10, 12, 0, 0, TimeSpan.Zero)));
         }
+    }
+
+    private sealed class BookingSettings : IAppointmentBookingSettings
+    {
+        public string TimeZoneId => "America/Bogota";
+        public TimeSpan MinimumLeadTime => TimeSpan.FromMinutes(60);
+        public int MaximumAdvanceDays => 30;
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }
