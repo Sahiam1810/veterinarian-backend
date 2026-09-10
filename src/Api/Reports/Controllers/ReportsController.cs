@@ -91,4 +91,52 @@ public sealed class ReportsController(ISender sender) : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpGet("top-services")]
+    [RequirePermission("Reportes", PermissionAction.View)]
+    [EndpointSummary("Servicios más demandados del período")]
+    [EndpointDescription(
+        "from y to son fechas locales inclusive en formato YYYY-MM-DD. El rango no puede superar " +
+        "366 días inclusivos (un día es válido). take es opcional (default 5, mínimo 1, máximo 20). " +
+        "El porcentaje de cada servicio se calcula sobre el total de citas del período.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<TopServiceReportResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<IReadOnlyCollection<TopServiceReportResponse>>> GetTopServices(
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        [FromQuery] int take = GetTopServicesReportQueryValidator.DefaultTake,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(
+            new GetTopServicesReportByLocalDateQuery(from, to, take),
+            cancellationToken);
+
+        return Ok(result.ToResponse());
+    }
+
+    [HttpGet("summary")]
+    [RequirePermission("Reportes", PermissionAction.View)]
+    [EndpointSummary("Resumen de citas del período")]
+    [EndpointDescription(
+        "from y to son fechas locales inclusive en formato YYYY-MM-DD. El rango no puede superar " +
+        "366 días inclusivos (un día es válido). scheduledCount incluye AGENDADA, CONFIRMADA y " +
+        "EN_PROGRESO. topServiceName es null si no hay citas en el período, y en ese caso " +
+        "topServiceCount y topServicePercentage son 0.")]
+    [ProducesResponseType(typeof(AppointmentsSummaryReportResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<AppointmentsSummaryReportResponse>> GetSummary(
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new GetAppointmentsSummaryReportByLocalDateQuery(from, to),
+            cancellationToken);
+
+        return Ok(result.ToResponse(from, to));
+    }
 }

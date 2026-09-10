@@ -30,9 +30,34 @@ public sealed class ReportsAuthorizationTests
         var method = typeof(ReportsController).GetMethod(nameof(ReportsController.GetAppointmentsByStatus));
         Assert.NotNull(method);
 
-        var attr = method.GetCustomAttribute<RequirePermissionAttribute>();
-        Assert.NotNull(attr);
-        Assert.Equal($"perm:Reportes:{PermissionAction.View}", attr.Policy);
+        var permission = method.GetCustomAttribute<RequirePermissionAttribute>();
+        Assert.NotNull(permission);
+        Assert.Equal("perm:Reportes:View", permission.Policy);
+        Assert.Null(method.GetCustomAttribute<AllowAnonymousAttribute>());
+    }
+
+    [Fact]
+    public void GetTopServices_requires_Reportes_View_permission()
+    {
+        var method = typeof(ReportsController).GetMethod(nameof(ReportsController.GetTopServices));
+        Assert.NotNull(method);
+
+        var permission = method.GetCustomAttribute<RequirePermissionAttribute>();
+        Assert.NotNull(permission);
+        Assert.Equal("perm:Reportes:View", permission.Policy);
+        Assert.Null(method.GetCustomAttribute<AllowAnonymousAttribute>());
+    }
+
+    [Fact]
+    public void GetSummary_requires_Reportes_View_permission()
+    {
+        var method = typeof(ReportsController).GetMethod(nameof(ReportsController.GetSummary));
+        Assert.NotNull(method);
+
+        var permission = method.GetCustomAttribute<RequirePermissionAttribute>();
+        Assert.NotNull(permission);
+        Assert.Equal("perm:Reportes:View", permission.Policy);
+        Assert.Null(method.GetCustomAttribute<AllowAnonymousAttribute>());
     }
 
     // Sin JWT: la falta de autenticación la corta el middleware de JwtBearer antes de
