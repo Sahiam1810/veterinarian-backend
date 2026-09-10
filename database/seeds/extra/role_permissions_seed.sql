@@ -52,6 +52,7 @@ BEGIN
     ensure_permission('7fb38b70-ac2f-4998-b64a-a769f27fdf7b', '11111111-1111-1111-1111-111111111111', 'Roles', 1, 1, 1, 1);
     ensure_permission('d1e3a202-1e6c-4a86-94c3-289de0ca7c21', '11111111-1111-1111-1111-111111111111', 'Reportes', 1, 0, 0, 0);
     ensure_permission('e2f4c313-2f7d-5b97-a5d4-3a0ef1db3d32', '11111111-1111-1111-1111-111111111111', 'Plataforma', 1, 0, 0, 0);
+    ensure_permission('e3b5d122-1f4a-4b99-a83d-11e223344556', '11111111-1111-1111-1111-111111111111', 'Reprogramación de Citas', 1, 1, 1, 1);
 
     -- Veterinario
     ensure_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
@@ -78,6 +79,7 @@ BEGIN
     ensure_permission('73869746-0660-4d14-b298-e11b28258231', '55555555-5555-5555-5555-555555555555', 'Estados de Cita', 1, 0, 0, 0);
     ensure_permission('352fc580-3c6f-4ab4-b491-8a535e21b0d6', '55555555-5555-5555-5555-555555555555', 'Cuentas y Pagos', 1, 1, 0, 0);
     ensure_permission('a4b6e535-4b9f-7db9-c7f6-5c2be3fd5f54', '55555555-5555-5555-5555-555555555555', 'Plataforma', 1, 0, 0, 0);
+    ensure_permission('f4c6e233-2a5b-4c00-b94e-22f334455667', '55555555-5555-5555-5555-555555555555', 'Reprogramación de Citas', 1, 1, 1, 1);
 
     -- Auxiliar
     ensure_permission('b7540f8f-7ac3-4479-a46e-b0efc34d588c', '66666666-6666-6666-6666-666666666666', 'Clientes', 1, 0, 0, 0);

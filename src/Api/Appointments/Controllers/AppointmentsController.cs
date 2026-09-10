@@ -229,7 +229,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [RequirePermission("Citas", PermissionAction.Edit)]
+    [RequirePermission("Reprogramación de Citas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una cita médica existente")]
     [EndpointDescription("Modifica los datos de una cita médica previamente registrada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
