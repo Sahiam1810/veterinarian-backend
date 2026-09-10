@@ -139,6 +139,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Include(x => x.ClientPet!)
                 .ThenInclude(x => x.Pet)
             .Include(x => x.Status)
+            .Include(x => x.Veterinarian)
             .Where(x => x.ScheduledStart >= fromUtc && x.ScheduledStart <= toUtc)
             .AsNoTracking()
             .OrderBy(x => x.ScheduledStart)

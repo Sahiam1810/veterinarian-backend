@@ -46,7 +46,7 @@ public sealed class ReportesPermissionsSeedTests
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            var candidate = Path.Combine(dir.FullName, "database", "seeds", fileName);
+            var candidate = Path.Combine(dir.FullName, "database", "seeds", "extra", fileName);
             if (File.Exists(candidate))
             {
                 return candidate;
@@ -55,6 +55,6 @@ public sealed class ReportesPermissionsSeedTests
             dir = dir.Parent;
         }
 
-        throw new FileNotFoundException($"No se encontro database/seeds/{fileName}");
+        throw new FileNotFoundException($"No se encontro database/seeds/extra/{fileName}");
     }
 }
