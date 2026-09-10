@@ -196,4 +196,12 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Plataforma', 'Acceso base al panel web (AccesoWeb)', SYSTIMESTAMP);
 
+-- 23. Reprogramación de Citas
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000023' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Reprogramación de Citas'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Reprogramación de Citas', 'Gestión y reprogramación estructural de citas médicas', SYSTIMESTAMP);
+
 COMMIT;
