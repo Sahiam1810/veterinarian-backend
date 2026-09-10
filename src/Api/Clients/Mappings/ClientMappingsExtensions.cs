@@ -44,7 +44,11 @@ public static class ClientMappingsExtensions
             entity.PhoneNumber?.Value,
             entity.RegistrationDate,
             entity.CreatedAt,
-            entity.UpdatedAt
+            entity.UpdatedAt,
+            // User ya viene cargado por .Include(c => c.User) en el repositorio.
+            // Si por algún motivo el navegador es nulo, se devuelve null sin reventar.
+            entity.User?.FullName,
+            entity.User?.Email?.Value
         );
     }
 
