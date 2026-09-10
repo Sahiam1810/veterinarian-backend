@@ -47,6 +47,23 @@ El ejecutor nunca llama `cleanup_seeds.sql` ni scripts de `database/test_seeds`.
 
 Las cantidades reales pueden ser mayores si la clínica agregó valores propios. `verify_seeds.sql` permite inspeccionar el resultado.
 
+## Reparar bases de datos locales desactualizadas
+
+`role_permissions_seed.sql` solo inserta filas faltantes: si su base local ya tenía una
+fila de `ROLE_PERMISSIONS` creada por una versión anterior del seed (por ejemplo, antes
+de que existiera el módulo `Plataforma`), volver a correr `apply_all.sql` no corrige los
+flags de esa fila. Si el rol Veterinario, Recepcionista o Auxiliar recibe 403 al usar el
+panel aunque los permisos "se vean bien", probablemente su base quedó en ese estado.
+
+Ejecute primero `apply_all.sql` (crea el módulo `Plataforma` y cualquier módulo/rol
+faltante) y luego:
+
+```powershell
+& 'C:\ruta\a\sqlplus.exe' 'VET_APP@//localhost:1521/FREEPDB1' '@database\seeds\extra\role_permissions_repair_2026-09-10.sql'
+```
+
+Este script sí actualiza filas existentes para dejarlas iguales a `role_permissions_seed.sql`. Es idempotente.
+
 ## Primer SuperAdmin
 
 El seed agrega el rol protegido, pero no crea una cuenta personal. Primero debe existir una cuenta interna activa con credencial. Después, un administrador de Oracle puede promoverla explícitamente:
