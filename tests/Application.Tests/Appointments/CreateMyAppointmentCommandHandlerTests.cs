@@ -158,12 +158,39 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     public async Task Handle_rechecks_overlap_after_lock_and_rejects_taken_slot()
     {
         var fixture = new Fixture(withClientPhone: true);
-        fixture.Appointments.HasScheduledOverlapAsync(
+        fixture.Appointments.HasOverlappingAppointmentAsync(
                 fixture.ClientPet.Id, fixture.Veterinarian.Id,
                 fixture.Command.ScheduledStartUtc,
                 fixture.Command.ScheduledStartUtc.AddMinutes(30),
+                Arg.Any<Guid?>(),
                 Arg.Any<CancellationToken>())
             .Returns(true);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            fixture.Sut.Handle(fixture.Command, CancellationToken.None));
+
+        await fixture.Availabilities.Received(1)
+            .LockByIdAsync(fixture.Availability.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rechecks_absence_after_lock_and_rejects_conflicting_slot()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        fixture.Absences.GetOverlappingAsync(
+                fixture.Veterinarian.Id,
+                fixture.Command.ScheduledStartUtc,
+                fixture.Command.ScheduledStartUtc.AddMinutes(30),
+                Arg.Any<CancellationToken>())
+            .Returns(new[]
+            {
+                new VeterinarianAbsence(
+                    fixture.Veterinarian.Id,
+                    fixture.Command.ScheduledStartUtc.AddMinutes(-10),
+                    fixture.Command.ScheduledStartUtc.AddMinutes(40),
+                    null,
+                    isFullDay: false)
+            });
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             fixture.Sut.Handle(fixture.Command, CancellationToken.None));

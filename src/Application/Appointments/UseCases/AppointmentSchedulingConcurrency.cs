@@ -7,6 +7,15 @@ namespace Application.Appointments.UseCases;
 
 internal static class AppointmentSchedulingConcurrency
 {
+    public static async Task<Availability> LockAvailabilityAsync(
+        IUnitOfWork unitOfWork,
+        Guid availabilityId,
+        CancellationToken cancellationToken)
+        => await unitOfWork.AvailabilitiesRepository.LockByIdAsync(
+            availabilityId,
+            cancellationToken)
+            ?? throw new ConflictException("La disponibilidad seleccionada ya no existe.");
+
     public static async Task<Availability> LockAndEnsureAvailableAsync(
         IUnitOfWork unitOfWork,
         IVeterinarianAbsenceRepository absences,
@@ -19,11 +28,38 @@ internal static class AppointmentSchedulingConcurrency
         string? consultingRoom,
         CancellationToken cancellationToken)
     {
-        var availability = await unitOfWork.AvailabilitiesRepository.LockByIdAsync(
+        var availability = await LockAvailabilityAsync(
+            unitOfWork,
             availabilityId,
-            cancellationToken)
-            ?? throw new ConflictException("La disponibilidad seleccionada ya no existe.");
+            cancellationToken);
 
+        await EnsureAvailableAsync(
+            unitOfWork,
+            absences,
+            availability,
+            clientPetId,
+            veterinarianId,
+            scheduledStart,
+            scheduledEnd,
+            excludeAppointmentId,
+            consultingRoom,
+            cancellationToken);
+
+        return availability;
+    }
+
+    public static async Task EnsureAvailableAsync(
+        IUnitOfWork unitOfWork,
+        IVeterinarianAbsenceRepository absences,
+        Availability availability,
+        Guid clientPetId,
+        Guid veterinarianId,
+        DateTime scheduledStart,
+        DateTime scheduledEnd,
+        Guid? excludeAppointmentId,
+        string? consultingRoom,
+        CancellationToken cancellationToken)
+    {
         if (!availability.IsActive || availability.VeterinarianId != veterinarianId)
         {
             throw new ConflictException("La disponibilidad seleccionada ya no es valida.");
@@ -95,7 +131,5 @@ internal static class AppointmentSchedulingConcurrency
             throw new ConflictException(
                 "El consultorio ya esta ocupado en el horario seleccionado.");
         }
-
-        return availability;
     }
 }
