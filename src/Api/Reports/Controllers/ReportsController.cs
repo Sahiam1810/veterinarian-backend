@@ -122,7 +122,8 @@ public sealed class ReportsController(ISender sender) : ControllerBase
     [EndpointDescription(
         "from y to son fechas locales inclusive en formato YYYY-MM-DD. El rango no puede superar " +
         "366 días inclusivos (un día es válido). scheduledCount incluye AGENDADA, CONFIRMADA y " +
-        "EN_PROGRESO. topService es null si no hay citas; si existe, incluye name, count y percentage.")]
+        "EN_PROGRESO. topServiceName es null si no hay citas en el período, y en ese caso " +
+        "topServiceCount y topServicePercentage son 0.")]
     [ProducesResponseType(typeof(AppointmentsSummaryReportResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
