@@ -14,7 +14,7 @@ public sealed class CreateMyAppointmentCommandValidator
         RuleFor(command => command.ScheduledStartUtc)
             .Must(value => value.Kind == DateTimeKind.Utc)
             .WithMessage("La fecha de inicio debe estar expresada en UTC.");
-        RuleFor(command => command.Notes).MaximumLength(100);
+        RuleFor(command => command.Notes).MaximumLength(500);
         RuleFor(command => command.RequesterPhoneNumber)
             .Must(phone =>
                 string.IsNullOrWhiteSpace(phone)

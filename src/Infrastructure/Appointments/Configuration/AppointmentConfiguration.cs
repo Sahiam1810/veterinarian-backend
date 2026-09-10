@@ -73,8 +73,8 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
 
         builder.Property(x => x.Notes)
             .HasColumnName("NOTES")
-            .HasColumnType("VARCHAR2(100)")
-            .HasMaxLength(100);
+            .HasColumnType("VARCHAR2(500)")
+            .HasMaxLength(500);
 
         builder.Property(x => x.RequesterPhoneNumber)
             .HasColumnName("REQUESTER_PHONE_NUMBER")
