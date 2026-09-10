@@ -45,10 +45,11 @@ public sealed class ChangePasswordCommandHandler
             cancellationToken)
             ?? throw new NotFoundException("El rol del usuario no existe.");
 
-        // Misma regla que Login/Refresh: solo rol de panel web con cuenta activa
-        // puede modificar USER_CREDENTIALS de plataforma.
+        // Misma regla que AuthenticationService/UserAccounts/UserCredentials: blocklist
+        // por Cliente (no allowlist de 5 nombres fijos), para que un rol configurable
+        // nuevo que ya puede loguearse también pueda cambiar su propia contraseña.
         if (!string.Equals(account.Status, AccountStatus.Active, StringComparison.Ordinal)
-            || !WebPlatformAccess.IsAllowedRoleName(role.Name.Value))
+            || WebPlatformAccess.IsClientRoleName(role.Name.Value))
         {
             throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
         }

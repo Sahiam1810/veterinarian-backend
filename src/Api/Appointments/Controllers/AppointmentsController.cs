@@ -127,7 +127,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las citas médicas")]
     [EndpointDescription("Retorna el listado completo de todas las citas médicas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentResponse>), StatusCodes.Status200OK)]
@@ -142,7 +142,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene una cita médica por su ID")]
     [EndpointDescription("Retorna la información detallada de una cita médica específica.")]
     [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]

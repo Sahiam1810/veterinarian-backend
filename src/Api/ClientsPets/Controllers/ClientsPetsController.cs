@@ -1,10 +1,8 @@
 using Api.ClientsPets.Dtos;
 using Api.ClientsPets.Mappings;
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.ClientsPets.UseCases;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.ClientsPets.Controllers;
@@ -14,14 +12,14 @@ namespace Api.ClientsPets.Controllers;
 public sealed class ClientsPetsController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene las relaciones cliente-mascota")]
     [EndpointDescription("Lista todas las asociaciones entre clientes y mascotas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ClientPetResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<ClientPetResponseDto>>> GetAll(CancellationToken ct) => Ok((await sender.Send(new GetAllClientPetsQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene una relación cliente-mascota")]
     [EndpointDescription("Busca una asociación por su identificador.")]
     [ProducesResponseType(typeof(ClientPetResponseDto), StatusCodes.Status200OK)]

@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Priorities.Dtos;
 using Api.Priorities.Mappings;
 using Application.Priorities.UseCases;
@@ -13,7 +14,7 @@ namespace Api.Priorities.Controllers;
 public sealed class PrioritiesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene las prioridades")]
     [EndpointDescription("Lista las prioridades registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<PriorityResponseDto>), StatusCodes.Status200OK)]
@@ -21,7 +22,7 @@ public sealed class PrioritiesController(ISender sender) : ControllerBase
         Ok((await sender.Send(new GetAllPrioritiesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene una prioridad")]
     [EndpointDescription("Busca una prioridad por su identificador.")]
     [ProducesResponseType(typeof(PriorityResponseDto), StatusCodes.Status200OK)]

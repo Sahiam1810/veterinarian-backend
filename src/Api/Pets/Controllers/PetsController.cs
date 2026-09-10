@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Pets.Dtos;
 using Api.Pets.Mappings;
@@ -65,7 +64,7 @@ public class PetsController : ControllerBase
 
     // GET /api/pets
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las mascotas")]
     [EndpointDescription("Retorna una lista de todas las mascotas registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<PetResponseDto>), StatusCodes.Status200OK)]
@@ -77,7 +76,7 @@ public class PetsController : ControllerBase
 
     // GET /api/pets/{id}
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene una mascota por su ID")]
     [EndpointDescription("Retorna los detalles de una mascota específica buscando por su identificador único.")]
     [ProducesResponseType(typeof(PetResponseDto), StatusCodes.Status200OK)]

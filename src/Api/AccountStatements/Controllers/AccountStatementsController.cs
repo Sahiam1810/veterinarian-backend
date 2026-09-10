@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Api.AccountStatements.Dtos;
 using Api.AccountStatements.Mappings;
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.AccountStatements.UseCases;
 using MediatR;
@@ -51,7 +50,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
 
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene un estado de cuenta por su ID")]
     [EndpointDescription("Retorna la información de un estado de cuenta específico por su identificador GUID.")]
     [ProducesResponseType(typeof(AccountStatementResponse), StatusCodes.Status200OK)]
@@ -68,7 +67,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-account/{accountId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene los estados de cuenta de una cuenta")]
     [EndpointDescription("Retorna todos los estados de cuenta asociados a una cuenta de usuario, ordenados por fecha de emisión descendente.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AccountStatementResponse>), StatusCodes.Status200OK)]

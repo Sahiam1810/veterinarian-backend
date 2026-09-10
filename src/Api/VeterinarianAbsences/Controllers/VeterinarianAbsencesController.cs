@@ -1,10 +1,8 @@
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.VeterinarianAbsences.Dtos;
 using Api.VeterinarianAbsences.Mappings;
 using Application.VeterinarianAbsences.UseCases;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,7 +27,7 @@ public sealed class VeterinarianAbsencesController(ISender sender) : ControllerB
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las ausencias")]
     [EndpointDescription("Retorna el listado de ausencias de todos los veterinarios.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VeterinarianAbsenceResponse>), StatusCodes.Status200OK)]
@@ -41,7 +39,7 @@ public sealed class VeterinarianAbsencesController(ISender sender) : ControllerB
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene una ausencia por su ID")]
     [EndpointDescription("Retorna el detalle de una ausencia puntual.")]
     [ProducesResponseType(typeof(VeterinarianAbsenceResponse), StatusCodes.Status200OK)]
@@ -55,7 +53,7 @@ public sealed class VeterinarianAbsencesController(ISender sender) : ControllerB
     }
 
     [HttpGet("by-veterinarian/{veterinarianId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene las ausencias de un veterinario")]
     [EndpointDescription("Retorna las ausencias puntuales configuradas para un veterinario.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VeterinarianAbsenceResponse>), StatusCodes.Status200OK)]

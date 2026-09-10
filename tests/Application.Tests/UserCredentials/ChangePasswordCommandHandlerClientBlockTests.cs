@@ -66,8 +66,12 @@ public sealed class ChangePasswordCommandHandlerClientBlockTests
             Arg.Any<UserCredentialsEntity>(), Arg.Any<CancellationToken>());
     }
 
+    // S8.2: ChangePasswordCommandHandler usa el mismo blocklist que Login/UserAccounts
+    // (bloquea solo Cliente), no un allowlist fijo de 5 nombres de rol. Un rol nuevo y
+    // configurable (ej. "RolExterno"/"Practicante") con cuenta activa ya puede cambiar
+    // su propia contraseña, igual que cualquier otro rol Staff.
     [Fact]
-    public async Task Handle_throws_forbidden_with_PlatformAccessDenied_when_role_is_not_web_panel_allowed()
+    public async Task Handle_updates_credentials_for_a_custom_non_client_role()
     {
         var user = new UserEntity("Externo", "externo@huellitas.test", "hash", NonPanelRoleId);
         var account = new UserAccountEntity(user.Id, "externo", "externo@huellitas.test", "Activo");
@@ -76,16 +80,16 @@ public sealed class ChangePasswordCommandHandlerClientBlockTests
             .Returns(credentials);
         userAccountsRepository.GetByIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(account);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        passwordHasher.Verify("current", "old-hash").Returns(true);
+        passwordHasher.Hash("new-password-1").Returns("new-hash");
 
-        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
-            sut.Handle(
-                new ChangePasswordCommand(credentials.Id, "current", "new-password-1"),
-                CancellationToken.None));
+        await sut.Handle(
+            new ChangePasswordCommand(credentials.Id, "current", "new-password-1"),
+            CancellationToken.None);
 
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Description, ex.Message);
-        await userCredentialsRepository.DidNotReceive().UpdateAsync(
-            Arg.Any<UserCredentialsEntity>(), Arg.Any<CancellationToken>());
+        Assert.Equal("new-hash", credentials.PasswordHash);
+        await userCredentialsRepository.Received(1).UpdateAsync(
+            credentials, Arg.Any<CancellationToken>());
     }
 
     [Fact]
