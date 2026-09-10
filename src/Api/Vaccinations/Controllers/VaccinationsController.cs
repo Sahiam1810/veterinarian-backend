@@ -37,7 +37,6 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.ClinicalStaffOnly)]
     [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las vacunaciones")]
     [EndpointDescription("Retorna el listado completo de vacunas para el personal clínico autorizado.")]
@@ -68,7 +67,6 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
 
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.ClinicalStaffOnly)]
     [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene un registro de vacunación por su ID")]
     [EndpointDescription("Retorna un registro de vacunación específico para el personal clínico autorizado.")]
