@@ -45,12 +45,13 @@ public record ClientResponseDto(
     DateTime RegistrationDate,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    // Nombre y correo resueltos desde la navegación User — disponibles sin
-    // necesidad de una segunda llamada a /api/Users por parte del cliente.
+    // Nombre, correo y estado resueltos desde la navegación User — disponibles
+    // sin necesidad de una segunda llamada a /api/Users por parte del cliente.
     // Nullable: si el User vinculado no se cargó (no debería ocurrir) no
     // revienta la serialización.
     string? FullName,
-    string? Email
+    string? Email,
+    bool IsActive
 );
 
 // Tarea 4.1: alta staff de dueño/cliente. Sin password/credentials -- no otorga acceso.
