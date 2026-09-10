@@ -9,7 +9,7 @@ namespace Application.Appointments;
 // ninguna restricción.
 internal static class AppointmentStatusTransitionRules
 {
-    public const string Agendada = "AGENDADA";
+    public const string Agendada = AppointmentStatusNames.Agendada;
 
     private static readonly HashSet<string> AllowedTargetsFromAgendada =
         new(StringComparer.OrdinalIgnoreCase)

@@ -100,10 +100,10 @@ public sealed class CreateMyAppointmentCommandHandler(
                 return;
             }
 
-            var locked = await unitOfWork.AvailabilitiesRepository.LockByIdAsync(
+            var locked = await AppointmentSchedulingConcurrency.LockAvailabilityAsync(
+                unitOfWork,
                 availability.Id,
-                transactionCancellationToken)
-                ?? throw new ConflictException("La disponibilidad seleccionada ya no existe.");
+                transactionCancellationToken);
             existing = await unitOfWork.AppointmentsRepository
                 .GetByBookingRequestKeyHashAsync(hash, transactionCancellationToken);
             if (existing is not null)
@@ -119,42 +119,23 @@ public sealed class CreateMyAppointmentCommandHandler(
                 request.ScheduledStartUtc,
                 endUtc,
                 service.DurationMinutes);
-            if (await unitOfWork.AppointmentsRepository.HasScheduledOverlapAsync(
-                    clientPet.Id,
-                    request.VeterinarianId,
-                    request.ScheduledStartUtc,
-                    endUtc,
-                    transactionCancellationToken))
-            {
-                throw new ConflictException("El horario seleccionado ya no esta disponible.");
-            }
 
-            var overlappingAbsences = await absences.GetOverlappingAsync(
+            await AppointmentSchedulingConcurrency.EnsureAvailableAsync(
+                unitOfWork,
+                absences,
+                locked,
+                clientPet.Id,
                 request.VeterinarianId,
                 request.ScheduledStartUtc,
                 endUtc,
+                excludeAppointmentId: null,
+                consultingRoom: null,
                 transactionCancellationToken);
-            if (overlappingAbsences.Any(item =>
-                    item.Overlaps(request.ScheduledStartUtc, endUtc)))
-            {
-                throw new ConflictException("El veterinario tiene una ausencia en el horario seleccionado.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(locked.ConsultingRoom)
-                && await unitOfWork.AppointmentsRepository.HasConsultingRoomOverlapAsync(
-                    locked.ConsultingRoom,
-                    request.ScheduledStartUtc,
-                    endUtc,
-                    excludeAppointmentId: null,
-                    transactionCancellationToken))
-            {
-                throw new ConflictException("El consultorio ya esta ocupado en el horario seleccionado.");
-            }
 
             var statuses = await unitOfWork.StatusAppointmentsRepository.GetAllAsync(
                 transactionCancellationToken);
             var status = statuses.SingleOrDefault(item =>
-                string.Equals(item.Name, "AGENDADA", StringComparison.OrdinalIgnoreCase))
+                string.Equals(item.Name, AppointmentStatusNames.Agendada, StringComparison.OrdinalIgnoreCase))
                 ?? throw new ConflictException("No esta configurado el estado AGENDADA.");
             var appointment = new Appointment(
                 clientPet.Id,

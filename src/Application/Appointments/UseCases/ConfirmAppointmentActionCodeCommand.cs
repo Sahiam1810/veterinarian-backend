@@ -28,7 +28,7 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
     IVeterinarianAbsenceRepository absences)
     : IRequestHandler<ConfirmAppointmentActionCodeCommand>
 {
-    private const string Agendada = "AGENDADA";
+    private const string Agendada = AppointmentStatusNames.Agendada;
     private const string Cancelada = "CANCELADA";
 
     public async Task Handle(
