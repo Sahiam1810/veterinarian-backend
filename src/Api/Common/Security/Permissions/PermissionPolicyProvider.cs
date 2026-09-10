@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 namespace Api.Common.Security.Permissions;
 
 // Resuelve policies dinámicas con prefijo "perm:" (ver RequirePermissionAttribute)
-// y delega cualquier otro nombre de policy (AdminOnly, StaffOnly, etc.) al
+// y delega cualquier otro nombre de policy (AdminOnly, SuperAdminOnly, etc.) al
 // provider por defecto, para poder migrar los controllers de forma gradual.
 public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
 {

@@ -27,43 +27,7 @@ public static class AuthorizationExtensions
             options.AddPolicy(
                 AuthorizationPolicies.SuperAdminOnly,
                 policy => policy.RequireAssertion(context => context.User.IsSuperAdmin()));
-            options.AddPolicy(
-                AuthorizationPolicies.VeterinarianOnly,
-                RoleOrSuperAdmin("Veterinario"));
-            options.AddPolicy(
-                AuthorizationPolicies.ReceptionistOnly,
-                RoleOrSuperAdmin("Recepcionista"));
-            options.AddPolicy(
-                AuthorizationPolicies.AssistantOnly,
-                RoleOrSuperAdmin("Auxiliar"));
 
-            options.AddPolicy(
-                AuthorizationPolicies.StaffOnly,
-                RoleOrSuperAdmin(
-                    "Administrador",
-                    "Veterinario",
-                    "Recepcionista",
-                    "Auxiliar"));
-
-            // Políticas combinadas: acciones que corresponden a más de un rol.
-            options.AddPolicy(
-                AuthorizationPolicies.AdminOrReceptionist,
-                RoleOrSuperAdmin("Administrador", "Recepcionista"));
-            options.AddPolicy(
-                AuthorizationPolicies.AdminOrVeterinarian,
-                RoleOrSuperAdmin("Administrador", "Veterinario"));
-            options.AddPolicy(
-                AuthorizationPolicies.ClinicalStaffOnly,
-                RoleOrSuperAdmin(
-                    "Administrador",
-                    "Veterinario",
-                    "Recepcionista"));
-            options.AddPolicy(
-                AuthorizationPolicies.FrontDeskStaffOnly,
-                RoleOrSuperAdmin(
-                    "Administrador",
-                    "Recepcionista",
-                    "Auxiliar"));
             options.AddPolicy(
                 AuthorizationPolicies.ClinicalHistoryReadOnly,
                 RoleOrSuperAdmin(

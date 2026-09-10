@@ -3,6 +3,7 @@ using Api.AppointmentStatusHistories.Controllers;
 using Api.Appointments.Controllers;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
+using Application.Permissions.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Xunit;
 
@@ -25,20 +26,17 @@ public sealed class AppointmentStatusAuthorizationTests
     [InlineData(nameof(AppointmentStatusHistoriesController.Create))]
     [InlineData(nameof(AppointmentStatusHistoriesController.Update))]
     [InlineData(nameof(AppointmentStatusHistoriesController.Delete))]
-    public void STA_T17_AppointmentStatusHistories_mutations_require_AdminOnly(string methodName)
+    public void STA_T17_AppointmentStatusHistories_mutations_require_Citas_Edit_permission(string methodName)
     {
         var method = typeof(AppointmentStatusHistoriesController).GetMethod(methodName);
         Assert.NotNull(method);
 
-        var authorizeAttr = method.GetCustomAttribute<AuthorizeAttribute>();
-        Assert.NotNull(authorizeAttr);
-        Assert.Equal(AuthorizationPolicies.AdminOnly, authorizeAttr.Policy);
-        Assert.Null(method.GetCustomAttribute<RequirePermissionAttribute>());
+        var authorizeAttributes = method.GetCustomAttributes<AuthorizeAttribute>().ToArray();
+        var authorizeAttribute = Assert.Single(authorizeAttributes);
+        Assert.IsType<RequirePermissionAttribute>(authorizeAttribute);
+        Assert.Equal($"perm:Citas:{PermissionAction.Edit}", authorizeAttribute.Policy);
     }
 
-    // S8.2: StaffOnly (allowlist fijo de 4 nombres de rol) reemplazado por el
-    // permiso de matriz Plataforma:View, igual que en los otros 8 controllers
-    // migrados (ver Api.Tests.Security.PlatformAccessAuthorizationTests).
     [Theory]
     [InlineData(nameof(AppointmentStatusHistoriesController.GetAll))]
     [InlineData(nameof(AppointmentStatusHistoriesController.GetById))]
@@ -50,5 +48,38 @@ public sealed class AppointmentStatusAuthorizationTests
         var attr = method.GetCustomAttribute<RequirePermissionAttribute>();
         Assert.NotNull(attr);
         Assert.Equal($"perm:Plataforma:{PermissionAction.View}", attr.Policy);
+    }
+
+    [Fact]
+    public async Task STA_T17_Custom_role_with_Citas_Edit_permission_succeeds_without_AdminOnly()
+    {
+        var handler = new PermissionAuthorizationHandler();
+        var requirement = new PermissionRequirement("Citas", PermissionAction.Edit);
+        var identity = new System.Security.Claims.ClaimsIdentity(
+            [
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "GestorCitasPersonalizado"),
+                new System.Security.Claims.Claim(PermissionClaimValue.ClaimType, "perm:Citas:Edit")
+            ],
+            authenticationType: "TestAuth");
+
+        var context = new AuthorizationHandlerContext([requirement], new System.Security.Claims.ClaimsPrincipal(identity), null);
+        await handler.HandleAsync(context);
+
+        Assert.True(context.HasSucceeded);
+    }
+
+    [Fact]
+    public async Task STA_T17_Custom_role_without_Citas_Edit_permission_fails()
+    {
+        var handler = new PermissionAuthorizationHandler();
+        var requirement = new PermissionRequirement("Citas", PermissionAction.Edit);
+        var identity = new System.Security.Claims.ClaimsIdentity(
+            [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "GestorSinPermisos")],
+            authenticationType: "TestAuth");
+
+        var context = new AuthorizationHandlerContext([requirement], new System.Security.Claims.ClaimsPrincipal(identity), null);
+        await handler.HandleAsync(context);
+
+        Assert.False(context.HasSucceeded);
     }
 }
