@@ -146,4 +146,52 @@ public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Delegated_token_reschedules_appointment_for_its_subject()
+    {
+        var appointmentId = Guid.NewGuid();
+        var availabilityId = Guid.NewGuid();
+        var scheduledStart = new DateTime(2026, 9, 11, 13, 0, 0, DateTimeKind.Utc);
+        var scheduledEnd = scheduledStart.AddMinutes(30);
+        factory.Sender.Send(
+                Arg.Is<RescheduleMyAppointmentCommand>(command =>
+                    command.AppointmentId == appointmentId &&
+                    command.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    command.AvailabilityId == availabilityId &&
+                    command.ScheduledStart == scheduledStart &&
+                    command.ScheduledEnd == scheduledEnd &&
+                    command.RequesterPhoneNumber == "3158940150" &&
+                    command.Notes == "Cambio solicitado por Telegram"),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        using var client = factory.CreateJwtClient("telegram_agent");
+
+        using var response = await client.PatchAsJsonAsync(
+            $"/api/bot/appointments/{appointmentId}/reschedule",
+            new RescheduleMyAppointmentRequest(
+                availabilityId,
+                scheduledStart,
+                scheduledEnd,
+                "3158940150",
+                "Cambio solicitado por Telegram"));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ordinary_authenticated_token_cannot_reschedule_bot_appointment()
+    {
+        using var client = factory.CreateJwtClient(tokenUse: null);
+
+        using var response = await client.PatchAsJsonAsync(
+            $"/api/bot/appointments/{Guid.NewGuid()}/reschedule",
+            new RescheduleMyAppointmentRequest(
+                Guid.NewGuid(),
+                new DateTime(2026, 9, 11, 13, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 11, 13, 30, 0, DateTimeKind.Utc),
+                "3158940150"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
 }
