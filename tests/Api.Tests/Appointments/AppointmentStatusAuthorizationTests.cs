@@ -36,16 +36,19 @@ public sealed class AppointmentStatusAuthorizationTests
         Assert.Null(method.GetCustomAttribute<RequirePermissionAttribute>());
     }
 
+    // S8.2: StaffOnly (allowlist fijo de 4 nombres de rol) reemplazado por el
+    // permiso de matriz Plataforma:View, igual que en los otros 8 controllers
+    // migrados (ver Api.Tests.Security.PlatformAccessAuthorizationTests).
     [Theory]
     [InlineData(nameof(AppointmentStatusHistoriesController.GetAll))]
     [InlineData(nameof(AppointmentStatusHistoriesController.GetById))]
-    public void STA_T18_AppointmentStatusHistories_reads_keep_StaffOnly_policy(string methodName)
+    public void STA_T18_AppointmentStatusHistories_reads_require_Plataforma_View_permission(string methodName)
     {
         var method = typeof(AppointmentStatusHistoriesController).GetMethod(methodName);
         Assert.NotNull(method);
 
-        var authorizeAttr = method.GetCustomAttribute<AuthorizeAttribute>();
-        Assert.NotNull(authorizeAttr);
-        Assert.Equal(AuthorizationPolicies.StaffOnly, authorizeAttr.Policy);
+        var attr = method.GetCustomAttribute<RequirePermissionAttribute>();
+        Assert.NotNull(attr);
+        Assert.Equal($"perm:Plataforma:{PermissionAction.View}", attr.Policy);
     }
 }

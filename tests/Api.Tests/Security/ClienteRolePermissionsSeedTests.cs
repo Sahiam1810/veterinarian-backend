@@ -57,7 +57,7 @@ public sealed class ClienteRolePermissionsSeedTests
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            var candidate = Path.Combine(dir.FullName, "database", "seeds", "role_permissions_seed.sql");
+            var candidate = Path.Combine(dir.FullName, "database", "seeds", "extra", "role_permissions_seed.sql");
             if (File.Exists(candidate))
             {
                 return candidate;
@@ -65,6 +65,6 @@ public sealed class ClienteRolePermissionsSeedTests
             dir = dir.Parent;
         }
 
-        throw new FileNotFoundException("No se encontro database/seeds/role_permissions_seed.sql");
+        throw new FileNotFoundException("No se encontro database/seeds/extra/role_permissions_seed.sql");
     }
 }

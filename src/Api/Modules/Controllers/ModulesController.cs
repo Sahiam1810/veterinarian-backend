@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.Modules.Dtos;
 using Api.Modules.Mappings;
 using Application.Modules.UseCases;
@@ -13,7 +14,7 @@ namespace Api.Modules.Controllers;
 public sealed class ModulesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene los módulos")]
     [EndpointDescription("Lista los módulos registrados para permisos por rol.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ModuleResponseDto>), StatusCodes.Status200OK)]
@@ -21,7 +22,7 @@ public sealed class ModulesController(ISender sender) : ControllerBase
         Ok((await sender.Send(new GetAllModulesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene un módulo")]
     [EndpointDescription("Busca un módulo por su identificador.")]
     [ProducesResponseType(typeof(ModuleResponseDto), StatusCodes.Status200OK)]

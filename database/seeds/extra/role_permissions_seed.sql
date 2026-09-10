@@ -51,6 +51,7 @@ BEGIN
     ensure_permission('07a733f3-3a97-42be-82d7-7aeb39366eca', '11111111-1111-1111-1111-111111111111', 'Usuarios', 1, 1, 1, 1);
     ensure_permission('7fb38b70-ac2f-4998-b64a-a769f27fdf7b', '11111111-1111-1111-1111-111111111111', 'Roles', 1, 1, 1, 1);
     ensure_permission('d1e3a202-1e6c-4a86-94c3-289de0ca7c21', '11111111-1111-1111-1111-111111111111', 'Reportes', 1, 0, 0, 0);
+    ensure_permission('e2f4c313-2f7d-5b97-a5d4-3a0ef1db3d32', '11111111-1111-1111-1111-111111111111', 'Plataforma', 1, 0, 0, 0);
 
     -- Veterinario
     ensure_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
@@ -62,6 +63,7 @@ BEGIN
     ensure_permission('1ab5c377-ad36-48db-bd3b-db02eecf2d64', '44444444-4444-4444-4444-444444444444', 'Historiales Clínicos', 1, 1, 1, 0);
     ensure_permission('80f53cfa-0ecf-42aa-a9d7-38731f00f599', '44444444-4444-4444-4444-444444444444', 'Servicios', 1, 0, 0, 0);
     ensure_permission('bc33442d-6bee-4b34-87b6-4e521551c8a7', '44444444-4444-4444-4444-444444444444', 'Estados de Cita', 1, 0, 0, 0);
+    ensure_permission('f3a5d424-3a8e-6ca8-b6e5-4b1fd2ec4e43', '44444444-4444-4444-4444-444444444444', 'Plataforma', 1, 0, 0, 0);
 
     -- Recepcionista
     ensure_permission('76be45ca-8349-410a-ab5c-ce4825bef0e0', '55555555-5555-5555-5555-555555555555', 'Clientes', 1, 1, 1, 0);
@@ -74,6 +76,7 @@ BEGIN
     ensure_permission('3642d164-4871-4982-b679-27fe48cd3e38', '55555555-5555-5555-5555-555555555555', 'Servicios', 1, 0, 0, 0);
     ensure_permission('73869746-0660-4d14-b298-e11b28258231', '55555555-5555-5555-5555-555555555555', 'Estados de Cita', 1, 0, 0, 0);
     ensure_permission('352fc580-3c6f-4ab4-b491-8a535e21b0d6', '55555555-5555-5555-5555-555555555555', 'Cuentas y Pagos', 1, 1, 0, 0);
+    ensure_permission('a4b6e535-4b9f-7db9-c7f6-5c2be3fd5f54', '55555555-5555-5555-5555-555555555555', 'Plataforma', 1, 0, 0, 0);
 
     -- Auxiliar
     ensure_permission('b7540f8f-7ac3-4479-a46e-b0efc34d588c', '66666666-6666-6666-6666-666666666666', 'Clientes', 1, 0, 0, 0);
@@ -84,6 +87,7 @@ BEGIN
     ensure_permission('8fee0f45-2c62-4aef-aae8-63a59df078a6', '66666666-6666-6666-6666-666666666666', 'Historiales Clínicos', 1, 0, 0, 0);
     ensure_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
     ensure_permission('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-6666-666666666666', 'Estados de Cita', 1, 0, 0, 0);
+    ensure_permission('b5c7f646-5c0a-8eca-d8a7-6d3cf4ae6a65', '66666666-6666-6666-6666-666666666666', 'Plataforma', 1, 0, 0, 0);
 
     -- Cliente = chatbot / Telegram / OTP autoservicio; NO plataforma web (ADR Opción A).
     -- ensure_permission solo inserta: sin DELETE, DBs ya sembradas conservarían canView de menú.

@@ -185,4 +185,15 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Reportes', 'Reportes operativos y de gestión', SYSTIMESTAMP);
 
+-- 22. Plataforma
+-- Acceso base al panel web: reemplaza la policy StaffOnly (fija a 4 nombres de
+-- rol) por un permiso de la matriz, para que un rol nuevo/configurable pueda
+-- usar el panel sin que su nombre tenga que coincidir con uno de los 4 conocidos.
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000022' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Plataforma'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Plataforma', 'Acceso base al panel web (AccesoWeb)', SYSTIMESTAMP);
+
 COMMIT;
