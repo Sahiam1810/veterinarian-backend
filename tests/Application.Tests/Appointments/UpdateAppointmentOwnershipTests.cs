@@ -17,6 +17,8 @@ using Domain.Races.Entities;
 using Domain.Species.Entities;
 using Domain.Common;
 using Domain.Veterinarians.Entities;
+using Domain.StatusAppointments.Entities;
+using Application.StatusAppointments.Abstraction;
 using NSubstitute;
 using Xunit;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
@@ -45,6 +47,8 @@ public sealed class UpdateAppointmentOwnershipTests
         = Substitute.For<IVeterinarianAbsenceRepository>();
     private readonly IClientPetRepository clientPetsRepository = Substitute.For<IClientPetRepository>();
     private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
+    private readonly IStatusAppointmentRepository statusAppointmentsRepository
+        = Substitute.For<IStatusAppointmentRepository>();
     private readonly UpdateAppointmentCommandHandler sut;
 
     public UpdateAppointmentOwnershipTests()
@@ -61,6 +65,9 @@ public sealed class UpdateAppointmentOwnershipTests
         unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
         unitOfWork.ClientPetsRepository.Returns(clientPetsRepository);
         unitOfWork.ClientsRepository.Returns(clientsRepository);
+        unitOfWork.StatusAppointmentsRepository.Returns(statusAppointmentsRepository);
+        statusAppointmentsRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new StatusAppointment("AGENDADA", null));
         clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>()).Returns(clientPet);
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
         absences.GetOverlappingAsync(

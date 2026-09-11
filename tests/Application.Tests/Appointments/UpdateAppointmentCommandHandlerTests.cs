@@ -4,6 +4,7 @@ using Application.Common.Abstractions;
 using Application.VeterinarianAbsences.Abstraction;
 using Domain.VeterinarianAbsences.Entities;
 using Application.Common.Exceptions;
+using Application.StatusAppointments.Abstraction;
 using Domain.Appointments.Entities;
 using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
@@ -13,6 +14,7 @@ using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
+using Domain.StatusAppointments.Entities;
 using NSubstitute;
 using Xunit;
 
@@ -36,6 +38,8 @@ public sealed class UpdateAppointmentCommandHandlerTests
         = Substitute.For<IVeterinarianAbsenceRepository>();
     private readonly IClientPetRepository clientPetsRepository = Substitute.For<IClientPetRepository>();
     private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
+    private readonly IStatusAppointmentRepository statusAppointmentsRepository
+        = Substitute.For<IStatusAppointmentRepository>();
     private readonly ClientEntity ownedClient;
     private readonly ClientPetEntity ownedClientPet;
     private readonly UpdateAppointmentCommandHandler sut;
@@ -54,6 +58,9 @@ public sealed class UpdateAppointmentCommandHandlerTests
         unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
         unitOfWork.ClientPetsRepository.Returns(clientPetsRepository);
         unitOfWork.ClientsRepository.Returns(clientsRepository);
+        unitOfWork.StatusAppointmentsRepository.Returns(statusAppointmentsRepository);
+        statusAppointmentsRepository.GetByIdAsync(OriginalStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus("AGENDADA", OriginalStatusId));
         clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>())
             .Returns(ownedClientPet);
         clientsRepository.GetByIdAsync(ownedClient.Id, Arg.Any<CancellationToken>())
@@ -136,5 +143,57 @@ public sealed class UpdateAppointmentCommandHandlerTests
 
         await Assert.ThrowsAsync<NotFoundException>(() => sut.Handle(command, CancellationToken.None));
         await appointmentsRepository.DidNotReceive().UpdateAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("ATENDIDA")]
+    [InlineData("CANCELADA")]
+    [InlineData("NO_ASISTIO")]
+    public async Task Handle_rejects_reschedule_when_current_status_is_not_AGENDADA(
+        string currentStatusName)
+    {
+        var appointment = new Appointment(
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            OriginalStatusId,
+            AvailabilityId,
+            DateTime.UtcNow,
+            DateTime.UtcNow.AddHours(1),
+            "notas");
+
+        appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(appointment);
+        statusAppointmentsRepository.GetByIdAsync(OriginalStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus(currentStatusName, OriginalStatusId));
+
+        var command = new UpdateAppointmentCommand(
+            AppointmentId,
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            RequestedStatusId,
+            AvailabilityId,
+            appointment.ScheduledStart.AddHours(1),
+            appointment.ScheduledEnd.AddHours(1),
+            "reprogramada");
+
+        var ex = await Assert.ThrowsAsync<BadRequestException>(
+            () => sut.Handle(command, CancellationToken.None));
+
+        Assert.Equal(
+            "No se puede reprogramar una cita que ya fue atendida, cancelada o marcada como no asistida.",
+            ex.Message);
+        await appointmentsRepository.DidNotReceive()
+            .UpdateAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    private static StatusAppointment CreateStatus(string name, Guid id)
+    {
+        var status = new StatusAppointment(name, null);
+        typeof(StatusAppointment)
+            .GetProperty(nameof(StatusAppointment.Id))!
+            .SetValue(status, id);
+        return status;
     }
 }

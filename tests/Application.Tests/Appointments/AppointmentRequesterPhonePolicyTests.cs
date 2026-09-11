@@ -12,6 +12,8 @@ using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
 using Domain.VeterinarianAbsences.Entities;
+using Domain.StatusAppointments.Entities;
+using Application.StatusAppointments.Abstraction;
 using NSubstitute;
 using Xunit;
 
@@ -126,6 +128,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
         var absences = Substitute.For<IVeterinarianAbsenceRepository>();
         var clientPets = Substitute.For<IClientPetRepository>();
         var clients = Substitute.For<IClientRepository>();
+        var statuses = Substitute.For<IStatusAppointmentRepository>();
 
         var veterinarianId = Guid.NewGuid();
         var availability = new Availability(
@@ -151,6 +154,9 @@ public sealed class AppointmentRequesterPhonePolicyTests
         unitOfWork.AvailabilitiesRepository.Returns(availabilities);
         unitOfWork.ClientPetsRepository.Returns(clientPets);
         unitOfWork.ClientsRepository.Returns(clients);
+        unitOfWork.StatusAppointmentsRepository.Returns(statuses);
+        statuses.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new StatusAppointment("AGENDADA", null));
         appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
         clientPets.GetByIdAsync(clientPet.Id, Arg.Any<CancellationToken>()).Returns(clientPet);
         clients.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);

@@ -5,6 +5,7 @@ using MediatR;
 
 namespace Application.Appointments.UseCases;
 
+// Reprograma una cita existente; solo permite estado AGENDADA (S27).
 public sealed class UpdateAppointmentCommandHandler(
     IUnitOfWork unitOfWork,
     IVeterinarianAbsenceRepository absences)
@@ -25,6 +26,20 @@ public sealed class UpdateAppointmentCommandHandler(
             request.ActorUserAccountId,
             request.EnforceVeterinarianOwnership,
             cancellationToken);
+
+        // Solo AGENDADA admite reprogramar; Atendida/Cancelada/No Asistió quedan cerradas.
+        var currentStatus = await unitOfWork.StatusAppointmentsRepository.GetByIdAsync(
+            appointment.StatusId,
+            cancellationToken)
+            ?? throw new ConflictException("El estado actual de la cita no es válido.");
+        if (!string.Equals(
+                currentStatus.Name,
+                AppointmentStatusNames.Agendada,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BadRequestException(
+                "No se puede reprogramar una cita que ya fue atendida, cancelada o marcada como no asistida.");
+        }
 
         // No reasignar a un servicio inactivo (las citas que ya lo tenían se conservan).
         if (request.ServiceId != appointment.ServiceId)
