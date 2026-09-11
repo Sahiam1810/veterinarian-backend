@@ -131,7 +131,8 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
         var agendada = new StatusAppointment("AGENDADA", null);
         var newAvailability = new Availability(
             appointment.VeterinarianId, DayOfWeek.Thursday, new TimeOnly(9, 0), new TimeOnly(17, 0));
-        var newStart = Now.AddDays(2).UtcDateTime;
+        // Jueves 10:00-11:00 hora Bogotá (15:00-16:00 UTC del 2026-09-03).
+        var newStart = new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc);
         var newEnd = newStart.AddHours(1);
 
         var payload = JsonSerializer.Serialize(new AppointmentReschedulePayload(

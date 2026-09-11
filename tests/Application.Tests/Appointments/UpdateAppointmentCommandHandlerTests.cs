@@ -27,6 +27,10 @@ public sealed class UpdateAppointmentCommandHandlerTests
     private static readonly Guid VeterinarianId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid ServiceId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid AvailabilityId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly DateTime MondaySlotStartUtc =
+        new(2026, 9, 7, 14, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime MondaySlotEndUtc =
+        new(2026, 9, 7, 15, 0, 0, DateTimeKind.Utc);
 
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
@@ -83,8 +87,8 @@ public sealed class UpdateAppointmentCommandHandlerTests
             ServiceId,
             OriginalStatusId,
             AvailabilityId,
-            DateTime.UtcNow,
-            DateTime.UtcNow.AddHours(1),
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
             "notas");
 
         appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
