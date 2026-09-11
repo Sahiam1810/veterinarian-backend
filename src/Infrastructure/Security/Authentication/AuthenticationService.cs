@@ -85,10 +85,12 @@ public sealed class AuthenticationService(
                 AuthenticationErrors.PlatformAccessDenied);
         }
 
+        var sessionStartedAt = ToUnspecifiedUtc(timeProvider.GetUtcNow());
+
         Result<AuthenticationTokens>? result = null;
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
-            result = await IssueTokensAsync(identity, transactionToken);
+            result = await IssueTokensAsync(identity, sessionStartedAt, transactionToken);
         }, cancellationToken);
 
         return result!;
@@ -104,6 +106,14 @@ public sealed class AuthenticationService(
             tokenHash, cancellationToken);
 
         if (currentToken is null || currentToken.IsExpiredAsOf(timeProvider))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.InvalidRefreshToken);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var maxSession = TimeSpan.FromHours(jwtOptions.MaxSessionHours);
+        if (now.UtcDateTime - currentToken.SessionStartedAt >= maxSession)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidRefreshToken);
@@ -140,11 +150,14 @@ public sealed class AuthenticationService(
                 AuthenticationErrors.PlatformAccessDenied);
         }
 
+        // Propagate the original login instant; never restart the session clock.
+        var sessionStartedAt = currentToken.SessionStartedAt;
+
         Result<AuthenticationTokens>? result = null;
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
             await userTokenRepository.DeleteAsync(currentToken, transactionToken);
-            result = await IssueTokensAsync(identity, transactionToken);
+            result = await IssueTokensAsync(identity, sessionStartedAt, transactionToken);
         }, cancellationToken);
 
         return result!;
@@ -201,6 +214,7 @@ public sealed class AuthenticationService(
 
     private async Task<Result<AuthenticationTokens>> IssueTokensAsync(
         AuthenticatedIdentity identity,
+        DateTime sessionStartedAt,
         CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
@@ -219,7 +233,8 @@ public sealed class AuthenticationService(
             RefreshTokenType,
             DateTime.SpecifyKind(
                 refreshTokenExpiresAt.UtcDateTime,
-                DateTimeKind.Unspecified));
+                DateTimeKind.Unspecified),
+            sessionStartedAt);
 
         await userTokenRepository.AddAsync(
             userToken,
@@ -273,4 +288,7 @@ public sealed class AuthenticationService(
 
     private static bool IsClientRole(string roleName) =>
         string.Equals(roleName, ClientRoleName, StringComparison.Ordinal);
+
+    private static DateTime ToUnspecifiedUtc(DateTimeOffset instant) =>
+        DateTime.SpecifyKind(instant.UtcDateTime, DateTimeKind.Unspecified);
 }

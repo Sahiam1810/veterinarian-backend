@@ -33,7 +33,8 @@ public sealed class CreateUserTokenCommandHandler
             request.AccountId,
             request.TokenValue,
             request.TokenType,
-            request.ExpiresAt);
+            request.ExpiresAt,
+            DateTime.UtcNow);
 
         await _uow.UserTokensRepository.AddAsync(
             token,

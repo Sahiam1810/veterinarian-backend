@@ -90,6 +90,26 @@ public sealed class JwtOptionsValidatorTests
         Assert.True(material.ValidationKey.Rsa.KeySize >= 2048);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_rejects_max_session_hours_not_positive(int maxSessionHours)
+    {
+        var keys = RsaTestKeys.Create();
+        var options = CreateOptions(
+            keys.PrivateKeyPemBase64,
+            keys.PublicKeyPemBase64,
+            "test-key-2026-08",
+            maxSessionHours);
+
+        var result = validator.Validate(null, options);
+
+        Assert.True(result.Failed);
+        Assert.Contains(
+            result.Failures!,
+            failure => failure.Contains("MaxSessionHours", StringComparison.Ordinal));
+    }
+
     private static JwtOptions ValidOptions(RsaTestKeys keys) =>
         CreateOptions(
             keys.PrivateKeyPemBase64,
@@ -99,7 +119,8 @@ public sealed class JwtOptionsValidatorTests
     private static JwtOptions CreateOptions(
         string privateKeyPemBase64,
         string publicKeyPemBase64,
-        string keyId) => new()
+        string keyId,
+        int maxSessionHours = 24) => new()
     {
         Issuer = "Veterinaria.Api.Tests",
         Audience = "Veterinaria.Client.Tests",
@@ -108,6 +129,7 @@ public sealed class JwtOptionsValidatorTests
         KeyId = keyId,
         AccessTokenMinutes = 15,
         RefreshTokenDays = 7,
+        MaxSessionHours = maxSessionHours,
         ClockSkewSeconds = 0
     };
 }
