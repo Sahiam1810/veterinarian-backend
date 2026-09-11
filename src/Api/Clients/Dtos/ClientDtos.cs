@@ -10,7 +10,7 @@ public record CreateClientDto(
     [MaxLength(20, ErrorMessage = "El número de identificación no puede superar los 20 caracteres.")]
     string IdentificationNumber,
 
-    [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
+    [MaxLength(150, ErrorMessage = "La dirección no puede superar los 150 caracteres.")]
     string? Address,
 
     // Obligatoriedad y formato los resuelve FluentValidation (codes Clients.Phone*).
@@ -27,7 +27,7 @@ public record UpdateClientDto(
     [MaxLength(20, ErrorMessage = "El número de identificación no puede superar los 20 caracteres.")]
     string IdentificationNumber,
 
-    [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
+    [MaxLength(150, ErrorMessage = "La dirección no puede superar los 150 caracteres.")]
     string? Address,
 
     // Update no deja el teléfono vacío: misma regla FluentValidation que Create.
@@ -73,7 +73,7 @@ public record RegisterOwnerDto(
     // Obligatoriedad y formato los resuelve FluentValidation (RegisterOwnerCommandValidator).
     string PhoneNumber,
 
-    [MaxLength(20, ErrorMessage = "La dirección no puede superar los 20 caracteres.")]
+    [MaxLength(150, ErrorMessage = "La dirección no puede superar los 150 caracteres.")]
     string? Address = null,
 
     // Solo se consume si RegisterOwner:RequireContactProofs está activo (hoy false para Staff).
