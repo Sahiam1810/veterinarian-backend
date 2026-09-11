@@ -134,7 +134,7 @@ La integración está deshabilitada por defecto. Para activarla se requieren los
 
 ```dotenv
 Agent__Enabled=true
-Agent__BaseUrl=http://localhost:8000
+Agent__BaseUrl=http://localhost:8010
 Agent__MessagesPath=/api/v1/messages
 Agent__RequestTimeoutSeconds=30
 Agent__MaxResponseBytes=1048576
