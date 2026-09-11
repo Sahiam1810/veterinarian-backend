@@ -17,7 +17,9 @@ public sealed class ClientRepository : IClientRepository
 
     public async Task<IReadOnlyCollection<ClientEntity>> GetAllAsync(CancellationToken cancellationToken)
     {
+        // Solo lectura: AsNoTracking evita rastrear Include(User) en listados (S26).
         return await _context.Set<ClientEntity>()
+            .AsNoTracking()
             .Include(c => c.User)
             .ToListAsync(cancellationToken);
     }
