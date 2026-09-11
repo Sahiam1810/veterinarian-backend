@@ -54,6 +54,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
             KeyId = "platform-access-test-key",
             AccessTokenMinutes = 15,
             RefreshTokenDays = 7,
+            MaxSessionHours = 24,
             ClockSkewSeconds = 0
         };
         keyMaterial = new JwtRsaKeyMaterial(Options.Create(jwtOptions));
@@ -260,7 +261,8 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
             accountId,
             hash,
             "refresh",
-            Now.AddDays(7).UtcDateTime);
+            Now.AddDays(7).UtcDateTime,
+            Now.UtcDateTime);
 
         userTokenRepository
             .GetByTokenValueAsync(hash, Arg.Any<CancellationToken>())
