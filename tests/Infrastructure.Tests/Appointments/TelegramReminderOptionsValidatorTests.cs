@@ -18,7 +18,42 @@ public sealed class TelegramReminderOptionsValidatorTests
     [Fact]
     public void Default_values_are_valid()
     {
-        var result = new TelegramReminderOptionsValidator().Validate(null, new TelegramReminderOptions());
+        var options = new TelegramReminderOptions
+        {
+            AllowedStatusNames = ["AGENDADA", "CONFIRMADA"]
+        };
+
+        var result = new TelegramReminderOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public void Poll_interval_cannot_exceed_twice_grace_when_enabled()
+    {
+        var options = new TelegramReminderOptions
+        {
+            PollIntervalMinutes = 21,
+            GraceMinutes = 10,
+            AllowedStatusNames = ["AGENDADA", "CONFIRMADA"]
+        };
+
+        var result = new TelegramReminderOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Failed);
+    }
+
+    [Fact]
+    public void Default_poll_and_grace_succeed()
+    {
+        var options = new TelegramReminderOptions
+        {
+            PollIntervalMinutes = 5,
+            GraceMinutes = 10,
+            AllowedStatusNames = ["AGENDADA", "CONFIRMADA"]
+        };
+
+        var result = new TelegramReminderOptionsValidator().Validate(null, options);
 
         Assert.True(result.Succeeded);
     }
@@ -26,7 +61,11 @@ public sealed class TelegramReminderOptionsValidatorTests
     [Fact]
     public void Lead_must_be_between_1_and_1440()
     {
-        var options = new TelegramReminderOptions { LeadMinutes = 0 };
+        var options = new TelegramReminderOptions
+        {
+            LeadMinutes = 0,
+            AllowedStatusNames = ["AGENDADA", "CONFIRMADA"]
+        };
 
         var result = new TelegramReminderOptionsValidator().Validate(null, options);
 
@@ -36,7 +75,12 @@ public sealed class TelegramReminderOptionsValidatorTests
     [Fact]
     public void Grace_cannot_exceed_lead()
     {
-        var options = new TelegramReminderOptions { LeadMinutes = 60, GraceMinutes = 61 };
+        var options = new TelegramReminderOptions
+        {
+            LeadMinutes = 60,
+            GraceMinutes = 61,
+            AllowedStatusNames = ["AGENDADA", "CONFIRMADA"]
+        };
 
         var result = new TelegramReminderOptionsValidator().Validate(null, options);
 

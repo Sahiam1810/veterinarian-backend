@@ -59,16 +59,13 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
 
+        const string expectedMessage =
+            "Recordatorio: Luna tiene cita el 11/09/2026 08:00. Por favor llega 10 minutos antes.";
         Assert.Equal(1, result.Delivered);
         Assert.Equal(0, result.MissingLink);
         Assert.Equal(0, result.Deferred);
-        await bot.Received(1).SendTextAsync(1001, Arg.Any<string>(), Arg.Any<CancellationToken>());
-        var message = added.Single().Message.Value;
-        Assert.Contains("Luna", message);
-        Assert.Contains("08:00", message);
-        Assert.Contains("11/09/2026", message);
-        Assert.Contains("10 minutos antes", message);
-        Assert.DoesNotContain("13:00", message);
+        await bot.Received(1).SendTextAsync(1001, expectedMessage, Arg.Any<CancellationToken>());
+        Assert.Equal(expectedMessage, added.Single().Message.Value);
         Assert.Equal("Recordatorio1h", added.Single().Type.Value);
         Assert.Equal("Enviado", added.Single().Status.Value);
         await unitOfWork.AppointmentsRepository.Received(1).GetScheduledBetweenAsync(
@@ -114,6 +111,42 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
         Assert.Equal(1, result.MissingLink);
         await bot.DidNotReceive().SendTextAsync(
             Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.Equal("SinVinculo", added.Single().Status.Value);
+        Assert.Equal("Recordatorio1h", added.Single().Type.Value);
+    }
+
+    [Fact]
+    public async Task Handle_defers_when_owner_user_id_is_missing()
+    {
+        ArrangeAppointments(CreateAppointment(Guid.Empty, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1)));
+
+        var result = await Sut().Handle(Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Delivered);
+        Assert.Equal(0, result.MissingLink);
+        Assert.Equal(1, result.Deferred);
+        Assert.Empty(added);
+        await bot.DidNotReceive().SendTextAsync(
+            Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_records_missing_pet_as_sin_vinculo()
+    {
+        var ownerId = Guid.NewGuid();
+        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        SetProperty(appointment.ClientPet!, nameof(ClientPetEntity.Pet), null);
+        ArrangeAppointments(appointment);
+
+        var result = await Sut().Handle(Command(), CancellationToken.None);
+
+        Assert.Equal(0, result.Delivered);
+        Assert.Equal(1, result.MissingLink);
+        Assert.Equal(0, result.Deferred);
+        await bot.DidNotReceive().SendTextAsync(
+            Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.Equal("SinVinculo", added.Single().Status.Value);
+        Assert.Equal("Recordatorio1h", added.Single().Type.Value);
     }
 
     [Fact]

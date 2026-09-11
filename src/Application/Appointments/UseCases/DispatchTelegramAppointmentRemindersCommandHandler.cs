@@ -1,3 +1,4 @@
+using System.Globalization;
 using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Telegram.Abstractions;
@@ -101,14 +102,27 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
         CancellationToken cancellationToken)
     {
         var ownerUserId = appointment.ClientPet?.Client?.UserId;
-        var petName = appointment.ClientPet?.Pet?.Name.Value;
-        if (ownerUserId is null || ownerUserId == Guid.Empty || string.IsNullOrWhiteSpace(petName))
+        if (ownerUserId is null || ownerUserId == Guid.Empty)
         {
+            // Notification.UserId is required; without an owner we cannot persist SinVinculo.
             return ProcessOutcome.Deferred;
         }
 
+        var petName = appointment.ClientPet?.Pet?.Name.Value;
         var localStart = TimeZoneInfo.ConvertTimeFromUtc(appointment.ScheduledStart, timeZone);
-        var message = BuildOwnerMessage(petName, localStart);
+        var message = BuildOwnerMessage(petName ?? string.Empty, localStart);
+
+        if (string.IsNullOrWhiteSpace(petName))
+        {
+            await PersistAsync(
+                ownerUserId.Value,
+                appointment.Id,
+                message,
+                now,
+                MissingLinkStatus,
+                cancellationToken);
+            return ProcessOutcome.MissingLink;
+        }
 
         var link = await telegramUnitOfWork.UserLinksRepository
             .GetByPersonIdAsync(ownerUserId.Value, cancellationToken);
@@ -167,7 +181,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
     }
 
     private static string BuildOwnerMessage(string petName, DateTime localStart) =>
-        $"Recordatorio: {petName} tiene cita el {localStart:dd/MM/yyyy HH:mm}. Por favor llega 10 minutos antes.";
+        $"Recordatorio: {petName} tiene cita el {localStart.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)}. Por favor llega 10 minutos antes.";
 
     private enum ProcessOutcome
     {

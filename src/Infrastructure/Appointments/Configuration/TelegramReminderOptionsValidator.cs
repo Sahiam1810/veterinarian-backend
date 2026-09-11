@@ -28,6 +28,11 @@ public sealed class TelegramReminderOptionsValidator : IValidateOptions<Telegram
             failures.Add("TelegramReminders:PollIntervalMinutes must be between 1 and 1440.");
         }
 
+        if (options.PollIntervalMinutes > 2 * options.GraceMinutes)
+        {
+            failures.Add("TelegramReminders:PollIntervalMinutes must not exceed twice GraceMinutes.");
+        }
+
         if (options.AllowedStatusNames is null ||
             options.AllowedStatusNames.Length == 0 ||
             options.AllowedStatusNames.All(string.IsNullOrWhiteSpace))
