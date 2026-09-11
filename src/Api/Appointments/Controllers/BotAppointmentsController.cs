@@ -148,6 +148,37 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{appointmentId:guid}/reschedule")]
+    [EndpointSummary("Reprograma una cita propia desde el agente de Telegram")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Reschedule(
+        Guid appointmentId,
+        [FromBody] RescheduleMyAppointmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserAccountId(out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            new RescheduleMyAppointmentCommand(
+                appointmentId,
+                userAccountId,
+                request.AvailabilityId,
+                request.ScheduledStart,
+                request.ScheduledEnd,
+                request.RequesterPhoneNumber,
+                request.Notes),
+            cancellationToken);
+        return NoContent();
+    }
+
     private bool TryGetUserAccountId(out Guid userAccountId)
     {
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
