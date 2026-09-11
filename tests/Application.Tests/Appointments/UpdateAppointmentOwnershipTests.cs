@@ -37,6 +37,11 @@ public sealed class UpdateAppointmentOwnershipTests
     private static readonly Guid StatusId = Guid.Parse("66666666-6666-6666-6666-666666666666");
     private static readonly Guid AvailabilityId = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
+    private static readonly DateTime MondaySlotStartUtc =
+        new(2026, 9, 7, 14, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime MondaySlotEndUtc =
+        new(2026, 9, 7, 15, 0, 0, DateTimeKind.Utc);
+
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
     private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
@@ -162,8 +167,8 @@ public sealed class UpdateAppointmentOwnershipTests
             ServiceId,
             StatusId,
             AvailabilityId,
-            DateTime.UtcNow,
-            DateTime.UtcNow.AddHours(1),
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
             "actualizado",
             ActorUserAccountId,
             enforce);
@@ -186,8 +191,8 @@ public sealed class UpdateAppointmentOwnershipTests
                 ServiceId,
                 StatusId,
                 AvailabilityId,
-                DateTime.UtcNow,
-                DateTime.UtcNow.AddHours(1),
+                MondaySlotStartUtc,
+                MondaySlotEndUtc,
                 "original"),
             AppointmentId);
 

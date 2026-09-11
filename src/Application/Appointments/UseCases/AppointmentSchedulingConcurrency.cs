@@ -5,6 +5,7 @@ using Domain.Availabilities.Entities;
 
 namespace Application.Appointments.UseCases;
 
+// Concurrencia de agenda: lock + ventana configurada del veterinario (S30).
 internal static class AppointmentSchedulingConcurrency
 {
     public static async Task<Availability> LockAvailabilityAsync(
@@ -64,6 +65,8 @@ internal static class AppointmentSchedulingConcurrency
         {
             throw new ConflictException("La disponibilidad seleccionada ya no es valida.");
         }
+
+        EnsureFitsConfiguredWindow(availability, scheduledStart, scheduledEnd);
 
         var overlappingAbsences = await absences.GetOverlappingAsync(
             veterinarianId,
@@ -130,6 +133,47 @@ internal static class AppointmentSchedulingConcurrency
         {
             throw new ConflictException(
                 "El consultorio ya esta ocupado en el horario seleccionado.");
+        }
+    }
+
+    // Compara día y franja en hora de clínica (America/Bogota), no en UTC crudo.
+    private static void EnsureFitsConfiguredWindow(
+        Availability availability,
+        DateTime scheduledStart,
+        DateTime scheduledEnd)
+    {
+        var zone = ResolveClinicTimeZone();
+        var startUtc = scheduledStart.Kind == DateTimeKind.Utc
+            ? scheduledStart
+            : DateTime.SpecifyKind(scheduledStart, DateTimeKind.Utc);
+        var endUtc = scheduledEnd.Kind == DateTimeKind.Utc
+            ? scheduledEnd
+            : DateTime.SpecifyKind(scheduledEnd, DateTimeKind.Utc);
+
+        var localStart = TimeZoneInfo.ConvertTimeFromUtc(startUtc, zone);
+        var localEnd = TimeZoneInfo.ConvertTimeFromUtc(endUtc, zone);
+        var startTime = TimeOnly.FromDateTime(localStart);
+        var endTime = TimeOnly.FromDateTime(localEnd);
+
+        var sameDay = localStart.Date == localEnd.Date;
+        var sameWeekday = availability.DayOfWeek == localStart.DayOfWeek;
+        var insideWindow = startTime >= availability.StartTime && endTime <= availability.EndTime;
+        if (!sameDay || !sameWeekday || !insideWindow)
+        {
+            throw new ConflictException(
+                "El veterinario no tiene disponibilidad configurada para ese día u horario.");
+        }
+    }
+
+    private static TimeZoneInfo ResolveClinicTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
         }
     }
 }
