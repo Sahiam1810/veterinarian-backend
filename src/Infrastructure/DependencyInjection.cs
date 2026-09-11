@@ -450,6 +450,11 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(AppointmentBookingOptions.SectionName))
             .ValidateOnStart();
         services.AddHostedService<AppointmentReminderBackgroundService>();
+        services.AddSingleton<IValidateOptions<TelegramReminderOptions>, TelegramReminderOptionsValidator>();
+        services.AddOptions<TelegramReminderOptions>()
+            .Bind(configuration.GetSection(TelegramReminderOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHostedService<TelegramAppointmentReminderBackgroundService>();
 
         var mapsterConfig = TypeAdapterConfig.GlobalSettings;
         mapsterConfig.Scan(typeof(DependencyInjection).Assembly);
