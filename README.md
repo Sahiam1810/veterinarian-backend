@@ -107,6 +107,7 @@ Las claves privadas, tokens, contraseñas Oracle, credenciales SMTP, OTP y datos
 | `RegisterOwner` | `RequireContactProofs=false` para alta hecha por staff; el alta desde bot siempre exige proof. |
 | `RateLimiting` | Límite global y límites específicos para login, refresh, Telegram, lookups y OTP. |
 | `Reminders` | Worker de recordatorios activo por defecto; ventana y frecuencia configurables. |
+| `TelegramReminders` | Worker de aviso Telegram al dueño ~1 h antes; requiere `Telegram:Enabled=true`. Ventana 50–70 min, sondeo cada 5 min, estados `AGENDADA` y `CONFIRMADA`. |
 
 Puede sobrescribir cualquier valor con el formato `Seccion__Propiedad` en `.env` o en el entorno de despliegue.
 
