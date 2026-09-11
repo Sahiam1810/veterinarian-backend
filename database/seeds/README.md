@@ -8,7 +8,7 @@ Desde la raíz del backend, con las migraciones ya aplicadas:
 
 ```powershell
 $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
-& 'C:\ruta\a\sqlplus.exe' 'VET_APP@//localhost:1521/FREEPDB1' '@database\seeds\apply_all.sql'
+& 'C:\ruta\a\sqlplus.exe' 'VET_APP@//localhost:1522/FREEPDB1' '@database\seeds\apply_all.sql'
 ```
 
 `apply_all.sql` ejecuta, en orden:
@@ -52,7 +52,7 @@ Las cantidades reales pueden ser mayores si la clínica agregó valores propios.
 El seed agrega el rol protegido, pero no crea una cuenta personal. Primero debe existir una cuenta interna activa con credencial. Después, un administrador de Oracle puede promoverla explícitamente:
 
 ```powershell
-& 'C:\ruta\a\sqlplus.exe' 'VET_APP@//localhost:1521/FREEPDB1' `
+& 'C:\ruta\a\sqlplus.exe' 'VET_APP@//localhost:1522/FREEPDB1' `
   '@database\admin\promote_superadmin.sql' `
   'correo-de-la-cuenta@dominio.com'
 ```

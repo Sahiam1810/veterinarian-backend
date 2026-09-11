@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.env.bak* 
+.env*
 
 # Local-only Telegram tunnel helpers
 /scripts/start-telegram-cloudflare-tunnel.ps1

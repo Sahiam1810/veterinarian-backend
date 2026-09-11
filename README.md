@@ -74,7 +74,7 @@ La API carga un archivo `.env` buscando desde el directorio de ejecución hacia 
 Como mínimo, la aplicación exige Oracle, CORS y JWT. Un ejemplo de estructura es el siguiente; reemplace todos los marcadores por valores reales.
 
 ```dotenv
-ConnectionStrings__DefaultConnection=User Id=VET_APP;Password=<secret>;Data Source=//localhost:1521/FREEPDB1
+ConnectionStrings__DefaultConnection=User Id=VET_APP;Password=<secret>;Data Source=//localhost:1522/FREEPDB1
 
 Cors__AllowedOrigins__0=http://localhost:5173
 
@@ -193,7 +193,7 @@ Después, ejecute los seeds idempotentes. Sustituya la ruta y el alias Oracle po
 ```powershell
 $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
 & 'C:\ruta\a\sqlplus.exe' `
-  'VET_APP@//localhost:1521/FREEPDB1' `
+  'VET_APP@//localhost:1522/FREEPDB1' `
   '@database\seeds\apply_all.sql'
 ```
 
