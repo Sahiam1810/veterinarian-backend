@@ -86,7 +86,7 @@ BEGIN
     ensure_permission('72686e74-29b0-46f6-b4bf-63fd6430ada9', '66666666-6666-6666-6666-666666666666', 'Mascotas', 1, 0, 0, 0);
     ensure_permission('86aef2cc-1b8b-4dd3-bffa-3ca04e4b5fcd', '66666666-6666-6666-6666-666666666666', 'Especies y Razas', 1, 0, 0, 0);
     ensure_permission('f0088433-eb22-419c-979d-900114049b96', '66666666-6666-6666-6666-666666666666', 'Especialidades', 1, 0, 0, 0);
-    ensure_permission('83b9375a-6dff-4ef7-b727-53e648364ba6', '66666666-6666-6666-6666-666666666666', 'Citas', 1, 0, 0, 0);
+    ensure_permission('83b9375a-6dff-4ef7-b727-53e648364ba6', '66666666-6666-6666-6666-666666666666', 'Citas', 1, 1, 0, 0);
     ensure_permission('c1a2b3c4-d5e6-47f8-9012-3456789abcde', '66666666-6666-6666-6666-666666666666', 'Veterinarios', 1, 0, 0, 0);
     ensure_permission('8fee0f45-2c62-4aef-aae8-63a59df078a6', '66666666-6666-6666-6666-666666666666', 'Historiales Clínicos', 1, 0, 0, 0);
     ensure_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
