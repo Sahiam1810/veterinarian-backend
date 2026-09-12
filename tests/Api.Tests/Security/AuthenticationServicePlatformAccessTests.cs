@@ -139,7 +139,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     }
 
     [Fact]
-    public async Task LoginAsync_inactive_staff_with_valid_password_returns_PlatformAccessDenied_without_tokens()
+    public async Task LoginAsync_inactive_staff_with_valid_password_returns_UserInactive_without_tokens()
     {
         var fixture = ArrangeStaffAccount(active: false);
         passwordHasher.Verify(Password, PasswordHash).Returns(true);
@@ -147,7 +147,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
         var result = await sut.LoginAsync(fixture.Email, Password, CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied, result.Error);
+        Assert.Equal(AuthenticationErrors.UserInactive, result.Error);
         await userTokenRepository.DidNotReceive()
             .AddAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
     }
@@ -204,7 +204,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     }
 
     [Fact]
-    public async Task RefreshAsync_inactive_staff_with_valid_token_returns_PlatformAccessDenied_without_tokens()
+    public async Task RefreshAsync_inactive_staff_with_valid_token_returns_UserInactive_without_tokens()
     {
         var fixture = ArrangeStaffAccount(active: false);
         ArrangeValidRefreshToken(fixture.AccountId);
@@ -212,7 +212,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
         var result = await sut.RefreshAsync("raw-refresh-token", CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied, result.Error);
+        Assert.Equal(AuthenticationErrors.UserInactive, result.Error);
         await userTokenRepository.DidNotReceive()
             .AddAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
     }

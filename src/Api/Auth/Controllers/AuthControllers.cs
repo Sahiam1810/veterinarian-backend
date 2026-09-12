@@ -62,8 +62,11 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
-            // PlatformAccessDenied es 403 (rol no admitido), no 401 de credenciales.
-            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code)
+            // PlatformAccessDenied (rol no admitido) y UserInactive (cuenta
+            // desactivada) son 403, no 401 de credenciales — el front distingue
+            // el mensaje por code, no por status.
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code ||
+                result.Error.Code == AuthenticationErrors.UserInactive.Code)
             {
                 return AuthProblem(
                     StatusCodes.Status403Forbidden,
@@ -94,7 +97,8 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
-            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code)
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code ||
+                result.Error.Code == AuthenticationErrors.UserInactive.Code)
             {
                 return AuthProblem(
                     StatusCodes.Status403Forbidden,
