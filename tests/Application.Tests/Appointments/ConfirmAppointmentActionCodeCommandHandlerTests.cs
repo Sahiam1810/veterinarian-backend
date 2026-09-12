@@ -7,6 +7,8 @@ using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.StatusAppointments.Abstraction;
 using Application.Verification.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
 using Domain.StatusAppointments.Entities;
@@ -48,6 +50,8 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
         Substitute.For<IAvailabilityRepository>();
     private readonly IAppointmentStatusHistoryRepository historiesRepository =
         Substitute.For<IAppointmentStatusHistoryRepository>();
+    private readonly IVeterinarianAbsenceRepository absences =
+        Substitute.For<IVeterinarianAbsenceRepository>();
 
     private readonly ConfirmAppointmentActionCodeCommandHandler sut;
 
@@ -57,6 +61,9 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
         unitOfWork.StatusAppointmentsRepository.Returns(statusRepository);
         unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
         unitOfWork.AppointmentStatusHistoriesRepository.Returns(historiesRepository);
+        absences.GetOverlappingAsync(
+                Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<VeterinarianAbsence>());
         unitOfWork
             .ExecuteInTransactionAsync(Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Func<CancellationToken, Task>>()(CancellationToken.None));
@@ -65,7 +72,7 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
         otpProtector.Verify(Code, OtpHash).Returns(true);
 
         sut = new ConfirmAppointmentActionCodeCommandHandler(
-            unitOfWork, sessions, otpProtector, settings, new FixedTimeProvider(Now));
+            unitOfWork, sessions, otpProtector, settings, new FixedTimeProvider(Now), absences);
     }
 
     [Fact]
@@ -124,7 +131,8 @@ public sealed class ConfirmAppointmentActionCodeCommandHandlerTests
         var agendada = new StatusAppointment("AGENDADA", null);
         var newAvailability = new Availability(
             appointment.VeterinarianId, DayOfWeek.Thursday, new TimeOnly(9, 0), new TimeOnly(17, 0));
-        var newStart = Now.AddDays(2).UtcDateTime;
+        // Jueves 10:00-11:00 hora Bogotá (15:00-16:00 UTC del 2026-09-03).
+        var newStart = new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc);
         var newEnd = newStart.AddHours(1);
 
         var payload = JsonSerializer.Serialize(new AppointmentReschedulePayload(

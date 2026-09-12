@@ -40,4 +40,22 @@ public sealed class TelegramRegistrationProtectorTests
         Assert.Throws<AuthenticationTagMismatchException>(() =>
             sut.UnprotectEmail(Convert.ToBase64String(bytes)));
     }
+
+    [Fact]
+    public void Protected_identity_value_round_trips_with_its_purpose()
+    {
+        var protectedValue = sut.Protect("identification", "123456789");
+
+        Assert.DoesNotContain("123456789", protectedValue, StringComparison.Ordinal);
+        Assert.Equal("123456789", sut.Unprotect("identification", protectedValue));
+    }
+
+    [Fact]
+    public void Protected_identity_value_cannot_be_opened_with_another_purpose()
+    {
+        var protectedValue = sut.Protect("identification", "123456789");
+
+        Assert.Throws<AuthenticationTagMismatchException>(() =>
+            sut.Unprotect("email", protectedValue));
+    }
 }

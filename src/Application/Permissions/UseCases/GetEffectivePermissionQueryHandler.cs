@@ -25,10 +25,22 @@ public sealed class GetEffectivePermissionQueryHandler(IUnitOfWork unitOfWork)
             return EffectivePermission.None;
         }
 
+        // Una excepción por usuario reemplaza por completo el permiso del rol para
+        // ese módulo (incluida la revocación de algo que el rol sí otorga), en vez
+        // de sumarse con OR. Sin excepción, se hereda el permiso del rol.
+        if (userPermission is not null)
+        {
+            return new EffectivePermission(
+                userPermission.CanView,
+                userPermission.CanCreate,
+                userPermission.CanEdit,
+                userPermission.CanDelete);
+        }
+
         return new EffectivePermission(
-            (rolePermission?.CanView ?? false) || (userPermission?.CanView ?? false),
-            (rolePermission?.CanCreate ?? false) || (userPermission?.CanCreate ?? false),
-            (rolePermission?.CanEdit ?? false) || (userPermission?.CanEdit ?? false),
-            (rolePermission?.CanDelete ?? false) || (userPermission?.CanDelete ?? false));
+            rolePermission?.CanView ?? false,
+            rolePermission?.CanCreate ?? false,
+            rolePermission?.CanEdit ?? false,
+            rolePermission?.CanDelete ?? false);
     }
 }

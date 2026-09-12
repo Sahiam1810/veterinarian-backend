@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Api.Appointments.Controllers;
+using Domain.Roles;
 using Api.Appointments.Dtos;
 using Api.Common.Errors;
 using Application.Appointments.UseCases;
@@ -79,7 +80,7 @@ public sealed class AppointmentOwnershipApiTests
             claims:
             [
                 new Claim("sub", ActorUserAccountId.ToString()),
-                new Claim("super_admin", "true")
+                new Claim("role_id", SystemRoles.SuperAdminId.ToString())
             ],
             expectedEnforce: false);
     }

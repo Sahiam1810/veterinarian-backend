@@ -13,6 +13,8 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     TimeSpan OtpLifetime,
     int OtpMaximumAttempts,
     TimeSpan OtpResendInterval,
+    TimeSpan PrivateAccessAbsoluteLifetime,
+    TimeSpan PrivateAccessIdleLifetime,
     bool RegistrationEnabled,
     string RegistrationCompletionUrl,
     TimeSpan RegistrationOtpLifetime,

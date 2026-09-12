@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Roles;
 using MediatR;
 
 namespace Application.Roles.UseCase;
@@ -22,6 +23,12 @@ public sealed class DeleteRoleCommandHandler
             request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Rol no encontrado.");
+
+        if (SystemRoles.IsSuperAdmin(request.Id))
+        {
+            throw new ForbiddenException(
+                "El rol SuperAdmin no se puede eliminar.");
+        }
 
         await _uow.RolesRepository.DeleteAsync(
             role,

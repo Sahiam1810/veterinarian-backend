@@ -43,14 +43,15 @@ public sealed class GetMyVaccinationsQueryHandlerTests
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
         var client = new ClientEntity(UserId, "1234567890", "Calle 1");
+        var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Firulais",
             3,
             "M",
             10m,
             null,
-            new SpeciesEntity("Canino"),
-            new RaceEntity("Mestizo"));
+            species,
+            new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
         var expected = new[]
         {

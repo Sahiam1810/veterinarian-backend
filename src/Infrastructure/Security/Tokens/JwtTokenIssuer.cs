@@ -1,4 +1,7 @@
+using Application.Permissions.Claims;
+using Application.Security.Claims;
 using Application.Security.Models;
+using Domain.Roles;
 using Infrastructure.Security.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -15,9 +18,43 @@ public sealed class JwtTokenIssuer(
     private readonly JwtOptions jwtOptions = options.Value;
 
     public IssuedAccessToken Issue(AuthenticatedIdentity identity) =>
-        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), []);
 
-    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime)
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        IReadOnlyCollection<string> permissions) =>
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), permissions);
+
+    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime) =>
+        Issue(identity, lifetime, []);
+
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
+    {
+        return Issue(identity, lifetime, permissions, tokenUse: null);
+    }
+
+    public IssuedAccessToken IssueDelegated(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        string tokenUse)
+    {
+        if (string.IsNullOrWhiteSpace(tokenUse))
+        {
+            throw new ArgumentException("Delegated token use is required.", nameof(tokenUse));
+        }
+
+        return Issue(identity, lifetime, permissions, tokenUse);
+    }
+
+    private IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        string? tokenUse)
     {
         if (lifetime <= TimeSpan.Zero)
         {
@@ -51,33 +88,26 @@ public sealed class JwtTokenIssuer(
                 identity.Email)
         };
 
-        return BuildToken(claims, lifetime);
-    }
-
-    // El SuperAdmin no es un usuario ni un rol de la tabla ROLES: no lleva
-    // "role_id" ni "role", solo el claim "super_admin" que PermissionAuthorizationHandler
-    // usa para saltarse toda verificación de permisos.
-    public IssuedAccessToken IssueForSuperAdmin(Guid id, string email)
-    {
-        var claims = new List<Claim>
+        if (tokenUse is not null)
         {
-            new(
-                JwtRegisteredClaimNames.Sub,
-                id.ToString()),
+            claims.Add(new Claim(DelegatedTokenClaims.ClaimType, tokenUse));
+        }
 
-            new(
-                "super_admin",
-                "true"),
+        string[] normalizedPermissions = SystemRoles.IsSuperAdmin(identity.RoleId)
+            ? []
+            : permissions
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray();
 
-            new(
-                JwtRegisteredClaimNames.Email,
-                email)
-        };
-
-        return BuildToken(claims, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+        return BuildToken(claims, lifetime, normalizedPermissions);
     }
 
-    private IssuedAccessToken BuildToken(List<Claim> claims, TimeSpan lifetime)
+    private IssuedAccessToken BuildToken(
+        List<Claim> claims,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
     {
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.Add(lifetime);
@@ -100,6 +130,11 @@ public sealed class JwtTokenIssuer(
                 new SigningCredentials(
                     keyMaterial.SigningKey,
                     SecurityAlgorithms.RsaSha256));
+
+        if (permissions.Count > 0)
+        {
+            token.Payload[PermissionClaimValue.ClaimType] = permissions.ToArray();
+        }
 
         return new IssuedAccessToken(
             new JwtSecurityTokenHandler().WriteToken(token),

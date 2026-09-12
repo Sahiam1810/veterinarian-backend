@@ -256,8 +256,19 @@ public sealed class UnitOfWork : IUnitOfWork
     public IChatAiRunErrorRepository ChatAiRunErrorsRepository { get; }
     public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => _context.SaveChangesAsync(cancellationToken);
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception)
+            when (OracleClientPhoneConflictMapper.TryMapToConflict(exception, out var conflict)
+                  && conflict is not null)
+        {
+            throw conflict;
+        }
+    }
 
 
     public async Task ExecuteInTransactionAsync(

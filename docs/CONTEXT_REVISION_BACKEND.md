@@ -1,25 +1,81 @@
 # Contexto de revisión — Backend Huellitas
 
-**Propósito:** que Gallo, Tomás y Sahiam puedan revisar el backend en paralelo, cada uno en sus módulos asignados, sin preguntar contexto adicional y sin duplicar trabajo ya hecho.
+**Propósito:** que un revisor nuevo (Gallo, Tomás, Sahiam u otro) entienda el sistema **como quedó** tras Etapas 3–6, sin preguntar contexto adicional y sin proponer cablear un portal Cliente en el front.
 
-**Estado del repo a la fecha de este documento:** `develop` @ `5a101a5` (2026-09-01) — incluye la auditoría de Auth (`365d7c5`, `45e840f`) y el fix de `RolesController` (`17089fa`, PR #69), ambos ya comiteados. Además, el mismo día se auditó y corrigió Users/UserAccounts/UserTokens (SEC-03 + P1/P2, ver §3) — ese trabajo está **sin commitear** todavía, incluida una migración de EF (`AddUserAccountsMailUniqueIndex`) generada pero sin aplicar contra la base compartida. Build y `dotnet test` en verde: **465/465**.
+**Lectura obligatoria:** §0 (candado Staff vs Telegram). El resto del documento conserva inventario histórico de controllers/auditorías; **no** contradice §0.
 
-**Cómo se armó este documento:** no es un resumen de memoria — cada afirmación de las secciones 2, 3 y 4 se verificó releyendo el archivo correspondiente o el commit correspondiente el mismo día que se escribió esto. Si algo cambia después de este commit, ese cambio **no** está reflejado aquí — corre `git log` sobre los archivos que te toquen antes de asumir que esto sigue vigente. Auth, `RolesController` y Users son la excepción: quedaron auditados y cerrados hoy (§2, §3, §4), no los vuelvan a revisar salvo que toquen esos archivos.
+**Estado de producto (CONTEXT final, 2026-09-07):** web = **solo staff**; dueño = **Telegram + teléfono + Gmail OTP**; portal JWT Cliente = **retirado** (`410` / `ClientPortal.Gone`); WhatsApp = **fuera**. Detalle y ADRs abajo.
 
 ---
 
-## 0. Alcance de producto y estado del frontend (leer primero, actualizado 2026-09-03)
+## 0. Alcance de producto y estado del frontend (leer primero — CONTEXT final del programa)
 
-**El Cliente nunca tiene interfaz propia ni login.** Se había planeado en algún momento un panel de cliente (self-service web/app con JWT, viendo sus citas/mascotas/etc.) — **esa idea se descartó**, indicación explícita de la líder: el Cliente **solo** interactúa con el sistema a través del chatbot (Telegram por ahora). Todo lo que el cliente necesita — agendar cita, cancelar, reprogramar, consultar sus mascotas — pasa por el chatbot, no por un frontend propio del cliente.
+> 🚨 **REGLA ARQUITECTÓNICA DE ORO (CANDADO DE PRODUCTO):**
+> 1. **La interfaz web es EXCLUSIVAMENTE para Staff** (SuperAdmin, Administrador, Veterinario, Recepcionista, Auxiliar).
+> 2. **El Cliente (dueño de mascota) NUNCA tiene interfaz web, NUNCA tiene login por contraseña y NUNCA tiene portal de cliente.** No existen menús, páginas ni tableros web para dueños de mascotas.
+> 3. **Canal real y único del Cliente = Telegram Chatbot + Teléfono + Gmail OTP (autoservicio).** Todo flujo de agendamiento, consulta o cancelación para el cliente pasa por el chatbot conversacional o endpoints anónimos de autoservicio vía OTP.
+> 4. **WhatsApp está explícitamente FUERA DE ALCANCE** para todo el programa (Etapas 3–6).
+> 5. **Portal JWT de Cliente = Retirado (410 Gone / `ClientPortal.Gone`).** Los endpoints legacy del portal de cliente responden HTTP 410 o fueron eliminados (Etapa 5). La matriz `ROLE_PERMISSIONS` para el rol Cliente no contiene filas de módulos web (ADR 5.3).
+> 6. **Responsabilidad del Frontend Staff:** El front staff opera únicamente para roles de personal y **no implementa flujos OTP de cliente** (ni pantallas de OTP Gmail ni OTP de cita). El front **solo traduce** UX leyendo la propiedad `code` de las respuestas `problem+json`.
 
 **Qué implica esto para el backend:**
-- Todo el trabajo ya hecho para Cliente (`ClientOnly`, `/clients/me`, `/pets/mine`, `/appointments/mine`, el flujo OTP de auto-servicio de citas sin JWT, etc.) **se deja tal cual está, quieto** — no se retira ni se completa activamente. Queda catalogado como **mejora futura**, no como pendiente de esta ronda. No reportar como "hallazgo" el hecho de que el panel de Cliente esté incompleto o inconsistente con el resto — es simplemente un camino que no se va a seguir desarrollando por ahora.
-- **No tocar nada de lo que es exclusivamente de Cliente** (rutas `ClientOnly`, controllers `/mine`) salvo que el hallazgo sea de seguridad real explotable por otro rol, o que se pida explícitamente.
-- El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es, en cambio, el canal real y activo del Cliente — ahí sí aplica todo el peso de la revisión y corrección.
+- El chatbot (Telegram + subsistemas de Chat/Escalamientos/IA-Agente, ver §6) es el canal real y activo del Cliente — ahí aplica el peso de revisión y corrección.
+- Las rutas JWT del portal dueño (`ClientOnly` / `/me` / `/mine` de panel) **quedaron retiradas** (HTTP 410 `ClientPortal.Gone` y/o eliminación; Etapa 5). La política `ClientOnly` no debe reintroducirse como superficie web.
+- **Excepción explícita (única):** endpoints anónimos de autoservicio de cita (`POST /api/appointments/mine/{id}/request-code|confirm-code`) con OTP + rate limit; **no** son portal JWT ni sesión web de dueño.
+- **WhatsApp fuera de alcance.** El único canal de mensajería para dueños es **Telegram**.
 
-**Estado del frontend (para contexto, no accionable desde el backend):** SuperAdmin, Veterinario y Auxiliar ya están **100% conectados** al frontend real (no es solo backend con Swagger — hay UI consumiéndolos en producción/staging). Tenerlo en cuenta al estimar impacto de un cambio: romper un contrato de esos tres roles es visible para usuarios reales ahora mismo, no solo teórico.
+**Estado del frontend:** SuperAdmin, Veterinario y Auxiliar están **100% conectados** al frontend **staff**. Romper un contrato de esos roles es visible en UI de inmediato. **No** hay módulo Cliente en el front: no lo propongas ni lo cablees.
 
 ---
+
+### Referencias normativas de arquitectura (ADRs y Smoke)
+
+- **ADR 3 (Email / Gmail OTP):** [`docs/adr/2026-09-07-contact-verification-email-foundations.md`](adr/2026-09-07-contact-verification-email-foundations.md) — ContactVerification Email; distinto del OTP de cita.
+- **ADR 4 (RegisterOwner):** [`docs/adr/2026-09-07-register-owner-foundations.md`](adr/2026-09-07-register-owner-foundations.md) — Alta de dueño sin password (`PASSWORD_HASH = null`) por staff / bot / Telegram.
+- **ADR 5 (Retiro portal Cliente & 410):** [`docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`](adr/2026-09-07-etapa-5-client-portal-retirement.md) — Cierre del portal JWT, rutas `/mine` y `ClientPortal.Gone`.
+- **ADR 5.3 (Permisos Cliente):** [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — Opción A: cero filas web en `ROLE_PERMISSIONS` para Cliente.
+- **ADR 6 (Hardening):** [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md) — Rate limit anónimo/bot, logs sin PII, catálogo `code`.
+- **Catálogo de codes:** [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md) — el front staff traduce solo por `code` (sin OTP en UI).
+- **Humo Etapa 6 (tarea 6.4):** [`docs/smoke/etapa-6-objetivo-exit-gate.md`](smoke/etapa-6-objetivo-exit-gate.md) — checklist ejecutable post-seed + filtros `dotnet test` (staff web, dueño Telegram/Gmail/OTP, portal 410).
+- **Kickoff Etapa 6:** [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md) — solo decisiones/ADR.
+- **Salida Etapa 5 (410):** [`docs/smoke/etapa-5-exit-gate.md`](smoke/etapa-5-exit-gate.md) — checklist portal → 410 y OTP cita intacto.
+
+---
+
+### Alta de dueño (Etapa 4) — sin login de Cliente
+El path legacy `ClientAccountRegistration` / `ClientAccountRegistrationService` (User + Account + Credentials + Client con password) **fue eliminado** (tarea 4.4). El alta de dueño pasa solo por `RegisterOwner` (staff/bot/Telegram): User rol Cliente **sin** `PASSWORD_HASH`, perfil Client, **cero** `USER_ACCOUNTS` / `USER_CREDENTIALS`. No reintroducir StageAsync con password ni registrar ese servicio en DI.
+
+### Etapa 5 (kickoff) — retiro portal Cliente JWT
+ADR: [`docs/adr/2026-09-07-etapa-5-client-portal-retirement.md`](adr/2026-09-07-etapa-5-client-portal-retirement.md). Smoke kickoff: [`docs/smoke/etapa-5-kickoff-gate.md`](smoke/etapa-5-kickoff-gate.md).
+Decisiones escritas: política `RequesterPhoneNumber` ↔ `Clients.PhoneNumber`; inventario ClientOnly → eliminar/410; OTP citas anónimo; seed Cliente sin módulos de escritorio; WhatsApp fuera.
+
+### Cierre superficie JWT ClientOnly (tarea 5.2)
+Eliminados / 410: `/api/clients/me`, `/api/pets/mine*`, `/api/appointments/mine` (GET/POST JWT), booking JWT, `PATCH .../cancel` JWT, `/api/vaccinations/mine`, `/api/accountstatements/mine`. **Excepción:** solo OTP `request-code`/`confirm-code` en `MyAppointmentsController` (AllowAnonymous). Tests: `ClientOnlyPortalClosureTests`.
+
+### Seed permisos rol Cliente (tarea 5.3)
+ADR: [`docs/adr/2026-09-07-client-role-permissions-boundaries.md`](adr/2026-09-07-client-role-permissions-boundaries.md) — **Opción A**: cero filas de módulos de plataforma en `ROLE_PERMISSIONS` para `77777777-…`. El seed borra residuales al reejecutar. Staff (Admin/Vet/Recep/Aux) intacto. Cliente = chatbot, no web.
+
+### Coherencia teléfono cita ↔ dueño (tarea 5.1)
+Regla ADR: si el dueño tiene `Clients.PhoneNumber`, Create/Update staff (y CreateMy) **copian** ese valor normalizado a `Appointment.RequesterPhoneNumber` e **ignoran** un requester divergente del body. Sin teléfono en perfil, se usa el request (solo dígitos, VO 7–20). Política: `AppointmentRequesterPhonePolicy`. OTP `request-code` sigue matcheando contra requester de la cita. Tests: `AppointmentRequesterPhonePolicyTests` + handlers Create/Update/CreateMy. No toca ContactVerification ni Telegram registration.
+
+### Etapa 6 (kickoff) — rate limit, logs y codes
+ADR: [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md). Catálogo: [`docs/contracts/api-error-codes-catalog.md`](contracts/api-error-codes-catalog.md). Kickoff: [`docs/smoke/etapa-6-kickoff-gate.md`](smoke/etapa-6-kickoff-gate.md). **Salida producto:** [`docs/smoke/etapa-6-objetivo-exit-gate.md`](smoke/etapa-6-objetivo-exit-gate.md).
+Inventario de rutas anónimas/bot con rate limit (Anexo A del ADR). Logs: nunca teléfono, cédula, OTP, proof ni cuerpo de correo en claro. Front staff traduce solo por `code`. **Canal = Telegram; WhatsApp fuera de alcance.** Dueños de archivo: RL (`RateLimitingExtensions` / `Program.cs` rate limit), LOG, CODE, CTX, SMOKE. Cero código de producto en el kickoff; 6.1–6.5 no se esperan entre sí.
+
+### Etapa 6.1 — rate limit canales anónimos / Telegram
+Anexo A del ADR Etapa 6 cubierto al 100%: Login/Refresh, lookup phone/cédula, Gmail request/confirm, bot RegisterOwner, Telegram registration + webhook, OTP cita request/confirm. Cada ruta tiene policy + `appsettings` (`RateLimiting`) + `[EnableRateLimiting]` + 429 `application/problem+json` con `code=RateLimit.Exceeded`. Tests: `AnonymousChannelRateLimitCoverageTests` + HTTP 429 por canal (sin SMTP/Telegram reales).
+
+### Etapa 6.2 — logs sin PII del dueño
+Política: [`docs/security/pii-logging-policy.md`](security/pii-logging-policy.md). Trazas con ids + `ErrorCode` / modo; **sin** teléfono, cédula, OTP, proof ni correo. EF: sin `EnableSensitiveDataLogging`. Tests: `PiiInLogsTests` (logger fake + escaneo de plantillas).
+
+### Etapa 6.3 — catálogo de codes (staff y Telegram)
+Tabla única por familia (`Authentication.*`, `ContactVerification.*`, alta dueño, `ClientPortal.Gone`, `AppointmentAction.*` OTP cita, `RateLimit.Exceeded`). Distinguir Gmail vs OTP de cita. Codes nuevos mínimos: `RateLimitErrors`, `AppointmentActionErrors`; `GlobalExceptionHandler` emite problem+json cuando la excepción trae `Code`.
+
+### Etapa 6.4 — humo de cierre (post-seed)
+Doc: [`docs/smoke/etapa-6-objetivo-exit-gate.md`](smoke/etapa-6-objetivo-exit-gate.md). Checklist S1–S7 + filtros `dotnet test` reutilizando suites 3–5/6.1–6.2. Login staff con seed = manual; resto CI con fakes (sin Gmail/Telegram reales).
+
+### Etapa 6.5 — CONTEXT final del programa
+Este documento (§ índice humo + §0 etapas 6.x): candado staff web vs dueño Telegram; sin portal Cliente JWT; OTP cita anónimo distinto de Gmail; rate limit / logs / codes. No cambia `Program.cs` rate limit.
 
 ## 1. Arquitectura y patrones establecidos
 
@@ -36,13 +92,13 @@ La forma correcta de proteger un endpoint hoy es:
 ```
 
 - `RequirePermission` (`Api/Common/Security/Permissions/RequirePermissionAttribute.cs`) arma una policy dinámica `"perm:{módulo}:{acción}"`, resuelta al vuelo por `PermissionPolicyProvider` (no hay que registrar una policy por combinación).
-- `PermissionAuthorizationHandler` (`Api/Common/Security/Permissions/PermissionAuthorizationHandler.cs`) es quien decide: primero revisa el claim `super_admin=true` del JWT (si está, aprueba sin consultar nada más — el SuperAdmin se salta *todo* el sistema de permisos). Si no es SuperAdmin, lee `role_id` y `person_id` del JWT y llama `GetEffectivePermissionQuery`.
+- `PermissionAuthorizationHandler` (`Api/Common/Security/Permissions/PermissionAuthorizationHandler.cs`) reconoce al SuperAdmin únicamente cuando el claim `role_id` coincide con el identificador canónico persistido de `SystemRoles.SuperAdminId`. Ese rol se salta la matriz de permisos. Los claims heredados `super_admin=true` ya no conceden acceso. Para los demás roles, lee `role_id` y `person_id` y llama `GetEffectivePermissionQuery`.
 - `GetEffectivePermissionQueryHandler` (`Application/Permissions/UseCases/`) combina **`RolePermission`** (permiso del rol) **OR `UserPermission`** (permiso puntual del usuario) por cada acción — es **aditivo**: `UserPermission` solo puede sumar, nunca quitar lo que ya da el rol. Si `USER_PERMISSIONS` está vacía, el sistema se comporta exactamente como si solo existiera `RolePermission` (verificado con tests unitarios en `GetEffectivePermissionQueryHandlerTests`).
 - El nombre del módulo en el atributo debe **coincidir exactamente** (case-sensitive, con tildes) con una fila en la tabla `MODULES`. Si no existe esa fila, el endpoint queda inaccesible para todo el mundo excepto SuperAdmin — así se rompió `RolesController` hasta hoy (ver §3, ya corregido).
 - El propio usuario autenticado puede ver sus permisos efectivos vía `GET /api/auth/permissions` (agregado hoy, ver sección 3).
-- **Catálogo actual de módulos** (17 filas en `MODULES`, verificado en vivo): Clientes, Mascotas, Especies y Razas, Especialidades, Veterinarios, Citas, Historiales Clínicos, Servicios, Estados de Cita, Cuentas y Pagos, Notificaciones, Usuarios, **Roles** (agregado hoy, ver §3), Chat, Escalamientos, IA y Agente, Catálogos del Chat. **"Roles y Permisos" sigue sin existir como módulo propio** — la gestión de permisos (`RolePermissionsController`/`UserPermissionsController`/escritura de `ModulesController`) es intencionalmente `SuperAdminOnly` y no pasa por `RequirePermission`, así que no necesita una fila en `MODULES`.
-- Los 3 controllers de gestión de permisos (`ModulesController` escritura, `RolePermissionsController` completo, `UserPermissionsController` completo) están protegidos con `[Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]` (`RequireClaim("super_admin","true")`) — **no** pasan por `RequirePermission`, es intencional: la gestión de roles/permisos es exclusiva de SuperAdmin y no se puede delegar ni siquiera vía `UserPermission`.
-- `GET /api/auth/permissions` refleja el mismo bypass: si el JWT trae `super_admin=true` (no tiene `role_id`), el endpoint no consulta la matriz — devuelve los 4 flags en `true` para todos los módulos de `MODULES` directamente (antes daba 401 porque intentaba parsear un `role_id` que el SuperAdmin no tiene).
+- **Catálogo canónico de módulos** (20 filas mínimas en `MODULES`): Clientes, Mascotas, Especies y Razas, Especialidades, Veterinarios, Citas, Historiales Clínicos, Servicios, Estados de Cita, Cuentas y Pagos, Notificaciones, Usuarios, Roles, Disponibilidades, Relación Clientes-Mascotas, Permisos, Chat, Escalamientos, IA y Agente y Catálogos del Chat.
+- Los 3 controllers de gestión de permisos (`ModulesController` escritura, `RolePermissionsController` completo, `UserPermissionsController` completo) están protegidos con `[Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]`. La policy valida el `role_id` canónico persistido; **no** pasan por `RequirePermission`, de forma intencional, porque la gestión de roles y permisos no se puede delegar mediante `UserPermission`.
+- `GET /api/auth/permissions` usa el mismo criterio: el SuperAdmin persistido recibe los cuatro flags en `true` para todos los módulos; los demás usuarios se resuelven mediante la matriz efectiva.
 
 ### Rate limiting
 Login/Register/Refresh/TelegramWebhook usan `[EnableRateLimiting(RateLimitPolicies.<Policy>)]` + la policy correspondiente registrada por `AddApiRateLimiting` (`Api/Extensions/RateLimitingExtensions.cs`), particionada por claim `sub` si hay usuario autenticado o por IP si no. Los límites (permit limit + ventana en segundos, más un `GlobalPermitLimit` que aplica a toda la API) viven en la sección `"RateLimiting"` de `appsettings.json`, con `RateLimitOptionsValidator` exigiendo que todos sean positivos (`ValidateOnStart`). **Hasta el 2026-09-01 esta implementación existía en el código pero `Program.cs` nunca la invocaba** — usaba en su lugar un bloque `AddRateLimiter`/`AddFixedWindowLimiter` hardcodeado y **sin partición** (un único contador compartido por todos los clientes de la API para cada policy), lo que además de ser más débil contra fuerza bruta permitía que cualquiera agotara el login de todo el mundo con 10 requests. Ya está corregido y conectado — no lo reporten de nuevo.
@@ -62,16 +118,40 @@ Toda excepción no controlada la captura `GlobalExceptionHandler` (`Api/Common/E
 
 **Patrón correcto**: el *handler* de Application lanza la excepción (`?? throw new NotFoundException(...)`); el *controller* nunca hace `is null ? NotFound() : Ok()` a mano — simplemente llama `sender.Send(...)` y envuelve el resultado en `Ok(...)`/`NoContent()`. Un refactor grande el 2026-09-01 (commit `6cd7068`) migró 18 controllers de un patrón viejo (`Handler` devolvía `bool`/`T?`, controller decidía 404 a mano) a este patrón nuevo — si ves un controller con `is null ? NotFound() : Ok(...)` o un `Handler` que retorna `bool`, es candidato a limpieza con este mismo patrón, pero **repórtalo, no lo cambies tú si el módulo no es tuyo** (ver sección 5).
 
-### Patrón "ver solo lo propio" (`/mine`)
-Ya existen `GET /api/clients/me`, `GET /api/pets/mine`, `GET /api/appointments/mine` — todos resuelven la identidad desde el JWT (`sub`/`NameIdentifier` → `UserAccountsRepository` → `ClientsRepository.GetByUserIdAsync` → `ClientPetsRepository.GetByClientIdAsync`) y devuelven solo lo del cliente autenticado.
+### Contrato de errores auth (`application/problem+json`)
+El front **solo traduce por `code`** (no por `title` ni por `Description` del `Error` de Application). Fuente de verdad: `Application/Security/Errors/AuthenticationErrors.cs`.
 
-**Por qué el `GetAll` general (`GET /api/pets`, `GET /api/clientspets`, etc.) no filtra por dueño**: esos endpoints son para el personal (Admin/Vet/Recepcionista/Auxiliar) y devuelven todo sin filtrar a propósito — el filtrado por dueño vive en el endpoint `/mine` separado. Migrar el `GetAll` general al mismo permiso que le da acceso a Cliente (`"Mascotas": View`) sin agregar filtrado real sería un hueco de privacidad — por eso, en varios módulos (Pets, ClientsPets, Appointments, AppointmentStatusHistories, Availabilities, AccountStatements), el `GetAll`/`GetById` general se dejó deliberadamente en la policy vieja (`StaffOnly`, basada en rol) en vez de migrarlo a `RequirePermission`, porque Cliente nunca estuvo en `StaffOnly` — así no gana acceso sin querer. Ver el detalle exacto por controller en la sección 2.
+Forma de la respuesta (login/refresh/revoke fallidos, JWT challenge/forbidden):
 
-**Excepción importante — `MedicalRecords`/`Vaccinations`**: ahí el `GetAll`/`GetById` general **sí** está en `RequirePermission`, pero el *handler* (no el controller) hace el filtrado: si el `UserAccountId` resuelve a un `Client`, filtra por sus `ClientPetId`; si no (personal), devuelve todo. Ver `GetAllMedicalRecordsQueryHandler`/`GetAllVaccinationsQueryHandler` como referencia si necesitas replicar este patrón en otro módulo.
+```json
+{ "type": "https://httpstatuses.com/401", "title": "Unauthorized", "status": 401, "code": "Authentication.InvalidCredentials" }
+```
+
+| Code estable | HTTP típico | Cuándo |
+|---|---|---|
+| `Authentication.InvalidCredentials` | 401 | Login fallido (`AuthController` → `AuthProblem`) |
+| `Authentication.InvalidRefreshToken` | 401 | Refresh/revoke con token inválido |
+| `Authentication.Unauthorized` | 401 | JWT ausente/inválido (`JwtResponseEvents.OnChallenge`) o `/me` sin identidad usable |
+| `Authentication.Forbidden` | 403 | Autenticado pero policy deniega (`JwtResponseEvents.OnForbidden`) |
+| `Authentication.PlatformAccessDenied` | 403 | Denegación de acceso a la plataforma (catálogo; usar cuando el caso de negocio lo emita) |
+| `Authentication.UserAlreadyExists` | conflicto registro | Correo/usuario ya registrado |
+| `Authentication.IdentificationNumberAlreadyExists` | conflicto registro | Cédula ya registrada |
+| `Authentication.InvalidRegistrationData` | 400 | Datos de registro inválidos |
+
+No hardcodear mensajes de UX distintos por endpoint en español: el `Description` del `Error` es respaldo genérico en inglés; la copia visible la resuelve el front con el `code`.
+
+### Patrón "ver solo lo propio" (histórico `/mine` JWT) — ⛔ OBSOLETO Y RETIRADO (ADR 5)
+El portal de dueño con JWT (`ClientOnly` + `/clients/me`, `/pets/mine`, `/appointments/mine`, etc.) **fue retirado definitivamente y marcado como OBSOLETO** (Etapa 5 / Tarea 5.2 / ADR 5). Los endpoints del portal web del cliente fueron removidos o devuelven HTTP 410 `ClientPortal.Gone`. El dueño no opera con JWT ni tiene sesión web; interactúa exclusivamente vía Telegram Chatbot y verificaciones anónimas por OTP de cita o Gmail.
+
+**Por qué el `GetAll` general (`GET /api/pets`, `GET /api/clientspets`, etc.) no filtra por dueño**: esos endpoints son para el **personal** (Admin/Vet/Recepcionista/Auxiliar) y devuelven todo sin filtrar a propósito. Ver el detalle exacto por controller en la sección 2.
+
+**Nota histórica — `MedicalRecords`/`Vaccinations`:** algunos handlers aún pueden filtrar si el actor resuelve a un `Client`. Eso **no** autoriza reabrir portal JWT ni UI Cliente; el canal del dueño sigue siendo Telegram / OTP anónimo. **No** copies ese filtro para inventar un módulo web de dueño.
 
 ---
 
 ## 2. Estado real por controller (no-chatbot)
+
+> ⛔ **Tabla histórica (auditoría 2026-09-01).** Varias filas aún mencionan `ClientOnly` o `/mine` como estaban entonces. **Producto actual:** esas rutas están retiradas (410 / eliminadas). **No** uses esta tabla para proponer conectar un módulo Cliente en el front. Regla vigente: §0.
 
 26 controllers de módulo + `AuthController`. Verificado línea por línea el 2026-09-01. **Todos** tienen Domain+EF+Migración aplicada, Repo+UoW registrado, CQRS con MediatR, y Swagger (`EndpointSummary`/`EndpointDescription`) — no se repite esa columna porque es uniforme; solo se marca cuando **no** es así.
 
@@ -113,7 +193,8 @@ No las reporten de nuevo. Orden cronológico, con autor real de `git log` (no as
 
 | Fecha | Commit | Qué se hizo | Autor |
 |---|---|---|---|
-| 2026-08-31 | `8c280ea` | SuperAdmin: policy `SuperAdminOnly`, `SuperAdminOptions` (config, no fila en DB), login especial, `/me` sintético | Sahiam1810 |
+| 2026-08-31 | `8c280ea` | Implementación histórica de SuperAdmin por configuración; reemplazada el 2026-09-04 por identidad persistida | Sahiam1810 |
+| 2026-09-04 | `c48dfa4`–`8bef71d` | SuperAdmin persistido: rol canónico, flujo normal de autenticación y refresh, ciclo de vida protegido y autorización por `role_id`; se retiró el claim heredado `super_admin=true` | Codex |
 | 2026-08-31/09-01 | `894d110` | Tabla `USER_PERMISSIONS`, `UserPermissionsRepository`, tests de `PermissionAuthorizationHandler` y `GetEffectivePermissionQueryHandler` | Sahiam1810 |
 | 2026-09-01 | `02afedd` | Migración masiva a `RequirePermission` de Species/StatusAppointments/TypeServices/UserAccounts/UserCredentials/UserTokens/Users/Vaccinations/Veterinarians + seed inicial de `ROLE_PERMISSIONS` (47 filas, 5 roles × 12 módulos) | Sahiam1810 |
 | 2026-09-01 | `7c0225c` | MedicalRecords/Vaccinations: filtrado por dueño en `GetAll`/`GetById` cuando el usuario tiene perfil de Cliente | Sahiam1810 |

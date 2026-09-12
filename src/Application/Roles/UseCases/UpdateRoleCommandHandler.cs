@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Roles;
 using MediatR;
 
 namespace Application.Roles.UseCase;
@@ -22,6 +23,13 @@ public sealed class UpdateRoleCommandHandler
             request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Rol no encontrado.");
+
+        if (SystemRoles.IsSuperAdmin(request.Id) ||
+            SystemRoles.IsReservedName(request.Name))
+        {
+            throw new ForbiddenException(
+                "El rol SuperAdmin no se puede modificar desde la administración de roles.");
+        }
 
         var roleExists = await _uow.RolesRepository.ExistsByNameAsync(
             request.Name,

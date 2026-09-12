@@ -55,4 +55,25 @@ public sealed class VaccinationRepository : IVaccinationRepository
         _context.Set<Vaccination>().Update(vaccination);
         return Task.CompletedTask;
     }
+
+    public async Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (clientPetIds.Count == 0)
+        {
+            return;
+        }
+
+        var vaccinations = await _context.Set<Vaccination>()
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .ToListAsync(cancellationToken);
+
+        if (vaccinations.Count == 0)
+        {
+            return;
+        }
+
+        _context.Set<Vaccination>().RemoveRange(vaccinations);
+    }
 }

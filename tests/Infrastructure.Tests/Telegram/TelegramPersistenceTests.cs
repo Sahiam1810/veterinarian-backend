@@ -20,6 +20,7 @@ public sealed class TelegramPersistenceTests
         var userLink = context.Model.FindEntityType(typeof(TelegramUserLink))!;
         var linkingSession = context.Model.FindEntityType(typeof(TelegramLinkingSession));
         var registrationSession = context.Model.FindEntityType(typeof(TelegramRegistrationSession));
+        var identitySession = context.Model.FindEntityType(typeof(TelegramIdentitySession));
 
         Assert.Equal("TELEGRAM_INBOUND_UPDATES", update.GetTableName());
         Assert.Equal("NUMBER(19)", update.FindProperty(nameof(TelegramInboundUpdate.TelegramChatId))!.GetColumnType());
@@ -55,6 +56,20 @@ public sealed class TelegramPersistenceTests
             index.IsUnique &&
             index.Properties.Single().Name ==
             nameof(TelegramRegistrationSession.CompletionTokenHash));
+        Assert.NotNull(identitySession);
+        Assert.Equal("TELEGRAM_IDENTITY_SESSIONS", identitySession.GetTableName());
+        Assert.Equal(
+            "NUMBER(19)",
+            identitySession.FindProperty(
+                nameof(TelegramIdentitySession.PendingInboundUpdateId))!.GetColumnType());
+        Assert.Equal(
+            "CLOB",
+            identitySession.FindProperty(
+                nameof(TelegramIdentitySession.ProtectedPendingMessage))!.GetColumnType());
+        Assert.Contains(identitySession.GetIndexes(), index =>
+            index.IsUnique &&
+            index.Properties.Single().Name ==
+            nameof(TelegramIdentitySession.PendingInboundUpdateId));
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using System.Text;
 using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.VeterinarianAbsences.Abstraction;
 using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
 using MediatR;
@@ -21,6 +22,7 @@ public sealed record CreateMyAppointmentCommand(
 
 public sealed class CreateMyAppointmentCommandHandler(
     IUnitOfWork unitOfWork,
+    IVeterinarianAbsenceRepository absences,
     IAppointmentBookingSettings settings,
     TimeProvider timeProvider)
     : IRequestHandler<CreateMyAppointmentCommand, Appointment>
@@ -58,7 +60,7 @@ public sealed class CreateMyAppointmentCommandHandler(
             ?? throw new NotFoundException("Servicio no encontrado.");
         if (!service.IsActive)
         {
-            throw new BadRequestException("El servicio no está disponible.");
+            throw new BadRequestException("El servicio no esta disponible.");
         }
         var veterinarian = await unitOfWork.VeterinariansRepository.GetByIdAsync(
             request.VeterinarianId,
@@ -66,14 +68,17 @@ public sealed class CreateMyAppointmentCommandHandler(
             ?? throw new NotFoundException("Veterinario no encontrado.");
         if (veterinarian.User?.IsActive != true)
         {
-            throw new BadRequestException("El veterinario no está disponible.");
+            throw new BadRequestException("El veterinario no esta disponible.");
         }
 
-        var phone = client.PhoneNumber?.Value ?? request.RequesterPhoneNumber;
-        if (string.IsNullOrWhiteSpace(phone))
-        {
-            throw new BadRequestException("El teléfono del solicitante es requerido.");
-        }
+        // Misma regla que Create/Update staff: perfil gana sobre request divergente.
+        var phone = await AppointmentRequesterPhonePolicy.ResolveAsync(
+            unitOfWork,
+            clientPet.Id,
+            request.RequesterPhoneNumber,
+            requirePhone: true,
+            cancellationToken);
+
         var endUtc = request.ScheduledStartUtc.AddMinutes(service.DurationMinutes);
         var availability = await ResolveAvailabilityAsync(
             request.VeterinarianId,
@@ -95,10 +100,10 @@ public sealed class CreateMyAppointmentCommandHandler(
                 return;
             }
 
-            var locked = await unitOfWork.AvailabilitiesRepository.LockByIdAsync(
+            var locked = await AppointmentSchedulingConcurrency.LockAvailabilityAsync(
+                unitOfWork,
                 availability.Id,
-                transactionCancellationToken)
-                ?? throw new ConflictException("La disponibilidad seleccionada ya no existe.");
+                transactionCancellationToken);
             existing = await unitOfWork.AppointmentsRepository
                 .GetByBookingRequestKeyHashAsync(hash, transactionCancellationToken);
             if (existing is not null)
@@ -114,21 +119,24 @@ public sealed class CreateMyAppointmentCommandHandler(
                 request.ScheduledStartUtc,
                 endUtc,
                 service.DurationMinutes);
-            if (await unitOfWork.AppointmentsRepository.HasScheduledOverlapAsync(
-                    clientPet.Id,
-                    request.VeterinarianId,
-                    request.ScheduledStartUtc,
-                    endUtc,
-                    transactionCancellationToken))
-            {
-                throw new ConflictException("El horario seleccionado ya no está disponible.");
-            }
+
+            await AppointmentSchedulingConcurrency.EnsureAvailableAsync(
+                unitOfWork,
+                absences,
+                locked,
+                clientPet.Id,
+                request.VeterinarianId,
+                request.ScheduledStartUtc,
+                endUtc,
+                excludeAppointmentId: null,
+                consultingRoom: null,
+                transactionCancellationToken);
 
             var statuses = await unitOfWork.StatusAppointmentsRepository.GetAllAsync(
                 transactionCancellationToken);
             var status = statuses.SingleOrDefault(item =>
-                string.Equals(item.Name, "AGENDADA", StringComparison.OrdinalIgnoreCase))
-                ?? throw new ConflictException("No está configurado el estado AGENDADA.");
+                string.Equals(item.Name, AppointmentStatusNames.Agendada, StringComparison.OrdinalIgnoreCase))
+                ?? throw new ConflictException("No esta configurado el estado AGENDADA.");
             var appointment = new Appointment(
                 clientPet.Id,
                 request.VeterinarianId,
@@ -139,7 +147,8 @@ public sealed class CreateMyAppointmentCommandHandler(
                 endUtc,
                 notes,
                 phone,
-                hash);
+                hash,
+                locked.ConsultingRoom);
             await unitOfWork.AppointmentsRepository.AddAsync(
                 appointment,
                 transactionCancellationToken);
@@ -176,7 +185,7 @@ public sealed class CreateMyAppointmentCommandHandler(
         if (!IsAvailabilityMatch(
                 availability, veterinarianId, startUtc, endUtc, durationMinutes))
         {
-            throw new ConflictException("La disponibilidad seleccionada cambió.");
+            throw new ConflictException("La disponibilidad seleccionada cambio.");
         }
     }
 
@@ -217,7 +226,7 @@ public sealed class CreateMyAppointmentCommandHandler(
         if (startUtc < nowUtc.Add(settings.MinimumLeadTime)
             || requestedDate > today.AddDays(settings.MaximumAdvanceDays))
         {
-            throw new BadRequestException("La fecha está fuera del horizonte de agendamiento.");
+            throw new BadRequestException("La fecha esta fuera del horizonte de agendamiento.");
         }
     }
 
@@ -241,7 +250,7 @@ public sealed class CreateMyAppointmentCommandHandler(
             || !string.Equals(existing.Notes, notes, StringComparison.Ordinal)
             || !requestPhoneMatches)
         {
-            throw new ConflictException("La clave de idempotencia ya se usó con otros datos.");
+            throw new ConflictException("La clave de idempotencia ya se uso con otros datos.");
         }
     }
 }

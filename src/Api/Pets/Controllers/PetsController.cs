@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Pets.Dtos;
 using Api.Pets.Mappings;
@@ -8,6 +7,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.Pets.Controllers;
 
@@ -22,94 +23,48 @@ public class PetsController : ControllerBase
         _mediator = mediator;
     }
 
-    // GET /api/pets/mine
+    // Portal Cliente JWT retirado (Etapa 5).
     [HttpGet("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene las mascotas del cliente autenticado")]
-    [EndpointDescription("Retorna las mascotas asociadas al cliente correspondiente al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<OwnedPetProfileResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyCollection<OwnedPetProfileResponseDto>>> GetMine(CancellationToken ct)
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<OwnedPetProfileResponseDto>>> GetMine(CancellationToken ct)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var pets = await _mediator.Send(new GetMyPetsQuery(userAccountId), ct);
-        return Ok(pets.Select(p => p.ToDto()).ToList());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
+
 
     [HttpPost("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Registra una mascota para el cliente autenticado")]
-    [EndpointDescription("Crea la mascota y la asociación de propietario principal usando exclusivamente la identidad del JWT.")]
-    [ProducesResponseType(typeof(OwnedPetProfileResponseDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OwnedPetProfileResponseDto>> RegisterMine(
-        [FromBody] CreateOwnedPetDto dto,
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<OwnedPetProfileResponseDto>> RegisterMine(
+        [FromBody] CreateOwnedPetDto request,
         CancellationToken ct)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var profile = await _mediator.Send(new RegisterMyPetCommand(
-            userAccountId,
-            dto.Name,
-            dto.Age,
-            dto.Gender,
-            dto.Weight,
-            dto.Observations,
-            dto.SpeciesId,
-            dto.RaceId), ct);
-
-        return CreatedAtAction(nameof(GetMine), profile.ToDto());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
+
     [HttpPatch("mine/{petId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Actualiza parcialmente una mascota del cliente autenticado")]
-    [EndpointDescription("Solo permite modificar mascotas vinculadas al cliente del JWT y exige la versión consultada.")]
-    [ProducesResponseType(typeof(OwnedPetProfileResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<OwnedPetProfileResponseDto>> UpdateMine(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<OwnedPetProfileResponseDto>> UpdateMine(
         Guid petId,
         [FromBody] UpdateOwnedPetProfileDto dto,
         CancellationToken ct)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-            return Unauthorized();
-
-        var profile = await _mediator.Send(new UpdateMyPetProfileCommand(
-            userAccountId,
-            petId,
-            dto.Name,
-            dto.Age,
-            dto.Gender,
-            dto.Weight,
-            dto.Observations,
-            dto.ChangeObservations,
-            dto.SpeciesId,
-            dto.RaceId,
-            dto.ExpectedUpdatedAt), ct);
-        return Ok(profile.ToDto());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
+
 
     // GET /api/pets
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las mascotas")]
     [EndpointDescription("Retorna una lista de todas las mascotas registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<PetResponseDto>), StatusCodes.Status200OK)]
@@ -121,7 +76,7 @@ public class PetsController : ControllerBase
 
     // GET /api/pets/{id}
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene una mascota por su ID")]
     [EndpointDescription("Retorna los detalles de una mascota específica buscando por su identificador único.")]
     [ProducesResponseType(typeof(PetResponseDto), StatusCodes.Status200OK)]
@@ -149,7 +104,8 @@ public class PetsController : ControllerBase
             dto.Weight,
             dto.Observations,
             dto.SpeciesId,
-            dto.RaceId), ct);
+            dto.RaceId,
+            dto.PhotoUrl), ct);
 
         var pet = await _mediator.Send(new GetPetByIdQuery(id), ct);
         return CreatedAtAction(nameof(GetById), new { id }, pet.ToDto());
@@ -173,7 +129,8 @@ public class PetsController : ControllerBase
             dto.Weight,
             dto.Observations,
             dto.SpeciesId,
-            dto.RaceId), ct);
+            dto.RaceId,
+            dto.PhotoUrl), ct);
 
         return NoContent();
     }

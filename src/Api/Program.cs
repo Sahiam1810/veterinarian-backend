@@ -10,9 +10,13 @@ using Application;
 using Infrastructure;
 using Serilog;
 
-DotEnvLoader.Load();
-
 var builder = WebApplication.CreateBuilder(args);
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    DotEnvLoader.Load();
+    builder.Configuration.AddEnvironmentVariables();
+}
 
 builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
     .ReadFrom.Configuration(context.Configuration)
@@ -47,15 +51,24 @@ builder.Services.AddApiRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwaggerBasicAuth();
+app.UseSwagger();
+app.UseSwaggerUI();
+
+
+
 
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
-app.UseHttpsRedirection();
+// Solo redirige si hay HTTPS configurado (evita WRN en perfil http local)
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? string.Empty;
+var hasHttpsPort = !string.IsNullOrWhiteSpace(
+    Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"));
+var hasHttpsUrl = urls.Contains("https://", StringComparison.OrdinalIgnoreCase);
+if (hasHttpsPort || hasHttpsUrl)
+{
+    app.UseHttpsRedirection();
+}
 app.UseApiCors();
 app.UseAuthentication();
 app.UseAuthorization();

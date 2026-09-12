@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Roles;
 using MediatR;
 
 namespace Application.Users.UseCase;
@@ -22,6 +23,13 @@ public sealed class UpdateUserCommandHandler
             request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Usuario no encontrado.");
+
+        if (SystemRoles.IsSuperAdmin(user.RoleId) ||
+            SystemRoles.IsSuperAdmin(request.RoleId))
+        {
+            throw new ForbiddenException(
+                "La cuenta SuperAdmin solo se administra mediante el proceso seguro de aprovisionamiento.");
+        }
 
         var role = await _uow.RolesRepository.GetByIdAsync(
             request.RoleId,

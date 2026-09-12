@@ -239,13 +239,18 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("CLIENT_PET_ID");
 
+                    b.Property<string>("ConsultingRoom")
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("CONSULTING_ROOM");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("CREATED_AT");
 
                     b.Property<string>("Notes")
-                        .HasMaxLength(100)
-                        .HasColumnType("VARCHAR2(100)")
+                        .HasMaxLength(500)
+                        .HasColumnType("VARCHAR2(500)")
                         .HasColumnName("NOTES");
 
                     b.Property<string>("RequesterPhoneNumber")
@@ -306,6 +311,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("AVAILABILITY_ID");
 
+                    b.Property<string>("ConsultingRoom")
+                        .HasMaxLength(50)
+                        .HasColumnType("VARCHAR2(50)")
+                        .HasColumnName("CONSULTING_ROOM");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("CREATED_AT");
@@ -324,6 +334,23 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("CHAR(1)")
                         .HasColumnName("IS_ACTIVE");
+
+                    b.Property<int>("MaxConcurrentAppointments")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(1)
+                        .HasColumnName("MAX_CONCURRENT_APPOINTMENTS");
+
+                    b.Property<string>("ShiftName")
+                        .HasMaxLength(30)
+                        .HasColumnType("VARCHAR2(30)")
+                        .HasColumnName("SHIFT_NAME");
+
+                    b.Property<int>("SlotDurationMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(30)
+                        .HasColumnName("SLOT_DURATION_MINUTES");
 
                     b.Property<string>("StartTime")
                         .IsRequired()
@@ -952,8 +979,8 @@ namespace Infrastructure.Migrations
                         .HasColumnName("CLIENT_ID");
 
                     b.Property<string>("Address")
-                        .HasMaxLength(20)
-                        .HasColumnType("NVARCHAR2(20)")
+                        .HasMaxLength(150)
+                        .HasColumnType("NVARCHAR2(150)")
                         .HasColumnName("ADDRESS");
 
                     b.Property<DateTime>("CreatedAt")
@@ -988,6 +1015,11 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("IdentificationNumber")
                         .IsUnique();
+
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER")
+                        .HasFilter("\"PHONE_NUMBER\" IS NOT NULL");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -1033,6 +1065,81 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CLIENTS_PETS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.ContactVerification.Entities.ContactVerificationSession", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("ATTEMPTS");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("CHANNEL");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("DESTINATION_HASH");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("EXPIRES_AT");
+
+                    b.Property<string>("OtpHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("OTP_HASH");
+
+                    b.Property<DateTime?>("ProofExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("PROOF_EXPIRES_AT");
+
+                    b.Property<string>("ProofHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("PROOF_HASH");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("PURPOSE");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("VARCHAR2(20)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<string>("SubjectUserId")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("SUBJECT_USER_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProofHash")
+                        .HasDatabaseName("IX_CONTACT_VERIF_PROOF");
+
+                    b.HasIndex("Purpose", "DestinationHash", "Status")
+                        .HasDatabaseName("IX_CONTACT_VERIF_ACTIVE");
+
+                    b.ToTable("CONTACT_VERIFICATION_SESSIONS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.ConversationStatuses.Entities.ConversationStatusEntity", b =>
@@ -1156,8 +1263,8 @@ namespace Infrastructure.Migrations
                         .HasColumnName("DIAGNOSTIC_ID");
 
                     b.Property<string>("Symptoms")
-                        .HasMaxLength(30)
-                        .HasColumnType("VARCHAR2(30)")
+                        .HasMaxLength(1000)
+                        .HasColumnType("VARCHAR2(1000)")
                         .HasColumnName("SYMPTOMS");
 
                     b.Property<decimal?>("Temperature")
@@ -1165,8 +1272,8 @@ namespace Infrastructure.Migrations
                         .HasColumnName("TEMPERATURE");
 
                     b.Property<string>("Treatment")
-                        .HasMaxLength(30)
-                        .HasColumnType("VARCHAR2(30)")
+                        .HasMaxLength(1000)
+                        .HasColumnType("VARCHAR2(1000)")
                         .HasColumnName("TREATMENT");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1332,6 +1439,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("NVARCHAR2(500)")
                         .HasColumnName("OBSERVATIONS");
 
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("PHOTO_URL");
+
                     b.Property<string>("RaceId")
                         .IsRequired()
                         .HasColumnType("VARCHAR2(36)")
@@ -1440,11 +1552,19 @@ namespace Infrastructure.Migrations
                         .HasColumnType("NVARCHAR2(20)")
                         .HasColumnName("NAME");
 
+                    b.Property<string>("SpeciesId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("SPECIES_ID");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("UPDATED_AT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SpeciesId", "Name")
+                        .IsUnique();
 
                     b.ToTable("RACES", (string)null);
                 });
@@ -1727,6 +1847,100 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("UX_TELEGRAM_CONVERSATION_LINKS_USER");
 
                     b.ToTable("TELEGRAM_CONVERSATION_LINKS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramIdentitySession", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime?>("AbsoluteExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("ABSOLUTE_EXPIRES_AT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<DateTime?>("IdleExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("IDLE_EXPIRES_AT");
+
+                    b.Property<int>("OtpAttempts")
+                        .HasColumnType("NUMBER(10)")
+                        .HasColumnName("OTP_ATTEMPTS");
+
+                    b.Property<DateTime?>("OtpExpiresAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("OTP_EXPIRES_AT");
+
+                    b.Property<string>("OtpHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("VARCHAR2(64)")
+                        .HasColumnName("OTP_HASH");
+
+                    b.Property<long?>("PendingInboundUpdateId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("PENDING_INBOUND_UPDATE_ID");
+
+                    b.Property<string>("PersonId")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("PERSON_ID");
+
+                    b.Property<string>("ProtectedEmail")
+                        .HasMaxLength(1024)
+                        .HasColumnType("VARCHAR2(1024)")
+                        .HasColumnName("PROTECTED_EMAIL");
+
+                    b.Property<string>("ProtectedFullName")
+                        .HasMaxLength(1024)
+                        .HasColumnType("VARCHAR2(1024)")
+                        .HasColumnName("PROTECTED_FULL_NAME");
+
+                    b.Property<string>("ProtectedIdentification")
+                        .HasMaxLength(512)
+                        .HasColumnType("VARCHAR2(512)")
+                        .HasColumnName("PROTECTED_IDENTIFICATION");
+
+                    b.Property<string>("ProtectedPendingMessage")
+                        .HasColumnType("CLOB")
+                        .HasColumnName("PROTECTED_PENDING_MESSAGE");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("VARCHAR2(40)")
+                        .HasColumnName("STATUS");
+
+                    b.Property<long>("TelegramChatId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_CHAT_ID");
+
+                    b.Property<long>("TelegramUserId")
+                        .HasColumnType("NUMBER(19)")
+                        .HasColumnName("TELEGRAM_USER_ID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PendingInboundUpdateId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_TG_ID_SESSIONS_PENDING")
+                        .HasFilter("\"PENDING_INBOUND_UPDATE_ID\" IS NOT NULL");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("TelegramChatId")
+                        .HasDatabaseName("IX_TG_ID_SESSIONS_CHAT");
+
+                    b.HasIndex("TelegramUserId", "Status")
+                        .HasDatabaseName("IX_TG_ID_SESSIONS_USER_STATUS");
+
+                    b.ToTable("TELEGRAM_IDENTITY_SESSIONS", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Telegram.Entities.TelegramInboundUpdate", b =>
@@ -2230,6 +2444,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("EXPIRES_AT");
 
+                    b.Property<DateTime>("SessionStartedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("SESSION_STARTED_AT");
+
                     b.Property<string>("TokenType")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2428,6 +2646,52 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("IX_APPT_ACTION_VERIF_ACTIVE");
 
                     b.ToTable("APPOINTMENT_ACTION_VERIFICATION_SESSIONS", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.VeterinarianAbsences.Entities.VeterinarianAbsence", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("ABSENCE_ID");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("CREATED_AT");
+
+                    b.Property<DateTime>("EndAtUtc")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("END_AT");
+
+                    b.Property<string>("IsFullDay")
+                        .IsRequired()
+                        .HasColumnType("CHAR(1)")
+                        .HasColumnName("IS_FULL_DAY");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("VARCHAR2(200)")
+                        .HasColumnName("REASON");
+
+                    b.Property<DateTime>("StartAtUtc")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("START_AT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TIMESTAMP")
+                        .HasColumnName("UPDATED_AT");
+
+                    b.Property<string>("VeterinarianId")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(36)")
+                        .HasColumnName("VETERINARIAN_ID");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VeterinarianId");
+
+                    b.HasIndex("VeterinarianId", "StartAtUtc", "EndAtUtc");
+
+                    b.ToTable("VETERINARIAN_ABSENCES", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>
@@ -2916,6 +3180,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Species");
                 });
 
+            modelBuilder.Entity("Domain.Races.Entities.RaceEntity", b =>
+                {
+                    b.HasOne("Domain.Species.Entities.SpeciesEntity", "Species")
+                        .WithMany()
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Species");
+                });
+
             modelBuilder.Entity("Domain.RolePermissions.Entities.RolePermission", b =>
                 {
                     b.HasOne("Domain.Modules.Entities.ModuleEntity", null)
@@ -2957,6 +3232,15 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_TELEGRAM_CONVERSATION_LINKS_USER_LINK");
+                });
+
+            modelBuilder.Entity("Domain.Telegram.Entities.TelegramIdentitySession", b =>
+                {
+                    b.HasOne("Domain.Users.Entities.Users", null)
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_TG_ID_SESSIONS_USERS");
                 });
 
             modelBuilder.Entity("Domain.Telegram.Entities.TelegramLinkCode", b =>
@@ -3065,6 +3349,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("ClientPet");
 
                     b.Navigation("Record");
+                });
+
+            modelBuilder.Entity("Domain.VeterinarianAbsences.Entities.VeterinarianAbsence", b =>
+                {
+                    b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
+                        .WithMany()
+                        .HasForeignKey("VeterinarianId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Veterinarian");
                 });
 
             modelBuilder.Entity("Domain.Veterinarians.Entities.Veterinarian", b =>

@@ -1,6 +1,8 @@
+using System.Text.Json;
 using FluentValidation;
 using Application.Agent.Errors;
 using Application.Common.Exceptions;
+using Application.ContactVerification.Errors;
 using Application.Telegram.Errors;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +16,152 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
+        // GoneException con Code: problem+json estable (ruta de portal retirada).
+        if (exception is GoneException { Code: { Length: > 0 } goneCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status410Gone;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status410Gone}",
+                    title = "Gone",
+                    status = StatusCodes.Status410Gone,
+                    code = goneCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+        // ForbiddenException con Code → problem+json estable (sin Message interno).
+        if (exception is ForbiddenException { Code: { Length: > 0 } code })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status403Forbidden}",
+                    title = "Forbidden",
+                    status = StatusCodes.Status403Forbidden,
+                    code
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is ContactVerificationNotImplementedException notImplemented)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status501NotImplemented;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status501NotImplemented}",
+                    title = "Not Implemented",
+                    status = StatusCodes.Status501NotImplemented,
+                    code = notImplemented.Code
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is ContactVerificationException contactVerification)
+        {
+            var contactStatus = MapContactVerificationStatus(contactVerification.Code);
+            httpContext.Response.StatusCode = contactStatus;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{contactStatus}",
+                    title = "Contact verification failed",
+                    status = contactStatus,
+                    code = contactVerification.Code
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        // Excepciones de negocio con code estable → problem+json (staff/Telegram traducen por code).
+        if (exception is ConflictException { Code: { Length: > 0 } conflictCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status409Conflict}",
+                    title = "Conflict",
+                    status = StatusCodes.Status409Conflict,
+                    code = conflictCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is UnauthorizedException { Code: { Length: > 0 } unauthorizedCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status401Unauthorized}",
+                    title = "Unauthorized",
+                    status = StatusCodes.Status401Unauthorized,
+                    code = unauthorizedCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is BadRequestException { Code: { Length: > 0 } badRequestCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status400BadRequest}",
+                    title = "Bad Request",
+                    status = StatusCodes.Status400BadRequest,
+                    code = badRequestCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
+        if (exception is NotFoundException { Code: { Length: > 0 } notFoundCode })
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            httpContext.Response.ContentType = "application/problem+json";
+            await JsonSerializer.SerializeAsync(
+                httpContext.Response.Body,
+                new
+                {
+                    type = $"https://httpstatuses.com/{StatusCodes.Status404NotFound}",
+                    title = "Not Found",
+                    status = StatusCodes.Status404NotFound,
+                    code = notFoundCode
+                },
+                cancellationToken: cancellationToken);
+            return true;
+        }
+
         var (status, message, agentError) = Map(exception);
         var violations = exception is ValidationException validationException
             ? validationException.Errors
                 .Select(failure => new FieldViolationResponse(
                     ApiErrorResponseFactory.ToJsonFieldName(failure.PropertyName),
-                    failure.ErrorMessage))
+                    failure.ErrorMessage,
+                    string.IsNullOrWhiteSpace(failure.ErrorCode) ? null : failure.ErrorCode))
                 .ToArray()
             : [];
         var typeContract = httpContext.Request.Path.StartsWithSegments("/TypeContract", StringComparison.OrdinalIgnoreCase);
@@ -96,11 +238,30 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ArgumentException argument => (StatusCodes.Status400BadRequest, argument.Message, null),
             UnauthorizedException unauthorized => (StatusCodes.Status401Unauthorized, unauthorized.Message, null),
             UnauthorizedAccessException unauthorizedAccess => (StatusCodes.Status401Unauthorized, unauthorizedAccess.Message, null),
+            GoneException gone => (StatusCodes.Status410Gone, gone.Message, gone.Code),
             ForbiddenException forbidden => (StatusCodes.Status403Forbidden, forbidden.Message, null),
             NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
-            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, null),
+            ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, conflict.Code),
             DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation", null),
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error", null)
+        };
+
+    private static int MapContactVerificationStatus(string code) =>
+        code switch
+        {
+            "ContactVerification.SessionNotFound" => StatusCodes.Status404NotFound,
+            "ContactVerification.Blocked" => StatusCodes.Status409Conflict,
+            "ContactVerification.Expired" => StatusCodes.Status409Conflict,
+            "ContactVerification.ResendTooSoon" => StatusCodes.Status409Conflict,
+            "ContactVerification.DeliveryFailed" => StatusCodes.Status409Conflict,
+            "ContactVerification.ProofExpired" => StatusCodes.Status409Conflict,
+            "ContactVerification.ProofAlreadyConsumed" => StatusCodes.Status409Conflict,
+            // RegisterOwner reusa ContactVerificationException con codes de Owner/Auth/Clients.
+            "Authentication.UserAlreadyExists" => StatusCodes.Status409Conflict,
+            "Authentication.IdentificationNumberAlreadyExists" => StatusCodes.Status409Conflict,
+            "Clients.PhoneAlreadyInUse" => StatusCodes.Status409Conflict,
+            "OwnerRegistration.ClientRoleMissing" => StatusCodes.Status409Conflict,
+            _ => StatusCodes.Status400BadRequest
         };
 }

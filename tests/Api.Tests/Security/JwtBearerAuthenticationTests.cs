@@ -74,6 +74,30 @@ public sealed class JwtBearerAuthenticationTests : IClassFixture<JwtBearerApiFac
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    // S15-2: valid RS256 signature/issuer/audience but tampered payload (no re-sign) → 401.
+    [Fact]
+    public async Task Me_rejects_tampered_payload_without_resigning()
+    {
+        var validToken = factory.CreateRs256Token();
+        var tamperedToken = JwtTestTokenBuilder.TamperPayloadClaim(
+            validToken,
+            "role_id",
+            Guid.NewGuid().ToString());
+        using var client = CreateClient(tamperedToken);
+
+        using var response = await client.GetAsync("/api/auth/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            Application.Security.Errors.AuthenticationErrors.Unauthorized.Code,
+            document.RootElement.GetProperty("code").GetString());
+    }
+
     [Theory]
     [InlineData(InvalidToken.WrongSigningKey)]
     [InlineData(InvalidToken.Hs256)]
@@ -94,6 +118,11 @@ public sealed class JwtBearerAuthenticationTests : IClassFixture<JwtBearerApiFac
         Assert.Equal(
             "application/problem+json",
             response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            Application.Security.Errors.AuthenticationErrors.Unauthorized.Code,
+            document.RootElement.GetProperty("code").GetString());
     }
 
     private HttpClient CreateClient(string token)

@@ -14,7 +14,7 @@ public sealed record CancelMyAppointmentCommand(
 public sealed class CancelMyAppointmentCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<CancelMyAppointmentCommand>
 {
-    private const string Agendada = "AGENDADA";
+    private const string Agendada = AppointmentStatusNames.Agendada;
     private const string Cancelada = "CANCELADA";
 
     public async Task Handle(

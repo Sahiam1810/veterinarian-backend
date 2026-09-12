@@ -4,7 +4,8 @@ using Application.Telegram.Abstractions;
 
 namespace Infrastructure.Telegram.Security;
 
-public sealed class TelegramRegistrationProtector : ITelegramRegistrationProtector
+public sealed class TelegramRegistrationProtector
+    : ITelegramRegistrationProtector, ITelegramIdentityDataProtector
 {
     private const int NonceSize = 12;
     private const int TagSize = 16;
@@ -29,13 +30,33 @@ public sealed class TelegramRegistrationProtector : ITelegramRegistrationProtect
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
     public string ProtectEmail(string normalizedEmail)
+        => ProtectCore(normalizedEmail, associatedData: null);
+
+    public string UnprotectEmail(string protectedEmail)
+        => UnprotectCore(protectedEmail, associatedData: null);
+
+    public string Protect(string purpose, string value)
     {
-        var plaintext = Encoding.UTF8.GetBytes(normalizedEmail);
+        ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
+        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+        return ProtectCore(value, Encoding.UTF8.GetBytes(purpose));
+    }
+
+    public string Unprotect(string purpose, string protectedValue)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
+        ArgumentException.ThrowIfNullOrWhiteSpace(protectedValue);
+        return UnprotectCore(protectedValue, Encoding.UTF8.GetBytes(purpose));
+    }
+
+    private string ProtectCore(string value, byte[]? associatedData)
+    {
+        var plaintext = Encoding.UTF8.GetBytes(value);
         var nonce = RandomNumberGenerator.GetBytes(NonceSize);
         var ciphertext = new byte[plaintext.Length];
         var tag = new byte[TagSize];
         using var aes = new AesGcm(key, TagSize);
-        aes.Encrypt(nonce, plaintext, ciphertext, tag);
+        aes.Encrypt(nonce, plaintext, ciphertext, tag, associatedData);
 
         var envelope = new byte[NonceSize + TagSize + ciphertext.Length];
         nonce.CopyTo(envelope, 0);
@@ -44,9 +65,9 @@ public sealed class TelegramRegistrationProtector : ITelegramRegistrationProtect
         return Convert.ToBase64String(envelope);
     }
 
-    public string UnprotectEmail(string protectedEmail)
+    private string UnprotectCore(string protectedValue, byte[]? associatedData)
     {
-        var envelope = Convert.FromBase64String(protectedEmail);
+        var envelope = Convert.FromBase64String(protectedValue);
         if (envelope.Length <= NonceSize + TagSize)
         {
             throw new CryptographicException("El correo protegido no es válido.");
@@ -57,7 +78,7 @@ public sealed class TelegramRegistrationProtector : ITelegramRegistrationProtect
         var ciphertext = envelope.AsSpan(NonceSize + TagSize);
         var plaintext = new byte[ciphertext.Length];
         using var aes = new AesGcm(key, TagSize);
-        aes.Decrypt(nonce, ciphertext, tag, plaintext);
+        aes.Decrypt(nonce, ciphertext, tag, plaintext, associatedData);
         return Encoding.UTF8.GetString(plaintext);
     }
 }

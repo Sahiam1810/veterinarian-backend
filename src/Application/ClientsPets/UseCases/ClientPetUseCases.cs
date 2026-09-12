@@ -49,6 +49,16 @@ public sealed class DeleteClientPetCommandHandler(IUnitOfWork unitOfWork) : IReq
     public async Task Handle(DeleteClientPetCommand request, CancellationToken cancellationToken)
     {
         var clientPet = await unitOfWork.ClientPetsRepository.GetByIdAsync(request.Id, cancellationToken) ?? throw new NotFoundException("Relación cliente-mascota no encontrada.");
+
+        // APPOINTMENTS.CLIENT_PET_ID -> CLIENTS_PETS.CLIENT_PET_ID es RESTRICT: sin este
+        // chequeo, el borrado revienta con una violación de integridad genérica.
+        var appointments = await unitOfWork.AppointmentsRepository.GetByClientPetIdsAsync([clientPet.Id], cancellationToken);
+        if (appointments.Count > 0)
+        {
+            throw new ConflictException(
+                "Esta mascota tiene citas registradas. No se puede eliminar mientras conserve historial de citas.");
+        }
+
         await unitOfWork.ClientPetsRepository.DeleteAsync(clientPet, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

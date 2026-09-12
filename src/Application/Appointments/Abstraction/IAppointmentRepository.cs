@@ -1,4 +1,5 @@
 using Application.Common.Models;
+using Application.Reports.Models;
 using Domain.Appointments.Entities;
 
 namespace Application.Appointments.Abstraction;
@@ -9,6 +10,10 @@ public interface IAppointmentRepository
         CancellationToken cancellationToken);
 
     Task<Appointment?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken);
+
+    Task<Appointment?> LockByIdAsync(
         Guid id,
         CancellationToken cancellationToken);
 
@@ -35,8 +40,41 @@ public interface IAppointmentRepository
         DateTime toUtc,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Obtiene únicamente los campos no sensibles necesarios para el reporte de citas por
+    /// día. El periodo usa límite inferior inclusivo y superior exclusivo.
+    /// </summary>
+    Task<IReadOnlyCollection<AppointmentDayReportEntry>> GetForDayReportAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Obtiene únicamente los campos no sensibles necesarios para el reporte de citas por
+    /// veterinario. El periodo usa límite inferior inclusivo y superior exclusivo.
+    /// </summary>
+    Task<IReadOnlyCollection<AppointmentVeterinarianReportEntry>> GetForVeterinarianReportAsync(
+        DateTime fromInclusive,
+        DateTime toExclusive,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Conteo de citas por StatusId dentro del periodo (límite inferior inclusivo,
+    /// superior exclusivo). Agrega en la base sin materializar filas de citas.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, int>> GetStatusCountsBetweenAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
         Guid veterinarianId,
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken);
+
+    // Citas AGENDADA con consultorio en la ventana (para choques de sala).
+    Task<IReadOnlyCollection<Appointment>> GetScheduledRoomOverlapsAsync(
         DateTime fromUtc,
         DateTime toUtc,
         CancellationToken cancellationToken);
@@ -60,6 +98,28 @@ public interface IAppointmentRepository
         Guid? excludeAppointmentId = null,
         CancellationToken cancellationToken = default);
 
+    // Choque de sala AGENDADA, comparacion case-insensitive.
+    Task<bool> HasConsultingRoomOverlapAsync(
+        string consultingRoom,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountScheduledOverlapsForVeterinarianAsync(
+        Guid veterinarianId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> HasClientPetOverlapAsync(
+        Guid clientPetId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(
         Appointment appointment,
         CancellationToken cancellationToken);
@@ -70,5 +130,15 @@ public interface IAppointmentRepository
 
     Task DeleteAsync(
         Appointment appointment,
+        CancellationToken cancellationToken);
+
+    // Borra citas (e historiales) de vínculos dueño-mascota sin Include(User)
+    Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken);
+
+    // True si alguna cita usa este servicio (impide borrado físico)
+    Task<bool> ExistsByServiceIdAsync(
+        Guid serviceId,
         CancellationToken cancellationToken);
 }

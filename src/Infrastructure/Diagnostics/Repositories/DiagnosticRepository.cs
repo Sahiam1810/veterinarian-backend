@@ -16,7 +16,9 @@ public class DiagnosticRepository : IDiagnosticRepository
 
     public async Task<IReadOnlyCollection<Diagnostic>> GetAllAsync(bool onlyActive = true, CancellationToken cancellationToken = default)
     {
+        // Solo lectura: sin tracking en listado de diagnósticos (S26).
         return await _context.Set<Diagnostic>()
+            .AsNoTracking()
             .Where(x => !onlyActive || x.IsActive)
             .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);

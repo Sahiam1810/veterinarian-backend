@@ -24,7 +24,8 @@ public sealed class SendAgentMessageHandlerTests
             "google/gemini-flash",
             new AgentTokenUsage(12, 7),
             "appointments",
-            new AgentRagResult("used", "contextual", 0.91, 2, 1, true, false));
+            new AgentRagResult("used", "contextual", 0.91, 2, 1, true, false),
+            AgentAccessRequirement.IdentityVerification);
         var client = new RecordingAgentMessagingClient(expected);
         var handler = new SendAgentMessageHandler(
             conversations,
@@ -34,6 +35,7 @@ public sealed class SendAgentMessageHandlerTests
         var result = await handler.Handle(Command(), CancellationToken.None);
 
         Assert.Same(expected, result);
+        Assert.Equal(AgentAccessRequirement.IdentityVerification, result.AccessRequirement);
         Assert.Equal(PersonId, client.Envelope!.UserId);
         Assert.Equal(["Cliente"], client.Envelope.Roles);
         Assert.Equal("web", client.Envelope.Channel);

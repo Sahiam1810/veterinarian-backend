@@ -1,5 +1,8 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.Security;
+using Application.Security.Errors;
+using Domain.UserAccounts.ValueObjects;
 using MediatR;
 
 namespace Application.UserCredentials.UseCase;
@@ -26,6 +29,30 @@ public sealed class ChangePasswordCommandHandler
             request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Credenciales no encontradas.");
+
+        var account = await _uow.UserAccountsRepository.GetByIdAsync(
+            credentials.AccountId,
+            cancellationToken)
+            ?? throw new NotFoundException("La cuenta asociada no existe.");
+
+        var user = await _uow.UsersRepository.GetByIdAsync(
+            account.UserId,
+            cancellationToken)
+            ?? throw new NotFoundException("El usuario de la cuenta no existe.");
+
+        var role = await _uow.RolesRepository.GetByIdAsync(
+            user.RoleId,
+            cancellationToken)
+            ?? throw new NotFoundException("El rol del usuario no existe.");
+
+        // Misma regla que AuthenticationService/UserAccounts/UserCredentials: blocklist
+        // por Cliente (no allowlist de 5 nombres fijos), para que un rol configurable
+        // nuevo que ya puede loguearse también pueda cambiar su propia contraseña.
+        if (!string.Equals(account.Status, AccountStatus.Active, StringComparison.Ordinal)
+            || WebPlatformAccess.IsClientRoleName(role.Name.Value))
+        {
+            throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
+        }
 
         if (!_passwordHasher.Verify(request.CurrentPassword, credentials.PasswordHash))
         {

@@ -1,5 +1,6 @@
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
+using Application.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Extensions;
@@ -22,50 +23,11 @@ public static class AuthorizationExtensions
             options.AddPolicy(
                 AuthorizationPolicies.AdminOnly,
                 RoleOrSuperAdmin("Administrador"));
-            // El SuperAdmin no es un rol de la tabla ROLES: se identifica por
-            // el claim "super_admin" que emite JwtTokenIssuer.IssueForSuperAdmin.
+            // SuperAdmin es un rol persistido identificado por su role_id canónico.
             options.AddPolicy(
                 AuthorizationPolicies.SuperAdminOnly,
-                policy => policy.RequireClaim("super_admin", "true"));
-            options.AddPolicy(
-                AuthorizationPolicies.VeterinarianOnly,
-                RoleOrSuperAdmin("Veterinario"));
-            options.AddPolicy(
-                AuthorizationPolicies.ReceptionistOnly,
-                RoleOrSuperAdmin("Recepcionista"));
-            options.AddPolicy(
-                AuthorizationPolicies.AssistantOnly,
-                RoleOrSuperAdmin("Auxiliar"));
-            options.AddPolicy(
-                AuthorizationPolicies.ClientOnly,
-                RoleOrSuperAdmin("Cliente"));
-            options.AddPolicy(
-                AuthorizationPolicies.StaffOnly,
-                RoleOrSuperAdmin(
-                    "Administrador",
-                    "Veterinario",
-                    "Recepcionista",
-                    "Auxiliar"));
+                policy => policy.RequireAssertion(context => context.User.IsSuperAdmin()));
 
-            // Políticas combinadas: acciones que corresponden a más de un rol.
-            options.AddPolicy(
-                AuthorizationPolicies.AdminOrReceptionist,
-                RoleOrSuperAdmin("Administrador", "Recepcionista"));
-            options.AddPolicy(
-                AuthorizationPolicies.AdminOrVeterinarian,
-                RoleOrSuperAdmin("Administrador", "Veterinario"));
-            options.AddPolicy(
-                AuthorizationPolicies.ClinicalStaffOnly,
-                RoleOrSuperAdmin(
-                    "Administrador",
-                    "Veterinario",
-                    "Recepcionista"));
-            options.AddPolicy(
-                AuthorizationPolicies.FrontDeskStaffOnly,
-                RoleOrSuperAdmin(
-                    "Administrador",
-                    "Recepcionista",
-                    "Auxiliar"));
             options.AddPolicy(
                 AuthorizationPolicies.ClinicalHistoryReadOnly,
                 RoleOrSuperAdmin(
@@ -73,6 +35,13 @@ public static class AuthorizationExtensions
                     "Veterinario",
                     "Recepcionista",
                     "Cliente"));
+            options.AddPolicy(
+                AuthorizationPolicies.TelegramAgentOnly,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .RequireClaim(
+                        DelegatedTokenClaims.ClaimType,
+                        DelegatedTokenClaims.TelegramAgent));
         });
 
         // Habilita las policies dinámicas "perm:{módulo}:{acción}" usadas por
@@ -85,11 +54,10 @@ public static class AuthorizationExtensions
         return services;
     }
 
-    // El SuperAdmin no tiene fila en ROLES (no es un rol, es un claim a nivel
-    // de usuario): cualquier policy basada en rol debe dejarlo pasar igual,
-    // sin que cada endpoint tenga que saber de su existencia.
+    // El SuperAdmin es un rol persistido. Se reconoce por su role_id canónico
+    // para que las policies no dependan del nombre mutable del rol.
     private static Action<AuthorizationPolicyBuilder> RoleOrSuperAdmin(params string[] roles) =>
         policy => policy.RequireAssertion(context =>
             roles.Any(context.User.IsInRole) ||
-            context.User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"));
+            context.User.IsSuperAdmin());
 }

@@ -1,9 +1,11 @@
-using System.Security.Claims;
 using Api.Clients.Dtos;
 using Api.Clients.Mappings;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.Clients.UseCases;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
+using Application.Owners.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,26 +16,17 @@ namespace Api.Clients.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ClientsController(ISender sender) : ControllerBase
+public class ClientsController(ISender sender, IRegisterOwnerFromStaff registerOwnerFromStaff) : ControllerBase
 {
-    // GET /api/clients/me
+    // GET /api/clients/me - portal Cliente retirado (Etapa 5): siempre 410.
     [HttpGet("me")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene el perfil del cliente autenticado")]
-    [EndpointDescription("Retorna los datos del cliente asociado al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ClientResponseDto>> GetMe(CancellationToken ct)
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone); usar chatbot/staff.")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<ClientResponseDto>> GetMe(CancellationToken ct)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var client = await sender.Send(new GetMyClientQuery(userAccountId), ct);
-        return Ok(client.ToDto());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
     // GET /api/clients/by-identification/{identificationNumber}
@@ -51,6 +44,43 @@ public class ClientsController(ISender sender) : ControllerBase
     {
         var client = await sender.Send(new GetClientByIdentificationQuery(identificationNumber), ct);
         return Ok(client.ToIdentificationLookupResponse());
+    }
+
+    // GET /api/clients/by-phone/{phone}
+    [HttpGet("by-phone/{phone}")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.ClientPhoneLookup)]
+    [EndpointSummary("Resuelve un cliente por teléfono")]
+    [EndpointDescription("Equivalente anónimo a by-identification para el chatbot: ubica al cliente por teléfono normalizado (solo dígitos). Respuesta acotada (sin dirección ni teléfono) y rate-limited. Sin JWT.")]
+    [ProducesResponseType(typeof(ClientPhoneLookupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ClientPhoneLookupResponseDto>> GetByPhone(
+        string phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientByPhoneQuery(phone), ct);
+        return Ok(client.ToPhoneLookupResponse());
+    }
+
+    // GET /api/clients/lookup
+    [HttpGet("lookup")]
+    [RequirePermission("Clientes", PermissionAction.View)]
+    [EndpointSummary("Busca un cliente por cédula y/o teléfono (Staff)")]
+    // Semántica: match exacto (VO normalizado); si vienen identification y phone → AND; sin fila → 404.
+    [EndpointDescription("Lookup staff autenticado (Clientes View). Match exacto por cédula y/o teléfono; si ambos params vienen aplica AND. Sin coincidencia → 404. DTO operativo (no el acotado anónimo).")]
+    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClientResponseDto>> Lookup(
+        [FromQuery] string? identification,
+        [FromQuery] string? phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientLookupQuery(identification, phone), ct);
+        return Ok(client.ToDto());
     }
 
     // GET /api/clients
@@ -89,15 +119,31 @@ public class ClientsController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ClientResponseDto>> Create([FromBody] CreateClientDto dto, CancellationToken ct)
     {
-        var id = await sender.Send(new CreateClientCommand(
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.RegistrationDate,
-            dto.PhoneNumber), ct);
+        var id = await sender.Send(dto.ToCommand(), ct);
 
         var client = await sender.Send(new GetClientByIdQuery(id), ct);
         return CreatedAtAction(nameof(GetById), new { id }, client.ToDto());
+    }
+
+    // POST /api/clients/register-owner
+    [HttpPost("register-owner")]
+    [RequirePermission("Clientes", PermissionAction.Create)]
+    [EndpointSummary("Registra un dueño (Staff)")]
+    [EndpointDescription("Alta de un dueño/cliente por recepción/admin usando el núcleo RegisterOwner existente. " +
+        "No crea acceso a la plataforma: no genera cuenta de acceso, credenciales ni contraseña.")]
+    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ClientResponseDto>> RegisterOwner(
+        [FromBody] RegisterOwnerDto dto,
+        CancellationToken ct)
+    {
+        var result = await registerOwnerFromStaff.RegisterAsync(dto.ToRequest(), ct);
+
+        var client = await sender.Send(new GetClientByIdQuery(result.ClientId), ct);
+        return CreatedAtAction(nameof(GetById), new { id = result.ClientId }, client.ToDto());
     }
 
     // PUT /api/clients/{id}
@@ -111,13 +157,7 @@ public class ClientsController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientDto dto, CancellationToken ct)
     {
-        await sender.Send(new UpdateClientCommand(
-            id,
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.RegistrationDate,
-            dto.PhoneNumber), ct);
+        await sender.Send(dto.ToCommand(id), ct);
 
         return NoContent();
     }

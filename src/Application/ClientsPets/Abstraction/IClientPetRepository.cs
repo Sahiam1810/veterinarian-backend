@@ -11,4 +11,7 @@ public interface IClientPetRepository
     Task AddAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
     Task UpdateAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
     Task DeleteAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
+
+    // Borra vínculos dueño-mascota del cliente sin AsNoTracking previo
+    Task DeleteByClientIdAsync(Guid clientId, CancellationToken cancellationToken);
 }
