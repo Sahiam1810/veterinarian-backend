@@ -34,6 +34,12 @@ public static class ClientMappingsExtensions
             dto.RegistrationDate,
             dto.PhoneNumber);
 
+    public static UpdateClientOwnerProfileCommand ToCommand(this UpdateClientOwnerProfileDto dto, Guid clientId) =>
+        new(
+            clientId,
+            dto.FullName,
+            dto.Email);
+
     public static ClientResponseDto ToDto(this ClientEntity entity)
     {
         return new ClientResponseDto(
