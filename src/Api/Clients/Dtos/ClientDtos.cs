@@ -81,6 +81,18 @@ public record RegisterOwnerDto(
     string? ContactProof = null
 );
 
+// Actualiza solo nombre/correo del dueño (User) vinculado al cliente, sin
+// tocar rol ni datos de Client -- ver UpdateClientOwnerProfileCommand.
+public record UpdateClientOwnerProfileDto(
+    [Required(ErrorMessage = "El nombre completo es obligatorio.")]
+    [MaxLength(150, ErrorMessage = "El nombre completo no puede superar los 150 caracteres.")]
+    string FullName,
+
+    [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
+    [MaxLength(150, ErrorMessage = "El correo electrónico no puede superar los 150 caracteres.")]
+    string Email
+);
+
 // Respuesta acotada para el lookup anónimo por cédula: sin Address/PhoneNumber.
 // Ese endpoint solo existe para que el chatbot ubique al cliente antes de
 // tener JWT -- no requiere devolver PII de contacto, y cualquiera que

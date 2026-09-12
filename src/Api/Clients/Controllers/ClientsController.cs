@@ -162,6 +162,27 @@ public class ClientsController(ISender sender, IRegisterOwnerFromStaff registerO
         return NoContent();
     }
 
+    // PUT /api/clients/{id}/owner-profile
+    [HttpPut("{id:guid}/owner-profile")]
+    [RequirePermission("Clientes", PermissionAction.Edit)]
+    [EndpointSummary("Actualiza nombre y correo del dueño asociado a un cliente")]
+    [EndpointDescription("Actualiza el nombre completo y correo del User vinculado a este Client, sin " +
+        "tocar su rol ni requerir permiso sobre 'Usuarios'. Pensado para roles con acceso solo a " +
+        "'Clientes' (ej. Recepcionista) que no pueden llamar PUT /api/Users directamente.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateOwnerProfile(
+        Guid id,
+        [FromBody] UpdateClientOwnerProfileDto dto,
+        CancellationToken ct)
+    {
+        await sender.Send(dto.ToCommand(id), ct);
+
+        return NoContent();
+    }
+
     // DELETE /api/clients/{id}
     [HttpDelete("{id:guid}")]
     [RequirePermission("Clientes", PermissionAction.Delete)]
