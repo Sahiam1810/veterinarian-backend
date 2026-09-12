@@ -68,7 +68,8 @@ public sealed class CreateAppointmentConcurrencyTests
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                 call.ArgAt<CancellationToken>(1)));
 
-        var handler = new CreateAppointmentCommandHandler(unitOfWork, absences);
+        var handler = new CreateAppointmentCommandHandler(
+            unitOfWork, absences, new FixedTimeProvider(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)));
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             handler.Handle(command, CancellationToken.None));
@@ -76,5 +77,10 @@ public sealed class CreateAppointmentConcurrencyTests
             .LockByIdAsync(availability.Id, Arg.Any<CancellationToken>());
         await appointments.DidNotReceive()
             .AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }

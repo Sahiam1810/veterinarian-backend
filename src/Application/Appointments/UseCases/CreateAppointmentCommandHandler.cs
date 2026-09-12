@@ -8,13 +8,17 @@ namespace Application.Appointments.UseCases;
 
 public sealed class CreateAppointmentCommandHandler(
     IUnitOfWork unitOfWork,
-    IVeterinarianAbsenceRepository absences)
+    IVeterinarianAbsenceRepository absences,
+    TimeProvider timeProvider)
     : IRequestHandler<CreateAppointmentCommand, Guid>
 {
     public async Task<Guid> Handle(
         CreateAppointmentCommand request,
         CancellationToken cancellationToken)
     {
+        // S36: el staff no puede agendar en una fecha/hora que ya pasó.
+        AppointmentPastDateGuard.EnsureNotInThePast(request.ScheduledStart, timeProvider);
+
         // Telefono: perfil del dueño gana; si no hay, request obligatorio.
         var requesterPhone = await AppointmentRequesterPhonePolicy.ResolveAsync(
             unitOfWork,

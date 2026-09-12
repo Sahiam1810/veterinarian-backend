@@ -174,7 +174,8 @@ public sealed class AppointmentRequesterPhonePolicyTests
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                 call.ArgAt<CancellationToken>(1)));
 
-        var sut = new UpdateAppointmentCommandHandler(unitOfWork, absences);
+        var sut = new UpdateAppointmentCommandHandler(
+            unitOfWork, absences, new FixedTimeProvider(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)));
         await sut.Handle(
             new UpdateAppointmentCommand(
                 appointment.Id,
@@ -243,11 +244,17 @@ public sealed class AppointmentRequesterPhonePolicyTests
         return new StaffFixture(
             command,
             appointments,
-            new CreateAppointmentCommandHandler(unitOfWork, absences));
+            new CreateAppointmentCommandHandler(
+                unitOfWork, absences, new FixedTimeProvider(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc))));
     }
 
     private sealed record StaffFixture(
         CreateAppointmentCommand Command,
         IAppointmentRepository Appointments,
         CreateAppointmentCommandHandler CreateSut);
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
 }

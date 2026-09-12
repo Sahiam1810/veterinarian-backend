@@ -80,6 +80,28 @@ public sealed class AppointmentConfiguredScheduleTests
             .AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
     }
 
+    // S36: encaja en el horario configurado (lunes 08:00-18:00) pero la fecha ya pasó
+    // respecto al TimeProvider fijo (2026-09-01) usado por el fixture.
+    [Fact]
+    public async Task Handle_rejects_appointment_scheduled_in_the_past()
+    {
+        var fixture = CreateFixture(
+            DayOfWeek.Monday,
+            new TimeOnly(8, 0),
+            new TimeOnly(18, 0),
+            scheduledStartUtc: new DateTime(2026, 8, 24, 14, 0, 0, DateTimeKind.Utc),
+            scheduledEndUtc: new DateTime(2026, 8, 24, 14, 30, 0, DateTimeKind.Utc));
+
+        var ex = await Assert.ThrowsAsync<BadRequestException>(
+            () => fixture.Handler.Handle(fixture.Command, CancellationToken.None));
+
+        Assert.Equal(
+            "No se puede agendar ni reprogramar una cita en una fecha u hora que ya pasó.",
+            ex.Message);
+        await fixture.Appointments.DidNotReceive()
+            .AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
     private static Fixture CreateFixture(
         DayOfWeek dayOfWeek,
         TimeOnly startTime,
@@ -136,7 +158,8 @@ public sealed class AppointmentConfiguredScheduleTests
                 call.ArgAt<CancellationToken>(1)));
 
         return new Fixture(
-            new CreateAppointmentCommandHandler(unitOfWork, absences),
+            new CreateAppointmentCommandHandler(
+                unitOfWork, absences, new FixedTimeProvider(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc))),
             command,
             appointments);
     }
@@ -145,4 +168,9 @@ public sealed class AppointmentConfiguredScheduleTests
         CreateAppointmentCommandHandler Handler,
         CreateAppointmentCommand Command,
         IAppointmentRepository Appointments);
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
 }
