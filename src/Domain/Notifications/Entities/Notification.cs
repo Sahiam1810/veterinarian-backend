@@ -42,6 +42,13 @@ public sealed class Notification : BaseEntity<Guid>
 
     public NotificationType Type { get; private set; } = null!;
 
+    // S43: marcar como leída no debe requerir el mismo permiso que editar cualquier campo.
+    public void MarkAsRead()
+    {
+        Status = NotificationStatus.Create("Leída");
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Update(
         Guid userId,
         Guid appointmentId,
