@@ -42,5 +42,12 @@ public static class AuthenticationErrors
     public static readonly Error PlatformAccessDenied = new(
         "Authentication.PlatformAccessDenied",
         GenericDescription);
+
+    // Cuenta desactivada por un administrador. Se distingue de PlatformAccessDenied
+    // para que el front pueda mostrar un mensaje específico ("cuenta inactiva")
+    // en vez del genérico de rol no admitido.
+    public static readonly Error UserInactive = new(
+        "Authentication.UserInactive",
+        GenericDescription);
 }
 

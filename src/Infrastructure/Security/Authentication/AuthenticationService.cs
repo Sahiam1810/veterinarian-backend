@@ -64,10 +64,12 @@ public sealed class AuthenticationService(
         }
 
         // Solo tras password válida: no filtrar inactiva como InvalidCredentials.
+        // Código propio (distinto de PlatformAccessDenied) para que el front
+        // muestre "cuenta inactiva" en vez del genérico de rol no admitido.
         if (!IsActiveAccount(account))
         {
             return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.PlatformAccessDenied);
+                AuthenticationErrors.UserInactive);
         }
 
         var identity = await BuildIdentityAsync(account, cancellationToken);
@@ -132,7 +134,7 @@ public sealed class AuthenticationService(
         if (!IsActiveAccount(account))
         {
             return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.PlatformAccessDenied);
+                AuthenticationErrors.UserInactive);
         }
 
         var identity = await BuildIdentityAsync(account, cancellationToken);
