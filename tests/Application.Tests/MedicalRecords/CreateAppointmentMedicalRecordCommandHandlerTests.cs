@@ -4,6 +4,7 @@ using Application.Common.Exceptions;
 using Application.Diagnostics.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.MedicalRecords.UseCases;
+using Application.StatusAppointments.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Veterinarians.Abstraction;
@@ -11,6 +12,7 @@ using Domain.Appointments.Entities;
 using Domain.Common;
 using Domain.Diagnostics.Entities;
 using Domain.MedicalRecords.Entities;
+using Domain.StatusAppointments.Entities;
 using Domain.Vaccinations.Entities;
 using Domain.Veterinarians.Entities;
 using FluentValidation.TestHelper;
@@ -29,6 +31,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     private static readonly Guid OwnVeterinarianId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid ForeignVeterinarianId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid DiagnosticId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid AppointmentStatusId = Guid.Parse("66666666-6666-6666-6666-666666666666");
 
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
     private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
@@ -36,6 +39,8 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     private readonly IDiagnosticRepository diagnosticsRepository = Substitute.For<IDiagnosticRepository>();
     private readonly IMedicalRecordRepository medicalRecordsRepository = Substitute.For<IMedicalRecordRepository>();
     private readonly IVaccinationRepository vaccinationsRepository = Substitute.For<IVaccinationRepository>();
+    private readonly IStatusAppointmentRepository statusAppointmentsRepository
+        = Substitute.For<IStatusAppointmentRepository>();
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateAppointmentMedicalRecordCommandHandler sut;
     private readonly CreateAppointmentMedicalRecordCommandValidator validator = new();
@@ -48,6 +53,9 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
         unitOfWork.DiagnosticsRepository.Returns(diagnosticsRepository);
         unitOfWork.MedicalRecordsRepository.Returns(medicalRecordsRepository);
         unitOfWork.VaccinationsRepository.Returns(vaccinationsRepository);
+        unitOfWork.StatusAppointmentsRepository.Returns(statusAppointmentsRepository);
+        statusAppointmentsRepository.GetByIdAsync(AppointmentStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus("AGENDADA", AppointmentStatusId));
         sut = new CreateAppointmentMedicalRecordCommandHandler(unitOfWork);
     }
 
@@ -297,6 +305,40 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
         await appointmentsRepository.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData("NO_ASISTIO")]
+    [InlineData("CANCELADA")]
+    public async Task MR_T13_throws_ConflictException_when_appointment_status_is_not_AGENDADA(
+        string currentStatusName)
+    {
+        ArrangeOwnedAppointment();
+        statusAppointmentsRepository.GetByIdAsync(AppointmentStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus(currentStatusName, AppointmentStatusId));
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            sut.Handle(CreateCommand(), CancellationToken.None));
+
+        await AssertNoPersistenceAsync();
+        await medicalRecordsRepository.DidNotReceive()
+            .ExistsByAppointmentIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task MR_T14_creates_medical_record_when_appointment_status_is_AGENDADA()
+    {
+        ArrangeOwnedAppointment();
+        ArrangeActiveDiagnostic();
+        medicalRecordsRepository.ExistsByAppointmentIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var result = await sut.Handle(CreateCommand(), CancellationToken.None);
+
+        Assert.Equal(AppointmentId, result.AppointmentId);
+        await medicalRecordsRepository.Received(1)
+            .AddAsync(Arg.Any<MedicalRecord>(), Arg.Any<CancellationToken>());
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
     private void ArrangeOwnedAppointment()
     {
         ArrangeAppointment(OwnVeterinarianId);
@@ -310,7 +352,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
                 ClientPetId,
                 veterinarianId,
                 Guid.NewGuid(),
-                Guid.NewGuid(),
+                AppointmentStatusId,
                 Guid.NewGuid(),
                 DateTime.UtcNow,
                 DateTime.UtcNow.AddHours(1),
@@ -373,5 +415,14 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     {
         typeof(BaseEntity<TId>).GetProperty(nameof(BaseEntity<TId>.Id))!.SetValue(entity, id);
         return entity;
+    }
+
+    private static StatusAppointment CreateStatus(string name, Guid id)
+    {
+        var status = new StatusAppointment(name, null);
+        typeof(StatusAppointment)
+            .GetProperty(nameof(StatusAppointment.Id))!
+            .SetValue(status, id);
+        return status;
     }
 }
