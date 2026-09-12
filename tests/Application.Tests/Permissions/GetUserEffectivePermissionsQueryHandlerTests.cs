@@ -72,8 +72,10 @@ public sealed class GetUserEffectivePermissionsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_does_not_let_a_false_user_row_revoke_a_role_grant()
+    public async Task Handle_lets_a_false_user_row_revoke_a_role_grant()
     {
+        // S47: una excepción por usuario reemplaza el permiso del rol para ese
+        // módulo, incluida la revocación de algo que el rol sí otorga.
         var module = new ModuleEntity("Citas", null);
         modulesRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns([module]);
         rolePermissionsRepository.GetByRoleIdAsync(RoleId, Arg.Any<CancellationToken>())
@@ -103,7 +105,7 @@ public sealed class GetUserEffectivePermissionsQueryHandlerTests
             new GetUserEffectivePermissionsQuery(RoleId, UserId),
             CancellationToken.None);
 
-        Assert.True(result["Citas"].CanView);
-        Assert.True(result["Citas"].CanCreate);
+        Assert.False(result["Citas"].CanView);
+        Assert.False(result["Citas"].CanCreate);
     }
 }
