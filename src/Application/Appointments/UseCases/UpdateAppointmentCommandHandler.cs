@@ -8,13 +8,17 @@ namespace Application.Appointments.UseCases;
 // Reprograma una cita existente; solo permite estado AGENDADA (S27).
 public sealed class UpdateAppointmentCommandHandler(
     IUnitOfWork unitOfWork,
-    IVeterinarianAbsenceRepository absences)
+    IVeterinarianAbsenceRepository absences,
+    TimeProvider timeProvider)
     : IRequestHandler<UpdateAppointmentCommand>
 {
     public async Task Handle(
         UpdateAppointmentCommand request,
         CancellationToken cancellationToken)
     {
+        // S36: el staff no puede reprogramar hacia una fecha/hora que ya pasó.
+        AppointmentPastDateGuard.EnsureNotInThePast(request.ScheduledStart, timeProvider);
+
         var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(
             request.Id,
             cancellationToken)

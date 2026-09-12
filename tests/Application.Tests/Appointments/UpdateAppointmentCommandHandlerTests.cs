@@ -82,7 +82,13 @@ public sealed class UpdateAppointmentCommandHandlerTests
                 Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                 call.ArgAt<CancellationToken>(1)));
-        sut = new UpdateAppointmentCommandHandler(unitOfWork, absences);
+        sut = new UpdateAppointmentCommandHandler(
+            unitOfWork, absences, new FixedTimeProvider(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)));
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     [Fact]
@@ -187,6 +193,46 @@ public sealed class UpdateAppointmentCommandHandlerTests
 
         Assert.Equal(
             "No se puede reprogramar una cita que ya fue atendida, cancelada o marcada como no asistida.",
+            ex.Message);
+        await appointmentsRepository.DidNotReceive()
+            .UpdateAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    // S36: reprogramar hacia una fecha/hora que ya pasó (respecto al TimeProvider fijo
+    // en 2026-09-01 usado por el fixture) debe rechazarse, aunque la cita sí esté AGENDADA.
+    [Fact]
+    public async Task Handle_rejects_reschedule_to_a_past_date()
+    {
+        var appointment = new Appointment(
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            OriginalStatusId,
+            AvailabilityId,
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
+            "notas");
+
+        appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(appointment);
+
+        var pastStart = new DateTime(2026, 8, 24, 14, 0, 0, DateTimeKind.Utc);
+        var command = new UpdateAppointmentCommand(
+            AppointmentId,
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            RequestedStatusId,
+            AvailabilityId,
+            pastStart,
+            pastStart.AddHours(1),
+            "reprogramada");
+
+        var ex = await Assert.ThrowsAsync<BadRequestException>(
+            () => sut.Handle(command, CancellationToken.None));
+
+        Assert.Equal(
+            "No se puede agendar ni reprogramar una cita en una fecha u hora que ya pasó.",
             ex.Message);
         await appointmentsRepository.DidNotReceive()
             .UpdateAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
