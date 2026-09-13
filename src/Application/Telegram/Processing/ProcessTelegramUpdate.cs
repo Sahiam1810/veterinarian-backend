@@ -29,10 +29,11 @@ public sealed class ProcessTelegramUpdateHandler(
     ILogger<ProcessTelegramUpdateHandler> logger) : IRequestHandler<ProcessTelegramUpdateCommand>
 {
     private const string GuestAccessDisabledReply =
-        "Este canal permite consultas generales cuando el acceso como invitado está habilitado.";
+        "Este canal permite consultas generales cuando el acceso como invitado está habilitado. " +
+        "La verificación de identidad se solicitará automáticamente al consultar información privada.";
     private const string GuestStartReply =
-        "¡Hola! Puedes consultar el catálogo, orientarte y agendar citas desde aquí. ¿En qué te ayudo?";
-    private const string FeatureInDevelopmentReply = "Esa función está en desarrollo.";
+        "¡Hola! Puedes hacer preguntas veterinarias generales como invitado. " +
+        "Solo cuando consultes información privada te pediré tu cédula y un código enviado a tu correo.";
 
     public async Task Handle(
         ProcessTelegramUpdateCommand request,
@@ -131,8 +132,19 @@ public sealed class ProcessTelegramUpdateHandler(
                         update,
                         messageText,
                         cancellationToken);
-                    // Citas y operaciones por cédula ya no pasan por OTP/BeginPrivateAccess.
-                    // identity_verification del agente se entrega como respuesta (o desarrollo).
+                    if (guestResult.AccessRequirement == AgentAccessRequirement.IdentityVerification)
+                    {
+                        var challenge = await identityAccessService.BeginPrivateAccessAsync(
+                            update,
+                            guestResult.ResumeMessage,
+                            cancellationToken);
+                        await DeliverAsync(
+                            update,
+                            challenge.Reply ?? "Escribe tu número de cédula para verificar tu identidad.",
+                            cancellationToken);
+                        return;
+                    }
+
                     await DeliverAsync(update, ResponseText(guestResult), cancellationToken);
                     return;
                 }
@@ -150,8 +162,20 @@ public sealed class ProcessTelegramUpdateHandler(
                 cancellationToken);
             if (!hasValidAccess)
             {
-                // Sin sesión Verified: despacho guest; no se inicia OTP por identity_verification.
                 var guestResult = await DispatchGuestMessageAsync(update, messageText, cancellationToken);
+                if (guestResult.AccessRequirement == AgentAccessRequirement.IdentityVerification)
+                {
+                    var challenge = await identityAccessService.BeginPrivateAccessAsync(
+                        update,
+                        guestResult.ResumeMessage,
+                        cancellationToken);
+                    await DeliverAsync(
+                        update,
+                        challenge.Reply ?? "Escribe tu número de cédula para verificar tu identidad.",
+                        cancellationToken);
+                    return;
+                }
+
                 await DeliverAsync(update, ResponseText(guestResult), cancellationToken);
                 return;
             }
@@ -243,7 +267,7 @@ public sealed class ProcessTelegramUpdateHandler(
 
     private static string ResponseText(AgentMessageResult result) =>
         string.IsNullOrWhiteSpace(result.Message)
-            ? FeatureInDevelopmentReply
+            ? "Tu conversación está siendo atendida por un asesor."
             : result.Message;
 
     private async Task ProcessLinkCodeAsync(

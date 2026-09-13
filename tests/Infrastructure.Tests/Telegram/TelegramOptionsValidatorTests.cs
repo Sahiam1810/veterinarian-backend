@@ -15,7 +15,7 @@ public sealed class TelegramOptionsValidatorTests
 
         Assert.True(result.Succeeded);
         Assert.Equal(24, options.PrivateAccessAbsoluteTtlHours);
-        Assert.Equal(5, options.PrivateAccessIdleTtlMinutes);
+        Assert.Equal(30, options.PrivateAccessIdleTtlMinutes);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public sealed class TelegramOptionsValidatorTests
 
     private static TelegramOptions ValidOptions(
         int absoluteHours = 24,
-        int idleMinutes = 5) => new()
+        int idleMinutes = 30) => new()
     {
         Enabled = true,
         GuestModeEnabled = true,

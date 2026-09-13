@@ -63,7 +63,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         await fixture.Bot.Received(1).SendTextAsync(
             1001,
             Arg.Is<string>(text =>
-                text.Contains("Hola", StringComparison.OrdinalIgnoreCase) &&
+                text.Contains("generales", StringComparison.OrdinalIgnoreCase) &&
                 !text.Contains("/vincular", StringComparison.OrdinalIgnoreCase)),
             default);
         await fixture.Dispatcher.DidNotReceive().DispatchAsync(
@@ -132,12 +132,10 @@ public sealed class ProcessTelegramUpdateHandlerTests
         await fixture.Bot.Received(1).SendTextAsync(
             1001,
             Arg.Is<string>(text =>
-                text.Contains("Hola", StringComparison.OrdinalIgnoreCase) &&
-                text.Contains("agendar", StringComparison.OrdinalIgnoreCase) &&
+                text.Contains("invitado", StringComparison.OrdinalIgnoreCase) &&
+                text.Contains("solo", StringComparison.OrdinalIgnoreCase) &&
                 !text.Contains("/vincular", StringComparison.OrdinalIgnoreCase) &&
-                !text.Contains("/registrar", StringComparison.OrdinalIgnoreCase) &&
-                !text.Contains("código", StringComparison.OrdinalIgnoreCase) &&
-                !text.Contains("asesor", StringComparison.OrdinalIgnoreCase)),
+                !text.Contains("/registrar", StringComparison.OrdinalIgnoreCase)),
             default);
     }
 
@@ -274,11 +272,11 @@ public sealed class ProcessTelegramUpdateHandlerTests
     }
 
     [Fact]
-    public async Task Private_guest_identity_verification_is_delivered_without_otp()
+    public async Task Private_guest_result_starts_identity_verification()
     {
         var fixture = CreateFixture();
         var guestId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-        var update = ProcessingUpdate(60, "quiero agendar una cita");
+        var update = ProcessingUpdate(60, "quiero ver mis mascotas");
         fixture.Settings.GuestModeEnabled.Returns(true);
         fixture.Updates.GetByIdAsync(60, default).Returns(update);
         fixture.Identity.GetGuest(1001)
@@ -289,47 +287,19 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 "guest-token",
                 default)
             .Returns(Result(
-                "Para agendar necesito tu cédula, nombre y correo.",
+                "Necesito verificar tu identidad.",
                 AgentAccessRequirement.IdentityVerification,
                 "Quiero agendar una cita"));
+        fixture.Access.BeginPrivateAccessAsync(update, "Quiero agendar una cita", default)
+            .Returns(new TelegramIdentityAccessOutcome(true, "Escribe tu cédula."));
 
         await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(60), default);
 
-        await fixture.Access.DidNotReceive().BeginPrivateAccessAsync(
-            Arg.Any<TelegramInboundUpdate>(),
-            Arg.Any<string?>(),
-            Arg.Any<CancellationToken>());
-        await fixture.Bot.Received(1).SendTextAsync(
-            1001,
-            "Para agendar necesito tu cédula, nombre y correo.",
+        await fixture.Access.Received(1).BeginPrivateAccessAsync(
+            update,
+            "Quiero agendar una cita",
             default);
-    }
-
-    [Fact]
-    public async Task Empty_agent_message_uses_development_fallback_not_advisor()
-    {
-        var fixture = CreateFixture();
-        var guestId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-        var update = ProcessingUpdate(62, "historial clínico");
-        fixture.Settings.GuestModeEnabled.Returns(true);
-        fixture.Updates.GetByIdAsync(62, default).Returns(update);
-        fixture.Identity.GetGuest(1001)
-            .Returns(new AgentDelegatedIdentity(guestId, "TelegramGuest", "guest-token"));
-        fixture.Dispatcher.DispatchAsync(
-                Arg.Any<AgentMessageDispatchRequest>(),
-                Arg.Any<AgentConversationContext>(),
-                "guest-token",
-                default)
-            .Returns(Result("   "));
-
-        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(62), default);
-
-        await fixture.Bot.Received(1).SendTextAsync(
-            1001,
-            Arg.Is<string>(text =>
-                text.Contains("desarrollo", StringComparison.OrdinalIgnoreCase) &&
-                !text.Contains("asesor", StringComparison.OrdinalIgnoreCase)),
-            default);
+        await fixture.Bot.Received(1).SendTextAsync(1001, "Escribe tu cédula.", default);
     }
 
     [Fact]
