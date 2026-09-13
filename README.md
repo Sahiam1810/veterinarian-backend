@@ -69,14 +69,15 @@ La versión de `dotnet-ef` está fijada en `dotnet-tools.json`.
 
 ## Configuración local
 
-La API carga un archivo `.env` buscando desde el directorio de ejecución hacia arriba y, después, incorpora las variables de entorno del proceso. Los valores del proceso prevalecen. El archivo `.env` está ignorado por Git y no hay una plantilla `.env.example` versionada: cree su archivo local sin compartir secretos.
+La API carga un archivo `.env` buscando desde el directorio de ejecución hacia arriba y, después, incorpora las variables de entorno del proceso. Los valores del proceso prevalecen. Use `.env.example` como plantilla: copie a `.env` (ignorado por Git) y complete secretos localmente. No suba `.env` reales.
 
 Como mínimo, la aplicación exige Oracle, CORS y JWT. Un ejemplo de estructura es el siguiente; reemplace todos los marcadores por valores reales.
 
 ```dotenv
 ConnectionStrings__DefaultConnection=User Id=VET_APP;Password=<secret>;Data Source=//localhost:1522/FREEPDB1
 
-Cors__AllowedOrigins__0=http://localhost:5173
+Cors__AllowedOrigins__0=https://huellitas.chatcampuslands.com
+# Local: Cors__AllowedOrigins__1=http://localhost:5174
 
 Jwt__Issuer=huellitas-api
 Jwt__Audience=huellitas-web
@@ -95,6 +96,12 @@ Twilio__Enabled=false
 ```
 
 Las claves privadas, tokens, contraseñas Oracle, credenciales SMTP, OTP y datos personales no deben subirse al repositorio ni imprimirse en logs.
+
+### Docker
+
+- **Producción (stack completo):** use `deploy/docker-compose.prod.yml` y la guía `deploy/DEPLOY.md`. Red `huellitas_network`, DNS `backend` / `chatbot` / `oracle`, API solo en `127.0.0.1:5233`. `Agent__BaseUrl=http://chatbot:8010`. Connection string con `Data Source=//oracle:1521/FREEPDB1` y credenciales solo en `.env` del VPS.
+- **Local:** `docker-compose.yml` en este repo (oracle + backend, red `huellitas-internal`). Copie `.env.example` → `.env` e incluya `ORACLE_PASSWORD`, `APP_USER`, `APP_USER_PASSWORD` y `ConnectionStrings__DefaultConnection` sin hardcodear passwords en el YAML.
+- Migraciones EF y seeds son **manuales** en el primer deploy (no las ejecuta Compose). Ver sección «Base de datos y datos iniciales» y `deploy/DEPLOY.md`.
 
 ### Opciones de negocio disponibles
 
@@ -142,7 +149,7 @@ Agent__InitialConversationStatusId=<GUID-del-catalogo>
 Agent__ClientParticipantTypeId=<GUID-del-catalogo>
 ```
 
-Los dos GUID deben corresponder a los catálogos creados por los seeds. Cuando API y agente comparten una red Docker, use el nombre DNS del servicio en `Agent__BaseUrl`, no `localhost`.
+Los dos GUID deben corresponder a los catálogos creados por los seeds. Cuando API y agente comparten una red Docker, use `http://chatbot:8010` en `Agent__BaseUrl` (nombre DNS del servicio), no `localhost`.
 
 ### Telegram
 

@@ -1,0 +1,67 @@
+# LOCAL / DEV ONLY — no usar como despliegue de producción.
+# Producción del stack completo: ../docker-compose.prod.yml (red huellitas_network).
+#
+# Dominios públicos (browser / reverse proxy del host):
+#   API:      https://api.huellitas.chatcampuslands.com
+#   Frontend: https://huellitas.chatcampuslands.com
+#
+# Este compose solo levanta oracle + backend en red local `huellitas-internal`.
+# DNS alineado a prod: backend, oracle. El chatbot de prod se llama `chatbot`
+# (Agent__BaseUrl). Para stack completo local preferir el Compose padre.
+#
+# Secretos: ./.env (copiar desde .env.example). Sin passwords en este YAML.
+
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    container_name: huellitas-oracle
+    ports:
+      - "127.0.0.1:1522:1521"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    networks:
+      - huellitas-internal
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: huellitas-backend:local
+    container_name: huellitas-backend
+    ports:
+      - "127.0.0.1:5233:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      # Prod (compose padre): http://chatbot:8010. Local: arrancar chatbot en la misma red
+      # o usar el Compose padre. Si el chatbot corre solo en host: http://host.docker.internal:8010
+      Agent__BaseUrl: http://chatbot:8010
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      oracle:
+        condition: service_healthy
+    networks:
+      - huellitas-internal
+    restart: unless-stopped
+
+networks:
+  huellitas-internal:
+    name: huellitas-internal
+    driver: bridge
+
+volumes:
+  oracle_data:
