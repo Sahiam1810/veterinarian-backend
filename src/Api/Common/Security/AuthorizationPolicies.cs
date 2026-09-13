@@ -6,6 +6,9 @@ public static class AuthorizationPolicies
     public const string SuperAdminOnly = "SuperAdminOnly";
     public const string TelegramAgentOnly = "TelegramAgentOnly";
 
+    // Agente delegado (cliente verificado) o JWT guest de Telegram: APIs por cédula / find-or-create.
+    public const string TelegramBotChannel = "TelegramBotChannel";
+
     // Consulta de historiales clínicos (historias médicas, vacunas): todos
     // los roles con interés legítimo en ver el historial de una mascota,
     // incluido el cliente dueño. La escritura la controla cada policy propia.
