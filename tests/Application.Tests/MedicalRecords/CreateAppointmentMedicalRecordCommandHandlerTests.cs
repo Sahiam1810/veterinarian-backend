@@ -339,6 +339,27 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
+    // Check-in de recepción: el paciente ya hizo "check-in" (CONFIRMADA) antes
+    // de pasar a manos del veterinario; debe poder registrarse la historia
+    // clínica igual que si estuviera en AGENDADA.
+    [Fact]
+    public async Task MR_T14B_creates_medical_record_when_appointment_status_is_CONFIRMADA()
+    {
+        ArrangeOwnedAppointment();
+        ArrangeActiveDiagnostic();
+        statusAppointmentsRepository.GetByIdAsync(AppointmentStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus("CONFIRMADA", AppointmentStatusId));
+        medicalRecordsRepository.ExistsByAppointmentIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var result = await sut.Handle(CreateCommand(), CancellationToken.None);
+
+        Assert.Equal(AppointmentId, result.AppointmentId);
+        await medicalRecordsRepository.Received(1)
+            .AddAsync(Arg.Any<MedicalRecord>(), Arg.Any<CancellationToken>());
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
     private void ArrangeOwnedAppointment()
     {
         ArrangeAppointment(OwnVeterinarianId);
