@@ -1,6 +1,7 @@
 using Api.ChatEscalationAssignments.Dtos;
 using Api.ChatEscalationAssignments.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatEscalationAssignments.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.ChatEscalationAssignments.Controllers;
 
 [ApiController]
 [Route("api/chat/escalation-assignments")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatEscalationAssignmentController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crear asignación de escalamiento")]
     [EndpointDescription("Asigna un agente humano a un escalamiento existente.")]
     [ProducesResponseType(typeof(ChatEscalationAssignmentResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +42,7 @@ public sealed class ChatEscalationAssignmentController(ISender sender) : Control
     }
 
     [HttpGet]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Listar asignaciones de escalamiento")]
     [EndpointDescription("Devuelve todas las asignaciones registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationAssignmentResponseDto>), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class ChatEscalationAssignmentController(ISender sender) : Control
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Obtener asignación por identificador")]
     [EndpointDescription("Devuelve la asignación indicada.")]
     [ProducesResponseType(typeof(ChatEscalationAssignmentResponseDto), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class ChatEscalationAssignmentController(ISender sender) : Control
     }
 
     [HttpGet("by-escalation/{chatEscalationId:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Consultar asignaciones por escalamiento")]
     [EndpointDescription("Devuelve las asignaciones asociadas al escalamiento indicado.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationAssignmentResponseDto>), StatusCodes.Status200OK)]
@@ -81,6 +85,7 @@ public sealed class ChatEscalationAssignmentController(ISender sender) : Control
     }
 
     [HttpGet("by-agent/{agentHumanId:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Consultar asignaciones por agente humano")]
     [EndpointDescription("Devuelve las asignaciones asociadas al agente humano indicado.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationAssignmentResponseDto>), StatusCodes.Status200OK)]
@@ -95,6 +100,7 @@ public sealed class ChatEscalationAssignmentController(ISender sender) : Control
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualizar asignación de escalamiento")]
     [EndpointDescription("Actualiza el agente humano y la fecha de asignación.")]
     [ProducesResponseType(typeof(ChatEscalationAssignmentResponseDto), StatusCodes.Status200OK)]
@@ -121,6 +127,7 @@ public sealed class ChatEscalationAssignmentController(ISender sender) : Control
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Eliminar asignación de escalamiento")]
     [EndpointDescription("Elimina la asignación indicada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

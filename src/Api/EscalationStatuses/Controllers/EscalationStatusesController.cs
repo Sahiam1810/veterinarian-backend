@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.EscalationStatuses.Dtos;
 using Api.EscalationStatuses.Mappings;
 using Application.EscalationStatuses.UseCases;
@@ -10,10 +11,10 @@ namespace Api.EscalationStatuses.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class EscalationStatusesController(ISender sender) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission("Catálogos del Chat", PermissionAction.View)]
     [EndpointSummary("Obtiene los estados de escalamiento")]
     [EndpointDescription("Lista los estados registrados para escalamientos.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<EscalationStatusResponseDto>), StatusCodes.Status200OK)]
@@ -21,6 +22,7 @@ public sealed class EscalationStatusesController(ISender sender) : ControllerBas
         Ok((await sender.Send(new GetAllEscalationStatusesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Catálogos del Chat", PermissionAction.View)]
     [EndpointSummary("Obtiene un estado de escalamiento")]
     [EndpointDescription("Busca un estado de escalamiento por su identificador.")]
     [ProducesResponseType(typeof(EscalationStatusResponseDto), StatusCodes.Status200OK)]
@@ -29,6 +31,7 @@ public sealed class EscalationStatusesController(ISender sender) : ControllerBas
         Ok((await sender.Send(new GetEscalationStatusByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crea un estado de escalamiento")]
     [EndpointDescription("Registra un nuevo estado de escalamiento.")]
     [ProducesResponseType(typeof(EscalationStatusResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +44,7 @@ public sealed class EscalationStatusesController(ISender sender) : ControllerBas
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualiza un estado de escalamiento")]
     [EndpointDescription("Actualiza el nombre de un estado de escalamiento.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -53,6 +57,7 @@ public sealed class EscalationStatusesController(ISender sender) : ControllerBas
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Elimina un estado de escalamiento")]
     [EndpointDescription("Elimina un estado de escalamiento por su identificador.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

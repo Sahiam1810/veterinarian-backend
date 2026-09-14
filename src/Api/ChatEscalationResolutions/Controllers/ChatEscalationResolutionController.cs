@@ -1,6 +1,7 @@
 using Api.ChatEscalationResolutions.Dtos;
 using Api.ChatEscalationResolutions.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatEscalationResolutions.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.ChatEscalationResolutions.Controllers;
 
 [ApiController]
 [Route("api/chat/escalation-resolutions")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatEscalationResolutionController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Escalamientos", PermissionAction.Create)]
     [EndpointSummary("Crear resolución de escalamiento")]
     [EndpointDescription("Registra la resolución de un escalamiento existente.")]
     [ProducesResponseType(typeof(ChatEscalationResolutionResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +42,7 @@ public sealed class ChatEscalationResolutionController(ISender sender) : Control
     }
 
     [HttpGet]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Listar resoluciones de escalamiento")]
     [EndpointDescription("Devuelve todas las resoluciones registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationResolutionResponseDto>), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class ChatEscalationResolutionController(ISender sender) : Control
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Obtener resolución por identificador")]
     [EndpointDescription("Devuelve la resolución indicada.")]
     [ProducesResponseType(typeof(ChatEscalationResolutionResponseDto), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class ChatEscalationResolutionController(ISender sender) : Control
     }
 
     [HttpGet("by-escalation/{chatEscalationId:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Consultar resoluciones por escalamiento")]
     [EndpointDescription("Devuelve las resoluciones asociadas al escalamiento indicado.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationResolutionResponseDto>), StatusCodes.Status200OK)]
@@ -81,6 +85,7 @@ public sealed class ChatEscalationResolutionController(ISender sender) : Control
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.Edit)]
     [EndpointSummary("Actualizar resolución de escalamiento")]
     [EndpointDescription("Actualiza los datos de la resolución.")]
     [ProducesResponseType(typeof(ChatEscalationResolutionResponseDto), StatusCodes.Status200OK)]
@@ -107,6 +112,7 @@ public sealed class ChatEscalationResolutionController(ISender sender) : Control
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Eliminar resolución de escalamiento")]
     [EndpointDescription("Elimina la resolución indicada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

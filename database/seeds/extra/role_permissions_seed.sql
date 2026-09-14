@@ -80,6 +80,11 @@ BEGIN
     ensure_permission('352fc580-3c6f-4ab4-b491-8a535e21b0d6', '55555555-5555-5555-5555-555555555555', 'Cuentas y Pagos', 1, 1, 0, 0);
     ensure_permission('a4b6e535-4b9f-7db9-c7f6-5c2be3fd5f54', '55555555-5555-5555-5555-555555555555', 'Plataforma', 1, 0, 0, 0);
     ensure_permission('f4c6e233-2a5b-4c00-b94e-22f334455667', '55555555-5555-5555-5555-555555555555', 'Reprogramación de Citas', 1, 1, 1, 1);
+    -- Bandeja de conversaciones escaladas (Ticket B1): lectura, envío de mensajes
+    -- propios y avance del ciclo de vida del escalamiento; sin borrar nada.
+    ensure_permission('a5490daf-1d22-4f3a-baf6-019beea5056f', '55555555-5555-5555-5555-555555555555', 'Chat', 1, 1, 1, 0);
+    ensure_permission('fd167cd6-9779-4a74-be95-83afb8d53956', '55555555-5555-5555-5555-555555555555', 'Escalamientos', 1, 1, 1, 0);
+    ensure_permission('8358cf0d-84b4-46a6-a8b2-04583929c52f', '55555555-5555-5555-5555-555555555555', 'Catálogos del Chat', 1, 0, 0, 0);
 
     -- Auxiliar
     ensure_permission('b7540f8f-7ac3-4479-a46e-b0efc34d588c', '66666666-6666-6666-6666-666666666666', 'Clientes', 1, 0, 0, 0);
