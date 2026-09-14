@@ -141,7 +141,7 @@ La integración está deshabilitada por defecto. Para activarla se requieren los
 
 ```dotenv
 Agent__Enabled=true
-Agent__BaseUrl=http://localhost:8010
+Agent__BaseUrl=http://127.0.0.1:8010
 Agent__MessagesPath=/api/v1/messages
 Agent__RequestTimeoutSeconds=30
 Agent__MaxResponseBytes=1048576
@@ -149,7 +149,7 @@ Agent__InitialConversationStatusId=<GUID-del-catalogo>
 Agent__ClientParticipantTypeId=<GUID-del-catalogo>
 ```
 
-Los dos GUID deben corresponder a los catálogos creados por los seeds. Cuando API y agente comparten una red Docker, use `http://chatbot:8010` en `Agent__BaseUrl` (nombre DNS del servicio), no `localhost`.
+Los dos GUID deben corresponder a los catálogos creados por los seeds. Para `dotnet run` en el host use la IP literal `127.0.0.1`, no `localhost`: en Windows "localhost" puede resolver primero a `::1` (IPv6) y el chatbot solo escucha en `127.0.0.1` (IPv4), lo que produce fallos de conexión intermitentes con el agente. Cuando API y agente comparten una red Docker, use `http://chatbot:8010` en `Agent__BaseUrl` (nombre DNS del servicio).
 
 ### Telegram
 
