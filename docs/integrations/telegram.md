@@ -1,9 +1,16 @@
 # Configuración del canal Telegram
 
-Esta integración recibe texto de chats privados, vincula la identidad de
-Telegram con una cuenta Huellitas y utiliza el mismo flujo del módulo `Agent`.
-Persiste la conversación, el participante y el estado técnico del webhook,
-pero todavía no guarda el historial en `CHAT_MESSAGES`.
+Esta integración recibe texto de chats privados y utiliza el mismo flujo del
+módulo `Agent`. Persiste la conversación, el participante y el estado técnico
+del webhook, pero todavía no guarda el historial en `CHAT_MESSAGES`.
+
+Por decisión de negocio, este canal **nunca envía ni valida un código de
+verificación**, ni exige que el cliente inicie sesión. Un invitado puede
+preguntar libremente sobre la veterinaria; cuando el propio agente necesita
+datos del cliente (por ejemplo, para agendar una cita), los recolecta en la
+conversación (nombre, cédula, correo, teléfono) y registra al cliente
+directamente. Ver el módulo de agendamiento del chatbot para el detalle de
+ese flujo.
 
 ## 1. Preparar la configuración
 
@@ -135,40 +142,26 @@ $webhookInfo.result | Select-Object url, pending_update_count, last_error_messag
 
 Si cambia la URL del túnel debe ejecutar `setWebhook` otra vez.
 
-## 3. Verificación condicional mediante cédula y OTP
+## 3. Consultas de invitado y registro sin verificación
 
 Con `Telegram__GuestModeEnabled=true`, cualquier chat privado puede hacer
-preguntas veterinarias generales. El backend usa una identidad técnica
-`TelegramGuest`; no crea conversaciones ni participantes para esa identidad y
-el agente no permite que ejecute módulos privados.
+preguntas generales sobre la veterinaria. El backend usa una identidad técnica
+`TelegramGuest`; no crea conversaciones ni participantes para esa identidad
+mientras el chat no esté vinculado a una persona.
 
-La verificación comienza automáticamente, sin `/vincular`, cuando el agente
-indica que la consulta requiere datos u operaciones privadas:
+Cuando el agente necesita datos del cliente (por ejemplo, para agendar una
+cita o registrar una mascota), los recolecta directamente en la conversación
+y registra al cliente sin ningún paso de verificación adicional. No hay
+`/vincular`, `/registrar` ni comandos de sesión: una vez el chat queda
+vinculado a una persona (`TelegramUserLink`), los mensajes siguientes se
+tratan como de esa persona de forma permanente.
 
-1. El backend conserva cifrada la consulta pendiente y solicita la cédula.
-2. Si existe un cliente activo, envía un OTP al correo registrado.
-3. Si no existe, solicita confirmación, nombre y correo, y envía el OTP a ese
-   correo para crear un perfil de cliente sin contraseña.
-4. Al validar el OTP, enlaza permanentemente el chat con la persona y reanuda
-   una sola vez la consulta original.
-
-La cédula, el nombre, el correo y la consulta pendiente se cifran con
-`Telegram__RegistrationProtectionKeyBase64`; el OTP solo se guarda como hash.
-Los mensajes entrantes que contienen datos sensibles se redactan del inbox. El
-agente Python nunca recibe cédula, correo ni OTP.
-
-El enlace del chat es persistente, pero la autorización privada es temporal.
-Dura como máximo `Telegram__PrivateAccessAbsoluteTtlHours` y se invalida tras
-`Telegram__PrivateAccessIdleTtlMinutes` sin actividad. Durante una sesión
-vigente no vuelve a pedir OTP. Al vencer, las preguntas generales siguen
-funcionando y solo una nueva solicitud privada activa otra verificación.
-
-Use `/cancelar` para abandonar un flujo activo. Para liberar el enlace envíe
-`/desvincular confirmar`. Los comandos antiguos `/vincular` y `/registrar` ya
-no inician procesos distintos; el bot explica que la verificación es automática.
+Use `/desvincular confirmar` para liberar el vínculo de un chat.
 
 `Telegram__DelegatedTokenMinutes` controla únicamente el JWT interno que .NET
-genera para llamar al agente; no representa la duración de la sesión privada.
+genera para llamar al agente en nombre de una persona ya vinculada; es un
+detalle técnico entre el backend y el agente, no algo que el cliente vea o
+provea.
 
 ## 4. Vinculación alternativa desde la aplicación
 
@@ -179,9 +172,7 @@ genera para llamar al agente; no representa la duración de la sesión privada.
 5. Espere la confirmación de vinculación y envíe un mensaje de texto.
 6. Verifique que Oracle contenga el vínculo, la conversación y el participante.
 
-El `update_id` evita procesar dos veces el mismo webhook. Los mensajes que
-contienen correo u OTP se redactan del inbox durante su procesamiento y nunca
-deben aparecer en logs.
+El `update_id` evita procesar dos veces el mismo webhook.
 
 ## 5. Diagnóstico rápido
 
@@ -191,12 +182,8 @@ deben aparecer en logs.
   registra cuando `Telegram__Enabled=true`.
 - El bot confirma vínculo pero no responde: compruebe `Agent__Enabled`, la URL
   interna del agente y que el usuario vinculado siga activo.
-- El bot no puede enviar el OTP: revise `Email__Enabled`, host, puerto, TLS,
-  credenciales SMTP y la política de claves de aplicación del proveedor.
-- El backend no inicia por configuración OTP: confirme que
-  `Telegram__OtpPepperBase64` decodifique al menos 32 bytes.
 - `getWebhookInfo.last_error_message` ayuda a detectar túneles cerrados o
   certificados inaccesibles.
 
 No registre en logs ni comparta el token del bot, el secreto del webhook, JWT,
-OTP, credenciales SMTP, correos o textos de usuarios.
+credenciales SMTP, correos o textos de usuarios.
