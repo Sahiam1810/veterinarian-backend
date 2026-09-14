@@ -4,7 +4,7 @@ API de Huellitas para la operación de una clínica veterinaria. Centraliza la g
 
 Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Domain, Application, Infrastructure y Api.
 
-> El portal web es solo para el personal de la clínica. Los dueños no tienen contraseña, cuenta de plataforma ni inicio de sesión web: usan el chatbot de Telegram y verifican su identidad mediante cédula y OTP enviado por correo cuando la operación requiere datos privados.
+> El portal web es solo para el personal de la clínica. Los clientes no tienen contraseña, cuenta de plataforma ni inicio de sesión web: usan el chatbot de Telegram y verifican su identidad mediante cédula y OTP enviado por correo cuando la operación requiere datos privados.
 
 ## Capacidades
 
@@ -17,6 +17,7 @@ Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Do
 - Verificación de correo por OTP para el alta de dueños desde bot y acciones que necesiten comprobar contacto.
 - Administración del runtime conversacional: conversaciones, mensajes, adjuntos, escalaciones, participantes, agentes humanos, modelos y métricas de IA.
 - Swagger en Development, rate limiting, CORS, logging estructurado con Serilog y respuestas de error `application/problem+json`.
+- Recordatorios de citas por Telegram (1 hora antes) con configuración separada de los recordatorios de 24h.
 
 ## Arquitectura
 
@@ -115,6 +116,10 @@ Las claves privadas, tokens, contraseñas Oracle, credenciales SMTP, OTP y datos
 | `RateLimiting` | Límite global y límites específicos para login, refresh, Telegram, lookups y OTP. |
 | `Reminders` | Worker de recordatorios activo por defecto; ventana y frecuencia configurables. |
 | `TelegramReminders` | Worker de aviso Telegram al dueño ~1 h antes; requiere `Telegram:Enabled=true`. Ventana 50–70 min, sondeo cada 5 min, estados `AGENDADA` y `CONFIRMADA`. |
+| `TelegramReminders__LeadMinutes` | Tiempo de anticipación para el recordatorio (60 minutos por defecto). |
+| `TelegramReminders__GraceMinutes` | Margen de tolerancia alrededor del tiempo objetivo (10 minutos por defecto). |
+| `TelegramReminders__PollIntervalMinutes` | Frecuencia de sondeo del worker (5 minutos por defecto). |
+| `TelegramReminders__AllowedStatusNames` | Estados de cita elegibles para recordatorio (AGENDADA,CONFIRMADA por defecto). |
 
 Puede sobrescribir cualquier valor con el formato `Seccion__Propiedad` en `.env` o en el entorno de despliegue.
 
@@ -207,6 +212,22 @@ $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
 
 Los seeds crean catálogos, roles, permisos y datos de soporte del chat. No incluyen usuarios, contraseñas, dueños, mascotas, citas ni historias clínicas. No ejecute `database/seeds/cleanup_seeds.sql` como parte de una instalación normal. Más detalle en [database/seeds/README.md](database/seeds/README.md).
 
+### Seeds extra y patches
+
+El directorio `database/seeds/extra/` contiene seeds adicionales y parches para casos específicos:
+
+- `apply_all.sql` - Ejecutor principal de seeds de producción (incluye roles, módulos, permisos, catálogos de chat, veterinarios y diagnósticos).
+- `diagnostics_seed.sql` - Catálogo inicial de diagnósticos clínicos veterinarios (12 diagnósticos base como Gastroenteritis, Dermatitis, Otitis, etc.).
+- `expand_species_races_catalog.sql` - Amplía el catálogo de especies y razas reales (Perro, Gato, Ave, Conejo con múltiples razas).
+- `modules_seed.sql` - Catálogo de 23 módulos del sistema incluyendo Chat, Escalamientos, IA y Agente, Catálogos del Chat, Plataforma y Reprogramación de Citas.
+- `role_permissions_repair_2026-09-10.sql` - Repara permisos desactualizados en bases existentes, especialmente para roles de staff.
+- `status_appointments_seed.sql` - Catálogo canónico de estados de cita (AGENDADA, ATENDIDA, CONFIRMADA, EN_PROGRESO, CANCELADA, NO_ASISTIO).
+
+El directorio `database/patches/` contiene parches para migraciones específicas:
+
+- `add_pet_photo_url.sql` - Agrega columna PHOTO_URL a la tabla PETS para almacenar URLs de fotos de mascotas.
+- `grant_auxiliar_citas_create_permission.sql` - Otorga permiso de creación en el módulo Citas al rol Auxiliar.
+
 El seed crea el rol protegido `SuperAdmin`, pero no crea una persona ni una contraseña. Promueva una cuenta interna ya existente siguiendo [docs/SUPERADMIN_PROVISIONING.md](docs/SUPERADMIN_PROVISIONING.md).
 
 ## Ejecutar la API
@@ -252,3 +273,15 @@ La solución incluye pruebas unitarias y de integración en `tests/Application.T
 - [Contexto funcional y de revisión](docs/CONTEXT_REVISION_BACKEND.md)
 - [Política de PII en logs](docs/security/pii-logging-policy.md)
 - [Documentación de la API](docs/API.md)
+- [Catálogo de códigos de error de la API](docs/contracts/api-error-codes-catalog.md)
+
+### ADRs (Architecture Decision Records)
+
+El proyecto mantiene registros de decisiones arquitectónicas en `docs/adr/`:
+
+- [Modelo de Cliente e independencia de OTP](docs/adr/2026-09-04-client-identity-and-otp-boundaries.md) - Define el modelo de Cliente sin contraseña y los límites entre OTP de contacto/identidad y OTP de acción de cita.
+- [Límites de permisos del rol Cliente](docs/adr/2026-09-07-client-role-permissions-boundaries.md) - Define la desasignación de permisos de módulos de plataforma web para el rol Cliente.
+- [Verificación de contacto por correo](docs/adr/2026-09-07-contact-verification-email-foundations.md) - Establece los fundamentos para la verificación de contacto por correo (propósitos Register y Claim).
+- [Retiro del portal Cliente JWT](docs/adr/2026-09-07-etapa-5-client-portal-retirement.md) - Política de retiro de rutas del portal Cliente JWT y convención HTTP 410 Gone.
+- [Rate limiting y códigos de error](docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md) - Fundamentos para rate limiting y códigos de error estables.
+- [Registro de dueños](docs/adr/2026-09-07-register-owner-foundations.md) - Fundamentos para el registro de dueños sin contraseña.
