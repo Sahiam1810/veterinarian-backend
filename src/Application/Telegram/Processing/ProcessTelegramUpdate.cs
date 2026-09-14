@@ -4,7 +4,6 @@ using Application.Agent.Errors;
 using Application.Agent.Messages;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
-using Application.Telegram.Identity;
 using Application.Telegram.Linking;
 using Application.Telegram.Messages;
 using Domain.Telegram.Entities;
@@ -23,17 +22,16 @@ public sealed class ProcessTelegramUpdateHandler(
     IAgentDelegatedIdentityProvider identityProvider,
     ITelegramBotClient botClient,
     ISender sender,
-    ITelegramIdentityAccessService identityAccessService,
     ITelegramRuntimeSettings settings,
     TimeProvider timeProvider,
     ILogger<ProcessTelegramUpdateHandler> logger) : IRequestHandler<ProcessTelegramUpdateCommand>
 {
     private const string GuestAccessDisabledReply =
-        "Este canal permite consultas generales cuando el acceso como invitado está habilitado. " +
-        "La verificación de identidad se solicitará automáticamente al consultar información privada.";
+        "Por el momento este canal no está disponible para consultas. Intenta más tarde.";
     private const string GuestStartReply =
-        "¡Hola! Puedes hacer preguntas veterinarias generales como invitado. " +
-        "Solo cuando consultes información privada te pediré tu cédula y un código enviado a tu correo.";
+        "¡Hola! Puedes hacer preguntas generales sobre Huellitas y sus servicios. " +
+        "Si quieres agendar una cita o registrar una mascota, te pediré tu nombre, cédula, " +
+        "correo y teléfono para registrarte.";
 
     public async Task Handle(
         ProcessTelegramUpdateCommand request,
@@ -74,55 +72,6 @@ public sealed class ProcessTelegramUpdateHandler(
                 return;
             }
 
-            var accessOutcome = await identityAccessService.HandleActiveFlowAsync(
-                update,
-                cancellationToken);
-            if (accessOutcome.Consumed)
-            {
-                if (accessOutcome is
-                    {
-                        VerifiedPersonId: not null,
-                        ResumeInboundUpdateId: not null,
-                        ResumeMessage: not null
-                    })
-                {
-                    var verifiedLink = await unitOfWork.UserLinksRepository
-                        .GetByTelegramUserIdAsync(update.TelegramUserId, cancellationToken);
-                    if (verifiedLink is null ||
-                        verifiedLink.PersonId != accessOutcome.VerifiedPersonId.Value)
-                    {
-                        throw new TelegramIdentityConflictException();
-                    }
-
-                    var resumedResult = await DispatchAuthenticatedAsync(
-                        verifiedLink,
-                        accessOutcome.ResumeMessage,
-                        $"telegram-update-{accessOutcome.ResumeInboundUpdateId.Value}-verified",
-                        accessOutcome.ResumeInboundUpdateId.Value,
-                        cancellationToken);
-                    await identityAccessService.TouchAsync(
-                        update.TelegramUserId,
-                        timeProvider.GetUtcNow().UtcDateTime,
-                        cancellationToken);
-                    await DeliverAsync(update, ResponseText(resumedResult), cancellationToken);
-                    // Se consume el mensaje pendiente solo tras entregar la respuesta
-                    // con éxito -- si DispatchAuthenticatedAsync o DeliverAsync fallan
-                    // antes de este punto, el reintento debe poder repetir la
-                    // reanudación completa (HandleActiveFlowAsync la vuelve a exponer).
-                    await identityAccessService.CompleteResumeAsync(
-                        update.TelegramUserId,
-                        timeProvider.GetUtcNow().UtcDateTime,
-                        cancellationToken);
-                    return;
-                }
-
-                await DeliverAsync(
-                    update,
-                    accessOutcome.Reply ?? "Solicitud procesada.",
-                    cancellationToken);
-                return;
-            }
-
             if (string.Equals(messageText, "/start", StringComparison.OrdinalIgnoreCase))
             {
                 await DeliverAsync(update, GuestStartReply, cancellationToken);
@@ -136,23 +85,15 @@ public sealed class ProcessTelegramUpdateHandler(
             {
                 if (settings.GuestModeEnabled)
                 {
+                    // Sin verificación de identidad: la respuesta del agente se
+                    // entrega tal cual, sin importar AccessRequirement. Si el
+                    // mensaje requiere datos del cliente (agendar cita, registrar
+                    // mascota), el propio agente los recolecta en la conversación
+                    // y registra al cliente directamente (ver módulo de agendamiento).
                     var guestResult = await DispatchGuestMessageAsync(
                         update,
                         messageText,
                         cancellationToken);
-                    if (guestResult.AccessRequirement == AgentAccessRequirement.IdentityVerification)
-                    {
-                        var challenge = await identityAccessService.BeginPrivateAccessAsync(
-                            update,
-                            guestResult.ResumeMessage,
-                            cancellationToken);
-                        await DeliverAsync(
-                            update,
-                            challenge.Reply ?? "Escribe tu número de cédula para verificar tu identidad.",
-                            cancellationToken);
-                        return;
-                    }
-
                     await DeliverAsync(update, ResponseText(guestResult), cancellationToken);
                     return;
                 }
@@ -164,39 +105,11 @@ public sealed class ProcessTelegramUpdateHandler(
                 return;
             }
 
-            var hasValidAccess = await identityAccessService.HasValidAccessAsync(
-                update.TelegramUserId,
-                timeProvider.GetUtcNow().UtcDateTime,
-                cancellationToken);
-            if (!hasValidAccess)
-            {
-                var guestResult = await DispatchGuestMessageAsync(update, messageText, cancellationToken);
-                if (guestResult.AccessRequirement == AgentAccessRequirement.IdentityVerification)
-                {
-                    var challenge = await identityAccessService.BeginPrivateAccessAsync(
-                        update,
-                        guestResult.ResumeMessage,
-                        cancellationToken);
-                    await DeliverAsync(
-                        update,
-                        challenge.Reply ?? "Escribe tu número de cédula para verificar tu identidad.",
-                        cancellationToken);
-                    return;
-                }
-
-                await DeliverAsync(update, ResponseText(guestResult), cancellationToken);
-                return;
-            }
-
             var result = await DispatchAuthenticatedAsync(
                 userLink,
                 messageText,
                 $"telegram-update-{update.Id}-verified",
                 update.Id,
-                cancellationToken);
-            await identityAccessService.TouchAsync(
-                update.TelegramUserId,
-                timeProvider.GetUtcNow().UtcDateTime,
                 cancellationToken);
             await DeliverAsync(update, ResponseText(result), cancellationToken);
         }

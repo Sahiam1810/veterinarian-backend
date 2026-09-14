@@ -80,7 +80,6 @@ using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
-using Application.Telegram.Identity;
 using Application.Telegram.Linking;
 using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
@@ -267,13 +266,11 @@ public static class DependencyInjection
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
         services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
         services.AddScoped<ITelegramRegistrationSessionRepository, TelegramRegistrationSessionRepository>();
-        services.AddScoped<ITelegramIdentitySessionRepository, TelegramIdentitySessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
         services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
         services.AddScoped<ITelegramRegistrationService, TelegramRegistrationService>();
-        services.AddScoped<ITelegramIdentityAccessService, TelegramIdentityAccessService>();
         services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
         services.AddSingleton<TelegramRegistrationProtector>(provider =>
         {
@@ -284,8 +281,6 @@ public static class DependencyInjection
             return new TelegramRegistrationProtector(key);
         });
         services.AddSingleton<ITelegramRegistrationProtector>(provider =>
-            provider.GetRequiredService<TelegramRegistrationProtector>());
-        services.AddSingleton<ITelegramIdentityDataProtector>(provider =>
             provider.GetRequiredService<TelegramRegistrationProtector>());
         services.AddSingleton<IOtpProtector>(provider =>
         {
@@ -312,7 +307,6 @@ public static class DependencyInjection
         });
         services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
         services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
-        services.AddScoped<ITelegramClientIdentityGateway, TelegramClientIdentityGateway>();
         services.AddScoped<IVerificationCodeSender, SmtpEmailVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioSmsVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();

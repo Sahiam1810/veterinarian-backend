@@ -18,8 +18,6 @@ public interface ITelegramUnitOfWork
 
     ITelegramRegistrationSessionRepository RegistrationSessionsRepository { get; }
 
-    ITelegramIdentitySessionRepository IdentitySessionsRepository { get; }
-
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     Task ExecuteInTransactionAsync(

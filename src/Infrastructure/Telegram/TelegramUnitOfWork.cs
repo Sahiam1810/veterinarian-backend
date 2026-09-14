@@ -12,8 +12,7 @@ public sealed class TelegramUnitOfWork(
     ITelegramConversationLinkRepository conversationLinksRepository,
     ITelegramInboundUpdateRepository inboundUpdatesRepository,
     ITelegramLinkingSessionRepository linkingSessionsRepository,
-    ITelegramRegistrationSessionRepository registrationSessionsRepository,
-    ITelegramIdentitySessionRepository identitySessionsRepository)
+    ITelegramRegistrationSessionRepository registrationSessionsRepository)
     : ITelegramUnitOfWork
 {
     public IUsersRepository UsersRepository { get; } = usersRepository;
@@ -24,8 +23,6 @@ public sealed class TelegramUnitOfWork(
     public ITelegramLinkingSessionRepository LinkingSessionsRepository { get; } = linkingSessionsRepository;
     public ITelegramRegistrationSessionRepository RegistrationSessionsRepository { get; } =
         registrationSessionsRepository;
-    public ITelegramIdentitySessionRepository IdentitySessionsRepository { get; } =
-        identitySessionsRepository;
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         context.SaveChangesAsync(cancellationToken);

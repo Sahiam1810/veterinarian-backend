@@ -5,7 +5,7 @@ using Application.Telegram.Abstractions;
 namespace Infrastructure.Telegram.Security;
 
 public sealed class TelegramRegistrationProtector
-    : ITelegramRegistrationProtector, ITelegramIdentityDataProtector
+    : ITelegramRegistrationProtector
 {
     private const int NonceSize = 12;
     private const int TagSize = 16;
@@ -34,20 +34,6 @@ public sealed class TelegramRegistrationProtector
 
     public string UnprotectEmail(string protectedEmail)
         => UnprotectCore(protectedEmail, associatedData: null);
-
-    public string Protect(string purpose, string value)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
-        ArgumentException.ThrowIfNullOrWhiteSpace(value);
-        return ProtectCore(value, Encoding.UTF8.GetBytes(purpose));
-    }
-
-    public string Unprotect(string purpose, string protectedValue)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(purpose);
-        ArgumentException.ThrowIfNullOrWhiteSpace(protectedValue);
-        return UnprotectCore(protectedValue, Encoding.UTF8.GetBytes(purpose));
-    }
 
     private string ProtectCore(string value, byte[]? associatedData)
     {

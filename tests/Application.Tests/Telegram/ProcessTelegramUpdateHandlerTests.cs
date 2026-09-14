@@ -2,7 +2,6 @@ using Application.Agent.Abstractions;
 using Application.Agent.Errors;
 using Application.Agent.Messages;
 using Application.Telegram.Abstractions;
-using Application.Telegram.Identity;
 using Application.Telegram.Models;
 using Application.Telegram.Processing;
 using Domain.Telegram.Entities;
@@ -37,9 +36,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
         await fixture.Bot.Received(1).SendTextAsync(
             1001,
-            Arg.Is<string>(text =>
-                text.Contains("invitado", StringComparison.OrdinalIgnoreCase) &&
-                !text.Contains("/vincular", StringComparison.OrdinalIgnoreCase)),
+            Arg.Is<string>(text => !text.Contains("/vincular", StringComparison.OrdinalIgnoreCase)),
             default);
         await fixture.Dispatcher.DidNotReceive().DispatchAsync(
             Arg.Any<AgentMessageDispatchRequest>(),
@@ -113,6 +110,36 @@ public sealed class ProcessTelegramUpdateHandlerTests
     }
 
     [Fact]
+    public async Task Guest_response_is_delivered_as_is_regardless_of_access_requirement()
+    {
+        // Sin verificación de identidad: la respuesta del agente se entrega tal
+        // cual, sin que el backend interprete ni actúe sobre AccessRequirement.
+        var fixture = CreateFixture();
+        var guestId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var update = ProcessingUpdate(60, "quiero agendar una cita");
+        fixture.Settings.GuestModeEnabled.Returns(true);
+        fixture.Updates.GetByIdAsync(60, default).Returns(update);
+        fixture.Identity.GetGuest(1001)
+            .Returns(new AgentDelegatedIdentity(guestId, "TelegramGuest", "guest-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "guest-token",
+                default)
+            .Returns(Result(
+                "Para agendar necesito tu nombre, cédula, correo y teléfono.",
+                AgentAccessRequirement.IdentityVerification,
+                "Quiero agendar una cita"));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(60), default);
+
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            "Para agendar necesito tu nombre, cédula, correo y teléfono.",
+            default);
+    }
+
+    [Fact]
     public async Task Guest_start_explains_both_modes_without_calling_the_agent()
     {
         var fixture = CreateFixture();
@@ -132,10 +159,10 @@ public sealed class ProcessTelegramUpdateHandlerTests
         await fixture.Bot.Received(1).SendTextAsync(
             1001,
             Arg.Is<string>(text =>
-                text.Contains("invitado", StringComparison.OrdinalIgnoreCase) &&
-                text.Contains("solo", StringComparison.OrdinalIgnoreCase) &&
+                text.Contains("generales", StringComparison.OrdinalIgnoreCase) &&
                 !text.Contains("/vincular", StringComparison.OrdinalIgnoreCase) &&
-                !text.Contains("/registrar", StringComparison.OrdinalIgnoreCase)),
+                !text.Contains("/registrar", StringComparison.OrdinalIgnoreCase) &&
+                !text.Contains("código", StringComparison.OrdinalIgnoreCase)),
             default);
     }
 
@@ -147,7 +174,6 @@ public sealed class ProcessTelegramUpdateHandlerTests
         var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
         fixture.Updates.GetByIdAsync(43, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
-        fixture.Access.HasValidAccessAsync(1001, Now.UtcDateTime, default).Returns(true);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
             .Returns(new TelegramConversationBinding(ConversationId, false));
         fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-43-verified", default)
@@ -171,51 +197,6 @@ public sealed class ProcessTelegramUpdateHandlerTests
             "delegated-token",
             default);
         await fixture.Bot.Received(1).SendTextAsync(1001, "Respuesta veterinaria", default);
-    }
-
-    [Fact]
-    public async Task Legacy_linking_command_is_explained_by_identity_service()
-    {
-        var fixture = CreateFixture();
-        var update = ProcessingUpdate(48, "/vincular");
-        fixture.Updates.GetByIdAsync(48, default).Returns(update);
-        fixture.Access.HandleActiveFlowAsync(update, default)
-            .Returns(new TelegramIdentityAccessOutcome(true, "La verificación inicia automáticamente."));
-
-        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(48), default);
-
-        Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
-        await fixture.Bot.Received(1).SendTextAsync(
-            1001,
-            "La verificación inicia automáticamente.",
-            default);
-        await fixture.Dispatcher.DidNotReceive().DispatchAsync(
-            Arg.Any<AgentMessageDispatchRequest>(),
-            Arg.Any<AgentConversationContext>(),
-            Arg.Any<string>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Legacy_registration_command_is_explained_before_agent_call()
-    {
-        var fixture = CreateFixture();
-        var update = ProcessingUpdate(53, "/registrar");
-        fixture.Updates.GetByIdAsync(53, default).Returns(update);
-        fixture.Access.HandleActiveFlowAsync(update, default)
-            .Returns(new TelegramIdentityAccessOutcome(true, "El registro inicia automáticamente."));
-
-        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(53), default);
-
-        await fixture.Bot.Received(1).SendTextAsync(
-            1001,
-            "El registro inicia automáticamente.",
-            default);
-        await fixture.Dispatcher.DidNotReceive().DispatchAsync(
-            Arg.Any<AgentMessageDispatchRequest>(),
-            Arg.Any<AgentConversationContext>(),
-            Arg.Any<string>(),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -249,7 +230,6 @@ public sealed class ProcessTelegramUpdateHandlerTests
         var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
         fixture.Updates.GetByIdAsync(52, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
-        fixture.Access.HasValidAccessAsync(1001, Now.UtcDateTime, default).Returns(true);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
             .Returns(new TelegramConversationBinding(ConversationId, false));
         fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-52-verified", default)
@@ -271,125 +251,6 @@ public sealed class ProcessTelegramUpdateHandlerTests
         Assert.Contains("agent_request_failed", fixture.Logger.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task Private_guest_result_starts_identity_verification()
-    {
-        var fixture = CreateFixture();
-        var guestId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-        var update = ProcessingUpdate(60, "quiero ver mis mascotas");
-        fixture.Settings.GuestModeEnabled.Returns(true);
-        fixture.Updates.GetByIdAsync(60, default).Returns(update);
-        fixture.Identity.GetGuest(1001)
-            .Returns(new AgentDelegatedIdentity(guestId, "TelegramGuest", "guest-token"));
-        fixture.Dispatcher.DispatchAsync(
-                Arg.Any<AgentMessageDispatchRequest>(),
-                Arg.Any<AgentConversationContext>(),
-                "guest-token",
-                default)
-            .Returns(Result(
-                "Necesito verificar tu identidad.",
-                AgentAccessRequirement.IdentityVerification,
-                "Quiero agendar una cita"));
-        fixture.Access.BeginPrivateAccessAsync(update, "Quiero agendar una cita", default)
-            .Returns(new TelegramIdentityAccessOutcome(true, "Escribe tu cédula."));
-
-        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(60), default);
-
-        await fixture.Access.Received(1).BeginPrivateAccessAsync(
-            update,
-            "Quiero agendar una cita",
-            default);
-        await fixture.Bot.Received(1).SendTextAsync(1001, "Escribe tu cédula.", default);
-    }
-
-    [Fact]
-    public async Task Valid_otp_outcome_resumes_original_private_message_once()
-    {
-        var fixture = CreateFixture();
-        var otpUpdate = ProcessingUpdate(61, "123456");
-        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
-        fixture.Updates.GetByIdAsync(61, default).Returns(otpUpdate);
-        fixture.Access.HandleActiveFlowAsync(otpUpdate, default)
-            .Returns(new TelegramIdentityAccessOutcome(
-                true,
-                "Identidad verificada.",
-                PersonId,
-                60,
-                "quiero ver mis mascotas"));
-        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
-        fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
-        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-60-verified", default)
-            .Returns(new AgentConversationContext(ConversationId, "web", false));
-        fixture.Identity.GetAsync(PersonId, default)
-            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
-        fixture.Dispatcher.DispatchAsync(
-                Arg.Any<AgentMessageDispatchRequest>(),
-                Arg.Any<AgentConversationContext>(),
-                "delegated-token",
-                default)
-            .Returns(Result("Tienes una mascota registrada"));
-
-        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(61), default);
-
-        await fixture.Dispatcher.Received(1).DispatchAsync(
-            Arg.Is<AgentMessageDispatchRequest>(request =>
-                request.Message == "quiero ver mis mascotas" &&
-                request.IdempotencyKey == "telegram-update-60-verified"),
-            Arg.Any<AgentConversationContext>(),
-            "delegated-token",
-            default);
-        await fixture.Bot.Received(1).SendTextAsync(
-            1001,
-            "Tienes una mascota registrada",
-            default);
-        await fixture.Access.Received(1).CompleteResumeAsync(1001, Now.UtcDateTime, default);
-    }
-
-    [Fact]
-    public async Task Failed_resume_dispatch_does_not_consume_the_pending_message()
-    {
-        var fixture = CreateFixture();
-        var otpUpdate = ProcessingUpdate(62, "123456");
-        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
-        fixture.Updates.GetByIdAsync(62, default).Returns(otpUpdate);
-        fixture.Access.HandleActiveFlowAsync(otpUpdate, default)
-            .Returns(new TelegramIdentityAccessOutcome(
-                true,
-                "Identidad verificada.",
-                PersonId,
-                60,
-                "quiero agendar una cita"));
-        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
-        fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
-        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-60-verified", default)
-            .Returns(new AgentConversationContext(ConversationId, "web", false));
-        fixture.Identity.GetAsync(PersonId, default)
-            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
-        fixture.Dispatcher.DispatchAsync(
-                Arg.Any<AgentMessageDispatchRequest>(),
-                Arg.Any<AgentConversationContext>(),
-                "delegated-token",
-                default)
-            .Returns<Task<AgentMessageResult>>(_ => throw new AgentUnavailableException(
-                new HttpRequestException("Connection refused")));
-
-        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(62), default);
-
-        // El agente falló antes de poder entregar la respuesta reanudada: no debe
-        // marcarse como consumido, para que el reintento lo vuelva a intentar.
-        await fixture.Access.DidNotReceiveWithAnyArgs().CompleteResumeAsync(
-            default,
-            default,
-            default);
-        await fixture.Bot.DidNotReceiveWithAnyArgs().SendTextAsync(
-            default,
-            default!,
-            default);
-        Assert.Equal(TelegramInboundUpdateStatus.Pending, otpUpdate.Status);
-    }
-
     private static Fixture CreateFixture(DateTimeOffset? currentTime = null)
     {
         var unitOfWork = Substitute.For<ITelegramUnitOfWork>();
@@ -406,12 +267,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         var sender = Substitute.For<ISender>();
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.MaxProcessingAttempts.Returns(3);
-        var access = Substitute.For<ITelegramIdentityAccessService>();
         var logger = new RecordingLogger<ProcessTelegramUpdateHandler>();
-        access.HandleActiveFlowAsync(
-                Arg.Any<TelegramInboundUpdate>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new TelegramIdentityAccessOutcome(false, null));
 
         return new Fixture(
             new ProcessTelegramUpdateHandler(
@@ -421,7 +277,6 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 identity,
                 bot,
                 sender,
-                access,
                 settings,
                 new FixedTimeProvider(currentTime ?? Now),
                 logger),
@@ -433,7 +288,6 @@ public sealed class ProcessTelegramUpdateHandlerTests
             identity,
             bot,
             sender,
-            access,
             settings,
             logger);
     }
@@ -464,7 +318,6 @@ public sealed class ProcessTelegramUpdateHandlerTests
         IAgentDelegatedIdentityProvider Identity,
         ITelegramBotClient Bot,
         ISender Sender,
-        ITelegramIdentityAccessService Access,
         ITelegramRuntimeSettings Settings,
         RecordingLogger<ProcessTelegramUpdateHandler> Logger);
 
