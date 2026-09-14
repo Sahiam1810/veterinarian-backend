@@ -16,6 +16,11 @@ public interface ITelegramRuntimeSettings
 
     TimeSpan DelegatedTokenLifetime { get; }
 
+    // Estado inicial (Pendiente) para un ChatEscalation creado automáticamente
+    // al detectar una frase de escalamiento (Ticket B2). Configurable en vez de
+    // hardcodeado, mismo criterio que Agent__InitialConversationStatusId.
+    Guid PendingEscalationStatusId { get; }
+
     TimeSpan OtpLifetime { get; }
 
     int OtpMaximumAttempts { get; }

@@ -10,6 +10,7 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     TimeSpan ProcessingLease,
     int MaxProcessingAttempts,
     TimeSpan DelegatedTokenLifetime,
+    Guid PendingEscalationStatusId,
     TimeSpan OtpLifetime,
     int OtpMaximumAttempts,
     TimeSpan OtpResendInterval,

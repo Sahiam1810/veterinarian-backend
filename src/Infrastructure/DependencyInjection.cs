@@ -362,6 +362,7 @@ public static class DependencyInjection
                 TimeSpan.FromSeconds(options.ProcessingLeaseSeconds),
                 options.MaxProcessingAttempts,
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes),
+                Guid.Parse(options.PendingEscalationStatusId),
                 TimeSpan.FromMinutes(options.OtpTtlMinutes),
                 options.OtpMaximumAttempts,
                 TimeSpan.FromSeconds(options.OtpResendSeconds),

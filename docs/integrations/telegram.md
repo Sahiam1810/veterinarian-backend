@@ -12,6 +12,17 @@ conversación (nombre, cédula, correo, teléfono) y registra al cliente
 directamente. Ver el módulo de agendamiento del chatbot para el detalle de
 ese flujo.
 
+Si un cliente **ya vinculado** escribe una frase de escalamiento (por ejemplo
+"asesor" o "hablar con alguien"), el backend crea un `ChatEscalation` en
+estado Pendiente para su conversación y responde con un mensaje fijo, sin
+llamar al agente de IA en ese turno — ver `ProcessTelegramUpdateHandler`. Un
+**invitado sin vincular** que escriba lo mismo nunca escala directamente: se
+le redirige a decir qué necesita (agendar cita, registrar mascota) para que
+el flujo de identificación conversacional del chatbot lo reconozca por su
+propia cuenta. La bandeja donde un asesor humano atiende esa conversación
+escalada es responsabilidad del frontend (Recepcionista) y de los tickets de
+persistencia de mensajes y reenvío a Telegram — ambos, en construcción.
+
 ## 1. Preparar la configuración
 
 Desde `@BotFather`, cree el bot y copie el token solamente en `.env`. Genere un
@@ -30,6 +41,7 @@ Telegram__WorkerPollMilliseconds=30000
 Telegram__ProcessingLeaseSeconds=300
 Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5
+Telegram__PendingEscalationStatusId=85000000-0000-0000-0000-000000000001
 Telegram__OtpTtlMinutes=5
 Telegram__OtpMaximumAttempts=5
 Telegram__OtpResendSeconds=60
