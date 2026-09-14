@@ -54,11 +54,25 @@ public sealed class TelegramOptionsValidatorTests
         Assert.True(result.Failed);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-a-guid")]
+    [InlineData("00000000-0000-0000-0000-000000000000")]
+    public void Human_agent_sender_type_id_must_be_a_non_empty_guid(string invalidId)
+    {
+        var options = ValidOptions(humanAgentSenderTypeId: invalidId);
+
+        var result = new TelegramOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Failed);
+    }
+
     private static TelegramOptions ValidOptions(
         int absoluteHours = 24,
         int idleMinutes = 30,
         string pendingEscalationStatusId = "85000000-0000-0000-0000-000000000001",
-        string textMessageTypeId = "83000000-0000-0000-0000-000000000001") => new()
+        string textMessageTypeId = "83000000-0000-0000-0000-000000000001",
+        string humanAgentSenderTypeId = "82000000-0000-0000-0000-000000000003") => new()
     {
         Enabled = true,
         GuestModeEnabled = true,
@@ -74,6 +88,7 @@ public sealed class TelegramOptionsValidatorTests
         PrivateAccessAbsoluteTtlHours = absoluteHours,
         PrivateAccessIdleTtlMinutes = idleMinutes,
         PendingEscalationStatusId = pendingEscalationStatusId,
-        TextMessageTypeId = textMessageTypeId
+        TextMessageTypeId = textMessageTypeId,
+        HumanAgentSenderTypeId = humanAgentSenderTypeId
     };
 }

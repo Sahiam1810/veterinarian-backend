@@ -8,6 +8,13 @@ respuesta del agente de IA **no** se persiste todavía (diferido a propósito,
 ver Ticket B3 en el historial de cambios); los mensajes de invitados sin
 vincular tampoco se guardan, ya que nunca llegan a escalar (Ticket B2).
 
+Cuando un asesor humano responde desde la bandeja de Recepcionista
+(`POST /api/chat/messages` con `SenderTypesId = Agente humano`), el backend
+reenvía ese texto al mismo chat de Telegram automáticamente — ver
+`ForwardHumanChatMessageToTelegramHandler` (Ticket B4). Si el envío falla, el
+mensaje ya quedó guardado igual: solo se pierde la entrega en tiempo real, no
+el registro.
+
 Por decisión de negocio, este canal **nunca envía ni valida un código de
 verificación**, ni exige que el cliente inicie sesión. Un invitado puede
 preguntar libremente sobre la veterinaria; cuando el propio agente necesita
@@ -47,6 +54,7 @@ Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5
 Telegram__PendingEscalationStatusId=85000000-0000-0000-0000-000000000001
 Telegram__TextMessageTypeId=83000000-0000-0000-0000-000000000001
+Telegram__HumanAgentSenderTypeId=82000000-0000-0000-0000-000000000003
 Telegram__OtpTtlMinutes=5
 Telegram__OtpMaximumAttempts=5
 Telegram__OtpResendSeconds=60

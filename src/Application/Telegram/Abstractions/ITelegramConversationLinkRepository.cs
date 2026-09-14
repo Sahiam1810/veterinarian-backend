@@ -12,6 +12,12 @@ public interface ITelegramConversationLinkRepository
         Guid telegramUserLinkId,
         CancellationToken cancellationToken);
 
+    // Ticket B4: búsqueda inversa ChatConversationId -> TelegramConversationLink,
+    // usada al reenviar la respuesta de un asesor humano a Telegram.
+    Task<TelegramConversationLink?> GetByConversationIdAsync(
+        Guid conversationId,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         TelegramConversationLink link,
         CancellationToken cancellationToken);

@@ -27,6 +27,11 @@ public interface ITelegramRuntimeSettings
     // la misma fuente que ya usa PersistentConversationContextProvider.
     Guid TextMessageTypeId { get; }
 
+    // SENDER_TYPES "Agente humano" — decide si un ChatMessage se reenvía a
+    // Telegram (Ticket B4). Ningún otro remitente (Cliente, Agente IA) dispara
+    // el reenvío.
+    Guid HumanAgentSenderTypeId { get; }
+
     TimeSpan OtpLifetime { get; }
 
     int OtpMaximumAttempts { get; }

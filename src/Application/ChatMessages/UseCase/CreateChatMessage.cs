@@ -1,3 +1,4 @@
+using Application.ChatMessages.Events;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using MediatR;
@@ -17,10 +18,12 @@ public sealed class CreateChatMessageCommandHandler
     : IRequestHandler<CreateChatMessageCommand, ChatMessageEntity>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IPublisher _publisher;
 
-    public CreateChatMessageCommandHandler(IUnitOfWork uow)
+    public CreateChatMessageCommandHandler(IUnitOfWork uow, IPublisher publisher)
     {
         _uow = uow;
+        _publisher = publisher;
     }
 
     public async Task<ChatMessageEntity> Handle(
@@ -88,6 +91,11 @@ public sealed class CreateChatMessageCommandHandler
         await _uow.ChatMessagesRepository.AddAsync(message, cancellationToken);
         await _uow.ChatConversationsRepository.UpdateAsync(conversation, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
+
+        // Ticket B4: el mensaje ya está guardado en este punto — cualquier
+        // suscriptor (hoy, el reenvío a Telegram) nunca debe poder hacer que
+        // esta respuesta falle; ver ForwardHumanChatMessageToTelegramHandler.
+        await _publisher.Publish(new ChatMessageCreatedNotification(message), cancellationToken);
 
         return message;
     }
