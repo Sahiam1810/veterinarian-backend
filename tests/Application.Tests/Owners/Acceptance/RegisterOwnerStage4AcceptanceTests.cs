@@ -64,18 +64,17 @@ public sealed class RegisterOwnerStage4AcceptanceTests
     }
 
     [Fact]
-    public async Task Acceptance_BotAdapter_AlwaysConsumesRegisterProof()
+    public async Task Acceptance_BotAdapter_NeverConsumesRegisterProof()
     {
+        // Decisión de negocio: el canal Bot nunca envía ni valida ningún proof/código.
         var harness = new RegisterOwnerAcceptanceHarness();
-        var issued = harness.IssueRegisterProof(Email);
         var adapter = new RegisterOwnerFromBot(ForwardingSender(harness, requireStaffProof: false));
 
         await adapter.RegisterAsync(
-            new RegisterOwnerFromBotRequest(
-                FullName, Email, Identification, Phone, issued.SessionId, issued.Proof),
+            new RegisterOwnerFromBotRequest(FullName, Email, Identification, Phone),
             CancellationToken.None);
 
-        Assert.Equal(issued.SessionId, Assert.Single(harness.ConsumeProof.ConsumedSessionIds));
+        Assert.Empty(harness.ConsumeProof.ConsumedSessionIds);
         Assert.Null(Assert.Single(harness.Users.Items).PasswordHash);
         Assert.Empty(harness.Accounts.Items);
     }
@@ -85,12 +84,10 @@ public sealed class RegisterOwnerStage4AcceptanceTests
     public async Task Acceptance_BotAdapter_RegisteredOwner_IsFindableByPhoneAndIdentification()
     {
         var harness = new RegisterOwnerAcceptanceHarness();
-        var issued = harness.IssueRegisterProof(Email);
         var adapter = new RegisterOwnerFromBot(ForwardingSender(harness, requireStaffProof: false));
 
         var result = await adapter.RegisterAsync(
-            new RegisterOwnerFromBotRequest(
-                FullName, Email, Identification, Phone, issued.SessionId, issued.Proof),
+            new RegisterOwnerFromBotRequest(FullName, Email, Identification, Phone),
             CancellationToken.None);
 
         var byPhone = await new GetClientByPhoneQueryHandler(harness.UnitOfWork).Handle(
@@ -197,6 +194,8 @@ public sealed class RegisterOwnerStage4AcceptanceTests
         Assert.Equal(OwnerRegistrationErrors.PhoneAlreadyInUse.Code, error.Code);
     }
 
+    // Bot ya no envía proof; esta regla del núcleo (propósito de proof inválido)
+    // sigue vigente para Staff cuando RequireContactProofs=true.
     [Fact]
     public async Task Acceptance_ClaimProof_DoesNotRegisterOwner()
     {
@@ -204,12 +203,12 @@ public sealed class RegisterOwnerStage4AcceptanceTests
         var sessionId = Guid.NewGuid();
         const string proof = "claim-proof";
         harness.IssueClaimProof(Email, sessionId, proof);
-        var adapter = new RegisterOwnerFromBot(ForwardingSender(harness, requireStaffProof: false));
+        var adapter = StaffAdapter(harness, requireStaffProof: true);
 
         var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
             adapter.RegisterAsync(
-                new RegisterOwnerFromBotRequest(
-                    FullName, Email, Identification, Phone, sessionId, proof),
+                new RegisterOwnerFromStaffRequest(
+                    FullName, Email, Identification, Phone, ContactProofSessionId: sessionId, ContactProof: proof),
                 CancellationToken.None));
 
         Assert.Equal(OwnerRegistrationErrors.ProofPurposeInvalid.Code, error.Code);
@@ -221,17 +220,18 @@ public sealed class RegisterOwnerStage4AcceptanceTests
     {
         var harness = new RegisterOwnerAcceptanceHarness();
         var issued = harness.IssueRegisterProof(Email);
-        var adapter = new RegisterOwnerFromBot(ForwardingSender(harness, requireStaffProof: false));
+        var adapter = StaffAdapter(harness, requireStaffProof: true);
         await adapter.RegisterAsync(
-            new RegisterOwnerFromBotRequest(
-                FullName, Email, Identification, Phone, issued.SessionId, issued.Proof),
+            new RegisterOwnerFromStaffRequest(
+                FullName, Email, Identification, Phone,
+                ContactProofSessionId: issued.SessionId, ContactProof: issued.Proof),
             CancellationToken.None);
 
         var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
             adapter.RegisterAsync(
-                new RegisterOwnerFromBotRequest(
+                new RegisterOwnerFromStaffRequest(
                     "Otra", "otra@huellitas.test", "9999999999", "3009999999",
-                    issued.SessionId, issued.Proof),
+                    ContactProofSessionId: issued.SessionId, ContactProof: issued.Proof),
                 CancellationToken.None));
 
         Assert.Equal(ContactVerificationErrors.ProofAlreadyConsumed.Code, error.Code);

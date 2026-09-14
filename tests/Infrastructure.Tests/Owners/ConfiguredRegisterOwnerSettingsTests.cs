@@ -9,15 +9,15 @@ namespace Infrastructure.Tests.Owners;
 public sealed class ConfiguredRegisterOwnerSettingsTests
 {
     [Fact]
-    public void Bot_always_requires_proof_telegram_uses_session_equivalence()
+    public void Bot_and_telegram_never_require_proof()
     {
         var settings = new ConfiguredRegisterOwnerSettings(
             Options.Create(new RegisterOwnerOptions { RequireContactProofs = false }));
 
         Assert.False(settings.RequireContactProofs);
         Assert.False(settings.RequiresContactProof(RegisterOwnerChannel.Staff));
-        Assert.True(settings.RequiresContactProof(RegisterOwnerChannel.Bot));
-        // Equivalencia ADR 4.3: OTP Gmail de sesión Telegram, no ContactVerification.
+        // Decisión de negocio: el canal Bot nunca envía ni valida códigos de verificación.
+        Assert.False(settings.RequiresContactProof(RegisterOwnerChannel.Bot));
         Assert.False(settings.RequiresContactProof(RegisterOwnerChannel.Telegram));
     }
 

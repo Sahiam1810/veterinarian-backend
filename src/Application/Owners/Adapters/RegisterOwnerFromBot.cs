@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Owners.Adapters;
 
-// Adaptador bot (4.2). Siempre exige proof Email en el núcleo.
+// Adaptador bot (4.2). Nunca exige proof de correo (decisión de negocio).
 public sealed class RegisterOwnerFromBot(ISender sender) : IRegisterOwnerFromBot
 {
     public Task<RegisterOwnerResult> RegisterAsync(
@@ -18,8 +18,6 @@ public sealed class RegisterOwnerFromBot(ISender sender) : IRegisterOwnerFromBot
                 request.IdentificationNumber,
                 request.PhoneNumber,
                 RegisterOwnerChannel.Bot,
-                request.Address,
-                request.ContactProofSessionId,
-                request.ContactProof),
+                request.Address),
             cancellationToken);
 }
