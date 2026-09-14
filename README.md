@@ -4,7 +4,7 @@ API de Huellitas para la operación de una clínica veterinaria. Centraliza la g
 
 Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Domain, Application, Infrastructure y Api.
 
-> El portal web es solo para el personal de la clínica. Los dueños no tienen contraseña, cuenta de plataforma ni inicio de sesión web: usan el chatbot de Telegram y verifican su identidad mediante cédula y OTP enviado por correo cuando la operación requiere datos privados.
+> El portal web es solo para el personal de la clínica. Los clientes no tienen contraseña, cuenta de plataforma ni inicio de sesión web: usan el chatbot de Telegram y verifican su identidad mediante cédula y OTP enviado por correo cuando la operación requiere datos privados.
 
 ## Capacidades
 
