@@ -338,6 +338,80 @@ public sealed class TelegramIdentityAccessServiceTests
     }
 
     [Fact]
+    public async Task Valid_otp_keeps_pending_update_until_the_caller_completes_the_resume()
+    {
+        var fixture = CreateFixture();
+        var session = KnownOtpSession();
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Otp.Verify("123456", Hash).Returns(true);
+
+        await fixture.Service.HandleActiveFlowAsync(ProcessingUpdate(44, "123456"), default);
+
+        // No se consume aquí -- si la reanudación con el agente falla después de
+        // este punto, un reintento todavía necesita poder leer el mensaje pendiente.
+        Assert.Equal(42, session.PendingInboundUpdateId);
+    }
+
+    [Fact]
+    public async Task Retry_after_verified_session_resumes_the_same_pending_message_again()
+    {
+        var fixture = CreateFixture();
+        var session = KnownOtpSession();
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Otp.Verify("123456", Hash).Returns(true);
+        await fixture.Service.HandleActiveFlowAsync(ProcessingUpdate(44, "123456"), default);
+
+        // Simula el reintento automático de la MISMA actualización tras un fallo
+        // al reanudar (p.ej. el agente no respondió): el texto original todavía
+        // está disponible porque la redacción del OTP no depende de este paso.
+        var retryOutcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(44, "123456"), default);
+
+        Assert.True(retryOutcome.Consumed);
+        Assert.Equal(PersonId, retryOutcome.VerifiedPersonId);
+        Assert.Equal(42, retryOutcome.ResumeInboundUpdateId);
+        Assert.Equal("quiero ver mis mascotas", retryOutcome.ResumeMessage);
+    }
+
+    [Fact]
+    public async Task Unrelated_message_after_verification_is_not_treated_as_a_resume_once_completed()
+    {
+        var fixture = CreateFixture();
+        var session = KnownOtpSession();
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Otp.Verify("123456", Hash).Returns(true);
+        await fixture.Service.HandleActiveFlowAsync(ProcessingUpdate(44, "123456"), default);
+
+        // El llamador ya entregó la respuesta reanudada con éxito y la consumió.
+        await fixture.Service.CompleteResumeAsync(1001, Now.UtcDateTime, default);
+        Assert.Null(session.PendingInboundUpdateId);
+
+        var nextOutcome = await fixture.Service.HandleActiveFlowAsync(
+            ProcessingUpdate(45, "hola"), default);
+
+        Assert.False(nextOutcome.Consumed);
+        Assert.Null(nextOutcome.ResumeInboundUpdateId);
+    }
+
+    [Fact]
+    public async Task Identification_text_survives_a_failure_so_a_retry_can_reprocess_it()
+    {
+        var fixture = CreateFixture();
+        var session = TelegramIdentitySession.Start(1001, 1001, 42, Now.UtcDateTime);
+        var update = ProcessingUpdate(43, "123456789");
+        fixture.Sessions.GetCurrentByTelegramUserIdAsync(1001, default).Returns(session);
+        fixture.Clients.FindActiveByIdentificationAsync("123456789", default)
+            .Returns<Task<TelegramClientIdentity?>>(_ => throw new InvalidOperationException("agente caído"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => fixture.Service.HandleActiveFlowAsync(update, default));
+
+        // Antes del fix, la redacción ocurría antes de esta llamada y el texto ya
+        // se habría perdido para el reintento. Ahora sigue disponible.
+        Assert.Equal("123456789", update.MessageText);
+    }
+
+    [Fact]
     public async Task Invalid_otp_blocks_at_the_configured_attempt_limit()
     {
         var fixture = CreateFixture(maximumAttempts: 1);
