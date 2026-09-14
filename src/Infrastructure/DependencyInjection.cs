@@ -364,6 +364,7 @@ public static class DependencyInjection
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes),
                 Guid.Parse(options.PendingEscalationStatusId),
                 Guid.Parse(options.TextMessageTypeId),
+                Guid.Parse(options.HumanAgentSenderTypeId),
                 TimeSpan.FromMinutes(options.OtpTtlMinutes),
                 options.OtpMaximumAttempts,
                 TimeSpan.FromSeconds(options.OtpResendSeconds),

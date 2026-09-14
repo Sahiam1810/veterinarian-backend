@@ -52,6 +52,8 @@ using Domain.ChatMessages.Entities;
 using Domain.ChatParticipants.Entities;
 using Domain.MessageTypes.Entities;
 using Domain.SenderTypes.Entities;
+using MediatR;
+using NSubstitute;
 using Xunit;
 
 namespace Application.Tests.ChatMessages;
@@ -197,7 +199,8 @@ public sealed class ChatMessageTests
         context.MessageTypes[messageType.Id] = messageType;
         context.Participants[participant.Id] = participant;
 
-        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork);
+        var publisher = Substitute.For<IPublisher>();
+        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork, publisher);
         var message = await handler.Handle(
             new CreateChatMessageCommand(
                 conversation.Id,
@@ -210,6 +213,12 @@ public sealed class ChatMessageTests
 
         Assert.Contains(message.Id, context.Messages.Keys);
         Assert.Equal(message.CreatedAt, context.Conversations[conversation.Id].LastMessageAt);
+        // Ticket B4: todo mensaje creado publica el evento genérico del que
+        // depende el reenvío a Telegram (entre otros suscriptores futuros).
+        await publisher.Received(1).Publish(
+            Arg.Is<Application.ChatMessages.Events.ChatMessageCreatedNotification>(
+                notification => notification.Message.Id == message.Id),
+            CancellationToken.None);
     }
 
     [Fact]
@@ -217,7 +226,7 @@ public sealed class ChatMessageTests
     {
         var context = new ChatMessageTestContext();
         var missingConversationId = Guid.Parse("66666666-6666-6666-6666-666666666666");
-        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork);
+        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork, Substitute.For<IPublisher>());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -238,7 +247,7 @@ public sealed class ChatMessageTests
         var conversation = ChatConversation.Create(context.Status.Id);
         context.Conversations[conversation.Id] = conversation;
         var missingParticipantId = Guid.Parse("77777777-7777-7777-7777-777777777777");
-        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork);
+        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork, Substitute.For<IPublisher>());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -265,7 +274,7 @@ public sealed class ChatMessageTests
         context.Conversations[conversation.Id] = conversation;
         context.Participants[participant.Id] = participant;
         var missingSenderTypeId = Guid.Parse("88888888-8888-8888-8888-888888888888");
-        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork);
+        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork, Substitute.For<IPublisher>());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -293,7 +302,7 @@ public sealed class ChatMessageTests
         context.SenderTypes[senderType.Id] = senderType;
         context.Participants[participant.Id] = participant;
         var missingMessageTypeId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork);
+        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork, Substitute.For<IPublisher>());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             handler.Handle(
@@ -323,7 +332,7 @@ public sealed class ChatMessageTests
         context.SenderTypes[senderType.Id] = senderType;
         context.MessageTypes[messageType.Id] = messageType;
         context.Participants[participant.Id] = participant;
-        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork);
+        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork, Substitute.For<IPublisher>());
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             handler.Handle(
@@ -354,7 +363,7 @@ public sealed class ChatMessageTests
         context.SenderTypes[otherSenderType.Id] = otherSenderType;
         context.MessageTypes[messageType.Id] = messageType;
         context.Participants[participant.Id] = participant;
-        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork);
+        var handler = new CreateChatMessageCommandHandler(context.UnitOfWork, Substitute.For<IPublisher>());
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             handler.Handle(
