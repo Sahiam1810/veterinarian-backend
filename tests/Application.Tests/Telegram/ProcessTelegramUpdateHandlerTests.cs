@@ -343,6 +343,51 @@ public sealed class ProcessTelegramUpdateHandlerTests
             1001,
             "Tienes una mascota registrada",
             default);
+        await fixture.Access.Received(1).CompleteResumeAsync(1001, Now.UtcDateTime, default);
+    }
+
+    [Fact]
+    public async Task Failed_resume_dispatch_does_not_consume_the_pending_message()
+    {
+        var fixture = CreateFixture();
+        var otpUpdate = ProcessingUpdate(62, "123456");
+        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
+        fixture.Updates.GetByIdAsync(62, default).Returns(otpUpdate);
+        fixture.Access.HandleActiveFlowAsync(otpUpdate, default)
+            .Returns(new TelegramIdentityAccessOutcome(
+                true,
+                "Identidad verificada.",
+                PersonId,
+                60,
+                "quiero agendar una cita"));
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
+        fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
+            .Returns(new TelegramConversationBinding(ConversationId, false));
+        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-60-verified", default)
+            .Returns(new AgentConversationContext(ConversationId, "web", false));
+        fixture.Identity.GetAsync(PersonId, default)
+            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "delegated-token",
+                default)
+            .Returns<Task<AgentMessageResult>>(_ => throw new AgentUnavailableException(
+                new HttpRequestException("Connection refused")));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(62), default);
+
+        // El agente falló antes de poder entregar la respuesta reanudada: no debe
+        // marcarse como consumido, para que el reintento lo vuelva a intentar.
+        await fixture.Access.DidNotReceiveWithAnyArgs().CompleteResumeAsync(
+            default,
+            default,
+            default);
+        await fixture.Bot.DidNotReceiveWithAnyArgs().SendTextAsync(
+            default,
+            default!,
+            default);
+        Assert.Equal(TelegramInboundUpdateStatus.Pending, otpUpdate.Status);
     }
 
     private static Fixture CreateFixture(DateTimeOffset? currentTime = null)

@@ -20,6 +20,15 @@ public interface ITelegramIdentityAccessService
         TelegramInboundUpdate update,
         CancellationToken cancellationToken);
 
+    // Marca como entregado el mensaje reanudado tras la verificación de identidad.
+    // Debe llamarse solo después de que el llamador reanude la conversación con el
+    // agente y entregue la respuesta con éxito -- si se llama antes y esa entrega
+    // falla, un reintento perdería el mensaje pendiente sin haberlo completado.
+    Task CompleteResumeAsync(
+        long telegramUserId,
+        DateTime now,
+        CancellationToken cancellationToken);
+
     Task<bool> HasValidAccessAsync(
         long telegramUserId,
         DateTime now,
@@ -144,6 +153,21 @@ public sealed class TelegramIdentityAccessService(
             .GetCurrentByTelegramUserIdAsync(update.TelegramUserId, cancellationToken);
         if (session is null || session.Status == TelegramIdentitySessionStatus.Verified)
         {
+            // La identidad ya quedó verificada pero todavía hay un mensaje pendiente
+            // sin reanudar (el llamador falló al reanudarlo -- p.ej. el agente no
+            // respondió -- antes de poder consumirlo). En vez de tratar este texto
+            // como un mensaje nuevo, se repite la reanudación pendiente hasta que
+            // el llamador la entregue con éxito y la consuma vía CompleteResumeAsync.
+            if (session is { Status: TelegramIdentitySessionStatus.Verified, PendingInboundUpdateId: not null })
+            {
+                return new TelegramIdentityAccessOutcome(
+                    true,
+                    null,
+                    session.PersonId,
+                    session.PendingInboundUpdateId,
+                    dataProtector.Unprotect(PendingMessagePurpose, session.ProtectedPendingMessage!));
+            }
+
             if (string.Equals(text, "/vincular", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(text, "/registrar", StringComparison.OrdinalIgnoreCase))
             {
@@ -183,6 +207,22 @@ public sealed class TelegramIdentityAccessService(
                 await ProcessOtpAsync(update, session, text, now, cancellationToken),
             _ => new TelegramIdentityAccessOutcome(false, null)
         };
+    }
+
+    public async Task CompleteResumeAsync(
+        long telegramUserId,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var session = await unitOfWork.IdentitySessionsRepository
+            .GetCurrentByTelegramUserIdAsync(telegramUserId, cancellationToken);
+        if (session is null || session.Status != TelegramIdentitySessionStatus.Verified)
+        {
+            return;
+        }
+
+        session.TakePendingInboundUpdate(now);
+        await PersistSessionAsync(session, cancellationToken);
     }
 
     public async Task<bool> HasValidAccessAsync(
@@ -232,10 +272,15 @@ public sealed class TelegramIdentityAccessService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        await RedactAsync(update, now.UtcDateTime, cancellationToken);
+        // La redacción se difiere hasta después de completar el paso (envío de
+        // OTP incluido): si se hiciera al entrar y algo posterior fallara
+        // (p.ej. el correo del OTP), el reintento vería el texto ya vacío y
+        // devolvería el mensaje genérico de "solo texto" en vez de repetir la
+        // validación de la cédula.
         var normalizedIdentification = identification.Trim();
         if (normalizedIdentification.Length is < 5 or > 20)
         {
+            await RedactAsync(update, now.UtcDateTime, cancellationToken);
             return new TelegramIdentityAccessOutcome(
                 true,
                 "Escribe una cédula válida de entre 5 y 20 caracteres o usa /cancelar.");
@@ -250,6 +295,7 @@ public sealed class TelegramIdentityAccessService(
                 dataProtector.Protect(IdentificationPurpose, normalizedIdentification),
                 now.UtcDateTime);
             await PersistSessionAsync(session, cancellationToken);
+            await RedactAsync(update, now.UtcDateTime, cancellationToken);
             return new TelegramIdentityAccessOutcome(
                 true,
                 "No encontramos un perfil con esa cédula. Responde sí para registrarte como cliente o usa /cancelar.");
@@ -263,6 +309,7 @@ public sealed class TelegramIdentityAccessService(
             now.Add(settings.OtpLifetime).UtcDateTime,
             now.UtcDateTime);
         await PersistSessionAsync(session, cancellationToken);
+        await RedactAsync(update, now.UtcDateTime, cancellationToken);
         return new TelegramIdentityAccessOutcome(
             true,
             "Enviamos un código de verificación a tu correo registrado. Escríbelo aquí.");
@@ -293,14 +340,16 @@ public sealed class TelegramIdentityAccessService(
         DateTime now,
         CancellationToken cancellationToken)
     {
-        await RedactAsync(update, now, cancellationToken);
+        // Ver comentario en ProcessIdentificationAsync: redactar solo al terminar el paso.
         if (fullName.Length is < 3 or > 100)
         {
+            await RedactAsync(update, now, cancellationToken);
             return new TelegramIdentityAccessOutcome(true, "Escribe un nombre completo válido.");
         }
 
         session.CaptureFullName(dataProtector.Protect(FullNamePurpose, fullName), now);
         await PersistSessionAsync(session, cancellationToken);
+        await RedactAsync(update, now, cancellationToken);
         return new TelegramIdentityAccessOutcome(true, "Escribe tu correo electrónico.");
     }
 
@@ -311,11 +360,12 @@ public sealed class TelegramIdentityAccessService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        await RedactAsync(update, now.UtcDateTime, cancellationToken);
+        // Ver comentario en ProcessIdentificationAsync: redactar solo al terminar el paso.
         var normalizedEmail = email.Trim().ToLowerInvariant();
         if (!MailAddress.TryCreate(normalizedEmail, out var address) ||
             !string.Equals(address.Address, normalizedEmail, StringComparison.OrdinalIgnoreCase))
         {
+            await RedactAsync(update, now.UtcDateTime, cancellationToken);
             return new TelegramIdentityAccessOutcome(true, "Escribe un correo electrónico válido.");
         }
 
@@ -325,6 +375,7 @@ public sealed class TelegramIdentityAccessService(
         {
             session.RecoverIdentification(now.UtcDateTime);
             await PersistSessionAsync(session, cancellationToken);
+            await RedactAsync(update, now.UtcDateTime, cancellationToken);
             return new TelegramIdentityAccessOutcome(
                 true,
                 "La cuenta asociada a ese correo está inactiva. " +
@@ -342,6 +393,7 @@ public sealed class TelegramIdentityAccessService(
                 ? account.PersonId
                 : null);
         await PersistSessionAsync(session, cancellationToken);
+        await RedactAsync(update, now.UtcDateTime, cancellationToken);
         return new TelegramIdentityAccessOutcome(
             true,
             "Enviamos un código de verificación al correo indicado. Escríbelo aquí.");
@@ -354,11 +406,19 @@ public sealed class TelegramIdentityAccessService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        await RedactAsync(update, now.UtcDateTime, cancellationToken);
+        // Ver comentario en ProcessIdentificationAsync: redactar solo al terminar el
+        // paso. La rama de éxito es una excepción deliberada -- NO redacta aquí.
+        // El llamador (ProcessTelegramUpdateHandler) todavía debe reanudar el
+        // mensaje pendiente con el agente y entregar la respuesta; si eso falla,
+        // update.Complete()/ScheduleRetry ya limpian el texto cuando el
+        // procesamiento realmente concluye (éxito o reintentos agotados). Redactar
+        // antes de eso repetía el bug: el reintento veía el texto vacío y
+        // devolvía el mensaje genérico de "solo texto" en vez de reanudar la cita.
         if (session.OtpExpiresAt is null || now.UtcDateTime >= session.OtpExpiresAt)
         {
             session.Expire(now.UtcDateTime);
             await PersistSessionAsync(session, cancellationToken);
+            await RedactAsync(update, now.UtcDateTime, cancellationToken);
             return new TelegramIdentityAccessOutcome(
                 true,
                 "El código venció. Repite tu solicitud privada para recibir uno nuevo.");
@@ -368,6 +428,7 @@ public sealed class TelegramIdentityAccessService(
         {
             session.RegisterFailedOtpAttempt(settings.OtpMaximumAttempts, now.UtcDateTime);
             await PersistSessionAsync(session, cancellationToken);
+            await RedactAsync(update, now.UtcDateTime, cancellationToken);
             var reply = session.Status == TelegramIdentitySessionStatus.Blocked
                 ? "Se agotaron los intentos. Repite tu solicitud privada para iniciar nuevamente."
                 : "El código no es válido. Verifícalo e intenta otra vez.";
@@ -403,7 +464,12 @@ public sealed class TelegramIdentityAccessService(
                     now.Add(settings.PrivateAccessAbsoluteLifetime).UtcDateTime,
                     now.Add(settings.PrivateAccessIdleLifetime).UtcDateTime,
                     now.UtcDateTime);
-                pendingUpdateId = session.TakePendingInboundUpdate(now.UtcDateTime);
+                // No se consume aquí (session.TakePendingInboundUpdate) a propósito:
+                // si la reanudación con el agente falla más adelante en el llamador,
+                // un reintento necesita poder volver a leer este mismo mensaje
+                // pendiente. Se consume recién en CompleteResumeAsync, una vez que
+                // el llamador entrega la respuesta con éxito.
+                pendingUpdateId = session.PendingInboundUpdateId;
                 personId = identity.PersonId;
                 await unitOfWork.IdentitySessionsRepository.UpdateAsync(session, transactionToken);
             }, cancellationToken);
@@ -414,6 +480,7 @@ public sealed class TelegramIdentityAccessService(
         {
             session.RecoverIdentification(now.UtcDateTime);
             await PersistSessionAsync(session, cancellationToken);
+            await RedactAsync(update, now.UtcDateTime, cancellationToken);
             return new TelegramIdentityAccessOutcome(
                 true,
                 "El correo pertenece a una cuenta existente, pero la cédula no coincide. " +

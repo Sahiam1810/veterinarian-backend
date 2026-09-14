@@ -105,6 +105,14 @@ public sealed class ProcessTelegramUpdateHandler(
                         timeProvider.GetUtcNow().UtcDateTime,
                         cancellationToken);
                     await DeliverAsync(update, ResponseText(resumedResult), cancellationToken);
+                    // Se consume el mensaje pendiente solo tras entregar la respuesta
+                    // con éxito -- si DispatchAuthenticatedAsync o DeliverAsync fallan
+                    // antes de este punto, el reintento debe poder repetir la
+                    // reanudación completa (HandleActiveFlowAsync la vuelve a exponer).
+                    await identityAccessService.CompleteResumeAsync(
+                        update.TelegramUserId,
+                        timeProvider.GetUtcNow().UtcDateTime,
+                        cancellationToken);
                     return;
                 }
 
