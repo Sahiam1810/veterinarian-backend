@@ -2,6 +2,8 @@ using Application.Agent.Abstractions;
 using Application.Agent.Errors;
 using Application.Agent.Messages;
 using Application.ChatEscalations.UseCase;
+using Application.ChatMessages.UseCase;
+using Application.ChatParticipants.UseCase;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Models;
 using Application.Telegram.Processing;
@@ -12,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 using ChatEscalationEntity = Domain.ChatEscalations.Entities.ChatEscalation;
+using ChatParticipantEntity = Domain.ChatParticipants.Entities.ChatParticipant;
 
 namespace Application.Tests.Telegram;
 
@@ -25,6 +28,10 @@ public sealed class ProcessTelegramUpdateHandlerTests
         Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid PendingEscalationStatusId =
         Guid.Parse("85000000-0000-0000-0000-000000000001");
+    private static readonly Guid ClientParticipantTypeId =
+        Guid.Parse("82000000-0000-0000-0000-000000000001");
+    private static readonly Guid TextMessageTypeId =
+        Guid.Parse("83000000-0000-0000-0000-000000000001");
 
     [Fact]
     public async Task Guest_mode_disabled_returns_control_message_without_linking_command()
@@ -203,6 +210,83 @@ public sealed class ProcessTelegramUpdateHandlerTests
         await fixture.Bot.Received(1).SendTextAsync(1001, "Respuesta veterinaria", default);
     }
 
+    [Fact]
+    public async Task Linked_user_message_is_persisted_as_a_client_chat_message()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(80, "¿Qué vacunas necesita?");
+        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
+        fixture.Updates.GetByIdAsync(80, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
+        fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
+            .Returns(new TelegramConversationBinding(ConversationId, false));
+        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-80-verified", default)
+            .Returns(new AgentConversationContext(ConversationId, "web", false));
+        fixture.Identity.GetAsync(PersonId, default)
+            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "delegated-token",
+                default)
+            .Returns(Result("Respuesta veterinaria"));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(80), default);
+
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<GetChatParticipantsByConversationIdQuery>(query =>
+                query.ChatConversationId == ConversationId),
+            default);
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<CreateChatMessageCommand>(command =>
+                command.ChatConversationId == ConversationId &&
+                command.SenderTypesId == ClientParticipantTypeId &&
+                command.MessageTypeId == TextMessageTypeId &&
+                command.Content == "¿Qué vacunas necesita?" &&
+                command.Metadata == null),
+            default);
+        // Ticket B3, Decisión 2: la respuesta de la IA no se persiste en esta ronda.
+        await fixture.Sender.DidNotReceive().Send(
+            Arg.Is<CreateChatMessageCommand>(command => command.Content == "Respuesta veterinaria"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Missing_client_participant_skips_persistence_without_failing_the_turn()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(81, "hola de nuevo");
+        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
+        fixture.Updates.GetByIdAsync(81, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
+        fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
+            .Returns(new TelegramConversationBinding(ConversationId, false));
+        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-81-verified", default)
+            .Returns(new AgentConversationContext(ConversationId, "web", false));
+        fixture.Identity.GetAsync(PersonId, default)
+            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "delegated-token",
+                default)
+            .Returns(Result("Hola de nuevo"));
+        // Sin participante "Cliente" para esta conversación (caso inesperado).
+        fixture.Sender.Send(
+                Arg.Is<GetChatParticipantsByConversationIdQuery>(query =>
+                    query.ChatConversationId == ConversationId),
+                default)
+            .Returns((IReadOnlyCollection<ChatParticipantEntity>)Array.Empty<ChatParticipantEntity>());
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(81), default);
+
+        await fixture.Sender.DidNotReceive().Send(
+            Arg.Any<CreateChatMessageCommand>(),
+            Arg.Any<CancellationToken>());
+        // El turno sigue su curso normal aunque no se pudo persistir el mensaje.
+        await fixture.Bot.Received(1).SendTextAsync(1001, "Hola de nuevo", default);
+    }
+
     [Theory]
     [InlineData("Quiero hablar con un asesor")]
     [InlineData("hablar con alguien porfa")]
@@ -220,7 +304,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Context.ResolveAsync(
                 PersonId,
                 ConversationId,
-                $"telegram-update-{userLink.Id}-escalation",
+                "telegram-update-70-verified",
                 default)
             .Returns(new AgentConversationContext(ConversationId, "web", false));
 
@@ -232,6 +316,15 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 command.EscalationStatusId == PendingEscalationStatusId &&
                 command.FromAi == false &&
                 command.Reason == message),
+            default);
+        // Ticket B3: el propio mensaje que disparó el escalamiento también queda
+        // guardado — la Recepcionista necesita verlo, no solo el resumen en Reason.
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<CreateChatMessageCommand>(command =>
+                command.ChatConversationId == ConversationId &&
+                command.SenderTypesId == ClientParticipantTypeId &&
+                command.MessageTypeId == TextMessageTypeId &&
+                command.Content == message),
             default);
         await fixture.Dispatcher.DidNotReceive().DispatchAsync(
             Arg.Any<AgentMessageDispatchRequest>(),
@@ -260,7 +353,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Context.ResolveAsync(
                 PersonId,
                 ConversationId,
-                $"telegram-update-{userLink.Id}-escalation",
+                "telegram-update-71-verified",
                 default)
             .Returns(new AgentConversationContext(ConversationId, "web", true));
 
@@ -376,12 +469,32 @@ public sealed class ProcessTelegramUpdateHandlerTests
         var context = Substitute.For<IConversationContextProvider>();
         var dispatcher = Substitute.For<IAgentMessageDispatcher>();
         var identity = Substitute.For<IAgentDelegatedIdentityProvider>();
+        var conversationDefaults = Substitute.For<IAgentConversationDefaults>();
+        conversationDefaults.ClientParticipantTypeId.Returns(ClientParticipantTypeId);
         var bot = Substitute.For<ITelegramBotClient>();
         var sender = Substitute.For<ISender>();
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.MaxProcessingAttempts.Returns(3);
         settings.PendingEscalationStatusId.Returns(PendingEscalationStatusId);
+        settings.TextMessageTypeId.Returns(TextMessageTypeId);
         var logger = new RecordingLogger<ProcessTelegramUpdateHandler>();
+
+        // Por defecto, toda conversación consultada ya tiene su participante
+        // "Cliente" (así lo crea PersistentConversationContextProvider) — los
+        // tests que necesiten simular su ausencia lo sobrescriben explícitamente.
+        sender.Send(Arg.Any<GetChatParticipantsByConversationIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var query = callInfo.Arg<GetChatParticipantsByConversationIdQuery>();
+                IReadOnlyCollection<ChatParticipantEntity> participants =
+                [
+                    ChatParticipantEntity.Create(
+                        query.ChatConversationId,
+                        ClientParticipantTypeId,
+                        chatUserProfileId: Guid.NewGuid())
+                ];
+                return participants;
+            });
 
         return new Fixture(
             new ProcessTelegramUpdateHandler(
@@ -389,6 +502,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 context,
                 dispatcher,
                 identity,
+                conversationDefaults,
                 bot,
                 sender,
                 settings,
@@ -400,6 +514,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
             context,
             dispatcher,
             identity,
+            conversationDefaults,
             bot,
             sender,
             settings,
@@ -430,6 +545,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         IConversationContextProvider Context,
         IAgentMessageDispatcher Dispatcher,
         IAgentDelegatedIdentityProvider Identity,
+        IAgentConversationDefaults ConversationDefaults,
         ITelegramBotClient Bot,
         ISender Sender,
         ITelegramRuntimeSettings Settings,

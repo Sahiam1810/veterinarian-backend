@@ -2,7 +2,11 @@
 
 Esta integración recibe texto de chats privados y utiliza el mismo flujo del
 módulo `Agent`. Persiste la conversación, el participante y el estado técnico
-del webhook, pero todavía no guarda el historial en `CHAT_MESSAGES`.
+del webhook. Para un cliente **vinculado**, cada mensaje de texto que envía
+también queda guardado en `CHAT_MESSAGES` (`SenderTypesId = Cliente`) — la
+respuesta del agente de IA **no** se persiste todavía (diferido a propósito,
+ver Ticket B3 en el historial de cambios); los mensajes de invitados sin
+vincular tampoco se guardan, ya que nunca llegan a escalar (Ticket B2).
 
 Por decisión de negocio, este canal **nunca envía ni valida un código de
 verificación**, ni exige que el cliente inicie sesión. Un invitado puede
@@ -42,6 +46,7 @@ Telegram__ProcessingLeaseSeconds=300
 Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5
 Telegram__PendingEscalationStatusId=85000000-0000-0000-0000-000000000001
+Telegram__TextMessageTypeId=83000000-0000-0000-0000-000000000001
 Telegram__OtpTtlMinutes=5
 Telegram__OtpMaximumAttempts=5
 Telegram__OtpResendSeconds=60

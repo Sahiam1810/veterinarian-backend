@@ -3,6 +3,8 @@ using Application.Agent.Abstractions;
 using Application.Agent.Errors;
 using Application.Agent.Messages;
 using Application.ChatEscalations.UseCase;
+using Application.ChatMessages.UseCase;
+using Application.ChatParticipants.UseCase;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
 using Application.Telegram.Linking;
@@ -21,6 +23,7 @@ public sealed class ProcessTelegramUpdateHandler(
     IConversationContextProvider conversationContextProvider,
     IAgentMessageDispatcher dispatcher,
     IAgentDelegatedIdentityProvider identityProvider,
+    IAgentConversationDefaults conversationDefaults,
     ITelegramBotClient botClient,
     ISender sender,
     ITelegramRuntimeSettings settings,
@@ -138,17 +141,31 @@ public sealed class ProcessTelegramUpdateHandler(
                 return;
             }
 
+            var idempotencyKey = $"telegram-update-{update.Id}-verified";
+            var context = await ResolveConversationAsync(userLink, idempotencyKey, cancellationToken);
+
+            // Ticket B3: se persiste cada mensaje de texto de un cliente vinculado,
+            // sea o no una frase de escalamiento — la Recepcionista necesita ver el
+            // mensaje que disparó el escalamiento, no solo la razón resumida que
+            // queda en ChatEscalation.Reason. La respuesta del agente de IA queda
+            // deliberadamente diferida (Decisión 2, Ticket B3): no hay todavía un
+            // AiModel/ChatParticipant "Agente IA" sembrado, y crear uno placeholder
+            // solo para esto acoplaría este ticket al sistema de métricas de costo
+            // de IA (ChatAiRuns/ChatAiRunMetrics), que nadie pidió todavía.
+            await PersistClientMessageAsync(context.ConversationId, messageText, cancellationToken);
+
             if (IsEscalationRequest(messageText))
             {
-                await EscalateAsync(userLink, messageText, cancellationToken);
+                await EscalateAsync(context, messageText, cancellationToken);
                 await DeliverAsync(update, EscalationConfirmedReply, cancellationToken);
                 return;
             }
 
             var result = await DispatchAuthenticatedAsync(
+                context,
                 userLink,
                 messageText,
-                $"telegram-update-{update.Id}-verified",
+                idempotencyKey,
                 update.Id,
                 cancellationToken);
             await DeliverAsync(update, ResponseText(result), cancellationToken);
@@ -198,13 +215,13 @@ public sealed class ProcessTelegramUpdateHandler(
     }
 
     private async Task<AgentMessageResult> DispatchAuthenticatedAsync(
+        AgentConversationContext context,
         TelegramUserLink userLink,
         string messageText,
         string idempotencyKey,
         long correlationSourceId,
         CancellationToken cancellationToken)
     {
-        var context = await ResolveConversationAsync(userLink, idempotencyKey, cancellationToken);
         var identity = await identityProvider.GetAsync(userLink.PersonId, cancellationToken);
         var result = await dispatcher.DispatchAsync(
             new AgentMessageDispatchRequest(
@@ -230,19 +247,16 @@ public sealed class ProcessTelegramUpdateHandler(
         EscalationPhrases.Any(phrase =>
             messageText.Contains(phrase, StringComparison.OrdinalIgnoreCase));
 
-    // Crea el ChatEscalation para un cliente ya vinculado. Reutiliza
-    // ResolveConversationAsync (ya existente) para obtener la ChatConversation
-    // real de la persona y, con ella, si ya hay un escalamiento activo sin
-    // resolver (AgentConversationContext.IsEscalated, calculado por el mismo
-    // IActiveConversationEscalationReader que usa PersistentConversationContextProvider)
-    // — evita crear un segundo registro si el cliente repite la frase.
+    // Crea el ChatEscalation para un cliente ya vinculado, a partir de la
+    // ChatConversation ya resuelta por el llamador. Si ya hay un escalamiento
+    // activo sin resolver (AgentConversationContext.IsEscalated, calculado por
+    // el mismo IActiveConversationEscalationReader que usa
+    // PersistentConversationContextProvider) no crea un segundo registro.
     private async Task EscalateAsync(
-        TelegramUserLink userLink,
+        AgentConversationContext context,
         string messageText,
         CancellationToken cancellationToken)
     {
-        var idempotencyKey = $"telegram-update-{userLink.Id}-escalation";
-        var context = await ResolveConversationAsync(userLink, idempotencyKey, cancellationToken);
         if (context.IsEscalated)
         {
             return;
@@ -255,6 +269,39 @@ public sealed class ProcessTelegramUpdateHandler(
                 FromAi: false,
                 Reason: messageText,
                 UpdateAt: null),
+            cancellationToken);
+    }
+
+    // Ticket B3: persiste el mensaje de texto del cliente en CHAT_MESSAGES.
+    // El participante "Cliente" ya existe para toda ChatConversation resuelta
+    // por PersistentConversationContextProvider — se busca por su tipo en vez
+    // de crearlo de nuevo.
+    private async Task PersistClientMessageAsync(
+        Guid conversationId,
+        string messageText,
+        CancellationToken cancellationToken)
+    {
+        var participants = await sender.Send(
+            new GetChatParticipantsByConversationIdQuery(conversationId),
+            cancellationToken);
+        var clientParticipant = participants.FirstOrDefault(
+            participant => participant.ParticipantTypeId == conversationDefaults.ClientParticipantTypeId);
+        if (clientParticipant is null)
+        {
+            logger.LogWarning(
+                "No client ChatParticipant found for conversation {ConversationId}; skipping message persistence.",
+                conversationId);
+            return;
+        }
+
+        await sender.Send(
+            new CreateChatMessageCommand(
+                conversationId,
+                clientParticipant.Id,
+                conversationDefaults.ClientParticipantTypeId,
+                settings.TextMessageTypeId,
+                messageText,
+                Metadata: null),
             cancellationToken);
     }
 

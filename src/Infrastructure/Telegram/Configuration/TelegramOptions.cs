@@ -16,6 +16,7 @@ public sealed class TelegramOptions
     public int MaxProcessingAttempts { get; init; } = 3;
     public int DelegatedTokenMinutes { get; init; } = 5;
     public string PendingEscalationStatusId { get; init; } = string.Empty;
+    public string TextMessageTypeId { get; init; } = string.Empty;
     public int OtpTtlMinutes { get; init; } = 5;
     public int OtpMaximumAttempts { get; init; } = 5;
     public int OtpResendSeconds { get; init; } = 60;
