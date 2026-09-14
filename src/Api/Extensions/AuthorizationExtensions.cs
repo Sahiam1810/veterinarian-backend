@@ -42,6 +42,11 @@ public static class AuthorizationExtensions
                     .RequireClaim(
                         DelegatedTokenClaims.ClaimType,
                         DelegatedTokenClaims.TelegramAgent));
+            options.AddPolicy(
+                AuthorizationPolicies.TelegramGuestLinkOnly,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .RequireClaim(DelegatedTokenClaims.TelegramUserId));
         });
 
         // Habilita las policies dinámicas "perm:{módulo}:{acción}" usadas por

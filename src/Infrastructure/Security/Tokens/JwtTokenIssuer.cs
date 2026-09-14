@@ -33,7 +33,18 @@ public sealed class JwtTokenIssuer(
         TimeSpan lifetime,
         IReadOnlyCollection<string> permissions)
     {
-        return Issue(identity, lifetime, permissions, tokenUse: null);
+        return Issue(identity, lifetime, permissions, tokenUse: null, extraClaims: []);
+    }
+
+    // Punto de extensión genérico para claims adicionales que no forman parte del
+    // conjunto fijo de AuthenticatedIdentity (p. ej. telegram_user_id en tokens de invitado).
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        IReadOnlyCollection<Claim> extraClaims)
+    {
+        return Issue(identity, lifetime, permissions, tokenUse: null, extraClaims);
     }
 
     public IssuedAccessToken IssueDelegated(
@@ -47,14 +58,15 @@ public sealed class JwtTokenIssuer(
             throw new ArgumentException("Delegated token use is required.", nameof(tokenUse));
         }
 
-        return Issue(identity, lifetime, permissions, tokenUse);
+        return Issue(identity, lifetime, permissions, tokenUse, extraClaims: []);
     }
 
     private IssuedAccessToken Issue(
         AuthenticatedIdentity identity,
         TimeSpan lifetime,
         IReadOnlyCollection<string> permissions,
-        string? tokenUse)
+        string? tokenUse,
+        IReadOnlyCollection<Claim> extraClaims)
     {
         if (lifetime <= TimeSpan.Zero)
         {
@@ -92,6 +104,8 @@ public sealed class JwtTokenIssuer(
         {
             claims.Add(new Claim(DelegatedTokenClaims.ClaimType, tokenUse));
         }
+
+        claims.AddRange(extraClaims);
 
         string[] normalizedPermissions = SystemRoles.IsSuperAdmin(identity.RoleId)
             ? []

@@ -35,6 +35,47 @@ public sealed class TelegramControllersTests
     }
 
     [Fact]
+    public async Task Bot_link_uses_the_telegram_user_id_claim_from_the_guest_token()
+    {
+        var personId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var linkId = Guid.NewGuid();
+        var sender = Substitute.For<ISender>();
+        sender.Send(Arg.Any<LinkTelegramBotAccountCommand>(), Arg.Any<CancellationToken>())
+            .Returns(linkId);
+        var controller = new TelegramBotLinkController(sender)
+        {
+            ControllerContext = ContextWithClaim("telegram_user_id", "555")
+        };
+
+        var result = await controller.Link(
+            new LinkTelegramBotAccountRequest(personId),
+            default);
+
+        Assert.Equal(linkId, Assert.IsType<OkObjectResult>(result.Result).Value is
+            LinkTelegramBotAccountResponse response ? response.LinkId : Guid.Empty);
+        await sender.Received(1).Send(
+            Arg.Is<LinkTelegramBotAccountCommand>(command =>
+                command.PersonId == personId && command.TelegramUserId == 555),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Bot_link_rejects_a_missing_or_invalid_telegram_user_id_claim()
+    {
+        var sender = Substitute.For<ISender>();
+        var controller = new TelegramBotLinkController(sender)
+        {
+            ControllerContext = ContextWithClaim("telegram_user_id", "not-a-number")
+        };
+
+        await Assert.ThrowsAsync<Application.Common.Exceptions.UnauthorizedException>(() =>
+            controller.Link(new LinkTelegramBotAccountRequest(Guid.NewGuid()), default));
+        await sender.DidNotReceive().Send(
+            Arg.Any<LinkTelegramBotAccountCommand>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Webhook_rejects_invalid_secret_without_enqueueing()
     {
         var sender = Substitute.For<ISender>();

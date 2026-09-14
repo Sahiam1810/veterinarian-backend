@@ -53,6 +53,7 @@ public sealed class AgentGuestIdentityProviderTests
         Assert.Equal(first.PersonId.ToString(), token.Claims.Single(x => x.Type == "person_id").Value);
         Assert.True(Guid.TryParse(token.Claims.Single(x => x.Type == "role_id").Value, out _));
         Assert.Equal("TelegramGuest", token.Claims.Single(x => x.Type == "role").Value);
+        Assert.Equal("1001", token.Claims.Single(x => x.Type == "telegram_user_id").Value);
         Assert.DoesNotContain(token.Claims, claim => claim.Type == "token_use");
         Assert.DoesNotContain(token.Claims, claim => claim.Type == PermissionClaimValue.ClaimType);
         await sender.DidNotReceive().Send(
@@ -117,6 +118,7 @@ public sealed class AgentGuestIdentityProviderTests
         Assert.Equal(
             "telegram_agent",
             token.Claims.Single(claim => claim.Type == "token_use").Value);
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "telegram_user_id");
     }
 
     private static string Encode(string pem) =>

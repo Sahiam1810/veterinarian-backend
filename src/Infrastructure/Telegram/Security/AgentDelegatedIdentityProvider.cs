@@ -10,6 +10,7 @@ using Application.Users.Abstraction;
 using Infrastructure.Security.Tokens;
 using Domain.Roles;
 using MediatR;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -44,7 +45,11 @@ public sealed class AgentDelegatedIdentityProvider(
             "telegram_guest",
             "guest@telegram.invalid",
             "Invitado");
-        var token = tokenIssuer.Issue(identity, settings.DelegatedTokenLifetime, []);
+        var token = tokenIssuer.Issue(
+            identity,
+            settings.DelegatedTokenLifetime,
+            permissions: [],
+            extraClaims: [new Claim(DelegatedTokenClaims.TelegramUserId, telegramUserId.ToString())]);
         return new AgentDelegatedIdentity(personId, GuestRole, token.Token);
     }
 

@@ -97,6 +97,30 @@ public sealed class AuthorizationPoliciesTests
         Assert.False(result.Succeeded);
     }
 
+    [Fact]
+    public async Task TelegramGuestLinkOnly_allows_a_guest_identity_with_the_telegram_claim()
+    {
+        var guest = PrincipalWithClaims(new Claim("telegram_user_id", "555"));
+
+        var result = await authorizationService.AuthorizeAsync(
+            guest,
+            AuthorizationPolicies.TelegramGuestLinkOnly);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task TelegramGuestLinkOnly_rejects_a_delegated_identity_without_the_guest_claim()
+    {
+        var delegated = PrincipalWithClaims(new Claim("token_use", "telegram_agent"));
+
+        var result = await authorizationService.AuthorizeAsync(
+            delegated,
+            AuthorizationPolicies.TelegramGuestLinkOnly);
+
+        Assert.False(result.Succeeded);
+    }
+
     private static ClaimsPrincipal PersistedSuperAdmin() =>
         PrincipalWithClaims(
             new Claim("role_id", SystemRoles.SuperAdminId.ToString()),
