@@ -85,9 +85,15 @@ internal sealed class RegisterOwnerAcceptanceHarness
     {
         public bool RequireContactProofs { get; } = requireStaffProof;
 
+        // Espeja ConfiguredRegisterOwnerSettings: Bot/Telegram nunca exigen proof
+        // (decisión de negocio); Staff respeta el flag configurado.
         public bool RequiresContactProof(RegisterOwnerChannel channel) =>
-            channel is RegisterOwnerChannel.Bot
-            || RequireContactProofs;
+            channel switch
+            {
+                RegisterOwnerChannel.Bot => false,
+                RegisterOwnerChannel.Telegram => false,
+                _ => RequireContactProofs
+            };
     }
 }
 

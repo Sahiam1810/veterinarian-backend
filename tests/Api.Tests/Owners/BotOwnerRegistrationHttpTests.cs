@@ -37,76 +37,11 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
         this.factory = factory;
 
     [Fact]
-    public async Task Register_WithoutProof_Returns400_AndDoesNotInvokePort()
-    {
-        factory.ResetRegisterOwner();
-        using var client = factory.CreateAnonymousClient();
-
-        using var response = await client.PostAsJsonAsync(
-            "/api/owners/bot",
-            new
-            {
-                FullName = "Ana Bot",
-                Email = "ana.bot@huellitas.test",
-                IdentificationNumber = "1234567890",
-                PhoneNumber = "3001234567",
-                ContactProofSessionId = Guid.NewGuid(),
-                ContactProof = ""
-            });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(
-            "application/problem+json",
-            response.Content.Headers.ContentType?.MediaType);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(
-            OwnerRegistrationErrors.ProofRequired.Code,
-            document.RootElement.GetProperty("code").GetString());
-        Assert.Equal(400, document.RootElement.GetProperty("status").GetInt32());
-        await factory.RegisterOwner.DidNotReceive().RegisterAsync(
-            Arg.Any<RegisterOwnerFromBotRequest>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Register_WithEmptySessionId_Returns400_AndDoesNotInvokePort()
-    {
-        factory.ResetRegisterOwner();
-        using var client = factory.CreateAnonymousClient();
-
-        using var response = await client.PostAsJsonAsync(
-            "/api/owners/bot",
-            new
-            {
-                FullName = "Ana Bot",
-                Email = "ana.bot@huellitas.test",
-                IdentificationNumber = "1234567890",
-                PhoneNumber = "3001234567",
-                ContactProofSessionId = Guid.Empty,
-                ContactProof = "proof-token"
-            });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(
-            "application/problem+json",
-            response.Content.Headers.ContentType?.MediaType);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(
-            OwnerRegistrationErrors.ProofRequired.Code,
-            document.RootElement.GetProperty("code").GetString());
-        Assert.Equal(400, document.RootElement.GetProperty("status").GetInt32());
-        await factory.RegisterOwner.DidNotReceive().RegisterAsync(
-            Arg.Any<RegisterOwnerFromBotRequest>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Register_ValidProofAndData_Returns201_WithoutSecrets()
+    public async Task Register_ValidData_Returns201_WithoutSecrets_AndWithoutAnyProof()
     {
         factory.ResetRegisterOwner();
         var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var clientId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var sessionId = Guid.Parse("33333333-3333-3333-3333-333333333333");
         factory.RegisterOwner.RegisterAsync(
                 Arg.Any<RegisterOwnerFromBotRequest>(),
                 Arg.Any<CancellationToken>())
@@ -114,9 +49,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
 
         using var client = factory.CreateAnonymousClient();
 
-        using var response = await client.PostAsJsonAsync(
-            "/api/owners/bot",
-            ValidBody(sessionId, "single-use-proof"));
+        using var response = await client.PostAsJsonAsync("/api/owners/bot", ValidBody());
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
@@ -128,53 +61,11 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
         Assert.False(document.RootElement.TryGetProperty("otp", out _));
         Assert.False(document.RootElement.TryGetProperty("proof", out _));
         Assert.False(document.RootElement.TryGetProperty("contactProof", out _));
-        Assert.DoesNotContain("single-use-proof", body, StringComparison.Ordinal);
         Assert.DoesNotContain("RequireContactProofs", body, StringComparison.OrdinalIgnoreCase);
 
         await factory.RegisterOwner.Received(1).RegisterAsync(
-            Arg.Is<RegisterOwnerFromBotRequest>(r =>
-                r.ContactProofSessionId == sessionId &&
-                r.ContactProof == "single-use-proof" &&
-                r.Email == "ana.bot@huellitas.test"),
+            Arg.Is<RegisterOwnerFromBotRequest>(r => r.Email == "ana.bot@huellitas.test"),
             Arg.Any<CancellationToken>());
-    }
-
-    [Theory]
-    [InlineData("ContactVerification.ProofInvalid", HttpStatusCode.BadRequest)]
-    [InlineData("ContactVerification.ProofExpired", HttpStatusCode.Conflict)]
-    [InlineData("ContactVerification.ProofAlreadyConsumed", HttpStatusCode.Conflict)]
-    public async Task Register_ProofFailures_PreserveCodeAndStatus(
-        string errorCode,
-        HttpStatusCode expectedStatus)
-    {
-        var error = errorCode switch
-        {
-            "ContactVerification.ProofInvalid" => ContactVerificationErrors.ProofInvalid,
-            "ContactVerification.ProofExpired" => ContactVerificationErrors.ProofExpired,
-            _ => ContactVerificationErrors.ProofAlreadyConsumed
-        };
-        factory.ResetRegisterOwner();
-        factory.RegisterOwner.RegisterAsync(
-                Arg.Any<RegisterOwnerFromBotRequest>(),
-                Arg.Any<CancellationToken>())
-            .Returns<Task<RegisterOwnerResult>>(_ =>
-                throw new ContactVerificationException(error));
-
-        using var client = factory.CreateAnonymousClient();
-
-        using var response = await client.PostAsJsonAsync(
-            "/api/owners/bot",
-            ValidBody(Guid.NewGuid(), "proof-token"));
-
-        Assert.Equal(expectedStatus, response.StatusCode);
-        Assert.NotEqual(HttpStatusCode.Created, response.StatusCode);
-        Assert.Equal(
-            "application/problem+json",
-            response.Content.Headers.ContentType?.MediaType);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(errorCode, document.RootElement.GetProperty("code").GetString());
-        Assert.Equal((int)expectedStatus, document.RootElement.GetProperty("status").GetInt32());
-        Assert.False(document.RootElement.TryGetProperty("error", out _));
     }
 
     [Theory]
@@ -194,7 +85,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
 
         using var response = await client.PostAsJsonAsync(
             "/api/owners/bot",
-            ValidBody(Guid.NewGuid(), "proof-token"));
+            ValidBody());
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(
@@ -225,14 +116,6 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
     {
         var cases = new (Exception Exception, HttpStatusCode Status, string Code)[]
         {
-            (new ContactVerificationException(OwnerRegistrationErrors.ProofRequired),
-                HttpStatusCode.BadRequest, OwnerRegistrationErrors.ProofRequired.Code),
-            (new ContactVerificationException(ContactVerificationErrors.ProofInvalid),
-                HttpStatusCode.BadRequest, ContactVerificationErrors.ProofInvalid.Code),
-            (new ContactVerificationException(ContactVerificationErrors.ProofExpired),
-                HttpStatusCode.Conflict, ContactVerificationErrors.ProofExpired.Code),
-            (new ContactVerificationException(ContactVerificationErrors.ProofAlreadyConsumed),
-                HttpStatusCode.Conflict, ContactVerificationErrors.ProofAlreadyConsumed.Code),
             (new ConflictException("dup", AuthenticationErrors.UserAlreadyExists.Code),
                 HttpStatusCode.Conflict, AuthenticationErrors.UserAlreadyExists.Code),
             (new ConflictException("dup", AuthenticationErrors.IdentificationNumberAlreadyExists.Code),
@@ -254,7 +137,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
 
             using var response = await client.PostAsJsonAsync(
                 "/api/owners/bot",
-                ValidBody(Guid.NewGuid(), "proof-token"));
+                ValidBody());
 
             Assert.Equal(expectedStatus, response.StatusCode);
             Assert.Equal(
@@ -286,7 +169,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
 
         using var response = await client.PostAsJsonAsync(
             "/api/owners/bot",
-            ValidBody(Guid.NewGuid(), "proof-token"));
+            ValidBody());
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(
@@ -314,7 +197,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
 
         using var response = await client.PostAsJsonAsync(
             "/api/owners/bot",
-            ValidBody(Guid.NewGuid(), "proof-token"));
+            ValidBody());
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(
@@ -342,7 +225,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
 
         using var response = await client.PostAsJsonAsync(
             "/api/owners/bot",
-            ValidBody(Guid.NewGuid(), "proof-token"));
+            ValidBody());
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal(
@@ -395,12 +278,12 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
 
         using var first = await client.PostAsJsonAsync(
             "/api/owners/bot",
-            ValidBody(Guid.NewGuid(), "proof-token"));
+            ValidBody());
         Assert.Equal(HttpStatusCode.Created, first.StatusCode);
 
         using var second = await client.PostAsJsonAsync(
             "/api/owners/bot",
-            ValidBody(Guid.NewGuid(), "proof-token-2"));
+            ValidBody());
 
         Assert.Equal(HttpStatusCode.TooManyRequests, second.StatusCode);
         Assert.Equal(
@@ -411,18 +294,17 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
         Assert.Equal("RateLimit.Exceeded", document.RootElement.GetProperty("code").GetString());
     }
 
-    private static object ValidBody(Guid sessionId, string proof) => new
+    private static object ValidBody() => new
     {
         FullName = "Ana Bot",
         Email = "ana.bot@huellitas.test",
         IdentificationNumber = "1234567890",
-        PhoneNumber = "3001234567",
-        ContactProofSessionId = sessionId,
-        ContactProof = proof
+        PhoneNumber = "3001234567"
     };
 }
 
-// Confirma que el adaptador Bot fija Channel=Bot (RequireContactProofs efectivo en el núcleo).
+// Confirma que el adaptador Bot fija Channel=Bot y nunca envía proof de contacto
+// (decisión de negocio: el canal Bot no exige ni valida ningún código).
 public sealed class BotOwnerRegistrationChannelContractTests
     : IClassFixture<BotOwnerRegistrationChannelApiFactory>
 {
@@ -432,7 +314,7 @@ public sealed class BotOwnerRegistrationChannelContractTests
         this.factory = factory;
 
     [Fact]
-    public async Task Register_DispatchesBotChannel_WhichAlwaysRequiresContactProof()
+    public async Task Register_DispatchesBotChannel_WithoutAnyContactProof()
     {
         RegisterOwnerCommand? captured = null;
         factory.Sender.Send(Arg.Any<RegisterOwnerCommand>(), Arg.Any<CancellationToken>())
@@ -443,7 +325,6 @@ public sealed class BotOwnerRegistrationChannelContractTests
             });
 
         using var client = factory.CreateAnonymousClient();
-        var sessionId = Guid.NewGuid();
 
         using var response = await client.PostAsJsonAsync(
             "/api/owners/bot",
@@ -452,20 +333,14 @@ public sealed class BotOwnerRegistrationChannelContractTests
                 FullName = "Ana Bot",
                 Email = "ana.bot@huellitas.test",
                 IdentificationNumber = "1234567890",
-                PhoneNumber = "3001234567",
-                ContactProofSessionId = sessionId,
-                ContactProof = "proof-token",
-                RequireContactProofs = false
+                PhoneNumber = "3001234567"
             });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(captured);
         Assert.Equal(RegisterOwnerChannel.Bot, captured!.Channel);
-        Assert.Equal(sessionId, captured.ContactProofSessionId);
-        Assert.Equal("proof-token", captured.ContactProof);
-        // Channel Bot ⇒ ConfiguredRegisterOwnerSettings.RequiresContactProof siempre true.
-        Assert.True(
-            captured.Channel is RegisterOwnerChannel.Bot or RegisterOwnerChannel.Telegram);
+        Assert.Null(captured.ContactProofSessionId);
+        Assert.Null(captured.ContactProof);
     }
 }
 

@@ -5,8 +5,9 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Owners;
 
-// Bot siempre ConsumeProof (Etapa 3). Telegram: equivalencia OTP de sesión (ADR 4.3).
-// Staff solo si RegisterOwner:RequireContactProofs=true.
+// Decisión de negocio: el chatbot nunca envía ni valida códigos de
+// verificación, tampoco para registrar al dueño (Bot). Telegram ya no exige
+// proof por la misma razón. Staff solo si RegisterOwner:RequireContactProofs=true.
 public sealed class ConfiguredRegisterOwnerSettings(
     IOptions<RegisterOwnerOptions> options) : IRegisterOwnerSettings
 {
@@ -17,7 +18,7 @@ public sealed class ConfiguredRegisterOwnerSettings(
     public bool RequiresContactProof(RegisterOwnerChannel channel) =>
         channel switch
         {
-            RegisterOwnerChannel.Bot => true,
+            RegisterOwnerChannel.Bot => false,
             RegisterOwnerChannel.Telegram => false,
             _ => _options.RequireContactProofs
         };

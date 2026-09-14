@@ -33,21 +33,20 @@ public sealed class RegisterOwnerAdapterTests
     }
 
     [Fact]
-    public async Task Bot_adapter_sends_bot_channel_with_proof()
+    public async Task Bot_adapter_sends_bot_channel_without_any_contact_proof()
     {
         var adapter = new RegisterOwnerFromBot(sender);
-        var sessionId = Guid.NewGuid();
 
         await adapter.RegisterAsync(
             new RegisterOwnerFromBotRequest(
-                "Ana", "ana@huellitas.test", "123", "3001234567", sessionId, "proof"),
+                "Ana", "ana@huellitas.test", "123", "3001234567"),
             CancellationToken.None);
 
         await sender.Received(1).Send(
             Arg.Is<RegisterOwnerCommand>(c =>
                 c.Channel == RegisterOwnerChannel.Bot &&
-                c.ContactProofSessionId == sessionId &&
-                c.ContactProof == "proof"),
+                c.ContactProofSessionId == null &&
+                c.ContactProof == null),
             Arg.Any<CancellationToken>());
     }
 

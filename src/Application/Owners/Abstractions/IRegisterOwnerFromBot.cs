@@ -7,8 +7,6 @@ public sealed record RegisterOwnerFromBotRequest(
     string Email,
     string IdentificationNumber,
     string PhoneNumber,
-    Guid ContactProofSessionId,
-    string ContactProof,
     string? Address = null);
 
 public interface IRegisterOwnerFromBot
