@@ -1,3 +1,4 @@
+using Application.ChatEscalations.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Notifications.Abstraction;
@@ -15,6 +16,7 @@ public sealed record CreateChatEscalationResolutionCommand(
 
 public sealed class CreateChatEscalationResolutionCommandHandler(
     IUnitOfWork uow,
+    IChatEscalationRuntimeSettings settings,
     IChatRealtimeNotifier chatRealtimeNotifier,
     ILogger<CreateChatEscalationResolutionCommandHandler> logger)
     : IRequestHandler<CreateChatEscalationResolutionCommand, ChatEscalationResolutionEntity>
@@ -39,6 +41,20 @@ public sealed class CreateChatEscalationResolutionCommandHandler(
             request.ResolvedAt);
 
         await uow.ChatEscalationResolutionsRepository.AddAsync(resolution, cancellationToken);
+
+        // Ticket B8: sincroniza el estado del escalamiento con la resolución
+        // recién creada. IActiveConversationEscalationReader.HasActiveAsync
+        // (que decide si el chatbot sigue callado) no depende de este campo
+        // — mira si existe una ChatEscalationResolution, no el estado — así
+        // que esto es solo para que la bandeja/REST dejen de mostrarlo como
+        // pendiente; no cambia el comportamiento del chatbot.
+        escalation.Update(
+            settings.ResolvedEscalationStatusId,
+            escalation.FromAi,
+            escalation.Reason,
+            escalation.UpdateAt);
+        await uow.ChatEscalationsRepository.UpdateAsync(escalation, cancellationToken);
+
         await uow.SaveChangesAsync(cancellationToken);
 
         // Ticket B5: ver el mismo razonamiento en CreateChatEscalationCommandHandler

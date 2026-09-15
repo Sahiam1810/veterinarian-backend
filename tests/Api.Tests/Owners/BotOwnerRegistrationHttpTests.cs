@@ -380,6 +380,7 @@ public class BotOwnerRegistrationApiFactory : WebApplicationFactory<AuthControll
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.bot-owner-tests",
             ["Jwt__Audience"] = "huellitas-api-bot-owner-tests",
@@ -446,6 +447,7 @@ public sealed class BotOwnerRegistrationChannelApiFactory : WebApplicationFactor
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.bot-owner-channel-tests",
             ["Jwt__Audience"] = "huellitas-api-bot-owner-channel-tests",
@@ -524,6 +526,7 @@ public sealed class BotOwnerRegistrationRateLimitedApiFactory : BotOwnerRegistra
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.bot-owner-rate-limit-tests",
             ["Jwt__Audience"] = "huellitas-api-bot-owner-rate-limit-tests",

@@ -104,6 +104,7 @@ public sealed class ClientIdentificationLookupRateLimitedApiFactory : WebApplica
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Email__Enabled"] = "false",
             ["Twilio__Enabled"] = "false",
             ["Telegram__Enabled"] = "false",

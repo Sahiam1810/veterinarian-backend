@@ -151,6 +151,7 @@ public sealed class TelegramAgentApiFactory : WebApplicationFactory<AuthControll
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Telegram__Enabled"] = "false",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = Issuer,

@@ -397,7 +397,8 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
             ["Jwt__AccessTokenMinutes"] = "15",
             ["Jwt__RefreshTokenDays"] = "7",
             ["Jwt__ClockSkewSeconds"] = "0",
-            ["Agent__Enabled"] = "false"
+            ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
         };
 
     private readonly Dictionary<string, string?> originalEnvironment = [];
