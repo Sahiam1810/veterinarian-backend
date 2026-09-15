@@ -73,8 +73,8 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
 
         builder.Property(x => x.Notes)
             .HasColumnName("NOTES")
-            .HasColumnType("VARCHAR2(100)")
-            .HasMaxLength(100);
+            .HasColumnType("VARCHAR2(500)")
+            .HasMaxLength(500);
 
         builder.Property(x => x.RequesterPhoneNumber)
             .HasColumnName("REQUESTER_PHONE_NUMBER")
@@ -101,6 +101,11 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.HasIndex(x => x.BookingRequestKeyHash)
             .IsUnique()
             .HasDatabaseName("UX_APPTS_BOOKING_REQ_HASH");
+
+        builder.Property(x => x.ConsultingRoom)
+            .HasColumnName("CONSULTING_ROOM")
+            .HasColumnType("VARCHAR2(50)")
+            .HasMaxLength(50);
 
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")

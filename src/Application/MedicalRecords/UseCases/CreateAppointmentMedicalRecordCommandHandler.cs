@@ -26,6 +26,19 @@ public sealed class CreateAppointmentMedicalRecordCommandHandler(IUnitOfWork uni
             request.EnforceVeterinarianOwnership,
             cancellationToken);
 
+        // AGENDADA o CONFIRMADA (paciente ya hizo check-in en recepción) admiten
+        // registrar historia clinica; No Asistio/Cancelada/Atendida quedan cerradas.
+        var currentStatus = await unitOfWork.StatusAppointmentsRepository.GetByIdAsync(
+            appointment.StatusId,
+            cancellationToken)
+            ?? throw new ConflictException("El estado actual de la cita no es válido.");
+        if (!string.Equals(currentStatus.Name, AppointmentStatusNames.Agendada, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(currentStatus.Name, AppointmentStatusNames.Confirmada, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException(
+                "No se puede registrar la historia clínica de una cita que no está agendada o confirmada.");
+        }
+
         if (await unitOfWork.MedicalRecordsRepository.ExistsByAppointmentIdAsync(
                 request.AppointmentId,
                 cancellationToken))

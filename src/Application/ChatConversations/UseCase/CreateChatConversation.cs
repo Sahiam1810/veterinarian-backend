@@ -8,7 +8,8 @@ namespace Application.ChatConversations.UseCase;
 public sealed record CreateChatConversationCommand(
     Guid ConversationStatusId,
     Guid? PriorityId,
-    bool AiEnabled = true) : IRequest<ChatConversationEntity>;
+    bool AiEnabled = true,
+    string Channel = "Web") : IRequest<ChatConversationEntity>;
 
 public sealed class CreateChatConversationCommandHandler
     : IRequestHandler<CreateChatConversationCommand, ChatConversationEntity>
@@ -48,7 +49,8 @@ public sealed class CreateChatConversationCommandHandler
         var conversation = ChatConversationEntity.Create(
             request.ConversationStatusId,
             request.PriorityId,
-            request.AiEnabled);
+            request.AiEnabled,
+            request.Channel);
 
         await _uow.ChatConversationsRepository.AddAsync(conversation, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

@@ -8,13 +8,14 @@ using Application.Security.Login;
 using Application.Security.Refresh;
 using Application.Security.Revoke;
 using Application.Security.ChangePassword;
+using Application.Security.Errors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Api.Common.Security;
 using MediatR;
 using Application.Security.Profile;
-using Application.Permissions.UseCases;
+using Application.Permissions.Claims;
 using Application.Modules.UseCases;
 
 
@@ -48,7 +49,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Login)]
     [HttpPost("login")]
     [EndpointSummary("Inicia sesión de usuario")]
-    [EndpointDescription("Valida las credenciales (nombre de usuario o correo y contraseña) y genera tokens de acceso AccessToken y RefreshToken.")]
+    [EndpointDescription("Valida correo y contraseña y genera AccessToken/RefreshToken. Fallo 401: application/problem+json con code fijo Authentication.InvalidCredentials (el front traduce por code).")]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(
@@ -61,6 +62,18 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
+            // PlatformAccessDenied (rol no admitido) y UserInactive (cuenta
+            // desactivada) son 403, no 401 de credenciales — el front distingue
+            // el mensaje por code, no por status.
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code ||
+                result.Error.Code == AuthenticationErrors.UserInactive.Code)
+            {
+                return AuthProblem(
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden",
+                    result.Error.Code);
+            }
+
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
@@ -71,7 +84,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Refresh)]
     [HttpPost("refresh")]
     [EndpointSummary("Renueva los tokens JWT vencidos usando el Refresh Token")]
-    [EndpointDescription("Genera un nuevo AccessToken y RefreshToken rotado para mantener la sesión activa sin solicitar credenciales nuevamente.")]
+    [EndpointDescription("Genera AccessToken y RefreshToken rotado. Fallo 401: application/problem+json con code fijo Authentication.InvalidRefreshToken.")]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Refresh(
@@ -84,6 +97,15 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code ||
+                result.Error.Code == AuthenticationErrors.UserInactive.Code)
+            {
+                return AuthProblem(
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden",
+                    result.Error.Code);
+            }
+
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
@@ -103,13 +125,21 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (!Guid.TryParse(subject, out var userAccountId))
         {
-            return Unauthorized();
+            return AuthProblem(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized",
+                AuthenticationErrors.Unauthorized.Code);
         }
 
         var result = await sender.Send(
             new GetCurrentProfileQuery(userAccountId), cancellationToken);
 
-        return result.IsSuccess ? Ok(result.Value) : Unauthorized();
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : AuthProblem(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized",
+                AuthenticationErrors.Unauthorized.Code);
     }
 
     [Authorize]
@@ -120,39 +150,48 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Permissions(CancellationToken cancellationToken)
     {
-        if (User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        var isSuperAdmin = User.IsSuperAdmin();
+        if (!isSuperAdmin && !Guid.TryParse(User.FindFirstValue("role_id"), out _))
         {
-            var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
+            return Unauthorized();
+        }
 
+        var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
+
+        if (isSuperAdmin)
+        {
             return Ok(new UserPermissionsResponseDto(
                 modules.ToDictionary(
                     module => module.Name.Value,
                     _ => new ModulePermissionDto(true, true, true, true))));
         }
 
-        var roleIdClaim = User.FindFirstValue("role_id");
+        var permissions = modules.ToDictionary(
+            module => module.Name.Value,
+            _ => new ModulePermissionDto(false, false, false, false));
 
-        if (!Guid.TryParse(roleIdClaim, out var roleId))
+        foreach (var claim in User.FindAll(PermissionClaimValue.ClaimType))
         {
-            return Unauthorized();
+            if (!PermissionClaimValue.TryParse(
+                    claim.Value,
+                    out var moduleName,
+                    out var action) ||
+                !permissions.TryGetValue(moduleName, out var current))
+            {
+                continue;
+            }
+
+            permissions[moduleName] = action switch
+            {
+                "View" => current with { CanView = true },
+                "Create" => current with { CanCreate = true },
+                "Edit" => current with { CanEdit = true },
+                "Delete" => current with { CanDelete = true },
+                _ => current
+            };
         }
 
-        Guid.TryParse(User.FindFirstValue("person_id"), out var userId);
-
-        var permissions = await sender.Send(
-            new GetUserEffectivePermissionsQuery(roleId, userId),
-            cancellationToken);
-
-        var dto = new UserPermissionsResponseDto(
-            permissions.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new ModulePermissionDto(
-                    kvp.Value.CanView,
-                    kvp.Value.CanCreate,
-                    kvp.Value.CanEdit,
-                    kvp.Value.CanDelete)));
-
-        return Ok(dto);
+        return Ok(new UserPermissionsResponseDto(permissions));
     }
 
     [Authorize]
@@ -188,7 +227,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [Authorize]
     [HttpPost("revoke")]
     [EndpointSummary("Revoca un Refresh Token y cierra la sesión")]
-    [EndpointDescription("Invalida el Refresh Token proporcionado para evitar su reutilización futura.")]
+    [EndpointDescription("Invalida el Refresh Token. Fallo 401: application/problem+json con code fijo Authentication.InvalidRefreshToken.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Revoke(

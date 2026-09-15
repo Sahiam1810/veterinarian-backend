@@ -15,7 +15,8 @@ public sealed record RegisterMyPetCommand(
     decimal Weight,
     string? Observations,
     Guid SpeciesId,
-    Guid RaceId) : IRequest<OwnedPetProfile>;
+    Guid RaceId,
+    string? PhotoUrl = null) : IRequest<OwnedPetProfile>;
 
 public sealed class RegisterMyPetCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<RegisterMyPetCommand, OwnedPetProfile>
@@ -48,7 +49,8 @@ public sealed class RegisterMyPetCommandHandler(IUnitOfWork unitOfWork)
             request.Weight,
             request.Observations,
             species,
-            race);
+            race,
+            request.PhotoUrl);
         var ownership = new ClientPetEntity(client, pet, isPrimaryOwner: true);
 
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
@@ -68,6 +70,7 @@ public sealed class RegisterMyPetCommandHandler(IUnitOfWork unitOfWork)
             species.Name.Value,
             pet.RaceId,
             race.Name.Value,
-            pet.UpdatedAt ?? pet.CreatedAt);
+            pet.UpdatedAt ?? pet.CreatedAt,
+            pet.PhotoUrl.Value);
     }
 }

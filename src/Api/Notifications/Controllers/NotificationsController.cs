@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Notifications.Dtos;
@@ -119,6 +120,33 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
+    // S43: marcar como leída es una acción propia del dueño de la notificación,
+    // no la edición general que exige el permiso "Notificaciones.Edit" (que
+    // ningún rol tiene). Solo requiere sesión autenticada (política global) +
+    // que la notificación sea del usuario que la marca.
+    [HttpPatch("{id:guid}/read")]
+    [EndpointSummary("Marca una notificación propia como leída")]
+    [EndpointDescription("Actualiza el estado de la notificación indicada a 'Leída'. Solo el dueño de la notificación puede marcarla.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarkAsRead(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorPersonId(out var actorPersonId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            new MarkNotificationAsReadCommand(id, actorPersonId),
+            cancellationToken);
+
+        return NoContent();
+    }
+
     [HttpDelete("{id:guid}")]
     [RequirePermission("Notificaciones", PermissionAction.Delete)]
     [EndpointSummary("Elimina una notificación por su ID")]
@@ -134,5 +162,11 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
             cancellationToken);
 
         return NoContent();
+    }
+
+    private bool TryGetActorPersonId(out Guid actorPersonId)
+    {
+        var personId = User.FindFirstValue("person_id");
+        return Guid.TryParse(personId, out actorPersonId);
     }
 }

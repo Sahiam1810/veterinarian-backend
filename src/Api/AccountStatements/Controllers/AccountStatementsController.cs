@@ -1,13 +1,14 @@
 using System.Security.Claims;
 using Api.AccountStatements.Dtos;
 using Api.AccountStatements.Mappings;
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.AccountStatements.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 
 namespace Api.AccountStatements.Controllers;
 
@@ -35,31 +36,21 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
             new CreateAccountStatementResponse(statementId));
     }
 
-    // GET /api/accountstatements/mine
+    // Portal Cliente JWT retirado (Etapa 5).
     [HttpGet("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene los estados de cuenta del cliente autenticado")]
-    [EndpointDescription("Retorna los estados de cuenta asociados a la cuenta del cliente correspondiente al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<AccountStatementResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<IReadOnlyCollection<AccountStatementResponse>>> GetMine(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<AccountStatementResponse>>> GetMine(
         CancellationToken cancellationToken)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var statements = await sender.Send(
-            new GetMyAccountStatementsQuery(userAccountId),
-            cancellationToken);
-
-        return Ok(statements.ToResponse());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
+
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene un estado de cuenta por su ID")]
     [EndpointDescription("Retorna la información de un estado de cuenta específico por su identificador GUID.")]
     [ProducesResponseType(typeof(AccountStatementResponse), StatusCodes.Status200OK)]
@@ -76,7 +67,7 @@ public sealed class AccountStatementsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-account/{accountId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene los estados de cuenta de una cuenta")]
     [EndpointDescription("Retorna todos los estados de cuenta asociados a una cuenta de usuario, ordenados por fecha de emisión descendente.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AccountStatementResponse>), StatusCodes.Status200OK)]

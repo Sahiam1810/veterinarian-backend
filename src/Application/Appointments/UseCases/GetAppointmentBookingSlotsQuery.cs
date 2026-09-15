@@ -1,6 +1,8 @@
 using Application.Appointments.Abstraction;
+using Application.Appointments.Scheduling;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.VeterinarianAbsences.Abstraction;
 using MediatR;
 
 namespace Application.Appointments.UseCases;
@@ -8,7 +10,9 @@ namespace Application.Appointments.UseCases;
 public sealed record AppointmentBookingSlot(
     Guid AvailabilityId,
     DateTime ScheduledStartUtc,
-    DateTime ScheduledEndUtc);
+    DateTime ScheduledEndUtc,
+    string? ConsultingRoom = null,
+    string? ShiftName = null);
 
 public sealed record GetAppointmentBookingSlotsQuery(
     Guid UserAccountId,
@@ -18,6 +22,7 @@ public sealed record GetAppointmentBookingSlotsQuery(
 
 public sealed class GetAppointmentBookingSlotsQueryHandler(
     IUnitOfWork unitOfWork,
+    IVeterinarianAbsenceRepository absences,
     IAppointmentBookingSettings settings,
     TimeProvider timeProvider)
     : IRequestHandler<GetAppointmentBookingSlotsQuery, IReadOnlyCollection<AppointmentBookingSlot>>
@@ -33,7 +38,7 @@ public sealed class GetAppointmentBookingSlotsQueryHandler(
             ?? throw new NotFoundException("Servicio no encontrado.");
         if (!service.IsActive)
         {
-            throw new BadRequestException("El servicio no está disponible.");
+            throw new BadRequestException("El servicio no esta disponible.");
         }
         var veterinarian = await unitOfWork.VeterinariansRepository.GetByIdAsync(
             request.VeterinarianId,
@@ -41,7 +46,7 @@ public sealed class GetAppointmentBookingSlotsQueryHandler(
             ?? throw new NotFoundException("Veterinario no encontrado.");
         if (veterinarian.User?.IsActive != true)
         {
-            throw new BadRequestException("El veterinario no está disponible.");
+            throw new BadRequestException("El veterinario no esta disponible.");
         }
 
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(settings.TimeZoneId);
@@ -49,7 +54,7 @@ public sealed class GetAppointmentBookingSlotsQueryHandler(
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, timeZone));
         if (request.Date < today || request.Date > today.AddDays(settings.MaximumAdvanceDays))
         {
-            throw new BadRequestException("La fecha está fuera del horizonte de agendamiento.");
+            throw new BadRequestException("La fecha esta fuera del horizonte de agendamiento.");
         }
 
         var dayStartUtc = ToUtc(request.Date.ToDateTime(TimeOnly.MinValue), timeZone);
@@ -59,33 +64,28 @@ public sealed class GetAppointmentBookingSlotsQueryHandler(
             dayStartUtc,
             dayEndUtc,
             cancellationToken);
+        var roomOverlaps = await unitOfWork.AppointmentsRepository.GetScheduledRoomOverlapsAsync(
+            dayStartUtc,
+            dayEndUtc,
+            cancellationToken);
+        var veterinarianAbsences = await absences.GetOverlappingAsync(
+            request.VeterinarianId,
+            dayStartUtc,
+            dayEndUtc,
+            cancellationToken);
         var availabilities = await unitOfWork.AvailabilitiesRepository
             .GetAllByVeterinarianIdAsync(request.VeterinarianId, cancellationToken);
         var earliestUtc = nowUtc.Add(settings.MinimumLeadTime);
-        var slots = new List<AppointmentBookingSlot>();
 
-        foreach (var availability in availabilities.Where(item =>
-                     item.IsActive && item.DayOfWeek == request.Date.DayOfWeek))
-        {
-            var cursor = request.Date.ToDateTime(availability.StartTime);
-            var localEnd = request.Date.ToDateTime(availability.EndTime);
-            while (cursor.AddMinutes(service.DurationMinutes) <= localEnd)
-            {
-                var startUtc = ToUtc(cursor, timeZone);
-                var endUtc = ToUtc(cursor.AddMinutes(service.DurationMinutes), timeZone);
-                if (startUtc >= earliestUtc
-                    && occupied.All(item =>
-                        item.ScheduledStart >= endUtc || item.ScheduledEnd <= startUtc))
-                {
-                    slots.Add(new AppointmentBookingSlot(availability.Id, startUtc, endUtc));
-                }
-                cursor = cursor.AddMinutes(service.DurationMinutes);
-            }
-        }
-
-        return slots.DistinctBy(slot => slot.ScheduledStartUtc)
-            .OrderBy(slot => slot.ScheduledStartUtc)
-            .ToArray();
+        return AppointmentSlotPlanner.Build(
+            availabilities,
+            request.Date,
+            timeZone,
+            earliestUtc,
+            service.DurationMinutes,
+            occupied,
+            veterinarianAbsences,
+            roomOverlaps);
     }
 
     private async Task EnsureClientAsync(Guid userAccountId, CancellationToken cancellationToken)

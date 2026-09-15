@@ -89,4 +89,20 @@ public sealed class NotificationRepository : INotificationRepository
         _context.Set<Notification>().Remove(notification);
         return Task.CompletedTask;
     }
+
+    public async Task DeleteByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var notifications = await _context.Set<Notification>()
+            .Where(x => x.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        if (notifications.Count == 0)
+        {
+            return;
+        }
+
+        _context.Set<Notification>().RemoveRange(notifications);
+    }
 }

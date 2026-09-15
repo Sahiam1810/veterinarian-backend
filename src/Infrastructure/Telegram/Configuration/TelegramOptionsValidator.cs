@@ -35,10 +35,32 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
         if (options.ProcessingLeaseSeconds <= 0) failures.Add("Telegram:ProcessingLeaseSeconds must be positive.");
         if (options.MaxProcessingAttempts is < 1 or > 10) failures.Add("Telegram:MaxProcessingAttempts must be between 1 and 10.");
         if (options.DelegatedTokenMinutes is < 1 or > 15) failures.Add("Telegram:DelegatedTokenMinutes must be between 1 and 15.");
+        ValidateRequiredGuid(
+            options.PendingEscalationStatusId,
+            "Telegram:PendingEscalationStatusId must be a non-empty GUID.",
+            failures);
+        ValidateRequiredGuid(
+            options.TextMessageTypeId,
+            "Telegram:TextMessageTypeId must be a non-empty GUID.",
+            failures);
+        ValidateRequiredGuid(
+            options.HumanAgentSenderTypeId,
+            "Telegram:HumanAgentSenderTypeId must be a non-empty GUID.",
+            failures);
         if (options.OtpTtlMinutes is < 1 or > 15) failures.Add("Telegram:OtpTtlMinutes must be between 1 and 15.");
         if (options.OtpMaximumAttempts is < 1 or > 10) failures.Add("Telegram:OtpMaximumAttempts must be between 1 and 10.");
         if (options.OtpResendSeconds is < 30 or > 3600) failures.Add("Telegram:OtpResendSeconds must be between 30 and 3600.");
+        if (options.PrivateAccessAbsoluteTtlHours is < 1 or > 168)
+            failures.Add("Telegram:PrivateAccessAbsoluteTtlHours must be between 1 and 168.");
+        if (options.PrivateAccessIdleTtlMinutes is < 1 or > 1440)
+            failures.Add("Telegram:PrivateAccessIdleTtlMinutes must be between 1 and 1440.");
+        if (TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes) >
+            TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours))
+        {
+            failures.Add("Telegram:PrivateAccessIdleTtlMinutes cannot exceed the absolute access lifetime.");
+        }
         ValidateOtpPepper(options.OtpPepperBase64, failures);
+        ValidateRegistrationKey(options.RegistrationProtectionKeyBase64, failures);
         if (options.RegistrationEnabled)
         {
             if (!Uri.TryCreate(options.RegistrationCompletionUrl, UriKind.Absolute, out var registrationUrl) ||
@@ -55,7 +77,6 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
                 failures.Add("Telegram:RegistrationMaxOtpAttempts must be between 1 and 10.");
             if (options.RegistrationResendSeconds is < 30 or > 3600)
                 failures.Add("Telegram:RegistrationResendSeconds must be between 30 and 3600.");
-            ValidateRegistrationKey(options.RegistrationProtectionKeyBase64, failures);
         }
 
         return failures.Count == 0
@@ -66,6 +87,14 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
     private static void Require(string value, string key, ICollection<string> failures)
     {
         if (string.IsNullOrWhiteSpace(value)) failures.Add($"{key} is required.");
+    }
+
+    private static void ValidateRequiredGuid(string value, string message, ICollection<string> failures)
+    {
+        if (!Guid.TryParse(value, out var identifier) || identifier == Guid.Empty)
+        {
+            failures.Add(message);
+        }
     }
 
     private static void ValidateOtpPepper(string value, ICollection<string> failures)

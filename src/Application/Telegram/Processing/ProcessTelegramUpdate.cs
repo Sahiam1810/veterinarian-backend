@@ -2,11 +2,13 @@ using System.Security.Cryptography;
 using Application.Agent.Abstractions;
 using Application.Agent.Errors;
 using Application.Agent.Messages;
+using Application.ChatEscalations.UseCase;
+using Application.ChatMessages.UseCase;
+using Application.ChatParticipants.UseCase;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
 using Application.Telegram.Linking;
 using Application.Telegram.Messages;
-using Application.Telegram.Registration;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
 using MediatR;
@@ -21,21 +23,42 @@ public sealed class ProcessTelegramUpdateHandler(
     IConversationContextProvider conversationContextProvider,
     IAgentMessageDispatcher dispatcher,
     IAgentDelegatedIdentityProvider identityProvider,
+    IAgentConversationDefaults conversationDefaults,
     ITelegramBotClient botClient,
     ISender sender,
-    ITelegramRegistrationService registrationService,
-    ITelegramChatLinkingService linkingService,
     ITelegramRuntimeSettings settings,
     TimeProvider timeProvider,
     ILogger<ProcessTelegramUpdateHandler> logger) : IRequestHandler<ProcessTelegramUpdateCommand>
 {
-    private const string LinkingRequiredReply =
-        "¡Hola! Para proteger tu información, primero debes vincular este chat una sola vez. " +
-        "Envía /vincular si ya tienes cuenta o /registrar si necesitas crearla.";
+    private const string GuestAccessDisabledReply =
+        "Por el momento este canal no está disponible para consultas. Intenta más tarde.";
     private const string GuestStartReply =
-        "¡Hola! Puedes hacer preguntas veterinarias generales como invitado. " +
-        "Para consultar tus mascotas o realizar operaciones, envía /vincular si ya tienes cuenta " +
-        "o /registrar para crearla de forma segura.";
+        "¡Hola! Puedes hacer preguntas generales sobre Huellitas y sus servicios. " +
+        "Si quieres agendar una cita o registrar una mascota, te pediré tu nombre, cédula, " +
+        "correo y teléfono para registrarte.";
+    private const string EscalationConfirmedReply =
+        "Tu conversación está siendo atendida por un asesor.";
+    // Decisión 1 (Ticket B2): un invitado sin vincular nunca escala directamente.
+    // Se le redirige al mismo flujo conversacional de identificación ya existente
+    // (Ticket 3, en el chatbot) en vez de recolectar sus datos aquí.
+    private const string GuestEscalationRedirectReply =
+        "Para conectarte con un asesor, primero cuéntame qué necesitas — por ejemplo, " +
+        "agendar una cita o registrar una mascota — así puedo identificarte.";
+
+    // Coincidencia simple por substring, mismo criterio ya usado en el resto del
+    // proyecto (p. ej. las reglas del enrutador del chatbot). No distingue mayúsculas.
+    private static readonly string[] EscalationPhrases =
+    [
+        "asesor",
+        "hablar con alguien",
+        "hablar con una persona",
+        "hablar con un humano",
+        "hablar con un agente",
+        "atencion humana",
+        "atención humana",
+        "quiero un humano",
+        "necesito un humano",
+    ];
 
     public async Task Handle(
         ProcessTelegramUpdateCommand request,
@@ -76,23 +99,9 @@ public sealed class ProcessTelegramUpdateHandler(
                 return;
             }
 
-            var registrationOutcome = await registrationService.HandleAsync(update, cancellationToken);
-            if (registrationOutcome.Consumed)
+            if (string.Equals(messageText, "/start", StringComparison.OrdinalIgnoreCase))
             {
-                await DeliverAsync(
-                    update,
-                    registrationOutcome.Reply ?? "Solicitud procesada.",
-                    cancellationToken);
-                return;
-            }
-
-            var linkingOutcome = await linkingService.HandleAsync(update, cancellationToken);
-            if (linkingOutcome.Consumed)
-            {
-                await DeliverAsync(
-                    update,
-                    linkingOutcome.Reply ?? "Solicitud procesada.",
-                    cancellationToken);
+                await DeliverAsync(update, GuestStartReply, cancellationToken);
                 return;
             }
 
@@ -101,45 +110,71 @@ public sealed class ProcessTelegramUpdateHandler(
                 cancellationToken);
             if (userLink is null)
             {
-                if (settings.GuestModeEnabled &&
-                    string.Equals(messageText, "/start", StringComparison.OrdinalIgnoreCase))
-                {
-                    await DeliverAsync(update, GuestStartReply, cancellationToken);
-                    return;
-                }
-
                 if (settings.GuestModeEnabled)
                 {
-                    await ProcessGuestMessageAsync(update, messageText, cancellationToken);
+                    // Decisión 1 (Ticket B2): un invitado nunca escala directamente —
+                    // se le redirige al flujo de identificación conversacional ya
+                    // existente (Ticket 3). No se toca CHAT_ESCALATIONS ni CHAT_CONVERSATIONS.
+                    if (IsEscalationRequest(messageText))
+                    {
+                        await DeliverAsync(update, GuestEscalationRedirectReply, cancellationToken);
+                        return;
+                    }
+
+                    // Sin verificación de identidad: la respuesta del agente se
+                    // entrega tal cual, sin importar AccessRequirement. Si el
+                    // mensaje requiere datos del cliente (agendar cita, registrar
+                    // mascota), el propio agente los recolecta en la conversación
+                    // y registra al cliente directamente (ver módulo de agendamiento).
+                    var guestResult = await DispatchGuestMessageAsync(
+                        update,
+                        messageText,
+                        cancellationToken);
+                    await DeliverAsync(update, ResponseText(guestResult), cancellationToken);
                     return;
                 }
 
                 await DeliverAsync(
                     update,
-                    LinkingRequiredReply,
+                    GuestAccessDisabledReply,
                     cancellationToken);
                 return;
             }
 
-            var idempotencyKey = $"telegram-update-{update.Id}";
+            var idempotencyKey = $"telegram-update-{update.Id}-verified";
             var context = await ResolveConversationAsync(userLink, idempotencyKey, cancellationToken);
-            var identity = await identityProvider.GetAsync(userLink.PersonId, cancellationToken);
-            var result = await dispatcher.DispatchAsync(
-                new AgentMessageDispatchRequest(
-                    messageText,
-                    identity.PersonId,
-                    null,
-                    "es-CO",
-                    identity.Role,
-                    idempotencyKey,
-                    CreateCorrelationId(update.Id)),
-                context with { Channel = "telegram" },
-                identity.AccessToken,
+
+            // Ticket B3: se persiste cada mensaje de texto de un cliente vinculado,
+            // sea o no una frase de escalamiento — la Recepcionista necesita ver el
+            // mensaje que disparó el escalamiento, no solo la razón resumida que
+            // queda en ChatEscalation.Reason. La respuesta del agente de IA queda
+            // deliberadamente diferida (Decisión 2, Ticket B3): no hay todavía un
+            // AiModel/ChatParticipant "Agente IA" sembrado, y crear uno placeholder
+            // solo para esto acoplaría este ticket al sistema de métricas de costo
+            // de IA (ChatAiRuns/ChatAiRunMetrics), que nadie pidió todavía.
+            await PersistClientMessageAsync(context.ConversationId, messageText, cancellationToken);
+
+            if (context.IsEscalated)
+            {
+                await CompleteWithoutResponseAsync(update, cancellationToken);
+                return;
+            }
+
+            if (IsEscalationRequest(messageText))
+            {
+                await EscalateAsync(context, messageText, cancellationToken);
+                await DeliverAsync(update, EscalationConfirmedReply, cancellationToken);
+                return;
+            }
+
+            var result = await DispatchAuthenticatedAsync(
+                context,
+                userLink,
+                messageText,
+                idempotencyKey,
+                update.Id,
                 cancellationToken);
-            var response = string.IsNullOrWhiteSpace(result.Message)
-                ? "Tu conversación está siendo atendida por un asesor."
-                : result.Message;
-            await DeliverAsync(update, response, cancellationToken);
+            await DeliverAsync(update, ResponseText(result), cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -160,18 +195,18 @@ public sealed class ProcessTelegramUpdateHandler(
         }
     }
 
-    private async Task ProcessGuestMessageAsync(
+    private async Task<AgentMessageResult> DispatchGuestMessageAsync(
         TelegramInboundUpdate update,
         string messageText,
         CancellationToken cancellationToken)
     {
-        var idempotencyKey = $"telegram-update-{update.Id}";
+        var idempotencyKey = $"telegram-update-{update.Id}-guest";
         var identity = identityProvider.GetGuest(update.TelegramUserId);
         var context = new AgentConversationContext(
             CreateGuestConversationId(update.TelegramChatId),
             "telegram",
             false);
-        var result = await dispatcher.DispatchAsync(
+        return await dispatcher.DispatchAsync(
             new AgentMessageDispatchRequest(
                 messageText,
                 identity.PersonId,
@@ -183,11 +218,103 @@ public sealed class ProcessTelegramUpdateHandler(
             context,
             identity.AccessToken,
             cancellationToken);
-        var response = string.IsNullOrWhiteSpace(result.Message)
-            ? GuestStartReply
-            : result.Message;
-        await DeliverAsync(update, response, cancellationToken);
     }
+
+    private async Task<AgentMessageResult> DispatchAuthenticatedAsync(
+        AgentConversationContext context,
+        TelegramUserLink userLink,
+        string messageText,
+        string idempotencyKey,
+        long correlationSourceId,
+        CancellationToken cancellationToken)
+    {
+        var identity = await identityProvider.GetAsync(userLink.PersonId, cancellationToken);
+        var result = await dispatcher.DispatchAsync(
+            new AgentMessageDispatchRequest(
+                messageText,
+                identity.PersonId,
+                null,
+                "es-CO",
+                identity.Role,
+                idempotencyKey,
+                CreateCorrelationId(correlationSourceId)),
+            context with { Channel = "telegram" },
+            identity.AccessToken,
+            cancellationToken);
+        if (result.AccessRequirement != AgentAccessRequirement.None)
+        {
+            throw new AgentContractException();
+        }
+
+        return result;
+    }
+
+    private static bool IsEscalationRequest(string messageText) =>
+        EscalationPhrases.Any(phrase =>
+            messageText.Contains(phrase, StringComparison.OrdinalIgnoreCase));
+
+    // Crea el ChatEscalation para un cliente ya vinculado, a partir de la
+    // ChatConversation ya resuelta por el llamador. Si ya hay un escalamiento
+    // activo sin resolver (AgentConversationContext.IsEscalated, calculado por
+    // el mismo IActiveConversationEscalationReader que usa
+    // PersistentConversationContextProvider) no crea un segundo registro.
+    private async Task EscalateAsync(
+        AgentConversationContext context,
+        string messageText,
+        CancellationToken cancellationToken)
+    {
+        if (context.IsEscalated)
+        {
+            return;
+        }
+
+        await sender.Send(
+            new CreateChatEscalationCommand(
+                context.ConversationId,
+                settings.PendingEscalationStatusId,
+                FromAi: false,
+                Reason: messageText,
+                UpdateAt: null),
+            cancellationToken);
+    }
+
+    // Ticket B3: persiste el mensaje de texto del cliente en CHAT_MESSAGES.
+    // El participante "Cliente" ya existe para toda ChatConversation resuelta
+    // por PersistentConversationContextProvider — se busca por su tipo en vez
+    // de crearlo de nuevo.
+    private async Task PersistClientMessageAsync(
+        Guid conversationId,
+        string messageText,
+        CancellationToken cancellationToken)
+    {
+        var participants = await sender.Send(
+            new GetChatParticipantsByConversationIdQuery(conversationId),
+            cancellationToken);
+        var clientParticipant = participants.FirstOrDefault(
+            participant => participant.ParticipantTypeId == conversationDefaults.ClientParticipantTypeId);
+        if (clientParticipant is null)
+        {
+            logger.LogWarning(
+                "No client ChatParticipant found for conversation {ConversationId}; skipping message persistence.",
+                conversationId);
+            return;
+        }
+
+        await sender.Send(
+            new CreateChatMessageCommand(
+                conversationId,
+                clientParticipant.Id,
+                conversationDefaults.ClientParticipantTypeId,
+                settings.TextMessageTypeId,
+                messageText,
+                Metadata: null),
+            cancellationToken);
+    }
+
+    private static string ResponseText(AgentMessageResult result) =>
+        string.IsNullOrWhiteSpace(result.Message)
+            ? "Tu conversación está siendo atendida por un asesor."
+            : result.Message;
 
     private async Task ProcessLinkCodeAsync(
         TelegramInboundUpdate update,
@@ -224,6 +351,7 @@ public sealed class ProcessTelegramUpdateHandler(
                 userLink.PersonId,
                 binding.ConversationId,
                 idempotencyKey,
+                "Telegram",
                 cancellationToken);
         }
 
@@ -234,6 +362,7 @@ public sealed class ProcessTelegramUpdateHandler(
                 userLink.PersonId,
                 null,
                 idempotencyKey,
+                "Telegram",
                 transactionToken);
             var link = await unitOfWork.ConversationLinksRepository.GetByUserLinkIdAsync(
                 userLink.Id,
@@ -274,6 +403,15 @@ public sealed class ProcessTelegramUpdateHandler(
         }
 
         update.Complete(timeProvider.GetUtcNow().UtcDateTime);
+        await unitOfWork.InboundUpdatesRepository.UpdateAsync(update, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task CompleteWithoutResponseAsync(
+        TelegramInboundUpdate update,
+        CancellationToken cancellationToken)
+    {
+        update.CompleteWithoutResponse(timeProvider.GetUtcNow().UtcDateTime);
         await unitOfWork.InboundUpdatesRepository.UpdateAsync(update, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

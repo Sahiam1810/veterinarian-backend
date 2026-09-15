@@ -37,6 +37,7 @@ public sealed class PersistentConversationContextProviderTests
             PersonId,
             null,
             "message-001",
+            "Web",
             fixture.Token);
 
         Assert.NotEqual(Guid.Empty, result.ConversationId);
@@ -61,6 +62,29 @@ public sealed class PersistentConversationContextProviderTests
     }
 
     [Fact]
+    public async Task Resolve_without_conversation_persists_the_requested_channel()
+    {
+        // Ticket B6: la conversación creada guarda el canal que pidió quien
+        // resuelve el contexto (Telegram, en este caso) — antes no existía
+        // ningún campo persistido para esto.
+        var fixture = CreateFixture();
+        fixture.Profiles.GetByUserIdAsync(PersonId, fixture.Token)
+            .Returns(Task.FromResult<IReadOnlyCollection<ChatUserProfile>>([]));
+        var provider = fixture.CreateProvider();
+
+        await provider.ResolveAsync(
+            PersonId,
+            null,
+            "message-001-telegram",
+            "Telegram",
+            fixture.Token);
+
+        await fixture.Conversations.Received(1).AddAsync(
+            Arg.Is<ChatConversation>(conversation => conversation.Channel == "Telegram"),
+            fixture.Token);
+    }
+
+    [Fact]
     public async Task Resolve_without_conversation_reuses_existing_profile()
     {
         var fixture = CreateFixture();
@@ -73,6 +97,7 @@ public sealed class PersistentConversationContextProviderTests
             PersonId,
             null,
             "message-002",
+            "Web",
             fixture.Token);
 
         await fixture.Profiles.DidNotReceive().AddAsync(
@@ -100,6 +125,7 @@ public sealed class PersistentConversationContextProviderTests
                 PersonId,
                 null,
                 "message-config",
+                "Web",
                 fixture.Token));
 
         await fixture.UnitOfWork.DidNotReceive().SaveChangesAsync(
@@ -127,6 +153,7 @@ public sealed class PersistentConversationContextProviderTests
             PersonId,
             conversation.Id,
             "message-003",
+            "Web",
             fixture.Token);
 
         Assert.Equal(conversation.Id, result.ConversationId);
@@ -149,6 +176,7 @@ public sealed class PersistentConversationContextProviderTests
                 PersonId,
                 missingId,
                 "message-004",
+                "Web",
                 fixture.Token));
     }
 
@@ -166,6 +194,7 @@ public sealed class PersistentConversationContextProviderTests
                 PersonId,
                 conversation.Id,
                 "message-005",
+                "Web",
                 fixture.Token));
     }
 
@@ -189,6 +218,7 @@ public sealed class PersistentConversationContextProviderTests
                 PersonId,
                 conversation.Id,
                 "message-user-missing",
+                "Web",
                 fixture.Token));
     }
 
@@ -211,6 +241,7 @@ public sealed class PersistentConversationContextProviderTests
             PersonId,
             conversation.Id,
             "message-006",
+            "Web",
             fixture.Token);
 
         Assert.True(result.IsEscalated);
@@ -235,6 +266,7 @@ public sealed class PersistentConversationContextProviderTests
             PersonId,
             conversation.Id,
             "message-007",
+            "Web",
             fixture.Token);
 
         Assert.False(result.IsEscalated);

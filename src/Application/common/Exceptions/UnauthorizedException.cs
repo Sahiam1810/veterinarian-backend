@@ -6,7 +6,15 @@ public class UnauthorizedException : Exception
     {
     }
 
+    // 401 con code estable (p. ej. AppointmentAction.PhoneMismatch).
+    public UnauthorizedException(string message, string code) : base(message)
+    {
+        Code = code;
+    }
+
     public UnauthorizedException(string message, Exception innerException) : base(message, innerException)
     {
     }
+
+    public string? Code { get; }
 }

@@ -1,10 +1,10 @@
+using Api.Appointments.Dtos;
+using Api.Appointments.Mappings;
 using Api.Availabilities.Dtos;
 using Api.Availabilities.Mappings;
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.Availabilities.UseCase;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,7 +34,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las disponibilidades")]
     [EndpointDescription("Retorna el listado completo de franjas de disponibilidad de todos los veterinarios.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AvailabilityResponse>), StatusCodes.Status200OK)]
@@ -48,8 +48,30 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
         return Ok(availabilities.ToResponse());
     }
 
+    [HttpGet("available-slots")]
+    [RequirePermission("Plataforma", PermissionAction.View)]
+    [EndpointSummary("Calcula huecos disponibles para el personal")]
+    [EndpointDescription("Retorna intervalos UTC libres del veterinario en la fecha indicada. Si no hay serviceId, usa la duracion del hueco de cada disponibilidad.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentBookingSlotResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<AppointmentBookingSlotResponse>>> GetAvailableSlots(
+        [FromQuery] Guid veterinarianId,
+        [FromQuery] DateOnly date,
+        [FromQuery] Guid? serviceId,
+        CancellationToken cancellationToken)
+    {
+        var slots = await sender.Send(
+            new GetAvailableScheduleSlotsQuery(veterinarianId, date, serviceId),
+            cancellationToken);
+
+        return Ok(slots.ToResponse());
+    }
+
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene una disponibilidad por su ID")]
     [EndpointDescription("Retorna la información detallada de una franja de disponibilidad específica.")]
     [ProducesResponseType(typeof(AvailabilityResponse), StatusCodes.Status200OK)]
@@ -66,7 +88,7 @@ public sealed class AvailabilitiesController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-veterinarian/{veterinarianId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene las disponibilidades de un veterinario")]
     [EndpointDescription("Retorna todas las franjas de disponibilidad configuradas para un veterinario, ordenadas por día y hora.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AvailabilityResponse>), StatusCodes.Status200OK)]

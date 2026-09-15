@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.ConversationStatuses.Dtos;
 using Api.ConversationStatuses.Mappings;
 using Application.ConversationStatuses.UseCases;
@@ -10,10 +11,10 @@ namespace Api.ConversationStatuses.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ConversationStatusesController(ISender sender) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission("Catálogos del Chat", PermissionAction.View)]
     [EndpointSummary("Obtiene los estados de conversación")]
     [EndpointDescription("Lista los estados registrados para las conversaciones.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ConversationStatusResponseDto>), StatusCodes.Status200OK)]
@@ -21,6 +22,7 @@ public sealed class ConversationStatusesController(ISender sender) : ControllerB
         Ok((await sender.Send(new GetAllConversationStatusesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Catálogos del Chat", PermissionAction.View)]
     [EndpointSummary("Obtiene un estado de conversación")]
     [EndpointDescription("Busca un estado de conversación por su identificador.")]
     [ProducesResponseType(typeof(ConversationStatusResponseDto), StatusCodes.Status200OK)]
@@ -29,6 +31,7 @@ public sealed class ConversationStatusesController(ISender sender) : ControllerB
         Ok((await sender.Send(new GetConversationStatusByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crea un estado de conversación")]
     [EndpointDescription("Registra un nuevo estado de conversación.")]
     [ProducesResponseType(typeof(ConversationStatusResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +44,7 @@ public sealed class ConversationStatusesController(ISender sender) : ControllerB
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualiza un estado de conversación")]
     [EndpointDescription("Actualiza el nombre de un estado de conversación.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -53,6 +57,7 @@ public sealed class ConversationStatusesController(ISender sender) : ControllerB
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Elimina un estado de conversación")]
     [EndpointDescription("Elimina un estado de conversación por su identificador.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

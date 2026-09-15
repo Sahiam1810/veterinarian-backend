@@ -23,4 +23,9 @@ public interface IUsersRepository
     Task UpdateAsync(
         UserEntity user,
         CancellationToken cancellationToken);
+
+    // Hard-delete del usuario (cascada a cuenta/permisos en EF)
+    Task DeleteAsync(
+        UserEntity user,
+        CancellationToken cancellationToken);
 }

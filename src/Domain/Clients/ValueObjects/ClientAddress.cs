@@ -2,7 +2,7 @@ namespace Domain.Clients.ValueObjects;
 
 public sealed record ClientAddress
 {
-    public const int MaxLength = 20;
+    public const int MaxLength = 150;
 
     private ClientAddress(string? value)
     {

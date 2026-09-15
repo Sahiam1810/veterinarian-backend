@@ -1,9 +1,12 @@
+using Application.Appointments;
 using Application.Appointments.Abstraction;
 using Application.Common.Models;
+using Application.Reports.Models;
 using Domain.Appointments.Entities;
 using Domain.Appointments.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Infrastructure.Appointments.Repositories;
 
@@ -40,6 +43,48 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Include(x => x.Status)
             .Include(x => x.Availability)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    public async Task<Appointment?> LockByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (!_context.Database.IsRelational())
+        {
+            return await _context.Set<Appointment>()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
+        var transaction = _context.Database.CurrentTransaction
+            ?? throw new InvalidOperationException(
+                "La cita solo puede bloquearse dentro de una transacción.");
+        var connection = _context.Database.GetDbConnection();
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction.GetDbTransaction();
+        command.CommandText =
+            "SELECT APPOINTMENT_ID FROM APPOINTMENTS "
+            + "WHERE APPOINTMENT_ID = :appointmentId FOR UPDATE";
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "appointmentId";
+        parameter.Value = id.ToString();
+        command.Parameters.Add(parameter);
+
+        var lockedId = await command.ExecuteScalarAsync(cancellationToken);
+        if (lockedId is null || lockedId is DBNull)
+        {
+            return null;
+        }
+
+        var tracked = _context.Set<Appointment>().Local
+            .FirstOrDefault(appointment => appointment.Id == id);
+        if (tracked is not null)
+        {
+            await _context.Entry(tracked).ReloadAsync(cancellationToken);
+            return tracked;
+        }
+
+        return await _context.Set<Appointment>()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
 
     public async Task<IReadOnlyCollection<Appointment>> GetByClientPetIdsAsync(
         IReadOnlyCollection<Guid> clientPetIds,
@@ -138,10 +183,44 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .Include(x => x.ClientPet!)
                 .ThenInclude(x => x.Pet)
             .Include(x => x.Status)
+            .Include(x => x.Veterinarian)
             .Where(x => x.ScheduledStart >= fromUtc && x.ScheduledStart <= toUtc)
             .AsNoTracking()
             .OrderBy(x => x.ScheduledStart)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<AppointmentDayReportEntry>> GetForDayReportAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
+            .Select(x => new AppointmentDayReportEntry(x.ScheduledStart, x.Status!.Name))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<AppointmentVeterinarianReportEntry>> GetForVeterinarianReportAsync(
+        DateTime fromInclusive,
+        DateTime toExclusive,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => x.ScheduledStart >= fromInclusive && x.ScheduledStart < toExclusive)
+            .Select(x => new AppointmentVeterinarianReportEntry(
+                x.VeterinarianId,
+                x.Veterinarian!.User!.FullName,
+                x.Status!.Name))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, int>> GetStatusCountsBetweenAsync(
+        DateTime fromInclusiveUtc,
+        DateTime toExclusiveUtc,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Appointment>()
+            .Where(x => x.ScheduledStart >= fromInclusiveUtc && x.ScheduledStart < toExclusiveUtc)
+            .GroupBy(x => x.StatusId)
+            .Select(g => new { StatusId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.StatusId, x => x.Count, cancellationToken);
 
     public async Task<IReadOnlyCollection<Appointment>> GetScheduledOverlapsAsync(
         Guid veterinarianId,
@@ -151,7 +230,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
         => await _context.Set<Appointment>()
             .Include(x => x.Status)
             .Where(x => x.VeterinarianId == veterinarianId
-                && x.Status!.Name == "AGENDADA"
+                && x.Status!.Name == AppointmentStatusNames.Agendada
                 && x.ScheduledStart < toUtc
                 && x.ScheduledEnd > fromUtc)
             .AsNoTracking()
@@ -182,7 +261,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
         DateTime endUtc,
         CancellationToken cancellationToken)
         => _context.Set<Appointment>()
-            .AnyAsync(x => x.Status!.Name == "AGENDADA"
+            .AnyAsync(x => x.Status!.Name == AppointmentStatusNames.Agendada
                 && (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
                 && x.ScheduledStart < endUtc
                 && x.ScheduledEnd > startUtc,
@@ -204,9 +283,89 @@ public sealed class AppointmentRepository : IAppointmentRepository
         }
 
         return await query.AnyAsync(
-            x => (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
+            x => x.Status!.Name == AppointmentStatusNames.Agendada
+                 && (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
                  && x.ScheduledStart < end
                  && x.ScheduledEnd > start,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Appointment>> GetScheduledRoomOverlapsAsync(
+        DateTime fromUtc,
+        DateTime toUtc,
+        CancellationToken cancellationToken)
+        => await _context.Set<Appointment>()
+            .Include(x => x.Status)
+            .Where(x => x.Status!.Name == AppointmentStatusNames.Agendada
+                && x.ConsultingRoom != null
+                && x.ScheduledStart < toUtc
+                && x.ScheduledEnd > fromUtc)
+            .AsNoTracking()
+            .OrderBy(x => x.ScheduledStart)
+            .ToListAsync(cancellationToken);
+
+    public Task<bool> HasConsultingRoomOverlapAsync(
+        string consultingRoom,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var room = consultingRoom.Trim().ToUpper();
+        var query = _context.Set<Appointment>().AsQueryable();
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeAppointmentId.Value);
+        }
+
+        return query.AnyAsync(
+            x => x.Status!.Name == AppointmentStatusNames.Agendada
+                && x.ConsultingRoom != null
+                && x.ConsultingRoom.ToUpper() == room
+                && x.ScheduledStart < end
+                && x.ScheduledEnd > start,
+            cancellationToken);
+    }
+
+    public Task<int> CountScheduledOverlapsForVeterinarianAsync(
+        Guid veterinarianId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<Appointment>().AsQueryable();
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeAppointmentId.Value);
+        }
+
+        return query.CountAsync(
+            x => x.VeterinarianId == veterinarianId
+                && x.Status!.Name == AppointmentStatusNames.Agendada
+                && x.ScheduledStart < end
+                && x.ScheduledEnd > start,
+            cancellationToken);
+    }
+
+    public Task<bool> HasClientPetOverlapAsync(
+        Guid clientPetId,
+        DateTime start,
+        DateTime end,
+        Guid? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<Appointment>().AsQueryable();
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x => x.Id != excludeAppointmentId.Value);
+        }
+
+        return query.AnyAsync(
+            x => x.ClientPetId == clientPetId
+                && x.Status!.Name == AppointmentStatusNames.Agendada
+                && x.ScheduledStart < end
+                && x.ScheduledEnd > start,
             cancellationToken);
     }
 
@@ -231,4 +390,48 @@ public sealed class AppointmentRepository : IAppointmentRepository
         _context.Set<Appointment>().Remove(appointment);
         return Task.CompletedTask;
     }
+
+    public async Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (clientPetIds.Count == 0)
+        {
+            return;
+        }
+
+        var appointmentIds = await _context.Set<Appointment>()
+            .AsNoTracking()
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        if (appointmentIds.Count == 0)
+        {
+            return;
+        }
+
+        var histories = await _context.Set<Domain.AppointmentStatusHistories.Entities.AppointmentStatusHistory>()
+            .Where(x => appointmentIds.Contains(x.AppointmentId))
+            .ToListAsync(cancellationToken);
+
+        if (histories.Count > 0)
+        {
+            _context.Set<Domain.AppointmentStatusHistories.Entities.AppointmentStatusHistory>()
+                .RemoveRange(histories);
+        }
+
+        var appointments = await _context.Set<Appointment>()
+            .Where(x => appointmentIds.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        _context.Set<Appointment>().RemoveRange(appointments);
+    }
+
+    public Task<bool> ExistsByServiceIdAsync(
+        Guid serviceId,
+        CancellationToken cancellationToken = default)
+        => _context.Set<Appointment>()
+            .AsNoTracking()
+            .AnyAsync(x => x.ServiceId == serviceId, cancellationToken);
 }

@@ -55,8 +55,9 @@ public sealed class DeactivateUserCommandHandlerTests
     {
         var user = new UserEntity("Ana", "ana@huellitas.test", "hash", RoleId);
         var account = new UserAccountEntity(user.Id, "ana", "ana@huellitas.test", "Activo");
-        var tokenOne = new UserTokenEntity(account.Id, "hash-1", "refresh", DateTime.UtcNow.AddDays(1));
-        var tokenTwo = new UserTokenEntity(account.Id, "hash-2", "refresh", DateTime.UtcNow.AddDays(2));
+        var sessionStartedAt = DateTime.UtcNow;
+        var tokenOne = new UserTokenEntity(account.Id, "hash-1", "refresh", DateTime.UtcNow.AddDays(1), sessionStartedAt);
+        var tokenTwo = new UserTokenEntity(account.Id, "hash-2", "refresh", DateTime.UtcNow.AddDays(2), sessionStartedAt);
 
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         userAccountsRepository.GetByUserIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(account);

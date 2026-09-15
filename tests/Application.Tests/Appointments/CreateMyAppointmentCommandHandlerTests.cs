@@ -1,6 +1,8 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Application.Common.Exceptions;
 using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
@@ -39,6 +41,17 @@ public sealed class CreateMyAppointmentCommandHandlerTests
         Assert.NotNull(result.BookingRequestKeyHash);
         await fixture.Appointments.Received(1)
             .AddAsync(result, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_prefers_profile_phone_over_divergent_request()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        var command = fixture.Command with { RequesterPhoneNumber = "+57 301 999 8888" };
+
+        var result = await fixture.Sut.Handle(command, CancellationToken.None);
+
+        Assert.Equal("3001234567", result.RequesterPhoneNumber?.Value);
     }
 
     [Fact]
@@ -145,12 +158,39 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     public async Task Handle_rechecks_overlap_after_lock_and_rejects_taken_slot()
     {
         var fixture = new Fixture(withClientPhone: true);
-        fixture.Appointments.HasScheduledOverlapAsync(
+        fixture.Appointments.HasOverlappingAppointmentAsync(
                 fixture.ClientPet.Id, fixture.Veterinarian.Id,
                 fixture.Command.ScheduledStartUtc,
                 fixture.Command.ScheduledStartUtc.AddMinutes(30),
+                Arg.Any<Guid?>(),
                 Arg.Any<CancellationToken>())
             .Returns(true);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            fixture.Sut.Handle(fixture.Command, CancellationToken.None));
+
+        await fixture.Availabilities.Received(1)
+            .LockByIdAsync(fixture.Availability.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rechecks_absence_after_lock_and_rejects_conflicting_slot()
+    {
+        var fixture = new Fixture(withClientPhone: true);
+        fixture.Absences.GetOverlappingAsync(
+                fixture.Veterinarian.Id,
+                fixture.Command.ScheduledStartUtc,
+                fixture.Command.ScheduledStartUtc.AddMinutes(30),
+                Arg.Any<CancellationToken>())
+            .Returns(new[]
+            {
+                new VeterinarianAbsence(
+                    fixture.Veterinarian.Id,
+                    fixture.Command.ScheduledStartUtc.AddMinutes(-10),
+                    fixture.Command.ScheduledStartUtc.AddMinutes(40),
+                    null,
+                    isFullDay: false)
+            });
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             fixture.Sut.Handle(fixture.Command, CancellationToken.None));
@@ -182,6 +222,7 @@ public sealed class CreateMyAppointmentCommandHandlerTests
     {
         public IUnitOfWork UnitOfWork { get; } = Substitute.For<IUnitOfWork>();
         public IAppointmentRepository Appointments { get; } = Substitute.For<IAppointmentRepository>();
+        public IVeterinarianAbsenceRepository Absences { get; } = Substitute.For<IVeterinarianAbsenceRepository>();
         public Application.Availabilities.Abstraction.IAvailabilityRepository Availabilities { get; }
             = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
         public ClientPetEntity ClientPet { get; }
@@ -200,9 +241,10 @@ public sealed class CreateMyAppointmentCommandHandlerTests
             var client = new ClientEntity(
                 userId, "1234567890", null,
                 phoneNumber: withClientPhone ? "3001234567" : null);
+            var species = new SpeciesEntity("Canino");
             var pet = new PetEntity(
                 "Luna", 4, "F", 12m, null,
-                new SpeciesEntity("Canino"), new RaceEntity("Mestizo"));
+                species, new RaceEntity("Mestizo", species));
             ClientPet = new ClientPetEntity(client, pet, true);
             Service = new Service(Guid.NewGuid(), "Consulta", 30, 50000m);
             var veterinarianUser = new UserEntity(
@@ -225,6 +267,10 @@ public sealed class CreateMyAppointmentCommandHandlerTests
                 .Returns(client);
             UnitOfWork.ClientPetsRepository.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
                 .Returns(new[] { ClientPet });
+            UnitOfWork.ClientPetsRepository.GetByIdAsync(ClientPet.Id, Arg.Any<CancellationToken>())
+                .Returns(ClientPet);
+            UnitOfWork.ClientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>())
+                .Returns(client);
             UnitOfWork.ServicesRepository.GetByIdAsync(Service.Id, Arg.Any<CancellationToken>())
                 .Returns(Service);
             UnitOfWork.VeterinariansRepository.GetByIdAsync(
@@ -237,6 +283,9 @@ public sealed class CreateMyAppointmentCommandHandlerTests
                 .Returns(new[] { Availability });
             Availabilities.LockByIdAsync(Availability.Id, Arg.Any<CancellationToken>())
                 .Returns(Availability);
+            Absences.GetOverlappingAsync(
+                    Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+                .Returns(Array.Empty<VeterinarianAbsence>());
             UnitOfWork.ExecuteInTransactionAsync(
                     Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
                 .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
@@ -251,7 +300,7 @@ public sealed class CreateMyAppointmentCommandHandlerTests
             Appointments.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                 .Returns(_ => added);
             Sut = new CreateMyAppointmentCommandHandler(
-                UnitOfWork, new Settings(), new FixedTimeProvider(Now));
+                UnitOfWork, Absences, new Settings(), new FixedTimeProvider(Now));
         }
 
         public Appointment MatchingAppointment(string phone = "3001234567")

@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddSignalR();
         services.AddSingleton<IUserIdProvider, PersonIdUserIdProvider>();
         services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
+        services.AddScoped<IChatRealtimeNotifier, SignalRChatRealtimeNotifier>();
 
         return services;
     }

@@ -47,7 +47,7 @@ public sealed class GetMyAppointmentsQueryHandler(
                 .Where(appointment =>
                     string.Equals(
                         appointment.Status?.Name,
-                        "AGENDADA",
+                        AppointmentStatusNames.Agendada,
                         StringComparison.OrdinalIgnoreCase)
                     && appointment.ScheduledEnd >= now)
                 .OrderBy(appointment => appointment.ScheduledStart)
@@ -56,7 +56,7 @@ public sealed class GetMyAppointmentsQueryHandler(
                 .Where(appointment =>
                     !string.Equals(
                         appointment.Status?.Name,
-                        "AGENDADA",
+                        AppointmentStatusNames.Agendada,
                         StringComparison.OrdinalIgnoreCase)
                     || appointment.ScheduledEnd < now)
                 .OrderByDescending(appointment => appointment.ScheduledStart)

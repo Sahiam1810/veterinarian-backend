@@ -14,7 +14,7 @@ public sealed record CancelMyAppointmentCommand(
 public sealed class CancelMyAppointmentCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<CancelMyAppointmentCommand>
 {
-    private const string Agendada = "AGENDADA";
+    private const string Agendada = AppointmentStatusNames.Agendada;
     private const string Cancelada = "CANCELADA";
 
     public async Task Handle(
@@ -48,6 +48,11 @@ public sealed class CancelMyAppointmentCommandHandler(IUnitOfWork unitOfWork)
             appointment.StatusId,
             cancellationToken)
             ?? throw new ConflictException("El estado actual de la cita no es válido.");
+
+        if (string.Equals(currentStatus.Name, Cancelada, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
 
         if (!string.Equals(currentStatus.Name, Agendada, StringComparison.OrdinalIgnoreCase))
         {

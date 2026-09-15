@@ -16,7 +16,10 @@ public sealed class PetRepository : IPetRepository
 
     public async Task<IReadOnlyCollection<PetEntity>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await _context.Set<PetEntity>().ToListAsync(cancellationToken);
+        // Solo lectura: sin tracking para reducir overhead de EF en listados completos (S26).
+        return await _context.Set<PetEntity>()
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<PetEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

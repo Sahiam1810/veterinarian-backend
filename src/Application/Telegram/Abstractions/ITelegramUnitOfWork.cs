@@ -1,3 +1,4 @@
+using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
 
 namespace Application.Telegram.Abstractions;
@@ -5,6 +6,10 @@ namespace Application.Telegram.Abstractions;
 public interface ITelegramUnitOfWork
 {
     IUsersRepository UsersRepository { get; }
+
+    // Necesario para crear la cuenta fantasma (sin password) al vincular un
+    // registro hecho desde el bot (ver LinkTelegramBotAccountCommand).
+    IUserAccountsRepository UserAccountsRepository { get; }
 
     ITelegramLinkCodeRepository LinkCodesRepository { get; }
 

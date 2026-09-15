@@ -90,6 +90,13 @@ public sealed class ChatConversationConfiguration : IEntityTypeConfiguration<Cha
                 value => value == null ? null : Guid.Parse(value))
             .IsRequired(false);
 
+        // Ticket B6: canal de origen ("Telegram"/"Web"), fijado al crear.
+        builder.Property(conversation => conversation.Channel)
+            .HasColumnName("CHANNEL")
+            .HasColumnType("VARCHAR2(20)")
+            .HasDefaultValue("Web")
+            .IsRequired();
+
         builder.Property(conversation => conversation.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

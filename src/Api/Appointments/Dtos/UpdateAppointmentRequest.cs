@@ -8,4 +8,5 @@ public sealed record UpdateAppointmentRequest(
     Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
-    string? Notes);
+    string? Notes,
+    string? ConsultingRoom = null);

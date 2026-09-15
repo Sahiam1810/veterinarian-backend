@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Appointments.Controllers;
+using Domain.Roles;
 using Api.Appointments.Dtos;
 using Application.MedicalRecords.UseCases;
 using MediatR;
@@ -52,7 +53,7 @@ public sealed class AppointmentMedicalRecordApiTests
             claims:
             [
                 new Claim("sub", ActorUserAccountId.ToString()),
-                new Claim("super_admin", "true")
+                new Claim("role_id", SystemRoles.SuperAdminId.ToString())
             ],
             expectedEnforce: false);
     }

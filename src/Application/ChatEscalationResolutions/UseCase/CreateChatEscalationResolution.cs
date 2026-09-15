@@ -1,6 +1,9 @@
+using Application.ChatEscalations.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.Notifications.Abstraction;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ChatEscalationResolutionEntity = Domain.ChatEscalationResolutions.Entities.ChatEscalationResolution;
 
 namespace Application.ChatEscalationResolutions.UseCase;
@@ -11,21 +14,18 @@ public sealed record CreateChatEscalationResolutionCommand(
     string? ResolutionNote,
     DateTime? ResolvedAt) : IRequest<ChatEscalationResolutionEntity>;
 
-public sealed class CreateChatEscalationResolutionCommandHandler
+public sealed class CreateChatEscalationResolutionCommandHandler(
+    IUnitOfWork uow,
+    IChatEscalationRuntimeSettings settings,
+    IChatRealtimeNotifier chatRealtimeNotifier,
+    ILogger<CreateChatEscalationResolutionCommandHandler> logger)
     : IRequestHandler<CreateChatEscalationResolutionCommand, ChatEscalationResolutionEntity>
 {
-    private readonly IUnitOfWork _uow;
-
-    public CreateChatEscalationResolutionCommandHandler(IUnitOfWork uow)
-    {
-        _uow = uow;
-    }
-
     public async Task<ChatEscalationResolutionEntity> Handle(
         CreateChatEscalationResolutionCommand request,
         CancellationToken cancellationToken)
     {
-        var escalation = await _uow.ChatEscalationsRepository.GetByIdAsync(
+        var escalation = await uow.ChatEscalationsRepository.GetByIdAsync(
             request.ChatEscalationId,
             cancellationToken);
         if (escalation is null)
@@ -40,8 +40,42 @@ public sealed class CreateChatEscalationResolutionCommandHandler
             request.ResolutionNote,
             request.ResolvedAt);
 
-        await _uow.ChatEscalationResolutionsRepository.AddAsync(resolution, cancellationToken);
-        await _uow.SaveChangesAsync(cancellationToken);
+        await uow.ChatEscalationResolutionsRepository.AddAsync(resolution, cancellationToken);
+
+        // Ticket B8: sincroniza el estado del escalamiento con la resolución
+        // recién creada. IActiveConversationEscalationReader.HasActiveAsync
+        // (que decide si el chatbot sigue callado) no depende de este campo
+        // — mira si existe una ChatEscalationResolution, no el estado — así
+        // que esto es solo para que la bandeja/REST dejen de mostrarlo como
+        // pendiente; no cambia el comportamiento del chatbot.
+        escalation.Update(
+            settings.ResolvedEscalationStatusId,
+            escalation.FromAi,
+            escalation.Reason,
+            escalation.UpdateAt);
+        await uow.ChatEscalationsRepository.UpdateAsync(escalation, cancellationToken);
+
+        await uow.SaveChangesAsync(cancellationToken);
+
+        // Ticket B5: ver el mismo razonamiento en CreateChatEscalationCommandHandler
+        // — un fallo de broadcast nunca debe tumbar la resolución ya guardada.
+        try
+        {
+            var payload = new ChatEscalationResolvedPayload(
+                resolution.ChatEscalationId,
+                escalation.ChatConversationId,
+                resolution.ResolvedBy?.ToString(),
+                resolution.ResolvedAt ?? DateTime.UtcNow,
+                resolution.ResolutionNote);
+            await chatRealtimeNotifier.NotifyEscalationResolvedAsync(payload, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(
+                exception,
+                "Failed to broadcast ChatEscalationResolved for escalation {EscalationId}.",
+                resolution.ChatEscalationId);
+        }
 
         return resolution;
     }

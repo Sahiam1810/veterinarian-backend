@@ -15,7 +15,7 @@ namespace Api.AppointmentStatusHistories.Controllers;
 public sealed class AppointmentStatusHistoriesController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Crea un nuevo historial de estado de cita")]
     [EndpointDescription("Registra un nuevo historial de cambio de estado para una cita médica.")]
     [ProducesResponseType(typeof(CreateAppointmentStatusHistoryResponse), StatusCodes.Status201Created)]
@@ -34,7 +34,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los historiales de estado de citas")]
     [EndpointDescription("Retorna el listado completo de los historiales de estado de citas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentStatusHistoryResponse>), StatusCodes.Status200OK)]
@@ -49,7 +49,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Plataforma", PermissionAction.View)]
     [EndpointSummary("Obtiene un historial de estado de cita por su ID")]
     [EndpointDescription("Retorna la información detallada de un historial de estado específico.")]
     [ProducesResponseType(typeof(AppointmentStatusHistoryResponse), StatusCodes.Status200OK)]
@@ -66,7 +66,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza un historial de estado de cita existente")]
     [EndpointDescription("Modifica los datos de un historial de estado previamente registrado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -85,7 +85,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Elimina un historial de estado de cita por su ID")]
     [EndpointDescription("Remueve permanentemente un historial de estado del sistema.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

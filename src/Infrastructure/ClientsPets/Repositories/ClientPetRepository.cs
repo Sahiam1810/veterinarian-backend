@@ -17,4 +17,18 @@ public sealed class ClientPetRepository(VeterinaryDbContext context) : IClientPe
     public async Task AddAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) => await context.Set<ClientPetEntity>().AddAsync(clientPet, cancellationToken);
     public Task UpdateAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) { context.Set<ClientPetEntity>().Update(clientPet); return Task.CompletedTask; }
     public Task DeleteAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) { context.Set<ClientPetEntity>().Remove(clientPet); return Task.CompletedTask; }
+
+    public async Task DeleteByClientIdAsync(Guid clientId, CancellationToken cancellationToken)
+    {
+        var links = await context.Set<ClientPetEntity>()
+            .Where(x => x.ClientId == clientId)
+            .ToListAsync(cancellationToken);
+
+        if (links.Count == 0)
+        {
+            return;
+        }
+
+        context.Set<ClientPetEntity>().RemoveRange(links);
+    }
 }

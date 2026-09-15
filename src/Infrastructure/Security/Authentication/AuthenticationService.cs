@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Results;
+using Application.Permissions.UseCases;
 using Application.Security.Abstractions;
 using Application.Security.Errors;
 using Application.Security.Models;
@@ -9,6 +10,8 @@ using Application.UserTokens.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
+using Domain.Roles;
+using MediatR;
 using Microsoft.Extensions.Options;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
@@ -21,19 +24,19 @@ public sealed class AuthenticationService(
     IUserTokensRepository userTokenRepository,
     IUsersRepository usersRepository,
     IUnitOfWork unitOfWork,
+    ISender sender,
     JwtTokenIssuer jwtTokenIssuer,
     RefreshTokenProtector refreshTokenProtector,
     IPasswordHasher passwordHasher,
     IOptions<JwtOptions> options,
-    IOptions<SuperAdminOptions> superAdminOptions,
     TimeProvider timeProvider) : IAuthenticationService
 {
     private const string ActiveStatus = "Activo";
     private const string RefreshTokenType = "refresh";
+    // Rol canónico: Cliente no entra a la plataforma (chatbot / teléfono).
+    private const string ClientRoleName = "Cliente";
 
     private readonly JwtOptions jwtOptions = options.Value;
-    private readonly SuperAdminOptions superAdmin = superAdminOptions.Value;
-
     public async Task<Result<AuthenticationTokens>> LoginAsync(
         string email,
         string password,
@@ -41,30 +44,32 @@ public sealed class AuthenticationService(
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
-        if (IsSuperAdminEmail(normalizedEmail))
-        {
-            return passwordHasher.Verify(password, superAdmin.PasswordHash)
-                ? IssueSuperAdminTokens()
-                : Result<AuthenticationTokens>.Failure(AuthenticationErrors.InvalidCredentials);
-        }
-
         var account = await userAccountRepository.GetByMailAsync(
             normalizedEmail, cancellationToken);
 
-        if (!IsActiveAccount(account))
+        if (account is null)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidCredentials);
         }
 
         var credential = await userCredentialRepository.GetByAccountIdAsync(
-            account!.Id, cancellationToken);
+            account.Id, cancellationToken);
 
         if (credential is null ||
             !passwordHasher.Verify(password, credential.PasswordHash))
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidCredentials);
+        }
+
+        // Solo tras password válida: no filtrar inactiva como InvalidCredentials.
+        // Código propio (distinto de PlatformAccessDenied) para que el front
+        // muestre "cuenta inactiva" en vez del genérico de rol no admitido.
+        if (!IsActiveAccount(account))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.UserInactive);
         }
 
         var identity = await BuildIdentityAsync(account, cancellationToken);
@@ -75,10 +80,19 @@ public sealed class AuthenticationService(
                 AuthenticationErrors.InvalidCredentials);
         }
 
+        // 1.1: aunque existan account+password legacy, Cliente no obtiene JWT de plataforma.
+        if (IsClientRole(identity.Role))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.PlatformAccessDenied);
+        }
+
+        var sessionStartedAt = ToUnspecifiedUtc(timeProvider.GetUtcNow());
+
         Result<AuthenticationTokens>? result = null;
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
-            result = await IssueTokensAsync(identity, transactionToken);
+            result = await IssueTokensAsync(identity, sessionStartedAt, transactionToken);
         }, cancellationToken);
 
         return result!;
@@ -99,16 +113,31 @@ public sealed class AuthenticationService(
                 AuthenticationErrors.InvalidRefreshToken);
         }
 
-        var account = await userAccountRepository.GetByIdAsync(
-            currentToken.AccountId, cancellationToken);
-
-        if (!IsActiveAccount(account))
+        var now = timeProvider.GetUtcNow();
+        var maxSession = TimeSpan.FromHours(jwtOptions.MaxSessionHours);
+        if (now.UtcDateTime - currentToken.SessionStartedAt >= maxSession)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidRefreshToken);
         }
 
-        var identity = await BuildIdentityAsync(account!, cancellationToken);
+        var account = await userAccountRepository.GetByIdAsync(
+            currentToken.AccountId, cancellationToken);
+
+        if (account is null)
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.InvalidRefreshToken);
+        }
+
+        // Antes de rotar/borrar: cuenta inactiva no renueva sesión.
+        if (!IsActiveAccount(account))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.UserInactive);
+        }
+
+        var identity = await BuildIdentityAsync(account, cancellationToken);
 
         if (identity is null)
         {
@@ -116,11 +145,21 @@ public sealed class AuthenticationService(
                 AuthenticationErrors.InvalidRefreshToken);
         }
 
+        // No renovar sesión de plataforma para rol Cliente (dato legacy).
+        if (IsClientRole(identity.Role))
+        {
+            return Result<AuthenticationTokens>.Failure(
+                AuthenticationErrors.PlatformAccessDenied);
+        }
+
+        // Propagate the original login instant; never restart the session clock.
+        var sessionStartedAt = currentToken.SessionStartedAt;
+
         Result<AuthenticationTokens>? result = null;
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
             await userTokenRepository.DeleteAsync(currentToken, transactionToken);
-            result = await IssueTokensAsync(identity, transactionToken);
+            result = await IssueTokensAsync(identity, sessionStartedAt, transactionToken);
         }, cancellationToken);
 
         return result!;
@@ -159,13 +198,6 @@ public sealed class AuthenticationService(
         Guid userAccountId,
         CancellationToken cancellationToken)
     {
-        // El SuperAdmin no tiene fila en UserAccounts: sin este caso, /me le
-        // devolvería 401 aunque su token sea válido.
-        if (superAdmin.Enabled && userAccountId == superAdmin.Id)
-        {
-            return Result<CurrentProfile>.Success(BuildSuperAdminProfile());
-        }
-
         var account = await userAccountRepository.GetByIdAsync(
             userAccountId, cancellationToken);
 
@@ -182,22 +214,9 @@ public sealed class AuthenticationService(
             : Result<CurrentProfile>.Success(CurrentProfile.From(identity));
     }
 
-    // El SuperAdmin no tiene UserAccounts, así que no hay dónde guardar un
-    // refresh token: solo recibe access token, y vuelve a loguearse cuando expire.
-    private Result<AuthenticationTokens> IssueSuperAdminTokens()
-    {
-        var accessToken = jwtTokenIssuer.IssueForSuperAdmin(superAdmin.Id, superAdmin.Email);
-
-        return Result<AuthenticationTokens>.Success(
-            new AuthenticationTokens(
-                accessToken.Token,
-                accessToken.ExpiresAt,
-                string.Empty,
-                accessToken.ExpiresAt));
-    }
-
     private async Task<Result<AuthenticationTokens>> IssueTokensAsync(
         AuthenticatedIdentity identity,
+        DateTime sessionStartedAt,
         CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
@@ -216,14 +235,20 @@ public sealed class AuthenticationService(
             RefreshTokenType,
             DateTime.SpecifyKind(
                 refreshTokenExpiresAt.UtcDateTime,
-                DateTimeKind.Unspecified));
+                DateTimeKind.Unspecified),
+            sessionStartedAt);
 
         await userTokenRepository.AddAsync(
             userToken,
             cancellationToken);
 
-        var accessToken = jwtTokenIssuer.Issue(
-            identity);
+        var permissions = SystemRoles.IsSuperAdmin(identity.RoleId)
+            ? Array.Empty<string>()
+            : await sender.Send(
+                new GetUserPermissionClaimsQuery(identity.RoleId, identity.PersonId),
+                cancellationToken);
+
+        var accessToken = jwtTokenIssuer.Issue(identity, permissions);
 
         return Result<AuthenticationTokens>.Success(
             new AuthenticationTokens(
@@ -259,22 +284,13 @@ public sealed class AuthenticationService(
             account.Status);
     }
 
-    private CurrentProfile BuildSuperAdminProfile() =>
-        new(
-            PersonId: superAdmin.Id,
-            UserAccountId: superAdmin.Id,
-            FullName: "Super Administrador",
-            Initials: "SA",
-            UserName: superAdmin.Email,
-            Email: superAdmin.Email,
-            Role: "SuperAdmin",
-            AccountStatus: ActiveStatus);
-
-    private bool IsSuperAdminEmail(string normalizedEmail) =>
-        superAdmin.Enabled &&
-        string.Equals(normalizedEmail, superAdmin.Email.Trim().ToLowerInvariant(), StringComparison.Ordinal);
-
     private static bool IsActiveAccount(UserAccountEntity? account) =>
         account is not null &&
         string.Equals(account.Status, ActiveStatus, StringComparison.Ordinal);
+
+    private static bool IsClientRole(string roleName) =>
+        string.Equals(roleName, ClientRoleName, StringComparison.Ordinal);
+
+    private static DateTime ToUnspecifiedUtc(DateTimeOffset instant) =>
+        DateTime.SpecifyKind(instant.UtcDateTime, DateTimeKind.Unspecified);
 }
