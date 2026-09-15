@@ -17,6 +17,7 @@ public sealed class PersistentConversationContextProvider(
         Guid personId,
         Guid? requestedConversationId,
         string idempotencyKey,
+        string channel,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -40,7 +41,7 @@ public sealed class PersistentConversationContextProvider(
             await unitOfWork.ChatUserProfilesRepository.AddAsync(profile, cancellationToken);
         }
 
-        var conversation = ChatConversation.Create(defaults.InitialConversationStatusId);
+        var conversation = ChatConversation.Create(defaults.InitialConversationStatusId, channel: channel);
         var participant = ChatParticipant.Create(
             conversation.Id,
             defaults.ClientParticipantTypeId,

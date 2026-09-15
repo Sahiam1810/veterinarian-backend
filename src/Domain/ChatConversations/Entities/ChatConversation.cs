@@ -25,15 +25,25 @@ public sealed class ChatConversation : BaseEntity<Guid>
 
     public Guid? ClosedBy { get; private set; }
 
+    // Ticket B6: canal de origen ("Telegram" o "Web"), fijado una sola vez al
+    // crear la conversación — hoy solo se conocía transitoriamente vía
+    // AgentConversationContext.Channel (nunca persistido) y se infería en la
+    // Recepcionista consultando TelegramConversationLink. No confundir con
+    // AgentConversationContext.Channel, que sigue siendo un campo aparte
+    // usado para el envelope que se le envía al agente de IA.
+    public string Channel { get; private set; } = "Web";
+
     /// <summary>
     /// Crea una conversación abierta. La IA queda habilitada por defecto salvo indicación contraria.
     /// </summary>
     public static ChatConversation Create(
         Guid conversationStatusId,
         Guid? priorityId = null,
-        bool aiEnabled = true)
+        bool aiEnabled = true,
+        string channel = "Web")
     {
         EnsureConversationStatusId(conversationStatusId);
+        EnsureChannel(channel);
 
         return new ChatConversation
         {
@@ -43,7 +53,8 @@ public sealed class ChatConversation : BaseEntity<Guid>
             AiEnabled = aiEnabled,
             Closed = false,
             ClosedAt = null,
-            ClosedBy = null
+            ClosedBy = null,
+            Channel = channel
         };
     }
 
@@ -135,6 +146,16 @@ public sealed class ChatConversation : BaseEntity<Guid>
             throw new ArgumentException(
                 "El identificador de cierre no puede ser vacío.",
                 nameof(closedBy));
+        }
+    }
+
+    private static void EnsureChannel(string channel)
+    {
+        if (string.IsNullOrWhiteSpace(channel))
+        {
+            throw new ArgumentException(
+                "El canal de la conversación es obligatorio.",
+                nameof(channel));
         }
     }
 }

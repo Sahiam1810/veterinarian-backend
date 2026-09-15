@@ -62,6 +62,9 @@ public sealed class SendAgentMessageHandlerTests
         Assert.Equal(PersonId, conversations.PersonId);
         Assert.Equal(requested, conversations.RequestedConversationId);
         Assert.Equal("message-001", conversations.IdempotencyKey);
+        // Ticket B6: el chat web siempre pide persistir "Web" si termina
+        // creando una conversación nueva.
+        Assert.Equal("Web", conversations.Channel);
     }
 
     [Fact]
@@ -137,17 +140,20 @@ public sealed class SendAgentMessageHandlerTests
         public Guid PersonId { get; private set; }
         public Guid? RequestedConversationId { get; private set; }
         public string? IdempotencyKey { get; private set; }
+        public string? Channel { get; private set; }
         public CancellationToken CancellationToken { get; private set; }
 
         public ValueTask<AgentConversationContext> ResolveAsync(
             Guid personId,
             Guid? requestedConversationId,
             string idempotencyKey,
+            string channel,
             CancellationToken cancellationToken)
         {
             PersonId = personId;
             RequestedConversationId = requestedConversationId;
             IdempotencyKey = idempotencyKey;
+            Channel = channel;
             CancellationToken = cancellationToken;
             return ValueTask.FromResult(result);
         }

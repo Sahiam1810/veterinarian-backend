@@ -5,14 +5,12 @@ using Application.ChatUserProfiles.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Notifications.Abstraction;
-using Application.Telegram.Abstractions;
 using Application.Users.Abstraction;
 using Domain.ChatConversations.Entities;
 using Domain.ChatParticipants.Entities;
 using Domain.ChatUserProfiles.Entities;
 using Domain.Clients.Entities;
 using Domain.EscalationStatuses.Entities;
-using Domain.Telegram.Entities;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -36,9 +34,6 @@ public sealed class CreateChatEscalationCommandHandlerTests
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));
-        fixture.ConversationLinks
-            .GetByConversationIdAsync(ConversationId, default)
-            .Returns((TelegramConversationLink?)null);
         fixture.Uow.ChatParticipantsRepository
             .GetAllByConversationIdAsync(ConversationId, default)
             .Returns((IReadOnlyCollection<ChatParticipant>)Array.Empty<ChatParticipant>());
@@ -54,24 +49,24 @@ public sealed class CreateChatEscalationCommandHandlerTests
                 payload.Status == "Pendiente" &&
                 payload.Reason == "asesor" &&
                 payload.LastMessage == "asesor" &&
-                payload.Channel == null &&
+                // Ticket B6: ChatConversation.Channel siempre trae un valor —
+                // "Web" es el default de ChatConversation.Create cuando no se
+                // especifica otro canal explícitamente.
+                payload.Channel == "Web" &&
                 payload.ClientId == null),
             default);
     }
 
     [Fact]
-    public async Task Escalation_for_a_telegram_linked_conversation_reports_telegram_channel()
+    public async Task Escalation_for_a_telegram_conversation_reports_telegram_channel()
     {
         var fixture = CreateFixture();
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
-            .Returns(ChatConversation.Create(Guid.NewGuid()));
+            .Returns(ChatConversation.Create(Guid.NewGuid(), channel: "Telegram"));
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));
-        fixture.ConversationLinks
-            .GetByConversationIdAsync(ConversationId, default)
-            .Returns(TelegramConversationLink.Create(Guid.NewGuid(), ConversationId, DateTime.UtcNow));
         fixture.Uow.ChatParticipantsRepository
             .GetAllByConversationIdAsync(ConversationId, default)
             .Returns((IReadOnlyCollection<ChatParticipant>)Array.Empty<ChatParticipant>());
@@ -102,9 +97,6 @@ public sealed class CreateChatEscalationCommandHandlerTests
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));
-        fixture.ConversationLinks
-            .GetByConversationIdAsync(ConversationId, default)
-            .Returns((TelegramConversationLink?)null);
         fixture.Uow.ChatParticipantsRepository
             .GetAllByConversationIdAsync(ConversationId, default)
             .Returns((IReadOnlyCollection<ChatParticipant>)new[] { clientParticipant });
@@ -140,9 +132,6 @@ public sealed class CreateChatEscalationCommandHandlerTests
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));
-        fixture.ConversationLinks
-            .GetByConversationIdAsync(ConversationId, default)
-            .Returns((TelegramConversationLink?)null);
         fixture.Uow.ChatParticipantsRepository
             .GetAllByConversationIdAsync(ConversationId, default)
             .Returns((IReadOnlyCollection<ChatParticipant>)Array.Empty<ChatParticipant>());
@@ -162,21 +151,18 @@ public sealed class CreateChatEscalationCommandHandlerTests
         var uow = Substitute.For<IUnitOfWork>();
         var conversationDefaults = Substitute.For<IAgentConversationDefaults>();
         conversationDefaults.ClientParticipantTypeId.Returns(ClientParticipantTypeId);
-        var conversationLinks = Substitute.For<ITelegramConversationLinkRepository>();
         var chatRealtimeNotifier = Substitute.For<IChatRealtimeNotifier>();
         var logger = Substitute.For<ILogger<CreateChatEscalationCommandHandler>>();
 
         return new Fixture(
             new CreateChatEscalationCommandHandler(
-                uow, conversationDefaults, conversationLinks, chatRealtimeNotifier, logger),
+                uow, conversationDefaults, chatRealtimeNotifier, logger),
             uow,
-            conversationLinks,
             chatRealtimeNotifier);
     }
 
     private sealed record Fixture(
         CreateChatEscalationCommandHandler Handler,
         IUnitOfWork Uow,
-        ITelegramConversationLinkRepository ConversationLinks,
         IChatRealtimeNotifier ChatRealtimeNotifier);
 }
