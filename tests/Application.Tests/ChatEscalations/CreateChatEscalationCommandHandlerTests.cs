@@ -1,4 +1,6 @@
 using Application.Agent.Abstractions;
+using Application.ChatConversations.Abstraction;
+using Application.ChatConversations.Enrichment;
 using Application.ChatEscalations.UseCase;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
@@ -151,12 +153,17 @@ public sealed class CreateChatEscalationCommandHandlerTests
         var uow = Substitute.For<IUnitOfWork>();
         var conversationDefaults = Substitute.For<IAgentConversationDefaults>();
         conversationDefaults.ClientParticipantTypeId.Returns(ClientParticipantTypeId);
+        // Ticket B7: resolver real (no un mock) sobre el mismo IUnitOfWork
+        // falso — mantiene la cobertura end-to-end de la resolución de
+        // cliente que antes vivía inline en el propio handler.
+        IChatConversationClientResolver clientResolver =
+            new ChatConversationClientResolver(uow, conversationDefaults);
         var chatRealtimeNotifier = Substitute.For<IChatRealtimeNotifier>();
         var logger = Substitute.For<ILogger<CreateChatEscalationCommandHandler>>();
 
         return new Fixture(
             new CreateChatEscalationCommandHandler(
-                uow, conversationDefaults, chatRealtimeNotifier, logger),
+                uow, clientResolver, chatRealtimeNotifier, logger),
             uow,
             chatRealtimeNotifier);
     }

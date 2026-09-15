@@ -502,6 +502,7 @@ public sealed class RecordingConversationContextProvider(Guid conversationId)
         Guid personId,
         Guid? requestedConversationId,
         string idempotencyKey,
+        string channel,
         CancellationToken cancellationToken) =>
         ExceptionToThrow is null
             ? ValueTask.FromResult(new AgentConversationContext(

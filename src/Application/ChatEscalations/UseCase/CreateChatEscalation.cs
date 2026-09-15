@@ -1,4 +1,4 @@
-using Application.Agent.Abstractions;
+using Application.ChatConversations.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Notifications.Abstraction;
@@ -18,7 +18,7 @@ public sealed record CreateChatEscalationCommand(
 
 public sealed class CreateChatEscalationCommandHandler(
     IUnitOfWork uow,
-    IAgentConversationDefaults conversationDefaults,
+    IChatConversationClientResolver clientResolver,
     IChatRealtimeNotifier chatRealtimeNotifier,
     ILogger<CreateChatEscalationCommandHandler> logger)
     : IRequestHandler<CreateChatEscalationCommand, ChatEscalationEntity>
@@ -92,49 +92,23 @@ public sealed class CreateChatEscalationCommandHandler(
             priority = priorityEntity?.Name.Value;
         }
 
-        var (clientId, clientName, clientPhone) = await ResolveClientAsync(
+        // Ticket B7: lógica de resolución de cliente extraída a
+        // IChatConversationClientResolver, compartida ahora con los
+        // listados REST de conversaciones y escalamientos.
+        var clientInfo = await clientResolver.ResolveAsync(
             escalation.ChatConversationId, cancellationToken);
 
         return new ChatEscalationCreatedPayload(
             escalation.Id,
             escalation.ChatConversationId,
-            clientId,
-            clientName,
-            clientPhone,
+            clientInfo.ClientId,
+            clientInfo.ClientName,
+            clientInfo.ClientPhone,
             escalation.Reason,
             priority,
             statusName,
             conversation.Channel,
             escalation.CreatedAt,
             escalation.Reason);
-    }
-
-    private async Task<(Guid? ClientId, string? ClientName, string? ClientPhone)> ResolveClientAsync(
-        Guid conversationId,
-        CancellationToken cancellationToken)
-    {
-        var participants = await uow.ChatParticipantsRepository.GetAllByConversationIdAsync(
-            conversationId, cancellationToken);
-        var clientParticipant = participants.FirstOrDefault(
-            participant => participant.ParticipantTypeId == conversationDefaults.ClientParticipantTypeId);
-        if (clientParticipant?.ChatUserProfileId is not { } profileId)
-        {
-            return (null, null, null);
-        }
-
-        var profile = await uow.ChatUserProfilesRepository.GetByIdAsync(profileId, cancellationToken);
-        if (profile is null)
-        {
-            return (null, null, null);
-        }
-
-        var client = await uow.ClientsRepository.GetByUserIdAsync(profile.UserId, cancellationToken);
-        if (client is null)
-        {
-            return (null, null, null);
-        }
-
-        var user = await uow.UsersRepository.GetByIdAsync(client.UserId, cancellationToken);
-        return (client.Id, user?.FullName, client.PhoneNumber?.Value);
     }
 }

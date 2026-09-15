@@ -27,4 +27,16 @@ public static class ChatEscalationMappings
     public static IReadOnlyCollection<ChatEscalationResponseDto> ToResponse(
         this IReadOnlyCollection<ChatEscalationEntity> escalations)
         => escalations.Select(escalation => escalation.ToResponse()).ToArray();
+
+    // Ticket B7
+    public static ChatEscalationResponseDto ToResponse(this ChatEscalationWithPriority item)
+        => item.Escalation.ToResponse() with
+        {
+            PriorityId = item.PriorityId,
+            Priority = item.Priority,
+        };
+
+    public static IReadOnlyCollection<ChatEscalationResponseDto> ToResponse(
+        this IReadOnlyCollection<ChatEscalationWithPriority> items)
+        => items.Select(item => item.ToResponse()).ToArray();
 }
