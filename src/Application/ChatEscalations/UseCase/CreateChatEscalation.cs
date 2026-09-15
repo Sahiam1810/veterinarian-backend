@@ -2,9 +2,9 @@ using Application.Agent.Abstractions;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Notifications.Abstraction;
-using Application.Telegram.Abstractions;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ChatConversationEntity = Domain.ChatConversations.Entities.ChatConversation;
 using ChatEscalationEntity = Domain.ChatEscalations.Entities.ChatEscalation;
 
 namespace Application.ChatEscalations.UseCase;
@@ -19,7 +19,6 @@ public sealed record CreateChatEscalationCommand(
 public sealed class CreateChatEscalationCommandHandler(
     IUnitOfWork uow,
     IAgentConversationDefaults conversationDefaults,
-    ITelegramConversationLinkRepository conversationLinks,
     IChatRealtimeNotifier chatRealtimeNotifier,
     ILogger<CreateChatEscalationCommandHandler> logger)
     : IRequestHandler<CreateChatEscalationCommand, ChatEscalationEntity>
@@ -62,7 +61,7 @@ public sealed class CreateChatEscalationCommandHandler(
         try
         {
             var payload = await BuildCreatedPayloadAsync(
-                escalation, status.Name.Value, cancellationToken);
+                escalation, conversation, status.Name.Value, cancellationToken);
             await chatRealtimeNotifier.NotifyEscalationCreatedAsync(payload, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -78,18 +77,15 @@ public sealed class CreateChatEscalationCommandHandler(
 
     private async Task<ChatEscalationCreatedPayload> BuildCreatedPayloadAsync(
         ChatEscalationEntity escalation,
+        ChatConversationEntity conversation,
         string statusName,
         CancellationToken cancellationToken)
     {
-        string? channel = await conversationLinks.GetByConversationIdAsync(
-            escalation.ChatConversationId, cancellationToken) is not null
-            ? "Telegram"
-            : null;
-
+        // Ticket B6: el canal ya queda persistido en ChatConversation.Channel
+        // al crear la conversación — ya no hace falta inferirlo consultando
+        // TelegramConversationLink.
         string? priority = null;
-        var conversation = await uow.ChatConversationsRepository.GetByIdAsync(
-            escalation.ChatConversationId, cancellationToken);
-        if (conversation?.PriorityId is { } priorityId)
+        if (conversation.PriorityId is { } priorityId)
         {
             var priorityEntity = await uow.PrioritiesRepository.GetByIdAsync(
                 priorityId, cancellationToken);
@@ -108,7 +104,7 @@ public sealed class CreateChatEscalationCommandHandler(
             escalation.Reason,
             priority,
             statusName,
-            channel,
+            conversation.Channel,
             escalation.CreatedAt,
             escalation.Reason);
     }

@@ -345,6 +345,7 @@ public sealed class ProcessTelegramUpdateHandler(
                 userLink.PersonId,
                 binding.ConversationId,
                 idempotencyKey,
+                "Telegram",
                 cancellationToken);
         }
 
@@ -355,6 +356,7 @@ public sealed class ProcessTelegramUpdateHandler(
                 userLink.PersonId,
                 null,
                 idempotencyKey,
+                "Telegram",
                 transactionToken);
             var link = await unitOfWork.ConversationLinksRepository.GetByUserLinkIdAsync(
                 userLink.Id,

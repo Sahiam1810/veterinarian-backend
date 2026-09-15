@@ -3,7 +3,8 @@ namespace Api.ChatConversations.Dtos;
 public sealed record CreateChatConversationDto(
     Guid ConversationStatusId,
     Guid? PriorityId,
-    bool AiEnabled = true);
+    bool AiEnabled = true,
+    string Channel = "Web");
 
 public sealed record UpdateChatConversationStatusDto(Guid ConversationStatusId);
 
@@ -23,4 +24,5 @@ public sealed record ChatConversationResponseDto(
     DateTime? ClosedAt,
     Guid? ClosedBy,
     DateTime CreatedAt,
-    DateTime? UpdatedAt);
+    DateTime? UpdatedAt,
+    string Channel);

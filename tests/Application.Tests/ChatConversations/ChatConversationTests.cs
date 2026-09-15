@@ -72,6 +72,8 @@ public sealed class ChatConversationTests
         Assert.Null(conversation.ClosedAt);
         Assert.Null(conversation.ClosedBy);
         Assert.NotEqual(Guid.Empty, conversation.Id);
+        // Ticket B6: sin canal explícito, el default es "Web".
+        Assert.Equal("Web", conversation.Channel);
     }
 
     [Fact]
@@ -81,6 +83,25 @@ public sealed class ChatConversationTests
             () => ChatConversation.Create(Guid.Empty));
 
         Assert.Equal("conversationStatusId", exception.ParamName);
+    }
+
+    [Theory]
+    [InlineData("Telegram")]
+    [InlineData("Web")]
+    public void Create_with_explicit_channel_persists_it(string channel)
+    {
+        var conversation = ChatConversation.Create(ValidStatusId, channel: channel);
+
+        Assert.Equal(channel, conversation.Channel);
+    }
+
+    [Fact]
+    public void Create_with_empty_channel_throws_argument_exception()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => ChatConversation.Create(ValidStatusId, channel: "   "));
+
+        Assert.Equal("channel", exception.ParamName);
     }
 
     [Fact]
@@ -150,6 +171,22 @@ public sealed class ChatConversationTests
 
         Assert.Contains(conversation.Id, context.Conversations.Keys);
         Assert.Equal(status.Id, conversation.ConversationStatusId);
+    }
+
+    [Fact]
+    public async Task Create_with_explicit_channel_persists_it_through_the_command()
+    {
+        var context = new ChatConversationTestContext();
+        var status = new ConversationStatusEntity("Abierta");
+        context.Statuses[status.Id] = status;
+
+        var handler = new CreateChatConversationCommandHandler(context.UnitOfWork);
+        var conversation = await handler.Handle(
+            new CreateChatConversationCommand(status.Id, null, Channel: "Telegram"),
+            CancellationToken.None);
+
+        Assert.Equal("Telegram", conversation.Channel);
+        Assert.Equal("Telegram", context.Conversations[conversation.Id].Channel);
     }
 
     [Fact]
