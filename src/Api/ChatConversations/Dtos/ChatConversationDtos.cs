@@ -25,4 +25,8 @@ public sealed record ChatConversationResponseDto(
     Guid? ClosedBy,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    string Channel);
+    string Channel,
+    // Ticket B7: solo poblados por el listado (GetAll) — Create/Update/GetById
+    // siguen usando el mapeo simple y los dejan en null.
+    string? ClientName = null,
+    string? ClientPhone = null);

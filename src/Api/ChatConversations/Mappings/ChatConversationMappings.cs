@@ -46,4 +46,16 @@ public static class ChatConversationMappings
     public static IReadOnlyCollection<ChatConversationResponseDto> ToResponse(
         this IReadOnlyCollection<ChatConversationEntity> conversations)
         => conversations.Select(conversation => conversation.ToResponse()).ToArray();
+
+    // Ticket B7
+    public static ChatConversationResponseDto ToResponse(this ChatConversationWithClient item)
+        => item.Conversation.ToResponse() with
+        {
+            ClientName = item.ClientName,
+            ClientPhone = item.ClientPhone,
+        };
+
+    public static IReadOnlyCollection<ChatConversationResponseDto> ToResponse(
+        this IReadOnlyCollection<ChatConversationWithClient> items)
+        => items.Select(item => item.ToResponse()).ToArray();
 }

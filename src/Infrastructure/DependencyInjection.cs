@@ -52,6 +52,8 @@ using Infrastructure.AccountStatements.Repositories;
 using Infrastructure.Agent.Configuration;
 using Infrastructure.Agent.Conversations;
 using Infrastructure.Agent.Http;
+using Application.ChatConversations.Enrichment;
+using Infrastructure.ChatConversations;
 using Infrastructure.Notifications.Repositories;
 using Infrastructure.Availabilities.Repositories;
 using Infrastructure.VeterinarianAbsences.Repositories;
@@ -412,6 +414,9 @@ public static class DependencyInjection
             services.AddScoped<
                 IConversationContextProvider,
                 PersistentConversationContextProvider>();
+            services.AddScoped<
+                IChatConversationClientResolver,
+                ChatConversationClientResolver>();
             services.AddHttpClient<IAgentMessagingClient, AgentMessagingHttpClient>((provider, client) =>
             {
                 var validated = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
@@ -424,6 +429,12 @@ public static class DependencyInjection
             services.AddSingleton<
                 IConversationContextProvider,
                 DisabledConversationContextProvider>();
+            // Ticket B7: sin Agent__Enabled no hay ClientParticipantTypeId
+            // configurado — los listados de chat siguen funcionando, solo
+            // sin enriquecer con datos de cliente.
+            services.AddSingleton<
+                IChatConversationClientResolver,
+                DisabledChatConversationClientResolver>();
             services.AddSingleton<IAgentMessagingClient, DisabledAgentMessagingClient>();
         }
 

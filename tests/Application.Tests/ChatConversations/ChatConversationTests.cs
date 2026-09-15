@@ -50,6 +50,7 @@ using Application.ChatConversations.UseCase;
 using Domain.ChatConversations.Entities;
 using Domain.ConversationStatuses.Entities;
 using Domain.Priorities.Entities;
+using NSubstitute;
 using Xunit;
 
 namespace Application.Tests.ChatConversations;
@@ -506,12 +507,36 @@ public sealed class ChatConversationTests
         context.Conversations[first.Id] = first;
         context.Conversations[second.Id] = second;
 
-        var handler = new GetAllChatConversationsQueryHandler(context.UnitOfWork);
+        var clientResolver = Substitute.For<IChatConversationClientResolver>();
+        clientResolver.ResolveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(ChatConversationClientInfo.Empty);
+
+        var handler = new GetAllChatConversationsQueryHandler(context.UnitOfWork, clientResolver);
         var results = await handler.Handle(new GetAllChatConversationsQuery(), CancellationToken.None);
 
         Assert.Equal(2, results.Count);
-        Assert.Contains(results, conversation => conversation.Id == first.Id);
-        Assert.Contains(results, conversation => conversation.Id == second.Id);
+        Assert.Contains(results, item => item.Conversation.Id == first.Id);
+        Assert.Contains(results, item => item.Conversation.Id == second.Id);
+    }
+
+    [Fact]
+    public async Task Get_all_includes_client_name_and_phone_when_a_client_participant_is_linked()
+    {
+        var context = new ChatConversationTestContext();
+        var status = new ConversationStatusEntity("Abierta");
+        var conversation = ChatConversation.Create(status.Id);
+        context.Conversations[conversation.Id] = conversation;
+
+        var clientResolver = Substitute.For<IChatConversationClientResolver>();
+        clientResolver.ResolveAsync(conversation.Id, Arg.Any<CancellationToken>())
+            .Returns(new ChatConversationClientInfo(Guid.NewGuid(), "Ana Pérez", "3001234567"));
+
+        var handler = new GetAllChatConversationsQueryHandler(context.UnitOfWork, clientResolver);
+        var results = await handler.Handle(new GetAllChatConversationsQuery(), CancellationToken.None);
+
+        var item = Assert.Single(results);
+        Assert.Equal("Ana Pérez", item.ClientName);
+        Assert.Equal("3001234567", item.ClientPhone);
     }
 
     [Fact]

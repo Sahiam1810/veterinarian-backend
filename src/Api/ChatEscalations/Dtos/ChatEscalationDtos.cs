@@ -20,4 +20,8 @@ public sealed record ChatEscalationResponseDto(
     bool FromAi,
     string? Reason,
     DateTime CreatedAt,
-    string? UpdateAt);
+    string? UpdateAt,
+    // Ticket B7: la prioridad vive en ChatConversation, no en ChatEscalation —
+    // solo poblados por el listado (GetAll); Create/Update/GetById quedan en null.
+    Guid? PriorityId = null,
+    string? Priority = null);
