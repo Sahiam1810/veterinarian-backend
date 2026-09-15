@@ -154,6 +154,12 @@ public sealed class ProcessTelegramUpdateHandler(
             // de IA (ChatAiRuns/ChatAiRunMetrics), que nadie pidió todavía.
             await PersistClientMessageAsync(context.ConversationId, messageText, cancellationToken);
 
+            if (context.IsEscalated)
+            {
+                await CompleteWithoutResponseAsync(update, cancellationToken);
+                return;
+            }
+
             if (IsEscalationRequest(messageText))
             {
                 await EscalateAsync(context, messageText, cancellationToken);
@@ -397,6 +403,15 @@ public sealed class ProcessTelegramUpdateHandler(
         }
 
         update.Complete(timeProvider.GetUtcNow().UtcDateTime);
+        await unitOfWork.InboundUpdatesRepository.UpdateAsync(update, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task CompleteWithoutResponseAsync(
+        TelegramInboundUpdate update,
+        CancellationToken cancellationToken)
+    {
+        update.CompleteWithoutResponse(timeProvider.GetUtcNow().UtcDateTime);
         await unitOfWork.InboundUpdatesRepository.UpdateAsync(update, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
