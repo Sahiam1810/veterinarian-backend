@@ -15,8 +15,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Api.Common.Security;
 using MediatR;
 using Application.Security.Profile;
-using Application.Permissions.Claims;
 using Application.Modules.UseCases;
+using Application.Permissions.UseCases;
 
 
 namespace Api.Auth.Controllers;
@@ -151,7 +151,9 @@ public sealed class AuthController(ISender sender) : ControllerBase
     public async Task<IActionResult> Permissions(CancellationToken cancellationToken)
     {
         var isSuperAdmin = User.IsSuperAdmin();
-        if (!isSuperAdmin && !Guid.TryParse(User.FindFirstValue("role_id"), out _))
+        var hasRoleId = Guid.TryParse(User.FindFirstValue("role_id"), out var roleId);
+        var hasUserId = Guid.TryParse(User.FindFirstValue("person_id"), out var userId);
+        if (!isSuperAdmin && (!hasRoleId || !hasUserId))
         {
             return Unauthorized();
         }
@@ -166,30 +168,18 @@ public sealed class AuthController(ISender sender) : ControllerBase
                     _ => new ModulePermissionDto(true, true, true, true))));
         }
 
+        var effective = await sender.Send(
+            new GetUserEffectivePermissionsQuery(roleId, userId),
+            cancellationToken);
         var permissions = modules.ToDictionary(
             module => module.Name.Value,
-            _ => new ModulePermissionDto(false, false, false, false));
-
-        foreach (var claim in User.FindAll(PermissionClaimValue.ClaimType))
-        {
-            if (!PermissionClaimValue.TryParse(
-                    claim.Value,
-                    out var moduleName,
-                    out var action) ||
-                !permissions.TryGetValue(moduleName, out var current))
-            {
-                continue;
-            }
-
-            permissions[moduleName] = action switch
-            {
-                "View" => current with { CanView = true },
-                "Create" => current with { CanCreate = true },
-                "Edit" => current with { CanEdit = true },
-                "Delete" => current with { CanDelete = true },
-                _ => current
-            };
-        }
+            module => effective.TryGetValue(module.Name.Value, out var permission)
+                ? new ModulePermissionDto(
+                    permission.CanView,
+                    permission.CanCreate,
+                    permission.CanEdit,
+                    permission.CanDelete)
+                : new ModulePermissionDto(false, false, false, false));
 
         return Ok(new UserPermissionsResponseDto(permissions));
     }
