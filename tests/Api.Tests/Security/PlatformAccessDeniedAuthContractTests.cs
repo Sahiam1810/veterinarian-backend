@@ -101,6 +101,7 @@ public sealed class PlatformAccessDeniedAuthContractApiFactory : WebApplicationF
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.test",
             ["Jwt__Audience"] = "huellitas-api-platform-access-denied-tests",

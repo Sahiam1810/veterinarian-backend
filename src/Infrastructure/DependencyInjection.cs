@@ -153,6 +153,7 @@ using Infrastructure.Telegram.Repositories;
 using Infrastructure.Telegram.Configuration;
 using Infrastructure.Telegram.Security;
 using Infrastructure.Telegram.Http;
+using Infrastructure.Chat.Configuration;
 using Infrastructure.Telegram.Workers;
 using Infrastructure.Telegram.Identity;
 using Infrastructure.Email;
@@ -334,6 +335,18 @@ public static class DependencyInjection
         services.AddOptions<TelegramOptions>()
             .Bind(configuration.GetSection(TelegramOptions.SectionName))
             .ValidateOnStart();
+        // Ticket B8: independiente de Telegram/Agent — la bandeja de
+        // Recepcionista y su flujo de resolución siempre están disponibles.
+        services.AddSingleton<IValidateOptions<ChatOptions>, ChatOptionsValidator>();
+        services.AddOptions<ChatOptions>()
+            .Bind(configuration.GetSection(ChatOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IChatEscalationRuntimeSettings>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<ChatOptions>>().Value;
+            return new ConfiguredChatEscalationRuntimeSettings(
+                Guid.Parse(options.ResolvedEscalationStatusId));
+        });
         services.AddSingleton<IValidateOptions<EmailOptions>, EmailOptionsValidator>();
         services.AddOptions<EmailOptions>()
             .Bind(configuration.GetSection(EmailOptions.SectionName))

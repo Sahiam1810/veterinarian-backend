@@ -157,6 +157,7 @@ public class ContactVerificationApiFactory : WebApplicationFactory<AuthControlle
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.contact-verification-tests",
             ["Jwt__Audience"] = "huellitas-api-contact-verification-tests",
@@ -248,6 +249,7 @@ public sealed class ContactVerificationRateLimitedApiFactory : ContactVerificati
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.contact-rate-limit-tests",
             ["Jwt__Audience"] = "huellitas-api-contact-rate-limit-tests",
