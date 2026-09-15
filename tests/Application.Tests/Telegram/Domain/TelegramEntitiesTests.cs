@@ -133,6 +133,31 @@ public sealed class TelegramEntitiesTests
     }
 
     [Fact]
+    public void Processing_update_can_complete_without_a_response()
+    {
+        var update = CreateUpdate();
+        update.Claim(Now);
+        var completedAt = Now.AddSeconds(1);
+
+        update.CompleteWithoutResponse(completedAt);
+
+        Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
+        Assert.Null(update.MessageText);
+        Assert.Null(update.ResponseText);
+        Assert.Null(update.LastErrorCode);
+        Assert.Equal(completedAt, update.UpdatedAt);
+    }
+
+    [Fact]
+    public void Pending_update_cannot_complete_without_a_response()
+    {
+        var update = CreateUpdate();
+
+        Assert.Throws<InvalidOperationException>(
+            () => update.CompleteWithoutResponse(Now.AddSeconds(1)));
+    }
+
+    [Fact]
     public void Chunk_confirmation_must_be_strictly_sequential()
     {
         var update = CreateUpdate();

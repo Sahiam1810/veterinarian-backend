@@ -63,4 +63,3 @@ el mecanismo actual de reintentos y no marcan el update como completado prematur
   escalamiento y no envía texto por Telegram.
 - Primera solicitud de asesor: mantiene la única confirmación existente.
 - Conversación no escalada: conserva el despacho normal.
-
