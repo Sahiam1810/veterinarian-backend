@@ -281,7 +281,8 @@ public sealed class AuthenticationService(
             user.FullName,
             account.Username.Value,
             account.Mail.Value,
-            account.Status);
+            account.Status,
+            user.PhotoUrl.Value);
     }
 
     private static bool IsActiveAccount(UserAccountEntity? account) =>

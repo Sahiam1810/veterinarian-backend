@@ -2419,6 +2419,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(255)")
                         .HasColumnName("PASSWORD_HASH");
 
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("NVARCHAR2(500)")
+                        .HasColumnName("PHOTO_URL");
+
                     b.Property<string>("RoleId")
                         .IsRequired()
                         .HasColumnType("VARCHAR2(36)")

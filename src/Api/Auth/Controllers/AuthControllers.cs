@@ -225,6 +225,33 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [Authorize]
+    [HttpPatch("me/photo")]
+    [EndpointSummary("Actualiza la foto de perfil del usuario autenticado")]
+    [EndpointDescription("Guarda un enlace http o https en USERS.PHOTO_URL. Enviar vacío o nulo quita la foto. No genera imágenes automáticas.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateMyPhoto(
+        [FromBody] UpdateMyPhotoRequest request,
+        CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        if (!Guid.TryParse(subject, out var userAccountId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            new UpdateMyPhotoCommand(userAccountId, request.PhotoUrl),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [Authorize]
     [HttpPost("revoke")]
     [EndpointSummary("Revoca un Refresh Token y cierra la sesión")]
     [EndpointDescription("Invalida el Refresh Token. Fallo 401: application/problem+json con code fijo Authentication.InvalidRefreshToken.")]
