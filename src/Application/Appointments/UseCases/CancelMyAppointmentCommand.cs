@@ -49,6 +49,11 @@ public sealed class CancelMyAppointmentCommandHandler(IUnitOfWork unitOfWork)
             cancellationToken)
             ?? throw new ConflictException("El estado actual de la cita no es válido.");
 
+        if (string.Equals(currentStatus.Name, Cancelada, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         if (!string.Equals(currentStatus.Name, Agendada, StringComparison.OrdinalIgnoreCase))
         {
             throw new ConflictException("Solo se puede cancelar una cita en estado AGENDADA.");
