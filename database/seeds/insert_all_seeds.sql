@@ -122,10 +122,20 @@ WHEN NOT MATCHED THEN INSERT (SERVICE_ID, TYPE_SERVICE_ID, NAME, DURATION_MINUTE
 
 MERGE INTO DIAGNOSTICS target
 USING (
-    SELECT 'bbbb0011-0000-0000-0000-000000000001' AS ID, 'DIAG-001' AS CODE, 'Gastroenteritis aguda' AS NAME, 'Inflamación estomacal' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
-    SELECT 'bbbb0011-0000-0000-0000-000000000002' AS ID, 'DIAG-002' AS CODE, 'Control sano / Preventivo' AS NAME, 'Paciente sano' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL
-) source ON (target.CODE = source.CODE)
-WHEN MATCHED THEN UPDATE SET target.NAME = source.NAME
+    SELECT '8b000000-0000-0000-0000-000000000001' AS ID, 'PREV' AS CODE, 'Control preventivo / Vacunación de rutina' AS NAME, 'Visita sin patología activa: control sano, vacunación o seguimiento preventivo' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000002' AS ID, 'GASTRO' AS CODE, 'Gastroenteritis aguda' AS NAME, 'Inflamación gastrointestinal por dieta, infección o parasitosis' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000003' AS ID, 'DERM' AS CODE, 'Dermatitis / alergia cutánea' AS NAME, 'Alteraciones de piel: prurito, eritema, alopecia o lesiones alérgicas' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000004' AS ID, 'OTITIS' AS CODE, 'Otitis' AS NAME, 'Inflamación del oído externo o medio' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000005' AS ID, 'INFURI' AS CODE, 'Infección urinaria' AS NAME, 'Infección del tracto urinario inferior o cistitis' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000006' AS ID, 'RESP' AS CODE, 'Infección respiratoria superior' AS NAME, 'Tos, secreción nasal o signos de vías respiratorias altas' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000007' AS ID, 'PARAS' AS CODE, 'Parasitosis intestinal' AS NAME, 'Infestación por parásitos gastrointestinales' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000008' AS ID, 'TRAUMA' AS CODE, 'Trauma / herida' AS NAME, 'Lesión traumática, laceración o contusión' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000009' AS ID, 'ODONT' AS CODE, 'Enfermedad periodontal' AS NAME, 'Gingivitis, sarro o enfermedad dental' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000010' AS ID, 'OBES' AS CODE, 'Sobrepeso / obesidad' AS NAME, 'Exceso de peso con riesgo metabólico' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000011' AS ID, 'CONJ' AS CODE, 'Conjuntivitis' AS NAME, 'Inflamación ocular de la conjuntiva' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL UNION ALL
+    SELECT '8b000000-0000-0000-0000-000000000012' AS ID, 'OTRO' AS CODE, 'Otro / a determinar' AS NAME, 'Diagnóstico provisional o no listado en el catálogo base' AS DESCRIPTION, 1 AS IS_ACTIVE FROM DUAL
+) source ON (UPPER(target.CODE) = UPPER(source.CODE))
+WHEN MATCHED THEN UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
 WHEN NOT MATCHED THEN INSERT (ID, CODE, NAME, DESCRIPTION, IS_ACTIVE, CREATED_AT) VALUES (source.ID, source.CODE, source.NAME, source.DESCRIPTION, source.IS_ACTIVE, SYSTIMESTAMP);
 
 -- =============================================================================
