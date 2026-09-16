@@ -37,7 +37,9 @@ public sealed class ClienteRolePermissionsSeedTests
         var permissionPath = FindSeedPath();
         var seedDirectory = Path.GetDirectoryName(permissionPath)!;
         var modulePath = Path.Combine(seedDirectory, "modules_seed.sql");
-        var verificationPath = Path.Combine(seedDirectory, "verify_seeds.sql");
+        var verificationPath = File.Exists(Path.Combine(seedDirectory, "verify_seeds.sql"))
+            ? Path.Combine(seedDirectory, "verify_seeds.sql")
+            : Path.Combine(Directory.GetParent(seedDirectory)!.FullName, "verify_seeds.sql");
         var permissionSql = File.ReadAllText(permissionPath);
         var moduleSql = File.ReadAllText(modulePath);
 
