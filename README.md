@@ -188,6 +188,7 @@ Telegram__WebhookSecret=<solo-letras-numeros-guion-y-guion-bajo>
 Telegram__PublicWebhookUrl=https://<host-publico>
 Telegram__LinkCodeTtlMinutes=10
 Telegram__WorkerPollMilliseconds=30000
+Telegram__WorkerConcurrency=16
 Telegram__ProcessingLeaseSeconds=300
 Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5

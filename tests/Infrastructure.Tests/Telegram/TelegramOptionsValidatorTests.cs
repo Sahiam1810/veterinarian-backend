@@ -67,9 +67,22 @@ public sealed class TelegramOptionsValidatorTests
         Assert.True(result.Failed);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(33)]
+    public void Worker_concurrency_must_be_between_1_and_32(int concurrency)
+    {
+        var options = ValidOptions(workerConcurrency: concurrency);
+
+        var result = new TelegramOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Failed);
+    }
+
     private static TelegramOptions ValidOptions(
         int absoluteHours = 24,
         int idleMinutes = 30,
+        int workerConcurrency = 1,
         string pendingEscalationStatusId = "85000000-0000-0000-0000-000000000001",
         string textMessageTypeId = "83000000-0000-0000-0000-000000000001",
         string humanAgentSenderTypeId = "82000000-0000-0000-0000-000000000003") => new()
@@ -80,6 +93,7 @@ public sealed class TelegramOptionsValidatorTests
         BotUsername = "huellitas_bot",
         WebhookSecret = "valid_secret",
         PublicWebhookUrl = "https://example.test",
+        WorkerConcurrency = workerConcurrency,
         OtpPepperBase64 = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
         RegistrationEnabled = true,
         RegistrationCompletionUrl = "https://example.test/register",

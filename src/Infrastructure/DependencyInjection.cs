@@ -374,6 +374,7 @@ public static class DependencyInjection
                 options.BotUsername,
                 TimeSpan.FromMinutes(options.LinkCodeTtlMinutes),
                 TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),
+                options.WorkerConcurrency,
                 TimeSpan.FromSeconds(options.ProcessingLeaseSeconds),
                 options.MaxProcessingAttempts,
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes),

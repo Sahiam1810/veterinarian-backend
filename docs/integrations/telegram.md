@@ -49,6 +49,7 @@ Telegram__WebhookSecret=secreto-aleatorio-con-letras-numeros-guion-o-guion-bajo
 Telegram__PublicWebhookUrl=https://<url-publica-del-tunel>
 Telegram__LinkCodeTtlMinutes=10
 Telegram__WorkerPollMilliseconds=30000
+Telegram__WorkerConcurrency=16
 Telegram__ProcessingLeaseSeconds=300
 Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5
@@ -77,7 +78,9 @@ Serilog__MinimumLevel__Override__Microsoft.EntityFrameworkCore.Database.Command=
 El worker se despierta inmediatamente cuando el webhook guarda un update.
 `Telegram__WorkerPollMilliseconds` es solamente el intervalo de respaldo para
 recuperar trabajo si una señal local se pierde; aumentarlo a 30000 no agrega
-30 segundos a la respuesta normal. El override de Serilog evita imprimir cada
+30 segundos a la respuesta normal. `Telegram__WorkerConcurrency` define cuántos
+updates de **chats distintos** se procesan en paralelo en el mismo proceso
+(1–32); el mismo chat sigue en serie. El override de Serilog evita imprimir cada
 consulta exitosa de EF Core y conserva visibles las advertencias y errores.
 
 Genere el pepper una sola vez para el ambiente y consérvelo como secreto:
