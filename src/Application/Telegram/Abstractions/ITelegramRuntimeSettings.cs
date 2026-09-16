@@ -10,6 +10,11 @@ public interface ITelegramRuntimeSettings
 
     TimeSpan WorkerPollInterval { get; }
 
+    /// <summary>
+    /// Slots paralelos del worker de Telegram (chats distintos). Mismo chat sigue en serie.
+    /// </summary>
+    int WorkerConcurrency { get; }
+
     TimeSpan ProcessingLease { get; }
 
     int MaxProcessingAttempts { get; }
