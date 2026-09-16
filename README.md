@@ -4,7 +4,7 @@ API de Huellitas para la operación de una clínica veterinaria. Centraliza la g
 
 Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Domain, Application, Infrastructure y Api.
 
-> El portal web es solo para el personal de la clínica. Los clientes no tienen contraseña, cuenta de plataforma ni inicio de sesión web: usan el chatbot de Telegram y verifican su identidad mediante cédula y OTP enviado por correo cuando la operación requiere datos privados.
+> El portal web es solo para el personal de la clínica. Los clientes no tienen contraseña, cuenta de plataforma ni inicio de sesión web: usan el chatbot de Telegram, que identifica al dueño pidiéndole nombre, cédula, correo y teléfono directamente en la conversación cuando la operación requiere datos privados. Por decisión de negocio, ningún canal envía ni valida un código de verificación para esto.
 
 ## Capacidades
 
@@ -14,7 +14,8 @@ Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Do
 - Estados de cuenta y notificaciones en tiempo real mediante SignalR (`/hubs/notifications`).
 - JWT RS256 con access token, refresh token rotativo y permisos como claims.
 - Integración opcional con el servicio de agente conversacional, SMTP, Twilio y Telegram.
-- Verificación de correo por OTP para el alta de dueños desde bot y acciones que necesiten comprobar contacto.
+- Verificación de correo por OTP para acciones puntuales que necesiten comprobar contacto (alta de dueño hecha por staff cuando `RegisterOwner__RequireContactProofs=true`, y OTP de acción de cita). El alta de dueños desde el bot y desde Telegram **nunca** exige este proof, por decisión de negocio.
+- Escalamiento de conversaciones de Telegram a un asesor humano: detección de frase, `ChatEscalation`, notificación a la bandeja de Recepcionista y reenvío de sus respuestas de vuelta al chat (ver «Escalamiento a un asesor humano» más abajo).
 - Administración del runtime conversacional: conversaciones, mensajes, adjuntos, escalaciones, participantes, agentes humanos, modelos y métricas de IA.
 - Swagger en Development, rate limiting, CORS, logging estructurado con Serilog y respuestas de error `application/problem+json`.
 - Recordatorios de citas por Telegram (1 hora antes) con configuración separada de los recordatorios de 24h.
@@ -52,11 +53,29 @@ El rol `Cliente` no puede obtener ni renovar un JWT de plataforma, incluso si ex
 El flujo vigente es:
 
 1. En Telegram, las consultas veterinarias generales funcionan en modo invitado, si `Telegram__GuestModeEnabled=true`.
-2. Cuando una solicitud necesita datos u operaciones privadas, el backend pide cédula y verifica un OTP enviado al correo registrado.
-3. Si el dueño aún no existe, confirma sus datos y correo; tras validar el OTP se crea su perfil **sin contraseña** y se vincula el chat.
-4. El enlace de Telegram queda persistido. El acceso privado tiene vencimiento absoluto y por inactividad, por lo que un nuevo OTP solo se solicita cuando corresponde.
+2. Cuando una solicitud necesita datos u operaciones privadas (agendar cita, registrar mascota), el propio chatbot pide nombre, cédula, correo y teléfono en un solo mensaje. **No hay ningún código de verificación**: por decisión de negocio, el dato se acepta tal como se entrega.
+3. Con esos datos, el chatbot busca al cliente por cédula en `GET /api/clients/by-identification/{identificationNumber}`; si no existe, lo registra con `POST /api/owners/bot` — que, por la misma decisión de negocio, **nunca exige proof de contacto** — y crea su perfil **sin contraseña**.
+4. El chatbot vincula la cuenta de Telegram con `POST /api/integrations/telegram/bot-link`. El enlace queda persistido sin vencimiento ni reverificación periódica.
 
 Las rutas antiguas del portal JWT de cliente (`/api/clients/me`, `/api/pets/mine` y `/api/appointments/mine`) están retiradas y devuelven `410 Gone`. El bot usa las rutas `/api/bot/pets` y `/api/bot/appointments`, protegidas con un JWT delegado interno (`TelegramAgent`) que la API genera; no son endpoints para un navegador ni para llamar con un token de cliente.
+
+### Escalamiento a un asesor humano
+
+Cuando un cliente **ya vinculado** escribe una frase de escalamiento ("asesor", "hablar con alguien",
+"hablar con un humano", etc.), el backend crea un `ChatEscalation` en estado Pendiente para su
+conversación y responde con un mensaje fijo, sin llamar al agente de IA en ese turno. Un
+**invitado sin vincular** que escriba lo mismo nunca escala directamente: se le redirige a decir
+qué necesita (agendar cita, registrar mascota) para que el flujo de identificación descrito arriba
+lo reconozca por su propia cuenta primero.
+
+Mientras una conversación está escalada, el agente de IA se mantiene en silencio: cada mensaje que
+llega al backend reenvía al chatbot el estado `isEscalated=true`, y el chatbot responde sin
+generar texto. La conversación queda visible en la bandeja de Recepcionista, donde un asesor
+humano responde manualmente; esas respuestas (`POST /api/chat/messages` con
+`SenderTypesId = Agente humano`) se reenvían automáticamente al mismo chat de Telegram. Al crear
+la resolución del escalamiento (`POST /api/chat/escalation-resolutions`), el backend también
+actualiza `ChatEscalation.EscalationStatusId` a Resuelta, para que la bandeja deje de mostrarlo
+como pendiente.
 
 ## Requisitos
 
@@ -112,7 +131,7 @@ Las claves privadas, tokens, contraseñas Oracle, credenciales SMTP, OTP y datos
 | --- | --- |
 | `AppointmentBooking` | Zona `America/Bogota`, 60 minutos mínimos de anticipación y 30 días máximos. |
 | `ContactVerification` | OTP de correo: 10 minutos, 5 intentos, reenvío a los 60 s y proof válido 15 minutos. |
-| `RegisterOwner` | `RequireContactProofs=false` para alta hecha por staff; el alta desde bot siempre exige proof. |
+| `RegisterOwner` | `RequireContactProofs=false` por defecto; controla si el alta hecha por staff exige proof de contacto. El alta desde bot y desde Telegram **nunca** exige proof, sin importar este valor. |
 | `RateLimiting` | Límite global y límites específicos para login, refresh, Telegram, lookups y OTP. |
 | `Reminders` | Worker de recordatorios activo por defecto; ventana y frecuencia configurables. |
 | `TelegramReminders` | Worker de aviso Telegram al dueño ~1 h antes; requiere `Telegram:Enabled=true`. Ventana 50–70 min, sondeo cada 5 min, estados `AGENDADA` y `CONFIRMADA`. |
