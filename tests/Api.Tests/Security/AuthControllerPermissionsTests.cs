@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Api.Auth.Controllers;
 using Api.Auth.Dtos;
 using Application.Modules.UseCases;
+using Application.Permissions.Claims;
 using Application.Permissions.UseCases;
 using Domain.Roles;
 using MediatR;
@@ -52,7 +53,7 @@ public sealed class AuthControllerPermissionsTests
     }
 
     [Fact]
-    public async Task Permissions_reads_the_current_effective_matrix_instead_of_stale_token_claims()
+    public async Task Permissions_reconstructs_the_complete_matrix_from_the_current_token()
     {
         sender.Send(Arg.Any<GetAllModulesQuery>(), Arg.Any<CancellationToken>())
             .Returns(new[]
@@ -60,22 +61,15 @@ public sealed class AuthControllerPermissionsTests
                 new ModuleEntity("Clientes", null),
                 new ModuleEntity("Mascotas", null)
             });
-        sender.Send(
-                Arg.Is<GetUserEffectivePermissionsQuery>(query =>
-                    query.RoleId == RoleId && query.UserId == PersonId),
-                Arg.Any<CancellationToken>())
-            .Returns(new Dictionary<string, EffectivePermission>
-            {
-                ["Clientes"] = new(true, false, true, false),
-                ["Mascotas"] = new(false, false, false, false),
-            });
 
         var controller = CreateController(claims:
         [
             new Claim("role_id", RoleId.ToString()),
             new Claim("person_id", PersonId.ToString()),
-            // Estos claims simulan un JWT anterior. No deben definir la respuesta.
-            new Claim("permission", "perm:Mascotas:View")
+            new Claim(PermissionClaimValue.ClaimType, "perm:Clientes:View"),
+            new Claim(PermissionClaimValue.ClaimType, "perm:Clientes:Edit"),
+            new Claim(PermissionClaimValue.ClaimType, "perm:ModuloInexistente:Delete"),
+            new Claim(PermissionClaimValue.ClaimType, "valor-invalido")
         ]);
 
         var result = await controller.Permissions(CancellationToken.None);
@@ -88,9 +82,8 @@ public sealed class AuthControllerPermissionsTests
         Assert.True(dto.Permissions["Clientes"].CanEdit);
         Assert.False(dto.Permissions["Clientes"].CanDelete);
         Assert.False(dto.Permissions["Mascotas"].CanView);
-        await sender.Received(1).Send(
-            Arg.Is<GetUserEffectivePermissionsQuery>(query =>
-                query.RoleId == RoleId && query.UserId == PersonId),
+        await sender.DidNotReceive().Send(
+            Arg.Any<GetUserEffectivePermissionsQuery>(),
             Arg.Any<CancellationToken>());
     }
 
