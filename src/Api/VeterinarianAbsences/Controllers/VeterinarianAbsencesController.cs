@@ -26,8 +26,9 @@ public sealed class VeterinarianAbsencesController(ISender sender) : ControllerB
         return StatusCode(StatusCodes.Status201Created, new CreateVeterinarianAbsenceResponse(id));
     }
 
+    // Lecturas con Citas.View (Create/Edit/Delete ya usan Citas.*)
     [HttpGet]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las ausencias")]
     [EndpointDescription("Retorna el listado de ausencias de todos los veterinarios.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VeterinarianAbsenceResponse>), StatusCodes.Status200OK)]
@@ -39,7 +40,7 @@ public sealed class VeterinarianAbsencesController(ISender sender) : ControllerB
     }
 
     [HttpGet("{id:guid}")]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene una ausencia por su ID")]
     [EndpointDescription("Retorna el detalle de una ausencia puntual.")]
     [ProducesResponseType(typeof(VeterinarianAbsenceResponse), StatusCodes.Status200OK)]
@@ -53,7 +54,7 @@ public sealed class VeterinarianAbsencesController(ISender sender) : ControllerB
     }
 
     [HttpGet("by-veterinarian/{veterinarianId:guid}")]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene las ausencias de un veterinario")]
     [EndpointDescription("Retorna las ausencias puntuales configuradas para un veterinario.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<VeterinarianAbsenceResponse>), StatusCodes.Status200OK)]

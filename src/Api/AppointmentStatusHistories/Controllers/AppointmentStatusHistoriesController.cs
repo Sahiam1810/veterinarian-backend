@@ -34,7 +34,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpGet]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene todos los historiales de estado de citas")]
     [EndpointDescription("Retorna el listado completo de los historiales de estado de citas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentStatusHistoryResponse>), StatusCodes.Status200OK)]
@@ -49,7 +49,7 @@ public sealed class AppointmentStatusHistoriesController(ISender sender) : Contr
     }
 
     [HttpGet("{id:guid}")]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene un historial de estado de cita por su ID")]
     [EndpointDescription("Retorna la información detallada de un historial de estado específico.")]
     [ProducesResponseType(typeof(AppointmentStatusHistoryResponse), StatusCodes.Status200OK)]

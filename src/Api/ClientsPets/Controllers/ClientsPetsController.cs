@@ -11,15 +11,16 @@ namespace Api.ClientsPets.Controllers;
 [Route("api/[controller]")]
 public sealed class ClientsPetsController(ISender sender) : ControllerBase
 {
+    // Lecturas con Mascotas.View (coherente con Create/Edit/Delete del mismo módulo)
     [HttpGet]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Mascotas", PermissionAction.View)]
     [EndpointSummary("Obtiene las relaciones cliente-mascota")]
     [EndpointDescription("Lista todas las asociaciones entre clientes y mascotas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ClientPetResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<ClientPetResponseDto>>> GetAll(CancellationToken ct) => Ok((await sender.Send(new GetAllClientPetsQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Mascotas", PermissionAction.View)]
     [EndpointSummary("Obtiene una relación cliente-mascota")]
     [EndpointDescription("Busca una asociación por su identificador.")]
     [ProducesResponseType(typeof(ClientPetResponseDto), StatusCodes.Status200OK)]

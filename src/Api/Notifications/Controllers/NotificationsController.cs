@@ -4,6 +4,7 @@ using Api.Common.Security.Permissions;
 using Api.Notifications.Dtos;
 using Api.Notifications.Mappings;
 using Application.Notifications.UseCases;
+using Application.Permissions.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -69,15 +70,35 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         return Ok(notification.ToResponse());
     }
 
+    // Lectura propia: cualquier usuario autenticado puede ver SUS notificaciones
+    // (misma idea que PATCH .../read). Lectura de terceros: Notificaciones.View.
     [HttpGet("user/{userId:guid}")]
-    [RequirePermission("Notificaciones", PermissionAction.View)]
     [EndpointSummary("Obtiene las notificaciones de un usuario")]
-    [EndpointDescription("Retorna todas las notificaciones pertenecientes a un usuario especificado.")]
+    [EndpointDescription("Retorna las notificaciones del usuario indicado. Sin Notificaciones.View solo se permiten las propias.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<NotificationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IReadOnlyCollection<NotificationResponse>>> GetByUserId(
         Guid userId,
         CancellationToken cancellationToken)
     {
+        if (!TryGetActorPersonId(out var actorPersonId))
+        {
+            return Unauthorized();
+        }
+
+        var isOwnInbox = userId == actorPersonId;
+        var canViewOthers =
+            User.IsSuperAdmin() ||
+            User.HasClaim(
+                PermissionClaimValue.ClaimType,
+                PermissionClaimValue.Create("Notificaciones", PermissionAction.View.ToString()));
+
+        if (!isOwnInbox && !canViewOthers)
+        {
+            return Forbid();
+        }
+
         var notifications = await sender.Send(
             new GetNotificationsByUserIdQuery(userId),
             cancellationToken);

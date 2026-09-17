@@ -126,8 +126,9 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
             new CreateAppointmentResponse(id));
     }
 
+    // Listado global con Citas.View (no Plataforma:Auxiliar/Vet con Citas pueden leer agenda)
     [HttpGet]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las citas médicas")]
     [EndpointDescription("Retorna el listado completo de todas las citas médicas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentResponse>), StatusCodes.Status200OK)]
@@ -142,7 +143,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [RequirePermission("Plataforma", PermissionAction.View)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene una cita médica por su ID")]
     [EndpointDescription("Retorna la información detallada de una cita médica específica.")]
     [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]

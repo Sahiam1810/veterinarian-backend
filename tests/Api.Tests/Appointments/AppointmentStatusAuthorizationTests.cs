@@ -40,14 +40,14 @@ public sealed class AppointmentStatusAuthorizationTests
     [Theory]
     [InlineData(nameof(AppointmentStatusHistoriesController.GetAll))]
     [InlineData(nameof(AppointmentStatusHistoriesController.GetById))]
-    public void STA_T18_AppointmentStatusHistories_reads_require_Plataforma_View_permission(string methodName)
+    public void STA_T18_AppointmentStatusHistories_reads_require_Citas_View_permission(string methodName)
     {
         var method = typeof(AppointmentStatusHistoriesController).GetMethod(methodName);
         Assert.NotNull(method);
 
         var attr = method.GetCustomAttribute<RequirePermissionAttribute>();
         Assert.NotNull(attr);
-        Assert.Equal($"perm:Plataforma:{PermissionAction.View}", attr.Policy);
+        Assert.Equal($"perm:Citas:{PermissionAction.View}", attr.Policy);
     }
 
     [Fact]
