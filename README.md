@@ -167,7 +167,7 @@ La integración está deshabilitada por defecto. Para activarla se requieren los
 Agent__Enabled=true
 Agent__BaseUrl=http://127.0.0.1:8010
 Agent__MessagesPath=/api/v1/messages
-Agent__RequestTimeoutSeconds=30
+Agent__RequestTimeoutSeconds=90
 Agent__MaxResponseBytes=1048576
 Agent__InitialConversationStatusId=<GUID-del-catalogo>
 Agent__ClientParticipantTypeId=<GUID-del-catalogo>
