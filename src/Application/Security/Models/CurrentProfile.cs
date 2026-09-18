@@ -7,7 +7,8 @@ public sealed record CurrentProfile(
     string UserName,
     string Email,
     string Role,
-    string AccountStatus)
+    string AccountStatus,
+    string? PhotoUrl = null)
 {
     public static CurrentProfile From(AuthenticatedIdentity identity)
     {
@@ -31,6 +32,7 @@ public sealed record CurrentProfile(
             identity.UserName,
             identity.Email,
             identity.Role,
-            identity.AccountStatus);
+            identity.AccountStatus,
+            identity.PhotoUrl);
     }
 }

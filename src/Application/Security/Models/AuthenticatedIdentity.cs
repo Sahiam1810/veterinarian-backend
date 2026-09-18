@@ -7,4 +7,5 @@ public sealed record AuthenticatedIdentity(
     string FullName,
     string UserName,
     string Email,
-    string AccountStatus);
+    string AccountStatus,
+    string? PhotoUrl = null);

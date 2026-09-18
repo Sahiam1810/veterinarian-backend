@@ -11,4 +11,6 @@ public sealed record CreateAppointmentCommand(
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes,
-    string RequesterPhoneNumber) : IRequest<Guid>;
+    // Opcional si el cliente ya tiene telefono en perfil (ResolveAsync lo exige al crear).
+    string? RequesterPhoneNumber,
+    string? ConsultingRoom = null) : IRequest<Guid>;

@@ -48,6 +48,11 @@ public sealed class UserTokensConfiguration
             .HasColumnType("TIMESTAMP")
             .IsRequired();
 
+        builder.Property(token => token.SessionStartedAt)
+            .HasColumnName("SESSION_STARTED_AT")
+            .HasColumnType("TIMESTAMP")
+            .IsRequired();
+
         builder.Property(token => token.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

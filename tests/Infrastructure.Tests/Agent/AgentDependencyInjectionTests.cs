@@ -69,6 +69,7 @@ public sealed class AgentDependencyInjectionTests
                 Guid.Parse("11111111-1111-1111-1111-111111111111"),
                 null,
                 "message-disabled",
+                "Web",
                 default);
         });
     }

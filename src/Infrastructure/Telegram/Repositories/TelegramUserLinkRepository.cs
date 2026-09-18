@@ -8,6 +8,9 @@ namespace Infrastructure.Telegram.Repositories;
 public sealed class TelegramUserLinkRepository(VeterinaryDbContext context)
     : ITelegramUserLinkRepository
 {
+    public Task<TelegramUserLink?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.Id == id, cancellationToken);
+
     public Task<TelegramUserLink?> GetByPersonIdAsync(Guid personId, CancellationToken cancellationToken) =>
         context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.PersonId == personId, cancellationToken);
 

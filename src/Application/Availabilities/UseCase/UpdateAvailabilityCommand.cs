@@ -1,3 +1,4 @@
+using Domain.Availabilities.Entities;
 using MediatR;
 
 namespace Application.Availabilities.UseCase;
@@ -8,4 +9,8 @@ public sealed record UpdateAvailabilityCommand(
     DayOfWeek DayOfWeek,
     TimeOnly StartTime,
     TimeOnly EndTime,
-    bool IsActive) : IRequest;
+    bool IsActive,
+    int SlotDurationMinutes = Availability.DefaultSlotDurationMinutes,
+    string? ShiftName = null,
+    string? ConsultingRoom = null,
+    int MaxConcurrentAppointments = Availability.DefaultMaxConcurrentAppointments) : IRequest;

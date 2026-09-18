@@ -7,7 +7,7 @@ namespace Api.ChatConversations.Mappings;
 public static class ChatConversationMappings
 {
     public static CreateChatConversationCommand ToCommand(this CreateChatConversationDto dto)
-        => new(dto.ConversationStatusId, dto.PriorityId, dto.AiEnabled);
+        => new(dto.ConversationStatusId, dto.PriorityId, dto.AiEnabled, dto.Channel);
 
     public static UpdateChatConversationStatusCommand ToCommand(
         this UpdateChatConversationStatusDto dto,
@@ -40,9 +40,22 @@ public static class ChatConversationMappings
             conversation.ClosedAt,
             conversation.ClosedBy,
             conversation.CreatedAt,
-            conversation.UpdatedAt);
+            conversation.UpdatedAt,
+            conversation.Channel);
 
     public static IReadOnlyCollection<ChatConversationResponseDto> ToResponse(
         this IReadOnlyCollection<ChatConversationEntity> conversations)
         => conversations.Select(conversation => conversation.ToResponse()).ToArray();
+
+    // Ticket B7
+    public static ChatConversationResponseDto ToResponse(this ChatConversationWithClient item)
+        => item.Conversation.ToResponse() with
+        {
+            ClientName = item.ClientName,
+            ClientPhone = item.ClientPhone,
+        };
+
+    public static IReadOnlyCollection<ChatConversationResponseDto> ToResponse(
+        this IReadOnlyCollection<ChatConversationWithClient> items)
+        => items.Select(item => item.ToResponse()).ToArray();
 }

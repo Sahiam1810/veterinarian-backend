@@ -22,6 +22,10 @@ public sealed class TelegramConversationLinkRepository(VeterinaryDbContext conte
         context.Set<TelegramConversationLink>().FirstOrDefaultAsync(
             link => link.TelegramUserLinkId == telegramUserLinkId, cancellationToken);
 
+    public Task<TelegramConversationLink?> GetByConversationIdAsync(Guid conversationId, CancellationToken cancellationToken) =>
+        context.Set<TelegramConversationLink>().FirstOrDefaultAsync(
+            link => link.ConversationId == conversationId, cancellationToken);
+
     public async Task AddAsync(TelegramConversationLink link, CancellationToken cancellationToken) =>
         await context.Set<TelegramConversationLink>().AddAsync(link, cancellationToken);
 

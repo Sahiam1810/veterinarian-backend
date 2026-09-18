@@ -19,8 +19,8 @@
 </head>
 <body>
 <main>
-    <h1>Completa tu cuenta</h1>
-    <p>Estos datos se enviarán directamente a Huellitas y no pasarán por Telegram.</p>
+    <h1>Completa tu registro de cliente</h1>
+    <p>Estos datos se vincularán directamente a tu cuenta de Telegram en Huellitas sin crear un inicio de sesión por contraseña.</p>
     <form method="post" asp-action="Submit" autocomplete="on">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly"></div>
@@ -30,16 +30,13 @@
         <label asp-for="IdentificationNumber">Número de identificación</label>
         <input asp-for="IdentificationNumber" autocomplete="off" />
         <span asp-validation-for="IdentificationNumber"></span>
-        <label asp-for="UserName">Nombre de usuario</label>
-        <input asp-for="UserName" autocomplete="username" />
-        <span asp-validation-for="UserName"></span>
-        <label asp-for="Password">Contraseña</label>
-        <input asp-for="Password" type="password" autocomplete="new-password" />
-        <span asp-validation-for="Password"></span>
-        <label asp-for="PasswordConfirmation">Confirmar contraseña</label>
-        <input asp-for="PasswordConfirmation" type="password" autocomplete="new-password" />
-        <span asp-validation-for="PasswordConfirmation"></span>
-        <button type="submit">Crear cuenta y vincular Telegram</button>
+        <label asp-for="PhoneNumber">Teléfono de contacto</label>
+        <input asp-for="PhoneNumber" autocomplete="tel" />
+        <span asp-validation-for="PhoneNumber"></span>
+        <label asp-for="Address">Dirección de residencia (opcional)</label>
+        <input asp-for="Address" autocomplete="street-address" />
+        <span asp-validation-for="Address"></span>
+        <button type="submit">Vincular cuenta con Telegram</button>
     </form>
 </main>
 </body>

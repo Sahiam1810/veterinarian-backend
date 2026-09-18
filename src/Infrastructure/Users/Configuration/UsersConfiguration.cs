@@ -60,6 +60,17 @@ public sealed class UsersConfiguration
             .HasDefaultValue(true)
             .IsRequired();
 
+        // URL de foto de perfil; opcional (NULL en Oracle → campo _photoUrl).
+        builder.Property(user => user.PhotoUrl)
+            .HasColumnName("PHOTO_URL")
+            .HasColumnType("NVARCHAR2(500)")
+            .HasMaxLength(UserPhotoUrl.MaxLength)
+            .HasConversion(
+                photo => photo == null ? null : photo.Value,
+                str => UserPhotoUrl.Create(str))
+            .HasField("_photoUrl")
+            .IsRequired(false);
+
         builder.Property(user => user.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

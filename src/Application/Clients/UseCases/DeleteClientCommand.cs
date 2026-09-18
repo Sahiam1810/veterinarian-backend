@@ -23,6 +23,15 @@ public sealed class DeleteClientCommandHandler : IRequestHandler<DeleteClientCom
             throw new NotFoundException("Cliente no encontrado.");
         }
 
+        // CLIENTS_PETS.CLIENT_ID -> CLIENTS.ID es RESTRICT: sin este chequeo, el borrado
+        // revienta con una violación de integridad genérica en vez de un mensaje claro.
+        var linkedPets = await _uow.ClientPetsRepository.GetByClientIdAsync(request.Id, cancellationToken);
+        if (linkedPets.Count > 0)
+        {
+            throw new ConflictException(
+                "Este dueño tiene mascotas asociadas. Debes eliminar o reasignar sus mascotas antes de eliminarlo.");
+        }
+
         await _uow.ClientsRepository.DeleteAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
     }

@@ -11,4 +11,5 @@ public sealed record OwnedPetProfile(
     string SpeciesName,
     Guid RaceId,
     string RaceName,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? PhotoUrl = null);

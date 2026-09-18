@@ -9,4 +9,6 @@ public sealed record CreateAppointmentRequest(
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes,
-    string RequesterPhoneNumber);
+    // Opcional: si falta, se usa el telefono del dueño de la mascota.
+    string? RequesterPhoneNumber = null,
+    string? ConsultingRoom = null);

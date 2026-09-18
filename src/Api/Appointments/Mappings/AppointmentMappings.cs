@@ -26,7 +26,9 @@ public static class AppointmentMappings
         return slots.Select(slot => new AppointmentBookingSlotResponse(
             slot.AvailabilityId,
             slot.ScheduledStartUtc,
-            slot.ScheduledEndUtc)).ToArray();
+            slot.ScheduledEndUtc,
+            slot.ConsultingRoom,
+            slot.ShiftName)).ToArray();
     }
 
     public static CreateMyAppointmentCommand ToCommand(
@@ -57,7 +59,8 @@ public static class AppointmentMappings
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes,
-            request.RequesterPhoneNumber);
+            request.RequesterPhoneNumber,
+            request.ConsultingRoom);
     }
 
     public static CreateAppointmentMedicalRecordCommand ToCommand(
@@ -116,7 +119,8 @@ public static class AppointmentMappings
             request.ScheduledEnd,
             request.Notes,
             actorUserAccountId,
-            enforceVeterinarianOwnership);
+            enforceVeterinarianOwnership,
+            request.ConsultingRoom);
     }
 
     public static UpdateAppointmentStatusCommand ToCommand(
@@ -151,7 +155,9 @@ public static class AppointmentMappings
             AsUtc(entity.ScheduledEnd),
             entity.Notes,
             entity.RequesterPhoneNumber?.Value,
-            entity.CreatedAt);
+            entity.CreatedAt,
+            entity.ClientPet?.PetId,
+            entity.ConsultingRoom);
     }
 
     private static DateTime AsUtc(DateTime value)

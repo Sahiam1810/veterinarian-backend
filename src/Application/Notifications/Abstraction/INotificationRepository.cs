@@ -35,4 +35,9 @@ public interface INotificationRepository
     Task DeleteAsync(
         Notification notification,
         CancellationToken cancellationToken = default);
+
+    // Borra notificaciones del usuario sin Include(User) (evita tracking conflict)
+    Task DeleteByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

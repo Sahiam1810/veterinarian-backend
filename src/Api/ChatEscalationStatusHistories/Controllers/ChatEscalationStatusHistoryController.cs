@@ -1,6 +1,7 @@
 using Api.ChatEscalationStatusHistories.Dtos;
 using Api.ChatEscalationStatusHistories.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatEscalationStatusHistories.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.ChatEscalationStatusHistories.Controllers;
 
 [ApiController]
 [Route("api/chat/escalation-status-histories")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatEscalationStatusHistoryController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crear historial de estado de escalamiento")]
     [EndpointDescription("Registra un cambio de estado para un escalamiento existente.")]
     [ProducesResponseType(typeof(ChatEscalationStatusHistoryResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +42,7 @@ public sealed class ChatEscalationStatusHistoryController(ISender sender) : Cont
     }
 
     [HttpGet]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Listar historiales de estado de escalamiento")]
     [EndpointDescription("Devuelve todos los historiales registrados.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationStatusHistoryResponseDto>), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class ChatEscalationStatusHistoryController(ISender sender) : Cont
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Obtener historial por identificador")]
     [EndpointDescription("Devuelve el historial de estado indicado.")]
     [ProducesResponseType(typeof(ChatEscalationStatusHistoryResponseDto), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class ChatEscalationStatusHistoryController(ISender sender) : Cont
     }
 
     [HttpGet("by-escalation/{chatEscalationId:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Consultar historiales por escalamiento")]
     [EndpointDescription("Devuelve los historiales asociados al escalamiento indicado.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationStatusHistoryResponseDto>), StatusCodes.Status200OK)]
@@ -81,6 +85,7 @@ public sealed class ChatEscalationStatusHistoryController(ISender sender) : Cont
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualizar historial de estado de escalamiento")]
     [EndpointDescription("Actualiza el estado registrado en el historial.")]
     [ProducesResponseType(typeof(ChatEscalationStatusHistoryResponseDto), StatusCodes.Status200OK)]
@@ -107,6 +112,7 @@ public sealed class ChatEscalationStatusHistoryController(ISender sender) : Cont
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Eliminar historial de estado de escalamiento")]
     [EndpointDescription("Elimina el historial indicado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

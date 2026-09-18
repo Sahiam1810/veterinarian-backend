@@ -15,12 +15,28 @@ public interface IClientRepository
         string identificationNumber,
         CancellationToken cancellationToken);
 
+    // Lookup por teléfono normalizado (solo dígitos).
+    Task<ClientEntity?> GetByPhoneAsync(
+        string phoneNumber,
+        CancellationToken cancellationToken);
+
     Task<ClientEntity?> GetByUserIdAsync(
         Guid userId,
         CancellationToken cancellationToken);
 
+    Task<ClientEntity?> GetByLookupAsync(
+        string? identificationNumber,
+        string? phoneNumber,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByIdentificationNumberAsync(
         string identificationNumber,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null);
+
+    // Unicidad operativa de teléfono (valor ya normalizado por ClientPhoneNumber).
+    Task<bool> ExistsByPhoneAsync(
+        string phoneNumber,
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 
@@ -39,5 +55,15 @@ public interface IClientRepository
 
     Task DeleteAsync(
         ClientEntity client,
+        CancellationToken cancellationToken);
+
+    // Id del dueño por user, sin Include(User)
+    Task<Guid?> GetIdByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
+    // Borra el perfil Client sin Include(User) (evita tracking conflict)
+    Task DeleteByUserIdAsync(
+        Guid userId,
         CancellationToken cancellationToken);
 }

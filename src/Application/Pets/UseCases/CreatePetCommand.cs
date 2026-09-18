@@ -12,7 +12,8 @@ public sealed record CreatePetCommand(
     decimal Weight,
     string? Observations,
     Guid SpeciesId,
-    Guid RaceId) : IRequest<Guid>;
+    Guid RaceId,
+    string? PhotoUrl = null) : IRequest<Guid>;
 
 public sealed class CreatePetCommandHandler : IRequestHandler<CreatePetCommand, Guid>
 {
@@ -40,7 +41,8 @@ public sealed class CreatePetCommandHandler : IRequestHandler<CreatePetCommand, 
             request.Weight,
             request.Observations,
             species,
-            race);
+            race,
+            request.PhotoUrl);
 
         await _uow.PetsRepository.AddAsync(pet, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

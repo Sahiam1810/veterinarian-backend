@@ -22,5 +22,8 @@ public sealed class CreateClientCommandValidator : AbstractValidator<CreateClien
             .MaximumLength(ClientAddress.MaxLength)
             .WithMessage(
                 $"La dirección no puede superar los {ClientAddress.MaxLength} caracteres.");
+
+        RuleFor(command => command.PhoneNumber)
+            .RequiredPhoneNumber();
     }
 }

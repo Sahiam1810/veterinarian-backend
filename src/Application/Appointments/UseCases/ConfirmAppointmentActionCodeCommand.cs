@@ -1,7 +1,9 @@
 using System.Text.Json;
+using Application.Appointments.Errors;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Verification.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
 using Domain.AppointmentStatusHistories.Entities;
 using Domain.Appointments.ValueObjects;
 using Domain.Verification.Enums;
@@ -22,10 +24,11 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
     IAppointmentActionVerificationSessionRepository sessions,
     IOtpProtector otpProtector,
     IAppointmentVerificationSettings settings,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IVeterinarianAbsenceRepository absences)
     : IRequestHandler<ConfirmAppointmentActionCodeCommand>
 {
-    private const string Agendada = "AGENDADA";
+    private const string Agendada = AppointmentStatusNames.Agendada;
     private const string Cancelada = "CANCELADA";
 
     public async Task Handle(
@@ -45,7 +48,9 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             request.AppointmentId,
             request.Action,
             cancellationToken)
-            ?? throw new NotFoundException("No hay una verificación activa para esta cita.");
+            ?? throw new NotFoundException(
+                "No hay una verificación activa para esta cita.",
+                AppointmentActionErrors.SessionNotFound.Code);
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
         var normalizedPhone = RequesterPhoneNumber.Normalize(request.PhoneNumber);
@@ -55,7 +60,8 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
                 StringComparison.OrdinalIgnoreCase))
         {
             throw new UnauthorizedException(
-                "El teléfono no coincide con el de la verificación activa.");
+                "El teléfono no coincide con el de la verificación activa.",
+                AppointmentActionErrors.PhoneMismatch.Code);
         }
 
         if (session.ExpiresAt is null || now >= session.ExpiresAt)
@@ -63,7 +69,9 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             session.Expire(now);
             await sessions.UpdateAsync(session, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
-            throw new ConflictException("El código venció. Solicita uno nuevo.");
+            throw new ConflictException(
+                "El código venció. Solicita uno nuevo.",
+                AppointmentActionErrors.Expired.Code);
         }
 
         if (session.OtpHash is null || !otpProtector.Verify(request.Code, session.OtpHash))
@@ -73,10 +81,14 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
             if (session.Status == VerificationSessionStatus.Blocked)
             {
-                throw new ConflictException("Se agotaron los intentos. Solicita un código nuevo.");
+                throw new ConflictException(
+                    "Se agotaron los intentos. Solicita un código nuevo.",
+                    AppointmentActionErrors.AttemptsExhausted.Code);
             }
 
-            throw new UnauthorizedException("El código no es válido.");
+            throw new UnauthorizedException(
+                "El código no es válido.",
+                AppointmentActionErrors.InvalidCode.Code);
         }
 
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
@@ -91,7 +103,9 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             }
             else
             {
-                throw new BadRequestException("La acción de verificación no es válida.");
+                throw new BadRequestException(
+                    "La acción de verificación no es válida.",
+                    AppointmentActionErrors.InvalidAction.Code);
             }
 
             session.Complete(now);
@@ -185,14 +199,16 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             throw new BadRequestException("La franja horaria de reagendado no es válida.");
         }
 
-        await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
+        var locked = await AppointmentSchedulingConcurrency.LockAndEnsureAvailableAsync(
             unitOfWork,
+            absences,
             payload.AvailabilityId,
             appointment.ClientPetId,
             appointment.VeterinarianId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
             appointment.Id,
+            consultingRoom: null,
             cancellationToken);
 
         var hasOverlap = await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
@@ -213,7 +229,8 @@ public sealed class ConfirmAppointmentActionCodeCommandHandler(
             payload.AvailabilityId,
             payload.ScheduledStart,
             payload.ScheduledEnd,
-            payload.Notes);
+            payload.Notes,
+            locked.ConsultingRoom);
 
         await unitOfWork.AppointmentsRepository.UpdateAsync(appointment, cancellationToken);
     }

@@ -32,11 +32,26 @@ public sealed class Users : BaseEntity<Guid>
 
     public bool IsActive { get; private set; }
 
+    // EF deja null si PHOTO_URL es NULL; el getter garantiza VO vacío.
+    private UserPhotoUrl? _photoUrl;
+    public UserPhotoUrl PhotoUrl
+    {
+        get => _photoUrl ?? UserPhotoUrl.Create(null);
+        private set => _photoUrl = value;
+    }
+
     public void Update(string fullName, string email, Guid roleId)
     {
         FullName = fullName;
         Email = UserEmail.Create(email);
         RoleId = roleId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    // Vacío o nulo quita la foto de perfil.
+    public void SetPhotoUrl(string? photoUrl)
+    {
+        PhotoUrl = UserPhotoUrl.Create(photoUrl);
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -50,6 +50,7 @@ using Application.ChatConversations.UseCase;
 using Domain.ChatConversations.Entities;
 using Domain.ConversationStatuses.Entities;
 using Domain.Priorities.Entities;
+using NSubstitute;
 using Xunit;
 
 namespace Application.Tests.ChatConversations;
@@ -72,6 +73,8 @@ public sealed class ChatConversationTests
         Assert.Null(conversation.ClosedAt);
         Assert.Null(conversation.ClosedBy);
         Assert.NotEqual(Guid.Empty, conversation.Id);
+        // Ticket B6: sin canal explícito, el default es "Web".
+        Assert.Equal("Web", conversation.Channel);
     }
 
     [Fact]
@@ -81,6 +84,25 @@ public sealed class ChatConversationTests
             () => ChatConversation.Create(Guid.Empty));
 
         Assert.Equal("conversationStatusId", exception.ParamName);
+    }
+
+    [Theory]
+    [InlineData("Telegram")]
+    [InlineData("Web")]
+    public void Create_with_explicit_channel_persists_it(string channel)
+    {
+        var conversation = ChatConversation.Create(ValidStatusId, channel: channel);
+
+        Assert.Equal(channel, conversation.Channel);
+    }
+
+    [Fact]
+    public void Create_with_empty_channel_throws_argument_exception()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => ChatConversation.Create(ValidStatusId, channel: "   "));
+
+        Assert.Equal("channel", exception.ParamName);
     }
 
     [Fact]
@@ -150,6 +172,22 @@ public sealed class ChatConversationTests
 
         Assert.Contains(conversation.Id, context.Conversations.Keys);
         Assert.Equal(status.Id, conversation.ConversationStatusId);
+    }
+
+    [Fact]
+    public async Task Create_with_explicit_channel_persists_it_through_the_command()
+    {
+        var context = new ChatConversationTestContext();
+        var status = new ConversationStatusEntity("Abierta");
+        context.Statuses[status.Id] = status;
+
+        var handler = new CreateChatConversationCommandHandler(context.UnitOfWork);
+        var conversation = await handler.Handle(
+            new CreateChatConversationCommand(status.Id, null, Channel: "Telegram"),
+            CancellationToken.None);
+
+        Assert.Equal("Telegram", conversation.Channel);
+        Assert.Equal("Telegram", context.Conversations[conversation.Id].Channel);
     }
 
     [Fact]
@@ -469,12 +507,36 @@ public sealed class ChatConversationTests
         context.Conversations[first.Id] = first;
         context.Conversations[second.Id] = second;
 
-        var handler = new GetAllChatConversationsQueryHandler(context.UnitOfWork);
+        var clientResolver = Substitute.For<IChatConversationClientResolver>();
+        clientResolver.ResolveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(ChatConversationClientInfo.Empty);
+
+        var handler = new GetAllChatConversationsQueryHandler(context.UnitOfWork, clientResolver);
         var results = await handler.Handle(new GetAllChatConversationsQuery(), CancellationToken.None);
 
         Assert.Equal(2, results.Count);
-        Assert.Contains(results, conversation => conversation.Id == first.Id);
-        Assert.Contains(results, conversation => conversation.Id == second.Id);
+        Assert.Contains(results, item => item.Conversation.Id == first.Id);
+        Assert.Contains(results, item => item.Conversation.Id == second.Id);
+    }
+
+    [Fact]
+    public async Task Get_all_includes_client_name_and_phone_when_a_client_participant_is_linked()
+    {
+        var context = new ChatConversationTestContext();
+        var status = new ConversationStatusEntity("Abierta");
+        var conversation = ChatConversation.Create(status.Id);
+        context.Conversations[conversation.Id] = conversation;
+
+        var clientResolver = Substitute.For<IChatConversationClientResolver>();
+        clientResolver.ResolveAsync(conversation.Id, Arg.Any<CancellationToken>())
+            .Returns(new ChatConversationClientInfo(Guid.NewGuid(), "Ana Pérez", "3001234567"));
+
+        var handler = new GetAllChatConversationsQueryHandler(context.UnitOfWork, clientResolver);
+        var results = await handler.Handle(new GetAllChatConversationsQuery(), CancellationToken.None);
+
+        var item = Assert.Single(results);
+        Assert.Equal("Ana Pérez", item.ClientName);
+        Assert.Equal("3001234567", item.ClientPhone);
     }
 
     [Fact]

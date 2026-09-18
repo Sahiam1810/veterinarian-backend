@@ -5,4 +5,8 @@ public sealed record UpdateAvailabilityRequest(
     DayOfWeek DayOfWeek,
     TimeOnly StartTime,
     TimeOnly EndTime,
-    bool IsActive);
+    bool IsActive,
+    int SlotDurationMinutes = 30,
+    string? ShiftName = null,
+    string? ConsultingRoom = null,
+    int MaxConcurrentAppointments = 1);

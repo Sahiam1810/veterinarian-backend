@@ -50,6 +50,7 @@ public sealed class GetMyPetsQueryHandler : IRequestHandler<GetMyPetsQuery, IRea
             pet.Species.Name.Value,
             pet.RaceId,
             pet.Race.Name.Value,
-            pet.UpdatedAt ?? pet.CreatedAt)).ToArray();
+            pet.UpdatedAt ?? pet.CreatedAt,
+            pet.PhotoUrl.Value)).ToArray();
     }
 }

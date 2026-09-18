@@ -24,6 +24,7 @@ public sealed class UpdateAppointmentStatusCommandHandlerTests
     private static readonly Guid AtendidaId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
     private static readonly Guid CanceladaId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000003");
     private static readonly Guid NoAsistioId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000004");
+    private static readonly Guid ConfirmadaId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000005");
 
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
@@ -89,6 +90,57 @@ public sealed class UpdateAppointmentStatusCommandHandlerTests
                 && h.ClientPetId == ClientPetId
                 && h.Comment == comment),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task STA_T03B_Handle_transitions_AGENDADA_to_CONFIRMADA_checkin_without_comment()
+    {
+        var fixture = CreateFixture(currentStatusName: "AGENDADA", targetStatusName: "CONFIRMADA");
+        var command = new UpdateAppointmentStatusCommand(AppointmentId, ConfirmadaId, null);
+
+        await sut.Handle(command, CancellationToken.None);
+
+        Assert.Equal(ConfirmadaId, fixture.Appointment.StatusId);
+        await appointmentStatusHistoriesRepository.Received(1).AddAsync(
+            Arg.Any<AppointmentStatusHistory>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task STA_T03C_Handle_transitions_CONFIRMADA_to_ATENDIDA()
+    {
+        var fixture = CreateFixture(currentStatusName: "CONFIRMADA", targetStatusName: "ATENDIDA");
+        var command = new UpdateAppointmentStatusCommand(AppointmentId, AtendidaId, null);
+
+        await sut.Handle(command, CancellationToken.None);
+
+        Assert.Equal(AtendidaId, fixture.Appointment.StatusId);
+    }
+
+    [Theory]
+    [InlineData("CANCELADA")]
+    [InlineData("NO_ASISTIO")]
+    public async Task STA_T03D_Handle_transitions_CONFIRMADA_to_terminal_status_with_comment(string targetStatusName)
+    {
+        CreateFixture(currentStatusName: "CONFIRMADA", targetStatusName: targetStatusName);
+        var targetId = ResolveStatusId(targetStatusName);
+        var command = new UpdateAppointmentStatusCommand(AppointmentId, targetId, "motivo");
+
+        await sut.Handle(command, CancellationToken.None);
+
+        await appointmentStatusHistoriesRepository.Received(1).AddAsync(
+            Arg.Any<AppointmentStatusHistory>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task STA_T03E_Handle_rejects_CONFIRMADA_back_to_AGENDADA()
+    {
+        CreateFixture(currentStatusName: "CONFIRMADA", targetStatusName: "AGENDADA");
+        var command = new UpdateAppointmentStatusCommand(AppointmentId, AgendadaId, null);
+
+        await Assert.ThrowsAsync<ConflictException>(() => sut.Handle(command, CancellationToken.None));
+        await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -299,6 +351,7 @@ public sealed class UpdateAppointmentStatusCommandHandlerTests
             "ATENDIDA" => AtendidaId,
             "CANCELADA" => CanceladaId,
             "NO_ASISTIO" => NoAsistioId,
+            "CONFIRMADA" => ConfirmadaId,
             _ => Guid.NewGuid()
         };
 

@@ -16,7 +16,9 @@ public sealed record UpdateMyPetProfileCommand(
     bool ChangeObservations,
     Guid? SpeciesId,
     Guid? RaceId,
-    DateTime ExpectedUpdatedAt) : IRequest<OwnedPetProfile>;
+    DateTime ExpectedUpdatedAt,
+    string? PhotoUrl = null,
+    bool ChangePhotoUrl = false) : IRequest<OwnedPetProfile>;
 
 public sealed class UpdateMyPetProfileCommandHandler
     : IRequestHandler<UpdateMyPetProfileCommand, OwnedPetProfile>
@@ -69,7 +71,8 @@ public sealed class UpdateMyPetProfileCommandHandler
             request.Weight ?? pet.Weight.Value,
             request.ChangeObservations ? request.Observations : pet.Observations.Value,
             species,
-            race);
+            race,
+            request.ChangePhotoUrl ? request.PhotoUrl : pet.PhotoUrl.Value);
 
         await _uow.PetsRepository.UpdateAsync(pet, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
@@ -77,7 +80,8 @@ public sealed class UpdateMyPetProfileCommandHandler
         return new OwnedPetProfile(
             pet.Id, pet.Name.Value, pet.Age, pet.Gender.Value, pet.Weight.Value,
             pet.Observations.Value, pet.SpeciesId, pet.Species.Name.Value,
-            pet.RaceId, pet.Race.Name.Value, pet.UpdatedAt ?? pet.CreatedAt);
+            pet.RaceId, pet.Race.Name.Value, pet.UpdatedAt ?? pet.CreatedAt,
+            pet.PhotoUrl.Value);
     }
 
     private static DateTime AsUtc(DateTime value) => value.Kind switch

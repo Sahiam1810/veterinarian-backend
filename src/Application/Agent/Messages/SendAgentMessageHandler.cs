@@ -17,6 +17,7 @@ public sealed class SendAgentMessageHandler(
             request.PersonId,
             request.ConversationId,
             request.IdempotencyKey,
+            "Web",
             cancellationToken);
         var accessToken = userAccessTokenProvider.GetRequiredAccessToken();
         return await dispatcher.DispatchAsync(

@@ -24,7 +24,8 @@ public sealed class SendAgentMessageHandlerTests
             "google/gemini-flash",
             new AgentTokenUsage(12, 7),
             "appointments",
-            new AgentRagResult("used", "contextual", 0.91, 2, 1, true, false));
+            new AgentRagResult("used", "contextual", 0.91, 2, 1, true, false),
+            AgentAccessRequirement.IdentityVerification);
         var client = new RecordingAgentMessagingClient(expected);
         var handler = new SendAgentMessageHandler(
             conversations,
@@ -34,6 +35,7 @@ public sealed class SendAgentMessageHandlerTests
         var result = await handler.Handle(Command(), CancellationToken.None);
 
         Assert.Same(expected, result);
+        Assert.Equal(AgentAccessRequirement.IdentityVerification, result.AccessRequirement);
         Assert.Equal(PersonId, client.Envelope!.UserId);
         Assert.Equal(["Cliente"], client.Envelope.Roles);
         Assert.Equal("web", client.Envelope.Channel);
@@ -60,6 +62,9 @@ public sealed class SendAgentMessageHandlerTests
         Assert.Equal(PersonId, conversations.PersonId);
         Assert.Equal(requested, conversations.RequestedConversationId);
         Assert.Equal("message-001", conversations.IdempotencyKey);
+        // Ticket B6: el chat web siempre pide persistir "Web" si termina
+        // creando una conversación nueva.
+        Assert.Equal("Web", conversations.Channel);
     }
 
     [Fact]
@@ -135,17 +140,20 @@ public sealed class SendAgentMessageHandlerTests
         public Guid PersonId { get; private set; }
         public Guid? RequestedConversationId { get; private set; }
         public string? IdempotencyKey { get; private set; }
+        public string? Channel { get; private set; }
         public CancellationToken CancellationToken { get; private set; }
 
         public ValueTask<AgentConversationContext> ResolveAsync(
             Guid personId,
             Guid? requestedConversationId,
             string idempotencyKey,
+            string channel,
             CancellationToken cancellationToken)
         {
             PersonId = personId;
             RequestedConversationId = requestedConversationId;
             IdempotencyKey = idempotencyKey;
+            Channel = channel;
             CancellationToken = cancellationToken;
             return ValueTask.FromResult(result);
         }

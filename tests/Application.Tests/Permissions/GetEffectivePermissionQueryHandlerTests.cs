@@ -70,16 +70,16 @@ public sealed class GetEffectivePermissionQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_combines_role_and_user_permissions_additively_per_action()
+    public async Task Handle_lets_user_row_fully_override_role_flags_including_revocation()
     {
-        // Rol: solo ver. Usuario: permiso puntual extra para crear.
-        RolePermissionRow(new RolePermissionEntity(RoleId, Guid.NewGuid(), canView: true, canCreate: false, canEdit: false, canDelete: false));
-        UserPermissionRow(new UserPermissionEntity(UserId, Guid.NewGuid(), canView: false, canCreate: true, canEdit: false, canDelete: false));
+        // Rol: todo permitido. Usuario: excepción que le revoca todo (incluida Ver).
+        RolePermissionRow(new RolePermissionEntity(RoleId, Guid.NewGuid(), canView: true, canCreate: true, canEdit: true, canDelete: true));
+        UserPermissionRow(new UserPermissionEntity(UserId, Guid.NewGuid(), canView: false, canCreate: false, canEdit: false, canDelete: false));
 
         var result = await sut.Handle(new GetEffectivePermissionQuery(RoleId, UserId, ModuleName), CancellationToken.None);
 
-        Assert.True(result.CanView);
-        Assert.True(result.CanCreate);
+        Assert.False(result.CanView);
+        Assert.False(result.CanCreate);
         Assert.False(result.CanEdit);
         Assert.False(result.CanDelete);
     }

@@ -1,6 +1,7 @@
 using Api.ChatUserProfiles.Dtos;
 using Api.ChatUserProfiles.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatUserProfiles.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.ChatUserProfiles.Controllers;
 
 [ApiController]
 [Route("api/chat/user-profiles")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatUserProfileController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Chat", PermissionAction.Create)]
     [EndpointSummary("Crear un perfil de chat")]
     [EndpointDescription("Registra un perfil de chat para un usuario existente. Un usuario puede tener varios perfiles.")]
     [ProducesResponseType(typeof(ChatUserProfileResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +42,7 @@ public sealed class ChatUserProfileController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Listar perfiles de chat")]
     [EndpointDescription("Devuelve todos los perfiles de chat registrados.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatUserProfileResponseDto>), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class ChatUserProfileController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Obtener un perfil de chat por su identificador")]
     [EndpointDescription("Devuelve el perfil de chat indicado.")]
     [ProducesResponseType(typeof(ChatUserProfileResponseDto), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class ChatUserProfileController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-user/{userId:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Consultar perfiles de chat por usuario")]
     [EndpointDescription("Devuelve todos los perfiles de chat asociados al usuario indicado. Si no hay registros, responde con una lista vacía.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatUserProfileResponseDto>), StatusCodes.Status200OK)]
@@ -79,6 +83,7 @@ public sealed class ChatUserProfileController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("Chat", PermissionAction.Edit)]
     [EndpointSummary("Actualizar un perfil de chat")]
     [EndpointDescription("Actualiza el nombre visible, el avatar y la biografía. No modifica el usuario asociado.")]
     [ProducesResponseType(typeof(ChatUserProfileResponseDto), StatusCodes.Status200OK)]
@@ -105,6 +110,7 @@ public sealed class ChatUserProfileController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Eliminar un perfil de chat")]
     [EndpointDescription("Elimina el perfil de chat. No hay participantes de conversación que lo referencien todavía.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

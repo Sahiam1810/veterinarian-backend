@@ -39,7 +39,12 @@ public sealed class Service : BaseEntity<Guid>
         decimal price,
         bool isActive)
     {
-        TypeServiceId = typeServiceId;
+        if (TypeServiceId != typeServiceId)
+        {
+            TypeServiceId = typeServiceId;
+            TypeService = null;
+        }
+
         Name = name;
         DurationMinutes = durationMinutes;
         Price = price;

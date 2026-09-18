@@ -1,20 +1,19 @@
 using Api.ChatParticipants.Dtos;
 using Api.ChatParticipants.Mappings;
-using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatParticipants.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.ChatParticipants.Controllers;
 
 [ApiController]
 [Route("api/chat/participants")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatParticipantController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Chat", PermissionAction.Create)]
     [EndpointSummary("Crear un participante de chat")]
     [EndpointDescription("Registra un participante en una conversación con exactamente una identidad (perfil, agente humano o modelo de IA).")]
     [ProducesResponseType(typeof(ChatParticipantResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +40,7 @@ public sealed class ChatParticipantController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Obtener un participante de chat por su identificador")]
     [EndpointDescription("Devuelve el participante de chat indicado.")]
     [ProducesResponseType(typeof(ChatParticipantResponseDto), StatusCodes.Status200OK)]
@@ -56,6 +56,7 @@ public sealed class ChatParticipantController(ISender sender) : ControllerBase
     }
 
     [HttpGet("conversation/{chatConversationId:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Listar participantes por conversación")]
     [EndpointDescription("Devuelve todos los participantes asociados a la conversación indicada.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatParticipantResponseDto>), StatusCodes.Status200OK)]
@@ -70,6 +71,7 @@ public sealed class ChatParticipantController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/identity")]
+    [RequirePermission("Chat", PermissionAction.Edit)]
     [EndpointSummary("Cambiar la identidad de un participante")]
     [EndpointDescription("Actualiza la identidad del participante manteniendo exactamente una identidad válida.")]
     [ProducesResponseType(typeof(ChatParticipantResponseDto), StatusCodes.Status200OK)]

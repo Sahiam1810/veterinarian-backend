@@ -4,6 +4,8 @@ using Api.Appointments.Mappings;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.Appointments.UseCases;
+using Application.Common.Exceptions;
+using Application.Security.Errors;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,129 +17,67 @@ namespace Api.Appointments.Controllers;
 [Route("api/[controller]")]
 public sealed class AppointmentsController(ISender sender) : ControllerBase
 {
-    // GET /api/appointments/mine
+    // Portal Cliente JWT retirado (Etapa 5): rutas legacy responden 410.
     [HttpGet("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene las citas del cliente autenticado")]
-    [EndpointDescription("Retorna las citas médicas de las mascotas del cliente correspondiente al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyCollection<AppointmentResponse>>> GetMine(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<AppointmentResponse>>> GetMine(
         [FromQuery] AppointmentQueryScope scope = AppointmentQueryScope.All,
         CancellationToken cancellationToken = default)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var appointments = await sender.Send(new GetMyAppointmentsQuery(userAccountId, scope), cancellationToken);
-        return Ok(appointments.ToResponse());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
-    // GET /api/appointments/mine/{appointmentId}
     [HttpGet("mine/{appointmentId:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene una cita del cliente autenticado")]
-    [EndpointDescription("Retorna el detalle de una cita que pertenece a una mascota del cliente autenticado.")]
-    [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<AppointmentResponse>> GetMineById(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<AppointmentResponse>> GetMineById(
         Guid appointmentId,
         CancellationToken cancellationToken)
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var appointment = await sender.Send(
-            new GetMyAppointmentByIdQuery(appointmentId, userAccountId),
-            cancellationToken);
-
-        return Ok(appointment.ToResponse());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
     [HttpGet("booking/options")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene opciones para agendar una cita propia")]
-    [EndpointDescription("Retorna mascotas propias, servicios activos, veterinarios disponibles y si se debe solicitar telÃ©fono.")]
-    [ProducesResponseType(typeof(AppointmentBookingOptionsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<AppointmentBookingOptionsResponse>> GetBookingOptions(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<AppointmentBookingOptionsResponse>> GetBookingOptions(
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var result = await sender.Send(
-            new GetAppointmentBookingOptionsQuery(userAccountId),
-            cancellationToken);
-        return Ok(result.ToResponse());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
     [HttpGet("booking/slots")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Calcula horarios disponibles para agendamiento")]
-    [EndpointDescription("Calcula en la zona horaria de la veterinaria y retorna intervalos UTC libres para el servicio elegido.")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentBookingSlotResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyCollection<AppointmentBookingSlotResponse>>> GetBookingSlots(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<IReadOnlyCollection<AppointmentBookingSlotResponse>>> GetBookingSlots(
         [FromQuery] Guid veterinarianId,
         [FromQuery] Guid serviceId,
         [FromQuery] DateOnly date,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var slots = await sender.Send(
-            new GetAppointmentBookingSlotsQuery(
-                userAccountId, veterinarianId, serviceId, date),
-            cancellationToken);
-        return Ok(slots.ToResponse());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
     [HttpPost("mine")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Agenda una cita para el cliente autenticado")]
-    [EndpointDescription("La identidad, propiedad de la mascota, duraciÃ³n, disponibilidad y estado se validan en el servidor. Idempotency-Key es obligatorio.")]
-    [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<AppointmentResponse>> CreateMine(
+    [AllowAnonymous]
+    [EndpointSummary("Portal Cliente retirado")]
+    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone).")]
+    [ProducesResponseType(StatusCodes.Status410Gone)]
+    public Task<ActionResult<AppointmentResponse>> CreateMine(
         [FromBody] CreateMyAppointmentRequest request,
         [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var appointment = await sender.Send(
-            request.ToCommand(userAccountId, idempotencyKey),
-            cancellationToken);
-        return CreatedAtAction(
-            nameof(GetMineById),
-            new { appointmentId = appointment.Id },
-            appointment.ToResponse());
+        throw new GoneException(ClientPortalErrors.Gone);
     }
 
     [HttpGet("me")]
@@ -186,8 +126,9 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
             new CreateAppointmentResponse(id));
     }
 
+    // Listado global con Citas.View (no Plataforma:Auxiliar/Vet con Citas pueden leer agenda)
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las citas médicas")]
     [EndpointDescription("Retorna el listado completo de todas las citas médicas registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AppointmentResponse>), StatusCodes.Status200OK)]
@@ -202,7 +143,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.StaffOnly)]
+    [RequirePermission("Citas", PermissionAction.View)]
     [EndpointSummary("Obtiene una cita médica por su ID")]
     [EndpointDescription("Retorna la información detallada de una cita médica específica.")]
     [ProducesResponseType(typeof(AppointmentResponse), StatusCodes.Status200OK)]
@@ -237,6 +178,35 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateStatus(
+        Guid appointmentId,
+        [FromBody] UpdateAppointmentStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            request.ToCommand(
+                appointmentId,
+                actorUserAccountId,
+                ShouldEnforceVeterinarianOwnership()),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPatch("{appointmentId:guid}/cancel")]
+    [RequirePermission("Citas", PermissionAction.Delete)]
+    [EndpointSummary("Cancela una cita mÃ©dica")]
+    [EndpointDescription("Marca una cita como cancelada. Operativamente se controla con Citas.Delete.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Cancel(
         Guid appointmentId,
         [FromBody] UpdateAppointmentStatusRequest request,
         CancellationToken cancellationToken)
@@ -317,9 +287,9 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
-    [EndpointSummary("Elimina una cita médica por su ID (solo SuperAdmin)")]
-    [EndpointDescription("Borrado físico restringido. El flujo de cliente debe usar soft-cancel por cambio de estado.")]
+    [RequirePermission("Citas", PermissionAction.Delete)]
+    [EndpointSummary("Elimina una cita médica por su ID")]
+    [EndpointDescription("Borrado físico protegido por Citas.Delete. Para cancelación operativa usa PATCH /api/Appointments/{id}/cancel.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
@@ -341,11 +311,11 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return Guid.TryParse(subject, out actorUserAccountId);
     }
 
-    // Solo "Veterinario" aplica ownership. SuperAdmin (claim super_admin=true) y
+    // Solo "Veterinario" aplica ownership. SuperAdmin y
     // Administrador/Recepcionista no filtran por veterinario asignado.
     private bool ShouldEnforceVeterinarianOwnership()
     {
-        if (User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
+        if (User.IsSuperAdmin())
         {
             return false;
         }

@@ -1,3 +1,4 @@
+using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Notifications.Abstraction;
 using Domain.Appointments.Entities;
@@ -9,7 +10,8 @@ namespace Application.Appointments.UseCases;
 public sealed class GenerateUpcomingAppointmentRemindersCommandHandler(
     IUnitOfWork unitOfWork,
     IRealtimeNotifier realtimeNotifier,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IAppointmentBookingSettings bookingSettings)
     : IRequestHandler<GenerateUpcomingAppointmentRemindersCommand, int>
 {
     private const string ReminderType = "Recordatorio";
@@ -51,20 +53,35 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandler(
             .Where(appointment => !notifiedAppointmentIds.Contains(appointment.Id))
             .ToArray();
 
-        var reminders = new List<Notification>(pendingAppointments.Length);
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(bookingSettings.TimeZoneId);
+        var reminders = new List<Notification>(pendingAppointments.Length * 2);
 
         foreach (var appointment in pendingAppointments)
         {
-            var reminder = new Notification(
+            var localStart = TimeZoneInfo.ConvertTimeFromUtc(appointment.ScheduledStart, timeZone);
+
+            var ownerReminder = new Notification(
                 appointment.ClientPet!.Client!.UserId,
                 appointment.Id,
-                BuildMessage(appointment),
+                BuildOwnerMessage(appointment, localStart),
                 now,
                 ReminderStatus,
                 ReminderType);
+            await unitOfWork.NotificationsRepository.AddAsync(ownerReminder, cancellationToken);
+            reminders.Add(ownerReminder);
 
-            await unitOfWork.NotificationsRepository.AddAsync(reminder, cancellationToken);
-            reminders.Add(reminder);
+            if (appointment.Veterinarian is not null)
+            {
+                var vetReminder = new Notification(
+                    appointment.Veterinarian.UserId,
+                    appointment.Id,
+                    BuildVeterinarianMessage(appointment, localStart),
+                    now,
+                    ReminderStatus,
+                    ReminderType);
+                await unitOfWork.NotificationsRepository.AddAsync(vetReminder, cancellationToken);
+                reminders.Add(vetReminder);
+            }
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -77,7 +94,11 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandler(
         return reminders.Count;
     }
 
-    private static string BuildMessage(Appointment appointment) =>
+    private static string BuildOwnerMessage(Appointment appointment, DateTime localStart) =>
         $"Recordatorio: tienes una cita para {appointment.ClientPet!.Pet!.Name.Value} " +
-        $"el {appointment.ScheduledStart:dd/MM/yyyy HH:mm}.";
+        $"el {localStart:dd/MM/yyyy HH:mm}.";
+
+    private static string BuildVeterinarianMessage(Appointment appointment, DateTime localStart) =>
+        $"Recordatorio: tienes una cita con {appointment.ClientPet!.Pet!.Name.Value} " +
+        $"el {localStart:dd/MM/yyyy HH:mm}.";
 }

@@ -69,6 +69,44 @@ public sealed class AppointmentRepositoryDetailsTests
     }
 
     [Fact]
+    public async Task HasOverlappingAppointmentAsync_detects_scheduled_conflicts()
+    {
+        await using var context = CreateContext();
+        var (appointment, clientPet) = AddAppointmentGraph(context, statusName: "AGENDADA");
+        await context.SaveChangesAsync();
+
+        var repository = new AppointmentRepository(context);
+        var overlaps = await repository.HasOverlappingAppointmentAsync(
+            clientPet.Id,
+            Guid.NewGuid(),
+            appointment.ScheduledStart.AddMinutes(10),
+            appointment.ScheduledEnd.AddMinutes(10),
+            excludeAppointmentId: null,
+            cancellationToken: CancellationToken.None);
+
+        Assert.True(overlaps);
+    }
+
+    [Fact]
+    public async Task HasOverlappingAppointmentAsync_ignores_cancelled_appointments()
+    {
+        await using var context = CreateContext();
+        var (appointment, clientPet) = AddAppointmentGraph(context, statusName: "CANCELADA");
+        await context.SaveChangesAsync();
+
+        var repository = new AppointmentRepository(context);
+        var overlaps = await repository.HasOverlappingAppointmentAsync(
+            clientPet.Id,
+            Guid.NewGuid(),
+            appointment.ScheduledStart.AddMinutes(10),
+            appointment.ScheduledEnd.AddMinutes(10),
+            excludeAppointmentId: null,
+            cancellationToken: CancellationToken.None);
+
+        Assert.False(overlaps);
+    }
+
+    [Fact]
     public async Task GetByClientPetIdsAsync_loads_pet_and_veterinarian_names()
     {
         await using var context = CreateContext();
@@ -103,22 +141,41 @@ public sealed class AppointmentRepositoryDetailsTests
         Assert.Equal("Dra. Ana Pérez", loaded.Veterinarian!.User!.FullName);
     }
 
+    [Fact]
+    public async Task LockByIdAsync_returns_a_tracked_appointment_with_in_memory_provider()
+    {
+        await using var context = CreateContext();
+        var (appointment, _) = AddAppointmentGraph(context);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var loaded = await new AppointmentRepository(context).LockByIdAsync(
+            appointment.Id,
+            CancellationToken.None);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(appointment.Id, loaded.Id);
+        Assert.Equal(EntityState.Unchanged, context.Entry(loaded).State);
+    }
+
     private static (Appointment Appointment, ClientPetEntity ClientPet) AddAppointmentGraph(
         VeterinaryDbContext context,
-        string? bookingRequestKeyHash = null)
+        string? bookingRequestKeyHash = null,
+        string statusName = "AGENDADA")
     {
         var clientUser = new UserEntity("Samuel Calderón", "samuel@example.com", "hash", Guid.NewGuid());
         var veterinarianUser = new UserEntity(
             "Dra. Ana Pérez", "ana@example.com", "hash", Guid.NewGuid());
         var client = new ClientEntity(clientUser.Id, "1234567890", "Calle 1");
+        var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna",
             4,
             "F",
             12m,
             null,
-            new SpeciesEntity("Canino"),
-            new RaceEntity("Mestizo"));
+            species,
+            new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
         var specialty = new SpecialtyEntity("Medicina general", null);
         var veterinarian = new Veterinarian(
@@ -126,7 +183,7 @@ public sealed class AppointmentRepositoryDetailsTests
             specialty.Id,
             "VET-001");
         var service = new Service(Guid.NewGuid(), "Consulta general", 30, 55000m);
-        var status = new StatusAppointment("AGENDADA", null);
+        var status = new StatusAppointment(statusName, null);
         var availability = new Availability(
             veterinarian.Id,
             DayOfWeek.Wednesday,

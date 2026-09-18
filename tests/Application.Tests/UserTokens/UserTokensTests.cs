@@ -10,7 +10,7 @@ public sealed class UserTokensTests
     [Fact]
     public void IsExpiredAsOf_is_false_strictly_before_the_expiration_instant()
     {
-        var token = new UserTokenEntity(Guid.NewGuid(), "hash", "refresh", ExpiresAt);
+        var token = new UserTokenEntity(Guid.NewGuid(), "hash", "refresh", ExpiresAt, ExpiresAt.AddHours(-1));
 
         Assert.False(token.IsExpiredAsOf(new FixedTimeProvider(ExpiresAt.AddSeconds(-1))));
     }
@@ -18,7 +18,7 @@ public sealed class UserTokensTests
     [Fact]
     public void IsExpiredAsOf_is_true_at_the_exact_expiration_instant()
     {
-        var token = new UserTokenEntity(Guid.NewGuid(), "hash", "refresh", ExpiresAt);
+        var token = new UserTokenEntity(Guid.NewGuid(), "hash", "refresh", ExpiresAt, ExpiresAt.AddHours(-1));
 
         Assert.True(token.IsExpiredAsOf(new FixedTimeProvider(ExpiresAt)));
     }
@@ -26,7 +26,7 @@ public sealed class UserTokensTests
     [Fact]
     public void IsExpiredAsOf_is_true_after_the_expiration_instant()
     {
-        var token = new UserTokenEntity(Guid.NewGuid(), "hash", "refresh", ExpiresAt);
+        var token = new UserTokenEntity(Guid.NewGuid(), "hash", "refresh", ExpiresAt, ExpiresAt.AddHours(-1));
 
         Assert.True(token.IsExpiredAsOf(new FixedTimeProvider(ExpiresAt.AddSeconds(1))));
     }

@@ -59,6 +59,16 @@ public sealed class PetConfiguration : IEntityTypeConfiguration<PetEntity>
                 str => PetObservations.Create(str))
             .IsRequired(false);
 
+        // URL de foto externa; opcional (NULL en Oracle → campo _photoUrl)
+        builder.Property(pet => pet.PhotoUrl)
+            .HasColumnName("PHOTO_URL")
+            .HasMaxLength(PetPhotoUrl.MaxLength)
+            .HasConversion(
+                photo => photo == null ? null : photo.Value,
+                str => PetPhotoUrl.Create(str))
+            .HasField("_photoUrl")
+            .IsRequired(false);
+
         builder.Property(pet => pet.SpeciesId)
             .HasColumnName("SPECIES_ID")
             .HasColumnType("VARCHAR2(36)")

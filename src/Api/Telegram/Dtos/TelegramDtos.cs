@@ -7,6 +7,10 @@ public sealed record CreateTelegramLinkCodeResponse(
     string DeepLink,
     DateTimeOffset ExpiresAt);
 
+public sealed record LinkTelegramBotAccountRequest(Guid PersonId);
+
+public sealed record LinkTelegramBotAccountResponse(Guid LinkId);
+
 public sealed record TelegramUpdateRequest(
     [property: JsonPropertyName("update_id")] long UpdateId,
     [property: JsonPropertyName("message")] TelegramMessageRequest? Message);

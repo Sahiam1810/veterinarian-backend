@@ -22,4 +22,9 @@ public interface IMedicalRecordRepository
     Task<bool> ExistsByAppointmentIdAsync(
         Guid appointmentId,
         CancellationToken cancellationToken);
+
+    // Borra expedientes de esos vínculos dueño-mascota sin Include
+    Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken);
 }

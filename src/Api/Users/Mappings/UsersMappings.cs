@@ -13,7 +13,12 @@ public static class UsersMappings
             request.FullName,
             request.Email,
             request.Password,
-            request.RoleId);
+            request.RoleId,
+            request.ClientIdentificationNumber,
+            request.ClientPhoneNumber,
+            request.ClientAddress,
+            request.SpecialtyId,
+            request.LicenseNumber);
     }
 
     public static UpdateUserCommand ToCommand(

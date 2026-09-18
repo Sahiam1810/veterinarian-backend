@@ -1,6 +1,8 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Domain.Appointments.Entities;
 using Domain.Availabilities.Entities;
 using Domain.Clients.Entities;
@@ -18,6 +20,7 @@ public sealed class GetAppointmentBookingSlotsQueryTests
     private static readonly DateTimeOffset Now = new(2026, 9, 3, 14, 0, 0, TimeSpan.Zero);
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly BookingSettings settings = new();
+    private readonly IVeterinarianAbsenceRepository absences = Substitute.For<IVeterinarianAbsenceRepository>();
 
     [Fact]
     public async Task Handle_generates_service_sized_utc_slots_and_removes_occupied_time()
@@ -66,8 +69,39 @@ public sealed class GetAppointmentBookingSlotsQueryTests
         await Assert.ThrowsAnyAsync<Exception>(action);
     }
 
+[Fact]
+    public async Task Handle_omits_slots_covered_by_veterinarian_absence()
+    {
+        var fixture = ConfigureBookingData();
+        var absence = new VeterinarianAbsence(
+            fixture.Veterinarian.Id,
+            new DateTime(2026, 9, 3, 15, 30, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 3, 16, 0, 0, DateTimeKind.Utc),
+            "Junta",
+            false);
+        absences.GetOverlappingAsync(
+                fixture.Veterinarian.Id, Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new[] { absence });
+
+        var result = await Handler().Handle(
+            new GetAppointmentBookingSlotsQuery(
+                fixture.AccountId, fixture.Veterinarian.Id, fixture.Service.Id,
+                new DateOnly(2026, 9, 3)),
+            CancellationToken.None);
+
+        Assert.Equal(
+            new[]
+            {
+                new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 3, 16, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 3, 16, 30, 0, DateTimeKind.Utc),
+            },
+            result.Select(slot => slot.ScheduledStartUtc));
+    }
+
     private GetAppointmentBookingSlotsQueryHandler Handler() =>
-        new(unitOfWork, settings, new FixedTimeProvider(Now));
+        new(unitOfWork, absences, settings, new FixedTimeProvider(Now));
 
     private BookingFixture ConfigureBookingData()
     {
@@ -96,6 +130,13 @@ public sealed class GetAppointmentBookingSlotsQueryTests
                 veterinarian.Id, Arg.Any<DateTime>(), Arg.Any<DateTime>(),
                 Arg.Any<CancellationToken>())
             .Returns(Array.Empty<Appointment>());
+        unitOfWork.AppointmentsRepository.GetScheduledRoomOverlapsAsync(
+                Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<Appointment>());
+        absences.GetOverlappingAsync(
+                veterinarian.Id, Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<VeterinarianAbsence>());
         return new BookingFixture(accountId, service, veterinarian, availability);
     }
 

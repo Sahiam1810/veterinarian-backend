@@ -8,4 +8,8 @@ public sealed record AvailabilityResponse(
     TimeOnly StartTime,
     TimeOnly EndTime,
     bool IsActive,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    int SlotDurationMinutes,
+    string? ShiftName,
+    string? ConsultingRoom,
+    int MaxConcurrentAppointments);

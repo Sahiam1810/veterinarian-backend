@@ -1,6 +1,7 @@
 using Api.ChatConversationAssignments.Dtos;
 using Api.ChatConversationAssignments.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatConversationAssignments.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.ChatConversationAssignments.Controllers;
 
 [ApiController]
 [Route("api/chat/conversation-assignments")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatConversationAssignmentController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crear una asignación de conversación")]
     [EndpointDescription("Registra la asignación de agente humano para una conversación existente.")]
     [ProducesResponseType(typeof(ChatConversationAssignmentResponseDto), StatusCodes.Status201Created)]
@@ -44,6 +45,7 @@ public sealed class ChatConversationAssignmentController(ISender sender) : Contr
     }
 
     [HttpGet]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Listar asignaciones de conversación")]
     [EndpointDescription("Devuelve todas las asignaciones registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatConversationAssignmentResponseDto>), StatusCodes.Status200OK)]
@@ -55,6 +57,7 @@ public sealed class ChatConversationAssignmentController(ISender sender) : Contr
     }
 
     [HttpGet("{chatConversationId:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Obtener asignación por conversación")]
     [EndpointDescription("Devuelve la asignación asociada a la conversación indicada.")]
     [ProducesResponseType(typeof(ChatConversationAssignmentResponseDto), StatusCodes.Status200OK)]
@@ -73,6 +76,7 @@ public sealed class ChatConversationAssignmentController(ISender sender) : Contr
     }
 
     [HttpGet("by-agent/{agentHumanId:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Consultar asignaciones por agente humano")]
     [EndpointDescription("Devuelve las asignaciones asociadas al agente humano indicado.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatConversationAssignmentResponseDto>), StatusCodes.Status200OK)]
@@ -87,6 +91,7 @@ public sealed class ChatConversationAssignmentController(ISender sender) : Contr
     }
 
     [HttpPut("{chatConversationId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualizar una asignación de conversación")]
     [EndpointDescription("Actualiza el agente humano y las fechas de asignación o desasignación.")]
     [ProducesResponseType(typeof(ChatConversationAssignmentResponseDto), StatusCodes.Status200OK)]
@@ -113,6 +118,7 @@ public sealed class ChatConversationAssignmentController(ISender sender) : Contr
     }
 
     [HttpDelete("{chatConversationId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Eliminar una asignación de conversación")]
     [EndpointDescription("Elimina la asignación asociada a la conversación indicada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
