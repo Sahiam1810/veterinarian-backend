@@ -1,6 +1,7 @@
 using Application.Appointments;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.AppointmentStatusHistories.Entities;
 using Domain.MedicalRecords.Entities;
 using Domain.Vaccinations.Entities;
 using MediatR;
@@ -46,6 +47,16 @@ public sealed class CreateAppointmentMedicalRecordCommandHandler(IUnitOfWork uni
             throw new ConflictException("Ya existe una historia clínica para esta cita.");
         }
 
+        var targetStatus = (await unitOfWork.StatusAppointmentsRepository.GetAllAsync(cancellationToken))
+            .FirstOrDefault(item =>
+                string.Equals(item.Name, "ATENDIDA", StringComparison.OrdinalIgnoreCase))
+            ?? throw new ConflictException("No está configurado el estado ATENDIDA.");
+
+        AppointmentStatusTransitionRules.EnsureValidTransition(
+            currentStatus.Name,
+            targetStatus.Name,
+            null);
+
         var diagnostic = await unitOfWork.DiagnosticsRepository.GetByIdAsync(
             request.DiagnosticId,
             cancellationToken)
@@ -89,6 +100,31 @@ public sealed class CreateAppointmentMedicalRecordCommandHandler(IUnitOfWork uni
                 vaccinationIds.Add(vaccination.Id);
             }
         }
+
+        var history = new AppointmentStatusHistory(
+            appointment.Id,
+            targetStatus.Id,
+            appointment.ClientPetId,
+            "Historia clínica registrada por el veterinario.");
+
+        await unitOfWork.AppointmentStatusHistoriesRepository.AddAsync(
+            history,
+            cancellationToken);
+
+        appointment.Update(
+            appointment.ClientPetId,
+            appointment.VeterinarianId,
+            appointment.ServiceId,
+            targetStatus.Id,
+            appointment.AvailabilityId,
+            appointment.ScheduledStart,
+            appointment.ScheduledEnd,
+            appointment.Notes,
+            appointment.ConsultingRoom);
+
+        await unitOfWork.AppointmentsRepository.UpdateAsync(
+            appointment,
+            cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
