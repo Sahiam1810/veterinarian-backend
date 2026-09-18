@@ -18,7 +18,7 @@ namespace Api.Species.Controllers;
 public sealed class SpeciesController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    [Authorize]
+    [RequirePermission("Especies y Razas", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las especies")]
     [EndpointDescription("Retorna una lista con todas las especies registradas en el sistema.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<SpeciesResponseDto>), StatusCodes.Status200OK)]
@@ -51,7 +51,7 @@ public sealed class SpeciesController(ISender sender) : ControllerBase
 
     // Razas de una especie (mismo filtro que GET /api/Races?speciesId=)
     [HttpGet("{id:guid}/races")]
-    [Authorize]
+    [RequirePermission("Especies y Razas", PermissionAction.View)]
     [EndpointSummary("Obtiene las razas de una especie")]
     [EndpointDescription("Retorna las razas asociadas a la especie indicada.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<RaceResponseDto>), StatusCodes.Status200OK)]

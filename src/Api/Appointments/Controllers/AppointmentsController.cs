@@ -197,6 +197,35 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{appointmentId:guid}/cancel")]
+    [RequirePermission("Citas", PermissionAction.Delete)]
+    [EndpointSummary("Cancela una cita mÃ©dica")]
+    [EndpointDescription("Marca una cita como cancelada. Operativamente se controla con Citas.Delete.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Cancel(
+        Guid appointmentId,
+        [FromBody] UpdateAppointmentStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            request.ToCommand(
+                appointmentId,
+                actorUserAccountId,
+                ShouldEnforceVeterinarianOwnership()),
+            cancellationToken);
+
+        return NoContent();
+    }
+
     [HttpPost("{appointmentId:guid}/medical-record")]
     [RequirePermission("Historiales Clínicos", PermissionAction.Create)]
     [EndpointSummary("Crea la historia clínica de una cita")]
@@ -230,7 +259,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [RequirePermission("Reprogramación de Citas", PermissionAction.Edit)]
+    [RequirePermission("Citas", PermissionAction.Edit)]
     [EndpointSummary("Actualiza una cita médica existente")]
     [EndpointDescription("Modifica los datos de una cita médica previamente registrada.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -258,9 +287,9 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
-    [EndpointSummary("Elimina una cita médica por su ID (solo SuperAdmin)")]
-    [EndpointDescription("Borrado físico restringido. El flujo de cliente debe usar soft-cancel por cambio de estado.")]
+    [RequirePermission("Citas", PermissionAction.Delete)]
+    [EndpointSummary("Elimina una cita médica por su ID")]
+    [EndpointDescription("Borrado físico protegido por Citas.Delete. Para cancelación operativa usa PATCH /api/Appointments/{id}/cancel.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
