@@ -32,8 +32,6 @@ using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 
-using Application.AiRunStatuses.Abstraction;
-
 using Application.ConversationStatuses.Abstraction;
 
 using Application.MessageTypes.Abstraction;
@@ -64,13 +62,8 @@ using Infrastructure.Vaccinations.Repositories;
 using Infrastructure.Clients.Repositories;
 
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
 using Application.ChatAttachments.Abstraction;
 using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
@@ -78,27 +71,20 @@ using Application.ChatEscalations.Abstraction;
 using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Linking;
 using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
-using Infrastructure.AiModels.Repository;
 using Infrastructure.ChatConversationAssignments.Repository;
-using Infrastructure.ChatConversationAiSettings.Repository;
 using Infrastructure.ChatConversations.Repository;
 using Infrastructure.ChatEscalationAssignments.Repository;
 using Infrastructure.ChatEscalationResolutions.Repository;
 using Infrastructure.ChatEscalations.Repository;
 using Infrastructure.ChatEscalationStatusHistories.Repository;
-using Infrastructure.ChatAiRunErrors.Repository;
-using Infrastructure.ChatAiRunMetrics.Repository;
-using Infrastructure.ChatAiRuns.Repository;
 using Infrastructure.ChatAttachments.Repository;
 using Infrastructure.ChatMessages.Repository;
 using Infrastructure.ChatParticipants.Repository;
-using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
 using Infrastructure.Diagnostics.Repositories;
@@ -130,8 +116,6 @@ using Infrastructure.Veterinarians.Repositories;
 using Infrastructure.Priorities.Repositories;
 
 using Infrastructure.SenderTypes.Repositories;
-
-using Infrastructure.AiRunStatuses.Repositories;
 
 using Infrastructure.ConversationStatuses.Repositories;
 
@@ -219,8 +203,6 @@ public static class DependencyInjection
 
         services.AddScoped<ISenderTypeRepository, SenderTypeRepository>();
 
-        services.AddScoped<IAiRunStatusRepository, AiRunStatusRepository>();
-
         services.AddScoped<IConversationStatusRepository, ConversationStatusRepository>();
 
         services.AddScoped<IMessageTypeRepository, MessageTypeRepository>();
@@ -244,11 +226,8 @@ public static class DependencyInjection
         services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
         services.AddScoped<IVaccinationRepository, VaccinationRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
-        services.AddScoped<IAiModelRepository, AiModelRepository>();
         services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
         services.AddScoped<IChatConversationAssignmentRepository, ChatConversationAssignmentRepository>();
-        services.AddScoped<IChatConversationAiSettingRepository, ChatConversationAiSettingRepository>();
         services.AddScoped<IChatParticipantRepository, ChatParticipantRepository>();
         services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
         services.AddScoped<IChatAttachmentRepository, ChatAttachmentRepository>();
@@ -256,9 +235,6 @@ public static class DependencyInjection
         services.AddScoped<IChatEscalationStatusHistoryRepository, ChatEscalationStatusHistoryRepository>();
         services.AddScoped<IChatEscalationResolutionRepository, ChatEscalationResolutionRepository>();
         services.AddScoped<IChatEscalationAssignmentRepository, ChatEscalationAssignmentRepository>();
-        services.AddScoped<IChatAiRunRepository, ChatAiRunRepository>();
-        services.AddScoped<IChatAiRunMetricsRepository, ChatAiRunMetricsRepository>();
-        services.AddScoped<IChatAiRunErrorRepository, ChatAiRunErrorRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
         services.AddScoped<ITelegramLinkCodeRepository, TelegramLinkCodeRepository>();
         services.AddScoped<ITelegramUserLinkRepository, TelegramUserLinkRepository>();
