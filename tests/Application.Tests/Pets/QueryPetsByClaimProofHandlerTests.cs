@@ -66,6 +66,51 @@ public sealed class QueryPetsByClaimProofHandlerTests
     }
 
     [Fact]
+    public async Task Handle_maps_null_observations_without_throwing()
+    {
+        var sessionId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var client = TestClients.Create(userId, "1234567890", null);
+        var species = new SpeciesEntity("Canino");
+        var race = new RaceEntity("Mestizo", species);
+        var pet = new PetEntity("Felix", 0, "M", 0.01m, null, species, race);
+        typeof(PetEntity).GetProperty(nameof(PetEntity.Observations))!
+            .SetValue(pet, null);
+        var relation = new ClientPetEntity(client, pet, true);
+
+        var consume = Substitute.For<IConsumeContactVerificationProof>();
+        consume.ConsumeAsync(Arg.Any<ConsumeContactVerificationProof>(), Arg.Any<CancellationToken>())
+            .Returns(new ConsumedContactVerificationProof(
+                sessionId,
+                ContactVerificationPurpose.Claim,
+                userId,
+                "hash"));
+
+        var uow = Substitute.For<IUnitOfWork>();
+        var clients = Substitute.For<IClientRepository>();
+        var clientPets = Substitute.For<IClientPetRepository>();
+        var pets = Substitute.For<IPetRepository>();
+        uow.ClientsRepository.Returns(clients);
+        uow.ClientPetsRepository.Returns(clientPets);
+        uow.PetsRepository.Returns(pets);
+        clients.GetByUserIdAsync(userId, Arg.Any<CancellationToken>()).Returns(client);
+        clientPets.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
+            .Returns(new List<ClientPetEntity> { relation });
+        pets.GetByIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<PetEntity> { pet });
+
+        var sut = new QueryPetsByClaimProofHandler(consume, uow);
+
+        var result = await sut.Handle(
+            new QueryPetsByClaimProof(sessionId, "proof-token"),
+            CancellationToken.None);
+
+        Assert.Single(result);
+        Assert.Equal("Felix", result.First().Name);
+        Assert.Null(result.First().Observations);
+    }
+
+    [Fact]
     public async Task Handle_rejects_non_claim_purpose()
     {
         var consume = Substitute.For<IConsumeContactVerificationProof>();
