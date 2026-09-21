@@ -1,4 +1,5 @@
 using Application.Clients.Abstraction;
+using Application.Security;
 using Application.Security.Claims;
 using Application.Security.Models;
 using Application.Telegram.Abstractions;
@@ -57,9 +58,9 @@ public sealed class AgentDelegatedIdentityProvider(
         }
 
         var roleId = SystemRoles.ClientRoleId;
-        const string roleName = "Cliente";
-        var email = client.Email?.Value ?? $"cliente_{client.Id:N}@telegram.invalid";
-        var username = client.Email?.Value ?? $"cliente_{client.Id:N}";
+        var roleName = WebPlatformAccess.ClientRoleName;
+        var email = client.Email.Value;
+        var username = client.Email.Value;
 
         var identity = new AuthenticatedIdentity(
             client.Id,
