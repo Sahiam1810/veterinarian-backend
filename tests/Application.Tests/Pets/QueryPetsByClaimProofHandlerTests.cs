@@ -23,8 +23,8 @@ public sealed class QueryPetsByClaimProofHandlerTests
     public async Task Handle_consumes_claim_proof_and_returns_pets_for_subject_user()
     {
         var sessionId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var client = TestClients.Create(userId, "1234567890", null);
+        var client = TestClients.Create("1234567890", null);
+        var userId = client.Id; // El sujeto de la reclamación es el id del cliente.
         var species = new SpeciesEntity("Canino");
         var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Luna", 4, "F", 12.5m, "Sana", species, race);
@@ -45,7 +45,7 @@ public sealed class QueryPetsByClaimProofHandlerTests
         uow.ClientsRepository.Returns(clients);
         uow.ClientPetsRepository.Returns(clientPets);
         uow.PetsRepository.Returns(pets);
-        clients.GetByUserIdAsync(userId, Arg.Any<CancellationToken>()).Returns(client);
+        clients.GetByIdAsync(userId, Arg.Any<CancellationToken>()).Returns(client);
         clientPets.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
             .Returns(new List<ClientPetEntity> { relation });
         pets.GetByIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
@@ -69,8 +69,8 @@ public sealed class QueryPetsByClaimProofHandlerTests
     public async Task Handle_maps_null_observations_without_throwing()
     {
         var sessionId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var client = TestClients.Create(userId, "1234567890", null);
+        var client = TestClients.Create("1234567890", null);
+        var userId = client.Id; // El sujeto de la reclamación es el id del cliente.
         var species = new SpeciesEntity("Canino");
         var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Felix", 0, "M", 0.01m, null, species, race);
@@ -93,7 +93,7 @@ public sealed class QueryPetsByClaimProofHandlerTests
         uow.ClientsRepository.Returns(clients);
         uow.ClientPetsRepository.Returns(clientPets);
         uow.PetsRepository.Returns(pets);
-        clients.GetByUserIdAsync(userId, Arg.Any<CancellationToken>()).Returns(client);
+        clients.GetByIdAsync(userId, Arg.Any<CancellationToken>()).Returns(client);
         clientPets.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
             .Returns(new List<ClientPetEntity> { relation });
         pets.GetByIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
@@ -144,7 +144,7 @@ public sealed class QueryPetsByClaimProofHandlerTests
         var uow = Substitute.For<IUnitOfWork>();
         var clients = Substitute.For<IClientRepository>();
         uow.ClientsRepository.Returns(clients);
-        clients.GetByUserIdAsync(userId, Arg.Any<CancellationToken>()).Returns((Domain.Clients.Entities.ClientEntity?)null);
+        clients.GetByIdAsync(userId, Arg.Any<CancellationToken>()).Returns((Domain.Clients.Entities.ClientEntity?)null);
 
         var sut = new QueryPetsByClaimProofHandler(consume, uow);
 

@@ -28,9 +28,7 @@ public sealed class RequestClaimEmailByIdentificationHandlerTests
     [Fact]
     public async Task RequestAsync_when_client_exists_requests_claim_otp_with_server_email()
     {
-        var userId = Guid.NewGuid();
         var client = new ClientEntity(
-            userId,
             "Ana Pérez",
             "ana@huellitas.test",
             "1234567890",
@@ -51,14 +49,14 @@ public sealed class RequestClaimEmailByIdentificationHandlerTests
 
         Assert.Equal(sessionId, result.SessionId);
         Assert.Equal(client.Id, result.ClientId);
-        Assert.Equal(userId, result.PersonId);
+        Assert.Equal(client.Id, result.PersonId);
         Assert.Equal("Ana Pérez", result.FullName);
         Assert.Equal("a***@huellitas.test", result.MaskedEmail);
         await requestEmail.Received(1).RequestAsync(
             Arg.Is<RequestContactEmailVerification>(r =>
                 r.Email == "ana@huellitas.test"
                 && r.Purpose == ContactVerificationPurpose.Claim
-                && r.SubjectUserId == userId),
+                && r.SubjectUserId == client.Id),
             Arg.Any<CancellationToken>());
     }
 

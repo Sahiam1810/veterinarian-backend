@@ -31,7 +31,8 @@ public sealed class QueryPetsByClaimProofHandler(
             throw new ContactVerificationException(ContactVerificationErrors.PurposeInvalid);
         }
 
-        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(
+        // SubjectUserId guarda el id del cliente (nombre heredado; se renombra en otro frente).
+        var client = await unitOfWork.ClientsRepository.GetByIdAsync(
             consumed.SubjectUserId.Value,
             cancellationToken);
         if (client is null)

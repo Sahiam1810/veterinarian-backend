@@ -34,8 +34,7 @@ public sealed class CompleteTelegramRegistrationHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(ClientId, result.Value.PersonId);
         await fixture.Links.Received(1).AddAsync(
-
-            Arg.Is<TelegramUserLink>(link => link.PersonId == ClientId), default);
+            Arg.Is<TelegramUserLink>(link => link.ClientId == ClientId), default);
 
         Assert.Equal(TelegramRegistrationSessionStatus.Completed, session.Status);
         await fixture.RegisterOwner.Received(1).RegisterAsync(
