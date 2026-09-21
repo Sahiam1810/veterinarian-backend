@@ -53,6 +53,24 @@ El trabajo se hace por frentes; **cada frente cierra con una migración** que ge
 **Frente 1 (actual): separar clientes de usuarios.** Cierra con la migración `SeparateClientsFromUsers`.
 Siguientes frentes: fusionar usuarios y quitar permisos por usuario; borrar las tablas sobrantes; renombres y booleanos; fusionar resolución y vínculo de conversación.
 
+**Frente 2 (siguiente): fusionar usuarios y quitar permisos por usuario.** Cierra con la migración `MergeUsersAndAccounts`. Contrato: [`docs/contracts/fusion-usuarios-api-v3.md`](contracts/fusion-usuarios-api-v3.md). Se empieza cuando el Frente 1 está mergeado y migrado. `ACCOUNT_STATEMENTS` y los flujos viejos de Telegram por código y por registro web pasan del frente de "tablas sobrantes" a este, porque dependen de `USER_ACCOUNTS`.
+
+| Tarea | Qué es | Depende de |
+|---|---|---|
+| **U1** | Eliminar permisos por usuario (`USER_PERMISSIONS`); permisos solo por rol | nada |
+| **U2** | Eliminar el módulo `AccountStatements` | nada |
+| **U3** | Eliminar Telegram por código y por registro web (`TELEGRAM_LINK_CODES`, `TELEGRAM_LINKING_SESSIONS`, `TELEGRAM_REGISTRATION_SESSIONS`) | nada |
+| **U4** | `sub` del token = id del usuario; casos de uso del personal pasan de `UserAccountId` a `UserId` (las cuentas aún existen) | nada |
+| **U5** | Fusión: `USERS` con contraseña, login por correo, refresh tokens por usuario, se borran cuentas y credenciales y sus endpoints | U2, U3 y U4 |
+| **U6** | Eliminar la claim `person_id` | U4, U5 y **CU1 desplegado** |
+| **U7** | Tests y documentación del frente | U6 |
+| **E2** | Seed de desarrollo sin cuentas ni credenciales | U5 (se prueba con la migración aplicada) |
+| **FU1 + FU2** | Frontend: alta de usuario en un solo paso, fuera cuentas, credenciales y permisos por usuario (misma persona: tocan el mismo hook) | contrato v3 |
+| **FU3** | Frontend: `personId`, `accountId`, `userAccountId` y `userName` fuera de tipos, perfil y sesión | contrato v3 |
+| **FU4** | Frontend: tests y `lint` | FU1, FU2 y FU3 |
+| **CU1** | Chatbot: deja de exigir `person_id`; `userId` == `sub` | nada (**va primero**) |
+| **CU2** | Chatbot: documentación y tests | CU1 |
+
 ### Tareas del Frente 1
 
 **Backend**
