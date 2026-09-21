@@ -1,4 +1,3 @@
-using Application.AccountStatements.Abstraction;
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
@@ -46,7 +45,6 @@ using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
-using Infrastructure.AccountStatements.Repositories;
 using Infrastructure.Agent.Configuration;
 using Infrastructure.Agent.Conversations;
 using Infrastructure.Agent.Http;
@@ -206,7 +204,6 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
 
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
-        services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
         services.AddScoped<IVeterinarianAbsenceRepository, VeterinarianAbsenceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();

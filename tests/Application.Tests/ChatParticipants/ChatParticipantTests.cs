@@ -1,4 +1,3 @@
-using Application.AccountStatements.Abstraction;
 using Application.AgentHumans.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
@@ -510,7 +509,6 @@ public sealed class ChatParticipantTests
         public IUserAccountsRepository UserAccountsRepository => null!;
         public IUserCredentialsRepository UserCredentialsRepository => null!;
         public IUserTokensRepository UserTokensRepository => null!;
-        public IAccountStatementsRepository AccountStatementsRepository => null!;
         public IAvailabilityRepository AvailabilitiesRepository => null!;
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

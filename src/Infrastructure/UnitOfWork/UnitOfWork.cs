@@ -1,4 +1,3 @@
-using Application.AccountStatements.Abstraction;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
@@ -72,7 +71,6 @@ public sealed class UnitOfWork : IUnitOfWork
         IUserTokensRepository userTokensRepository,
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
-        IAccountStatementsRepository accountStatementsRepository,
         ISenderTypeRepository senderTypesRepository,
         IVeterinarianRepository veterinariansRepository,
         IConversationStatusRepository conversationStatusesRepository,
@@ -111,7 +109,6 @@ public sealed class UnitOfWork : IUnitOfWork
         UserTokensRepository = userTokensRepository;
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
-        AccountStatementsRepository = accountStatementsRepository;
         VeterinariansRepository = veterinariansRepository;
         PrioritiesRepository = prioritiesRepository;
         SenderTypesRepository = senderTypesRepository;
@@ -145,7 +142,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUserCredentialsRepository UserCredentialsRepository { get; }
     public IClientRepository ClientsRepository { get; }
     public IUserTokensRepository UserTokensRepository { get; }
-    public IAccountStatementsRepository AccountStatementsRepository { get; }
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
     public ITypeServiceRepository TypeServicesRepository { get; }
     public IServiceRepository ServicesRepository { get; }
