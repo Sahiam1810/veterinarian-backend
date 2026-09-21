@@ -1,9 +1,12 @@
 # Catálogo de endpoints
 
-Este documento inventaría las rutas implementadas en `src/Api`. Los cuerpos,
-parámetros, respuestas y códigos HTTP precisos se publican en Swagger al
-ejecutar la API en `Development` (`/swagger`); esa es la fuente de contrato
-para una integración.
+Este documento inventaría las rutas según el modelo del refactor de clientes y
+usuarios. Fuente de verdad del cambio: [`docs/contracts/clientes-usuarios-api-v2.md`](contracts/clientes-usuarios-api-v2.md).
+Los cuerpos, parámetros, respuestas y códigos HTTP precisos se publican en
+Swagger al ejecutar la API en `Development` (`/swagger`).
+
+Las rutas marcadas **(retirar)** dejan de ser producto vigente (tareas D1–D4 /
+limpieza del frente); no las use en integraciones nuevas.
 
 ## Convenciones de acceso
 
@@ -15,8 +18,8 @@ para una integración.
   propia API. No es un token para navegador ni para dueños.
 - **Vinculación de invitado Telegram** (`TelegramGuestLinkOnly`): JWT delegado
   distinto al anterior, emitido solo para el token de invitado de Telegram
-  (trae el claim `telegram_user_id`). Se usa exclusivamente para cerrar el
-  flujo de vinculación bot↔persona; tampoco es un token de navegador.
+  (trae el claim `telegram_user_id`). Se usa para `bot-link` / `bot-link/claim`;
+  tampoco es un token de navegador.
 - **Anónimo**: no requiere JWT, pero puede requerir encabezado, OTP o proof y
   tiene rate limiting cuando se indica.
 - **Legacy (410)**: ruta conservada únicamente para indicar que el portal JWT
@@ -37,15 +40,18 @@ GUID se muestran tal como están definidos en los atributos de enrutamiento.
 | PATCH | `/api/auth/me/password` | Autenticado | Cambia la contraseña propia. |
 | PATCH | `/api/auth/me/photo` | Autenticado | Actualiza la URL de foto de perfil propia. |
 | POST | `/api/auth/revoke` | Autenticado | Revoca un refresh token propio. |
-| POST | `/api/contact-verification/email/request` | Anónimo, rate limit | Solicita OTP de correo. |
+| POST | `/api/contact-verification/email/request` | Anónimo, rate limit | Solicita OTP de correo (purpose `Register` únicamente). |
+| POST | `/api/contact-verification/email/request-claim-by-identification` | Anónimo, rate limit | Solicita OTP Claim resolviendo el correo por cédula (cliente ya existente, otro Telegram). Respuesta `{ sessionId, expiresAt, channel, maskedEmail }`. |
 | POST | `/api/contact-verification/email/confirm` | Anónimo, rate limit | Confirma OTP y devuelve proof de un solo uso. |
-| POST | `/api/owners/bot` | Anónimo, rate limit + proof | Crea un dueño desde el bot, sin contraseña ni cuenta web. |
-| GET | `/api/clients/by-identification/{identificationNumber}` | Anónimo, rate limit | Lookup acotado por cédula para el bot. |
-| GET | `/api/clients/by-phone/{phone}` | Anónimo, rate limit | Lookup acotado por teléfono para el bot. |
-| GET | `/api/clients/lookup` | Staff: `Clientes.View` | Lookup operativo de clientes; acepta query `identification` y/o `phone`. |
+| POST | `/api/owners/bot` | Anónimo, rate limit | Alta de cliente desde el bot: inserta solo en `CLIENTS`. **201** `{ clientId }` (sin `userId`). |
+| GET | `/api/clients/by-identification/{identificationNumber}` | Anónimo, rate limit | Lookup acotado por cédula para el bot: `{ id, identificationNumber, createdAt }` (sin `userId` ni `registrationDate`). |
+| GET | `/api/clients/by-phone/{phone}` | Anónimo, rate limit | Misma forma de respuesta que by-identification. |
+| GET | `/api/clients/lookup` | Staff: `Clientes.View` | Lookup operativo de clientes; query `identification` y/o `phone`. |
 
-No existe `POST /api/auth/register`. El rol `Cliente` no puede iniciar ni
-renovar una sesión de plataforma.
+No existe `POST /api/auth/register`. Un cliente (dueño) **nunca** inicia sesión
+web: no tiene contraseña ni cuenta de plataforma. El rol `Cliente` deja de
+existir en la base; el token delegado del bot usa la claim `role` = `"Cliente"`
+como constante de código.
 
 ## Portal de cliente retirado
 
@@ -61,7 +67,7 @@ renovar una sesión de plataforma.
 | GET | `/api/appointments/booking/slots` | Legacy | `410 Gone`. |
 | POST | `/api/appointments/mine` | Legacy | `410 Gone`. |
 | PATCH | `/api/appointments/mine/{id:guid}/cancel` | Legacy | `410 Gone`. |
-| GET | `/api/accountstatements/mine` | Legacy | `410 Gone`. |
+| GET | `/api/accountstatements/mine` | Legacy **(retirar)** | `410 Gone`. |
 | GET | `/api/vaccinations/mine` | Legacy | `410 Gone`. |
 
 La cancelación de cita sin portal permanece disponible mediante OTP:
@@ -75,14 +81,21 @@ La cancelación de cita sin portal permanece disponible mediante OTP:
 
 ### Clientes, mascotas y catálogos veterinarios
 
+Recurso **Cliente** (staff): `{ id, fullName, email, identificationNumber,
+phoneNumber, address?, isActive, createdAt, updatedAt }`. **Sin** `userId` ni
+`registrationDate`. `POST` body: `{ fullName, email, identificationNumber,
+phoneNumber, address? }`. `PUT` body: `{ fullName, email, identificationNumber,
+phoneNumber, address?, isActive }`.
+
+Eliminados (consolidados en `POST`/`PUT /api/clients`): `POST
+/api/clients/register-owner`, `PUT /api/clients/{id}/owner-profile`.
+
 | Método | Ruta | Acceso |
 | --- | --- | --- |
 | GET | `/api/clients` | `Clientes.View` |
 | GET | `/api/clients/{id:guid}` | `Clientes.View` |
 | POST | `/api/clients` | `Clientes.Create` |
-| POST | `/api/clients/register-owner` | `Clientes.Create` |
 | PUT | `/api/clients/{id:guid}` | `Clientes.Edit` |
-| PUT | `/api/clients/{id:guid}/owner-profile` | `Clientes.Edit` |
 | DELETE | `/api/clients/{id:guid}` | `Clientes.Delete` |
 | GET | `/api/clientspets` | Staff |
 | GET | `/api/clientspets/{id:guid}` | Staff |
@@ -172,13 +185,16 @@ La cancelación de cita sin portal permanece disponible mediante OTP:
 
 ### Cobros, notificaciones, reportes y estados
 
+`/api/accountstatements/*` **(retirar, D3/U2):** el módulo de estados de cuenta
+deja de existir; no lo use en integraciones nuevas.
+
 | Método | Ruta | Acceso |
 | --- | --- | --- |
-| POST | `/api/accountstatements` | `Cuentas y Pagos.Create` |
-| GET | `/api/accountstatements/{id:guid}` | Staff |
-| GET | `/api/accountstatements/by-account/{accountId:guid}` | Staff |
-| PATCH | `/api/accountstatements/{id:guid}/status` | `Cuentas y Pagos.Edit` |
-| DELETE | `/api/accountstatements/{id:guid}` | `Cuentas y Pagos.Delete` |
+| POST | `/api/accountstatements` | `Cuentas y Pagos.Create` **(retirar)** |
+| GET | `/api/accountstatements/{id:guid}` | Staff **(retirar)** |
+| GET | `/api/accountstatements/by-account/{accountId:guid}` | Staff **(retirar)** |
+| PATCH | `/api/accountstatements/{id:guid}/status` | `Cuentas y Pagos.Edit` **(retirar)** |
+| DELETE | `/api/accountstatements/{id:guid}` | `Cuentas y Pagos.Delete` **(retirar)** |
 | GET | `/api/notifications` | `Notificaciones.View` |
 | GET | `/api/notifications/{id:guid}` | `Notificaciones.View` |
 | GET | `/api/notifications/user/{userId:guid}` | `Notificaciones.View` |
@@ -256,10 +272,11 @@ de módulo.
 | --- | --- | --- | --- |
 | POST | `/api/agent/messages` | Autenticado | Envía un mensaje al servicio de agente configurado. |
 | POST | `/api/integrations/telegram/webhook` | Anónimo, rate limit + secreto de Telegram | Recibe actualizaciones de Telegram. |
-| POST | `/api/integrations/telegram/link-codes` | Autenticado | Genera código/deep link temporal de vinculación. |
-| POST | `/api/integrations/telegram/bot-link` | `TelegramGuestLinkOnly` | Vincula la persona registrada/encontrada por el bot con el Telegram invitado actual (segundo turno del flujo de vinculación; el `telegramUserId` real nunca sale del backend). |
-| GET | `/telegram/registration/complete` | Anónimo, rate limit + cookie temporal | Muestra el formulario de finalización de registro Telegram. |
-| POST | `/telegram/registration/complete` | Anónimo, rate limit + cookie temporal | Completa el registro Telegram. |
+| POST | `/api/integrations/telegram/bot-link` | `TelegramGuestLinkOnly` | Body `{ clientId }`. Vincula el Telegram invitado con un cliente recién registrado (ventana corta). **200** `{ linkId }`. No crea cuenta fantasma. |
+| POST | `/api/integrations/telegram/bot-link/claim` | `TelegramGuestLinkOnly` | Body `{ sessionId, proof }`. Vincula un cliente ya existente tras OTP Claim. **200** `{ linkId, fullName }`. |
+| POST | `/api/integrations/telegram/link-codes` | Autenticado **(retirar, D4/U3)** | Flujo legacy de código/`/start <code>`; reemplazado por `bot-link`. |
+| GET | `/telegram/registration/complete` | Anónimo **(retirar, D4/U3)** | Formulario web de registro Telegram; fuera de producto. |
+| POST | `/telegram/registration/complete` | Anónimo **(retirar, D4/U3)** | Completa el registro web Telegram; fuera de producto. |
 | GET | `/api/bot/pets` | Bot interno | Lista mascotas del dueño delegado. |
 | POST | `/api/bot/pets` | Bot interno | Registra una mascota del dueño delegado. |
 | PATCH | `/api/bot/pets/{petId:guid}` | Bot interno | Actualiza una mascota del dueño delegado. |
@@ -280,7 +297,10 @@ edición — solo un subconjunto de acciones (casi siempre las de borrado y las
 de catálogos de solo-IA) exige realmente `AdminOnly`. Cada tabla siguiente
 indica la política real de cada endpoint.
 
-### Catálogos de IA (`AdminOnly` en todo el controlador)
+### Catálogos de IA (`AdminOnly` en todo el controlador) **(retirar, D1)**
+
+Estas rutas de proveedores/modelos/runs de IA dejan de ser producto; no las
+use en integraciones nuevas.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -338,7 +358,11 @@ resto es `AdminOnly`. `Priorities` es la excepción — sus `GET` piden
 | PUT | `/api/sendertypes/{id:guid}` | `AdminOnly` |
 | DELETE | `/api/sendertypes/{id:guid}` | `AdminOnly` |
 
-### Agentes humanos y perfiles de usuario del chat
+### Agentes humanos
+
+`/api/chat/user-profiles` **eliminados** (tabla `CHAT_USER_PROFILES` fuera del
+modelo). Un participante de chat usa `clientId` o `agentHumanId`, no
+`chatUserProfileId`.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -349,14 +373,12 @@ resto es `AdminOnly`. `Priorities` es la excepción — sus `GET` piden
 | PUT | `/api/chat/agent-humans/{id:guid}` | `AdminOnly` |
 | PATCH | `/api/chat/agent-humans/{id:guid}/activate` | `AdminOnly` |
 | PATCH | `/api/chat/agent-humans/{id:guid}/deactivate` | `AdminOnly` |
-| POST | `/api/chat/user-profiles` | `Chat.Create` |
-| GET | `/api/chat/user-profiles` | `Chat.View` |
-| GET | `/api/chat/user-profiles/{id:guid}` | `Chat.View` |
-| GET | `/api/chat/user-profiles/by-user/{userId:guid}` | `Chat.View` |
-| PUT | `/api/chat/user-profiles/{id:guid}` | `Chat.Edit` |
-| DELETE | `/api/chat/user-profiles/{id:guid}` | `AdminOnly` |
 
 ### Conversaciones y su configuración de IA
+
+Rutas de `conversation-ai-settings` y asignaciones de conversación de solo-IA
+**(retirar)** cuando aplique la limpieza del frente; la bandeja de
+conversaciones/escalamientos sigue vigente.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -383,8 +405,13 @@ resto es `AdminOnly`. `Priorities` es la excepción — sus `GET` piden
 
 ### Participantes, mensajes y adjuntos
 
-`ChatParticipants` y `ChatMessages` no tienen ninguna acción `AdminOnly` — todo
-es `Chat.*`. `ChatAttachments` es `AdminOnly` en todo el controlador.
+`ChatParticipants`: body/respuesta con `clientId?` o `agentHumanId?` (exactamente
+una identidad). **Sin** `chatUserProfileId` ni `aiModelId`.
+
+Crear: `{ chatConversationId, participantTypeId, clientId?, agentHumanId? }`.
+Cambiar identidad: `{ clientId?, agentHumanId? }`.
+
+`ChatAttachments` **(retirar)** junto con la limpieza de tablas de adjuntos.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -395,11 +422,11 @@ es `Chat.*`. `ChatAttachments` es `AdminOnly` en todo el controlador.
 | POST | `/api/chat/messages` | `Chat.Create` |
 | GET | `/api/chat/messages/{id:guid}` | `Chat.View` |
 | GET | `/api/chat/messages/conversation/{chatConversationId:guid}` | `Chat.View` |
-| GET | `/api/chat/attachments/{id:guid}` | `AdminOnly` |
-| GET | `/api/chat/attachments/message/{chatMessageId:guid}` | `AdminOnly` |
-| POST | `/api/chat/attachments` | `AdminOnly` |
+| GET | `/api/chat/attachments/{id:guid}` | `AdminOnly` **(retirar)** |
+| GET | `/api/chat/attachments/message/{chatMessageId:guid}` | `AdminOnly` **(retirar)** |
+| POST | `/api/chat/attachments` | `AdminOnly` **(retirar)** |
 
-### Ejecuciones de IA (`AdminOnly` en todo el controlador)
+### Ejecuciones de IA (`AdminOnly`) **(retirar, D1)**
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |

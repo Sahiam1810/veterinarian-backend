@@ -9,14 +9,18 @@ Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Do
 ## Capacidades
 
 - Gestión de personal, roles, permisos por módulo y cuentas internas.
-- Dueños, mascotas, especies, razas, especialidades, servicios y diagnósticos.
+- Dueños (solo `CLIENTS`, sin `userId`), mascotas, especies, razas, especialidades, servicios y diagnósticos.
 - Agenda, disponibilidad, ausencias, prevención de solapamientos, citas, historia clínica, vacunas y recordatorios.
-- Estados de cuenta y notificaciones en tiempo real mediante SignalR (`/hubs/notifications`).
+- Notificaciones en tiempo real mediante SignalR (`/hubs/notifications`).
 - JWT RS256 con access token, refresh token rotativo y permisos como claims.
 - Integración opcional con el servicio de agente conversacional, SMTP, Twilio y Telegram.
-- Verificación de correo por OTP para acciones puntuales que necesiten comprobar contacto (alta de dueño hecha por staff cuando `RegisterOwner__RequireContactProofs=true`, y OTP de acción de cita). El alta de dueños desde el bot y desde Telegram **nunca** exige este proof, por decisión de negocio.
+- Verificación de correo por OTP: (a) opcional en alta de dueño hecha por
+  **staff** cuando `RegisterOwner__RequireContactProofs=true`; (b) **Claim**
+  cuando un cliente ya registrado escribe desde otro Telegram (correo
+  resuelto por el servidor). El alta desde el bot de un cliente **nuevo** y
+  el `bot-link` inmediato **no** exigen OTP.
 - Escalamiento de conversaciones de Telegram a un asesor humano: detección de frase, `ChatEscalation`, notificación a la bandeja de Recepcionista y reenvío de sus respuestas de vuelta al chat (ver «Escalamiento a un asesor humano» más abajo).
-- Administración del runtime conversacional: conversaciones, mensajes, adjuntos, escalaciones, participantes, agentes humanos, modelos y métricas de IA.
+- Runtime conversacional operativo: conversaciones, mensajes, escalaciones, participantes (con `clientId`) y agentes humanos. Fuera de producto (D1–D4): estados de cuenta, catálogos/ejecuciones de IA, adjuntos de chat y `link-codes`/registro web Telegram.
 - Swagger en Development, rate limiting, CORS, logging estructurado con Serilog y respuestas de error `application/problem+json`.
 - Recordatorios de citas por Telegram (1 hora antes) con configuración separada de los recordatorios de 24h.
 
@@ -46,18 +50,37 @@ Las cuentas internas inician sesión en `POST /api/auth/login` con correo y cont
 
 Los endpoints administrativos usan permisos dinámicos por módulo (`Clientes`, `Mascotas`, `Citas`, `Usuarios`, `Reportes`, etc.) y las políticas de rol necesarias. Consulte Swagger para el requisito exacto de cada ruta.
 
-### Dueños: sin contraseña
+### Dueños: sin contraseña ni cuenta de plataforma
 
-El rol `Cliente` no puede obtener ni renovar un JWT de plataforma, incluso si existen datos de credenciales heredados. Por tanto, no se debe construir un flujo web de registro o login para dueños.
+Un **cliente** (dueño de mascota) vive solo en `CLIENTS`: nombre, correo, cédula,
+teléfono y dirección. **No** tiene fila en `USERS`, no tiene contraseña y
+**nunca** inicia sesión web. El personal gestiona dueños con `GET`/`POST`/`PUT`
+`/api/clients` (sin `userId` ni `registrationDate`).
 
-El flujo vigente es:
+El flujo del chatbot es:
 
-1. En Telegram, las consultas veterinarias generales funcionan en modo invitado, si `Telegram__GuestModeEnabled=true`.
-2. Cuando una solicitud necesita datos u operaciones privadas (agendar cita, registrar mascota), el propio chatbot pide nombre, cédula, correo y teléfono en un solo mensaje. **No hay ningún código de verificación**: por decisión de negocio, el dato se acepta tal como se entrega.
-3. Con esos datos, el chatbot busca al cliente por cédula en `GET /api/clients/by-identification/{identificationNumber}`; si no existe, lo registra con `POST /api/owners/bot` — que, por la misma decisión de negocio, **nunca exige proof de contacto** — y crea su perfil **sin contraseña**.
-4. El chatbot vincula la cuenta de Telegram con `POST /api/integrations/telegram/bot-link`. El enlace queda persistido sin vencimiento ni reverificación periódica.
+1. En Telegram, las consultas generales funcionan en modo invitado si
+   `Telegram__GuestModeEnabled=true`.
+2. Cuando hace falta identidad (agendar cita, registrar mascota), el chatbot
+   pide nombre, cédula, correo y teléfono. Un **cliente nuevo** se registra y
+   se vincula **sin OTP**.
+3. Busca por cédula en `GET /api/clients/by-identification/{identificationNumber}`
+   (`{ id, identificationNumber, createdAt }`). Si no existe, alta con
+   `POST /api/owners/bot` → **201** `{ clientId }` (solo inserta en `CLIENTS`).
+4. Vincula Telegram con `POST /api/integrations/telegram/bot-link` y body
+   `{ clientId }` (token de invitado con `telegram_user_id`).
+5. Si **ya es cliente** pero escribe desde **otro** Telegram, no use
+   `bot-link` directo: pida OTP al correo registrado vía
+   `POST /api/contact-verification/email/request-claim-by-identification`,
+   confirme con `email/confirm` y cierre con
+   `POST /api/integrations/telegram/bot-link/claim` (`{ sessionId, proof }`).
+   Detalle: [contrato v2 §9.1](docs/contracts/clientes-usuarios-api-v2.md) y
+   [guía Telegram](docs/integrations/telegram.md).
 
-Las rutas antiguas del portal JWT de cliente (`/api/clients/me`, `/api/pets/mine` y `/api/appointments/mine`) están retiradas y devuelven `410 Gone`. El bot usa las rutas `/api/bot/pets` y `/api/bot/appointments`, protegidas con un JWT delegado interno (`TelegramAgent`) que la API genera; no son endpoints para un navegador ni para llamar con un token de cliente.
+Las rutas del portal JWT de cliente (`/api/clients/me`, `/api/pets/mine`,
+`/api/appointments/mine`, etc.) están retiradas (`410 Gone`). El bot usa
+`/api/bot/pets` y `/api/bot/appointments` con JWT delegado interno
+(`TelegramAgent`).
 
 ### Escalamiento a un asesor humano
 
@@ -271,9 +294,9 @@ Swagger. A alto nivel:
 | Sesión interna | `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me`, `GET /api/auth/permissions`, `PATCH /api/auth/me/password`, `POST /api/auth/revoke` |
 | Operación de staff | `/api/clients`, `/api/pets`, `/api/veterinarians`, `/api/availabilities`, `/api/veterinarian-absences`, `/api/appointments`, `/api/medicalrecords`, `/api/vaccinations`, `/api/reports` |
 | Catálogos y seguridad | `/api/species`, `/api/races`, `/api/services`, `/api/roles`, `/api/role-permissions`, `/api/user-permissions`, `/api/users`, `/api/useraccounts`, `/api/usercredentials` |
-| Dueños/bot | `POST /api/contact-verification/email/request`, `POST /api/contact-verification/email/confirm`, `POST /api/owners/bot`, lookups anónimos de clientes y rutas internas `/api/bot/*` |
-| Integraciones | `POST /api/integrations/telegram/webhook`, `POST /api/integrations/telegram/link-codes`, `POST /api/agent/messages`, `/hubs/notifications` |
-| Administración conversacional | `/api/chat/*`, `/api/ai/models`, `/api/ai/providers` |
+| Dueños/bot | `POST /api/owners/bot` → `{ clientId }`, lookups anónimos de clientes, Claim OTP (`request-claim-by-identification` + `bot-link/claim`), rutas `/api/bot/*` |
+| Integraciones | `POST /api/integrations/telegram/webhook`, `POST /api/integrations/telegram/bot-link`, `POST /api/agent/messages`, `/hubs/notifications` |
+| Administración conversacional | `/api/chat/*` (participantes con `clientId`; sin `/api/chat/user-profiles`) |
 
 La política de respaldo exige autenticación para cualquier endpoint que no sea marcado explícitamente como anónimo. Las rutas públicas tienen rate limiting. Los códigos de error estables se devuelven en `application/problem+json`; los clientes deben interpretar el campo `code`, no el texto del mensaje.
 
