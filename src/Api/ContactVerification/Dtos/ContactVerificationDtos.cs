@@ -19,3 +19,15 @@ public sealed record ConfirmContactEmailVerificationRequest(
 public sealed record ConfirmContactEmailVerificationResponse(
     Guid SessionId,
     string Proof);
+
+public sealed record RequestClaimEmailByIdentificationRequest(string IdentificationNumber);
+
+public sealed record RequestClaimEmailByIdentificationResponse(
+    Guid SessionId,
+    DateTime ExpiresAt,
+    string Channel,
+    string MaskedEmail,
+    Guid PersonId,
+    Guid ClientId,
+    string FullName);
+

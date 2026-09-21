@@ -15,7 +15,11 @@ public sealed class TelegramConversationLinkRepository(VeterinaryDbContext conte
          join conversation in context.Set<Domain.ChatConversations.Entities.ChatConversation>().AsNoTracking()
              on link.ConversationId equals conversation.Id
          where link.TelegramUserLinkId == telegramUserLinkId
-         select new TelegramConversationBinding(conversation.Id, conversation.Closed))
+         select new TelegramConversationBinding(
+             conversation.Id,
+             conversation.Closed,
+             conversation.LastMessageAt,
+             conversation.CreatedAt))
         .FirstOrDefaultAsync(cancellationToken);
 
     public Task<TelegramConversationLink?> GetByUserLinkIdAsync(Guid telegramUserLinkId, CancellationToken cancellationToken) =>

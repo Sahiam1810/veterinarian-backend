@@ -59,8 +59,12 @@ public sealed class AgentMessagingHttpClient(
             var resumeMessage = string.IsNullOrWhiteSpace(payload.ResumeMessage)
                 ? null
                 : payload.ResumeMessage.Trim();
+            // resumeMessage may accompany identity_verification (deferred OTP) or none
+            // (conversational guest registration just linked this Telegram and wants
+            // ProcessTelegramUpdate to continue the deferred intent as Cliente).
             if (resumeMessage is not null &&
-                accessRequirement != AgentAccessRequirement.IdentityVerification)
+                accessRequirement != AgentAccessRequirement.IdentityVerification &&
+                accessRequirement != AgentAccessRequirement.None)
             {
                 throw new AgentContractException();
             }
