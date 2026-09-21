@@ -48,7 +48,6 @@ public sealed class CreateClientCommandHandlerTests
         Assert.Equal(created!.Id, id);
         Assert.Equal("Ana Cliente", created.FullName.Value);
         Assert.Equal("ana@huellitas.test", created.Email.Value);
-        Assert.Null(created.UserId);
         Assert.True(created.IsActive);
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }

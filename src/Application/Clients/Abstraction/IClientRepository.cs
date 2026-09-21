@@ -24,10 +24,6 @@ public interface IClientRepository
         string phoneNumber,
         CancellationToken cancellationToken);
 
-    Task<ClientEntity?> GetByUserIdAsync(
-        Guid userId,
-        CancellationToken cancellationToken);
-
     Task<ClientEntity?> GetByLookupAsync(
         string? identificationNumber,
         string? phoneNumber,
@@ -49,11 +45,6 @@ public interface IClientRepository
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 
-    Task<bool> ExistsByUserIdAsync(
-        Guid userId,
-        CancellationToken cancellationToken,
-        Guid? excludedId = null);
-
     Task AddAsync(
         ClientEntity client,
         CancellationToken cancellationToken);
@@ -64,15 +55,5 @@ public interface IClientRepository
 
     Task DeleteAsync(
         ClientEntity client,
-        CancellationToken cancellationToken);
-
-    // Id del dueño por user, sin Include(User)
-    Task<Guid?> GetIdByUserIdAsync(
-        Guid userId,
-        CancellationToken cancellationToken);
-
-    // Borra el perfil Client sin Include(User) (evita tracking conflict)
-    Task DeleteByUserIdAsync(
-        Guid userId,
         CancellationToken cancellationToken);
 }
