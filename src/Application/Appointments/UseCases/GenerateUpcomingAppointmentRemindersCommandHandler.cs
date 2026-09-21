@@ -54,29 +54,17 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandler(
             .ToArray();
 
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(bookingSettings.TimeZoneId);
-        var reminders = new List<Notification>(pendingAppointments.Length * 2);
+        var reminders = new List<Notification>(pendingAppointments.Length);
 
         foreach (var appointment in pendingAppointments)
         {
             var localStart = TimeZoneInfo.ConvertTimeFromUtc(appointment.ScheduledStart, timeZone);
 
-            // El aviso al dueño solo existe si el cliente tiene usuario (legado): la T8 lo elimina.
-            if (appointment.ClientPet!.Client!.UserId is { } ownerUserId)
-            {
-                var ownerReminder = new Notification(
-                    ownerUserId,
-                    appointment.Id,
-                    BuildOwnerMessage(appointment, localStart),
-                    now,
-                    ReminderStatus,
-                    ReminderType);
-                await unitOfWork.NotificationsRepository.AddAsync(ownerReminder, cancellationToken);
-                reminders.Add(ownerReminder);
-            }
-
+            // Solo se avisa dentro del sistema al veterinario: el cliente no tiene sesión
+            // para ver avisos internos y su recordatorio sale por Telegram.
             if (appointment.Veterinarian is not null)
             {
-                var vetReminder = new Notification(
+                var vetReminder = Notification.ForUser(
                     appointment.Veterinarian.UserId,
                     appointment.Id,
                     BuildVeterinarianMessage(appointment, localStart),
@@ -97,10 +85,6 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandler(
 
         return reminders.Count;
     }
-
-    private static string BuildOwnerMessage(Appointment appointment, DateTime localStart) =>
-        $"Recordatorio: tienes una cita para {appointment.ClientPet!.Pet!.Name.Value} " +
-        $"el {localStart:dd/MM/yyyy HH:mm}.";
 
     private static string BuildVeterinarianMessage(Appointment appointment, DateTime localStart) =>
         $"Recordatorio: tienes una cita con {appointment.ClientPet!.Pet!.Name.Value} " +

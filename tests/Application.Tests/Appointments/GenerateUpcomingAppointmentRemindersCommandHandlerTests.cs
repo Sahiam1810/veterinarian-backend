@@ -20,6 +20,8 @@ namespace Application.Tests.Appointments;
 // Bug reportado: 1) la notificación de recordatorio mostraba la hora UTC cruda
 // (8am Bogotá aparecía como 13:00) porque no se convertía a America/Bogota;
 // 2) solo se notificaba al dueño de la mascota, nunca al veterinario asignado.
+// Hoy solo se avisa al veterinario dentro del sistema: el dueño no tiene sesión y su
+// recordatorio sale por Telegram.
 public sealed class GenerateUpcomingAppointmentRemindersCommandHandlerTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 10, 12, 0, 0, TimeSpan.Zero);
@@ -28,15 +30,14 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandlerTests
     private readonly BookingSettings settings = new();
 
     [Fact]
-    public async Task Handle_notifies_both_owner_and_veterinarian_with_the_local_Bogota_time()
+    public async Task Handle_notifies_only_the_veterinarian_with_the_local_Bogota_time()
     {
-        var ownerUserId = Guid.NewGuid();
         var vetUserId = Guid.NewGuid();
 
         var species = new SpeciesEntity("Perro");
         var race = new RaceEntity("Labrador", species);
         var pet = new PetEntity("Milu", 5, "F", 10m, null, species, race);
-        var client = TestClients.Create("1234567890", null).WithLegacyUserId(ownerUserId);
+        var client = TestClients.Create("1234567890", null);
         var clientPet = new ClientPetEntity(client, pet, true);
         SetProperty(clientPet, nameof(ClientPetEntity.Client), client);
         SetProperty(clientPet, nameof(ClientPetEntity.Pet), pet);
@@ -72,20 +73,17 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandlerTests
             new GenerateUpcomingAppointmentRemindersCommand(TimeSpan.FromHours(24), []),
             CancellationToken.None);
 
-        Assert.Equal(2, count);
-        Assert.Equal(2, added.Count);
-
-        var ownerReminder = Assert.Single(added, n => n.UserId == ownerUserId);
-        Assert.Contains("08:00", ownerReminder.Message.Value);
-        Assert.Contains("para Milu", ownerReminder.Message.Value);
-        Assert.DoesNotContain("13:00", ownerReminder.Message.Value);
+        Assert.Equal(1, count);
+        Assert.Single(added);
+        // El dueño no recibe aviso interno.
+        Assert.DoesNotContain(added, n => n.ClientId is not null);
 
         var vetReminder = Assert.Single(added, n => n.UserId == vetUserId);
         Assert.Contains("08:00", vetReminder.Message.Value);
         Assert.Contains("con Milu", vetReminder.Message.Value);
         Assert.DoesNotContain("13:00", vetReminder.Message.Value);
 
-        await realtimeNotifier.Received(2).NotifyUserAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
+        await realtimeNotifier.Received(1).NotifyUserAsync(Arg.Any<Notification>(), Arg.Any<CancellationToken>());
     }
 
     private static void SetProperty(object target, string propertyName, object? value) =>

@@ -52,8 +52,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     [Fact]
     public async Task Handle_sends_owner_telegram_with_bogota_time_and_ten_minute_arrival()
     {
-        var ownerId = Guid.NewGuid();
-        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         ArrangeAppointments(appointment);
         var clientId = appointment.ClientPet!.Client!.Id;
         links.GetByClientIdAsync(clientId, Arg.Any<CancellationToken>())
@@ -84,8 +83,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     [Fact]
     public async Task Handle_records_missing_link_without_sending()
     {
-        var ownerId = Guid.NewGuid();
-        ArrangeAppointments(CreateAppointment(ownerId, "Luna", "CONFIRMADA", Now.UtcDateTime.AddHours(1)));
+        ArrangeAppointments(CreateAppointment("Luna", "CONFIRMADA", Now.UtcDateTime.AddHours(1)));
         links.GetByClientIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((TelegramUserLink?)null);
 
@@ -97,13 +95,14 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
             Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         Assert.Equal("SinVinculo", added.Single().Status.Value);
         Assert.Equal("Recordatorio1h", added.Single().Type.Value);
+        Assert.NotNull(added.Single().ClientId);
+        Assert.Null(added.Single().UserId);
     }
 
     [Fact]
     public async Task Handle_treats_revoked_link_as_missing()
     {
-        var ownerId = Guid.NewGuid();
-        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         var clientId = appointment.ClientPet!.Client!.Id;
         ArrangeAppointments(appointment);
         var link = TelegramUserLink.Create(clientId, 99, 1001, Now.UtcDateTime);
@@ -117,12 +116,16 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
             Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         Assert.Equal("SinVinculo", added.Single().Status.Value);
         Assert.Equal("Recordatorio1h", added.Single().Type.Value);
+        Assert.NotNull(added.Single().ClientId);
+        Assert.Null(added.Single().UserId);
     }
 
     [Fact]
-    public async Task Handle_defers_when_owner_user_id_is_missing()
+    public async Task Handle_defers_when_the_appointment_has_no_client()
     {
-        ArrangeAppointments(CreateAppointment(Guid.Empty, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1)));
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        SetProperty(appointment.ClientPet!, nameof(ClientPetEntity.Client), null);
+        ArrangeAppointments(appointment);
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
 
@@ -134,11 +137,29 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
             Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
+    // Los clientes nuevos no tienen usuario: su recordatorio se registra con ClientId.
+    [Fact]
+    public async Task Handle_records_the_reminder_against_the_client_and_never_a_user()
+    {
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var client = appointment.ClientPet!.Client!;
+        ArrangeAppointments(appointment);
+        links.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
+            .Returns(TelegramUserLink.Create(client.Id, 99, 1001, Now.UtcDateTime));
+
+        var result = await Sut().Handle(Command(), CancellationToken.None);
+
+        Assert.Equal(1, result.Delivered);
+        var notification = Assert.Single(added);
+        Assert.Equal(client.Id, notification.ClientId);
+        Assert.Null(notification.UserId);
+        Assert.Equal("Enviado", notification.Status.Value);
+    }
+
     [Fact]
     public async Task Handle_records_missing_pet_as_sin_vinculo()
     {
-        var ownerId = Guid.NewGuid();
-        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         SetProperty(appointment.ClientPet!, nameof(ClientPetEntity.Pet), null);
         ArrangeAppointments(appointment);
 
@@ -151,13 +172,14 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
             Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         Assert.Equal("SinVinculo", added.Single().Status.Value);
         Assert.Equal("Recordatorio1h", added.Single().Type.Value);
+        Assert.NotNull(added.Single().ClientId);
+        Assert.Null(added.Single().UserId);
     }
 
     [Fact]
     public async Task Handle_skips_when_recordatorio1h_already_exists()
     {
-        var ownerId = Guid.NewGuid();
-        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         ArrangeAppointments(appointment);
         unitOfWork.NotificationsRepository.GetNotifiedAppointmentIdsAsync(
                 Arg.Any<IReadOnlyCollection<Guid>>(),
@@ -176,8 +198,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     [Fact]
     public async Task Handle_sends_even_when_24h_recordatorio_exists()
     {
-        var ownerId = Guid.NewGuid();
-        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         ArrangeAppointments(appointment);
         var clientId = appointment.ClientPet!.Client!.Id;
         links.GetByClientIdAsync(clientId, Arg.Any<CancellationToken>())
@@ -199,8 +220,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     [InlineData("NO_ASISTIO")]
     public async Task Handle_ignores_non_eligible_status(string status)
     {
-        var ownerId = Guid.NewGuid();
-        ArrangeAppointments(CreateAppointment(ownerId, "Luna", status, Now.UtcDateTime.AddHours(1)));
+        ArrangeAppointments(CreateAppointment("Luna", status, Now.UtcDateTime.AddHours(1)));
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
 
@@ -213,8 +233,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     [Fact]
     public async Task Handle_ignores_appointment_outside_window()
     {
-        var ownerId = Guid.NewGuid();
-        ArrangeAppointments(CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(2)));
+        ArrangeAppointments(CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(2)));
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
 
@@ -227,8 +246,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     [Fact]
     public async Task Handle_does_not_persist_when_telegram_send_fails()
     {
-        var ownerId = Guid.NewGuid();
-        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var appointment = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         var clientId = appointment.ClientPet!.Client!.Id;
         ArrangeAppointments(appointment);
         links.GetByClientIdAsync(clientId, Arg.Any<CancellationToken>())
@@ -247,10 +265,8 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     [Fact]
     public async Task Handle_continues_batch_when_one_send_fails()
     {
-        var ownerA = Guid.NewGuid();
-        var ownerB = Guid.NewGuid();
-        var first = CreateAppointment(ownerA, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
-        var second = CreateAppointment(ownerB, "Rocky", "CONFIRMADA", Now.UtcDateTime.AddMinutes(55));
+        var first = CreateAppointment("Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var second = CreateAppointment("Rocky", "CONFIRMADA", Now.UtcDateTime.AddMinutes(55));
         ArrangeAppointments(first, second);
         var clientAId = first.ClientPet!.Client!.Id;
         var clientBId = second.ClientPet!.Client!.Id;
@@ -287,7 +303,6 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
             .Returns(appointments);
 
     private static Appointment CreateAppointment(
-        Guid ownerUserId,
         string petName,
         string statusName,
         DateTime scheduledStartUtc)
@@ -295,7 +310,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
         var species = new SpeciesEntity("Perro");
         var race = new RaceEntity("Labrador", species);
         var pet = new PetEntity(petName, 5, "F", 10m, null, species, race);
-        var client = TestClients.Create("1234567890", null).WithLegacyUserId(ownerUserId);
+        var client = TestClients.Create("1234567890", null);
         var clientPet = new ClientPetEntity(client, pet, true);
         SetProperty(clientPet, nameof(ClientPetEntity.Client), client);
         SetProperty(clientPet, nameof(ClientPetEntity.Pet), pet);

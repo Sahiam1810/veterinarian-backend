@@ -26,7 +26,7 @@ public sealed class MarkNotificationAsReadCommandHandlerTests
     public async Task Handle_marks_own_notification_as_read()
     {
         var personId = Guid.NewGuid();
-        var notification = new Notification(
+        var notification = Notification.ForUser(
             personId,
             Guid.NewGuid(),
             "Recordatorio: tienes una cita.",
@@ -65,7 +65,7 @@ public sealed class MarkNotificationAsReadCommandHandlerTests
     {
         var ownerId = Guid.NewGuid();
         var actorId = Guid.NewGuid();
-        var notification = new Notification(
+        var notification = Notification.ForUser(
             ownerId,
             Guid.NewGuid(),
             "Recordatorio: tienes una cita.",

@@ -18,11 +18,4 @@ internal static class TestClients
             identificationNumber,
             phoneNumber,
             address);
-
-    // Vestigio hasta la T8/T11: el recordatorio por Telegram todavía lee Client.UserId.
-    public static ClientEntity WithLegacyUserId(this ClientEntity client, Guid userId)
-    {
-        typeof(ClientEntity).GetProperty(nameof(ClientEntity.UserId))!.SetValue(client, userId);
-        return client;
-    }
 }

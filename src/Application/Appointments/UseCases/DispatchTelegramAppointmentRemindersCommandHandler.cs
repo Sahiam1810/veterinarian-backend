@@ -101,10 +101,10 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
         DateTime now,
         CancellationToken cancellationToken)
     {
-        var ownerUserId = appointment.ClientPet?.Client?.UserId;
-        if (ownerUserId is null || ownerUserId == Guid.Empty)
+        var client = appointment.ClientPet?.Client;
+        if (client is null)
         {
-            // Notification.UserId is required; without an owner we cannot persist SinVinculo.
+            // Sin cliente no se puede registrar el recordatorio (ni SinVinculo).
             return ProcessOutcome.Deferred;
         }
 
@@ -115,7 +115,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
         if (string.IsNullOrWhiteSpace(petName))
         {
             await PersistAsync(
-                ownerUserId.Value,
+                client.Id,
                 appointment.Id,
                 message,
                 now,
@@ -125,11 +125,11 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
         }
 
         var link = await telegramUnitOfWork.UserLinksRepository
-            .GetByClientIdAsync(appointment.ClientPet!.Client!.Id, cancellationToken);
+            .GetByClientIdAsync(client.Id, cancellationToken);
         if (link is not { IsActive: true })
         {
             await PersistAsync(
-                ownerUserId.Value,
+                client.Id,
                 appointment.Id,
                 message,
                 now,
@@ -152,7 +152,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
         }
 
         await PersistAsync(
-            ownerUserId.Value,
+            client.Id,
             appointment.Id,
             message,
             now,
@@ -162,15 +162,15 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
     }
 
     private async Task PersistAsync(
-        Guid userId,
+        Guid clientId,
         Guid appointmentId,
         string message,
         DateTime now,
         string status,
         CancellationToken cancellationToken)
     {
-        var notification = new Notification(
-            userId,
+        var notification = Notification.ForClient(
+            clientId,
             appointmentId,
             message,
             now,

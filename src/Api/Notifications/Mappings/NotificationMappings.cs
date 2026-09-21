@@ -37,7 +37,7 @@ public static class NotificationMappings
     {
         return new NotificationResponse(
             entity.Id,
-            entity.UserId,
+            entity.UserId!.Value,
             entity.User?.FullName,
             entity.AppointmentId,
             entity.Message.Value,
