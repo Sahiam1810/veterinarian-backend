@@ -9,7 +9,7 @@ namespace Infrastructure.Tests.Clients;
 public sealed class ClientPhoneUniquenessPersistenceTests
 {
     [Fact]
-    public void Client_mapping_has_nullable_unique_phone_number_index()
+    public void Client_mapping_has_required_unique_phone_number_index()
     {
         using var context = CreateOracleModelContext();
         var entityType = context.Model.FindEntityType(typeof(ClientEntity));
@@ -17,7 +17,7 @@ public sealed class ClientPhoneUniquenessPersistenceTests
 
         var phone = entityType!.FindProperty(nameof(ClientEntity.PhoneNumber));
         Assert.NotNull(phone);
-        Assert.True(phone!.IsNullable);
+        Assert.False(phone!.IsNullable);
 
         Assert.Contains(entityType.GetIndexes(), index =>
             index.IsUnique

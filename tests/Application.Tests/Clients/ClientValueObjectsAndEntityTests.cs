@@ -1,0 +1,35 @@
+using Domain.Clients.Entities;
+using Domain.Clients.ValueObjects;
+using Xunit;
+
+namespace Application.Tests.Clients;
+
+public sealed class ClientValueObjectsAndEntityTests
+{
+    [Fact]
+    public void FullName_trims_and_rejects_invalid_values()
+    {
+        Assert.Equal("Ana Perez", ClientFullName.Create("  Ana Perez ").Value);
+        Assert.Throws<ArgumentException>(() => ClientFullName.Create(" "));
+        Assert.Throws<ArgumentException>(() => ClientFullName.Create(new string('a', 151)));
+    }
+
+    [Fact]
+    public void Email_normalizes_and_validates_values()
+    {
+        Assert.Equal("ana@test.com", ClientEmail.Create(" Ana@Test.COM ").Value);
+        Assert.Throws<ArgumentException>(() => ClientEmail.Create("invalid"));
+    }
+
+    [Fact]
+    public void Client_requires_phone_and_tracks_activation()
+    {
+        Assert.Throws<ArgumentException>(() => new ClientEntity(Guid.NewGuid(), "Ana", "ana@test.com", "123", "", null));
+        var client = new ClientEntity(Guid.NewGuid(), "Ana", "ana@test.com", "123", "3001234567", null);
+        client.Deactivate();
+        Assert.False(client.IsActive);
+        Assert.NotNull(client.UpdatedAt);
+        client.Activate();
+        Assert.True(client.IsActive);
+    }
+}

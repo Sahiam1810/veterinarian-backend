@@ -55,11 +55,10 @@ public sealed class ClientIdentificationLookupRateLimitedApiFactory : WebApplica
             Environment.SetEnvironmentVariable(setting.Key, setting.Value);
         }
 
-        var knownClient = new ClientEntity(
+        var knownClient = TestClients.Create(
             Guid.Parse("cccccccc-3333-3333-3333-333333333333"),
             "9001002003",
             "N/A",
-            registrationDate: new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
             phoneNumber: "3000000001");
 
         Sender.Send(Arg.Any<GetClientByIdentificationQuery>(), Arg.Any<CancellationToken>())

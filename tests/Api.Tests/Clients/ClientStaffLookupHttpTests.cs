@@ -185,7 +185,7 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
 
     private void ConfigureSenderDefaults()
     {
-        var clientEntity = new ClientEntity(
+        var clientEntity = TestClients.Create(
             userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Operativa 10",

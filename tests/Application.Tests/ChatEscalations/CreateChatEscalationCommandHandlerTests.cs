@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 using UserEntity = Domain.Users.Entities.Users;
+using Application.Tests.Common;
 
 namespace Application.Tests.ChatEscalations;
 
@@ -90,7 +91,7 @@ public sealed class CreateChatEscalationCommandHandlerTests
         var profile = ChatUserProfile.Create(userId, null, null, null);
         var clientParticipant = ChatParticipant.Create(
             ConversationId, ClientParticipantTypeId, chatUserProfileId: profile.Id);
-        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
+        var client = TestClients.Create(userId, "1234567890", null, phoneNumber: "3001234567");
         var user = new UserEntity("Ana Pérez", "ana@example.test", null, Guid.NewGuid());
 
         fixture.Uow.ChatConversationsRepository

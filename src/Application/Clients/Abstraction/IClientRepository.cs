@@ -15,6 +15,10 @@ public interface IClientRepository
         string identificationNumber,
         CancellationToken cancellationToken);
 
+    Task<ClientEntity?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken);
+
     // Lookup por teléfono normalizado (solo dígitos).
     Task<ClientEntity?> GetByPhoneAsync(
         string phoneNumber,
@@ -31,6 +35,11 @@ public interface IClientRepository
 
     Task<bool> ExistsByIdentificationNumberAsync(
         string identificationNumber,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null);
+
+    Task<bool> ExistsByEmailAsync(
+        string email,
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 

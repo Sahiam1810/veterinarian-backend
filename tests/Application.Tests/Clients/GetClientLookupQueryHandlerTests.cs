@@ -4,6 +4,7 @@ using Application.Common.Exceptions;
 using Domain.Clients.Entities;
 using NSubstitute;
 using Xunit;
+using Application.Tests.Common;
 
 namespace Application.Tests.Clients;
 
@@ -22,7 +23,7 @@ public sealed class GetClientLookupQueryHandlerTests
     [Fact]
     public async Task Handle_returns_client_when_lookup_matches()
     {
-        var client = new ClientEntity(
+        var client = TestClients.Create(
             userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Falsa 123",

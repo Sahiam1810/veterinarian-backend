@@ -20,6 +20,7 @@ using Domain.VeterinarianAbsences.Entities;
 using NSubstitute;
 using Xunit;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -207,7 +208,7 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
         {
             var userId = Guid.NewGuid();
             Account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
-            Client = new ClientEntity(userId, "1095914051", null);
+            Client = TestClients.Create(userId, "1095914051", null);
             var species = new SpeciesEntity("Perro");
             var pet = new PetEntity(
                 "Pacho",

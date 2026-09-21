@@ -16,6 +16,7 @@ using Domain.StatusAppointments.Entities;
 using Application.StatusAppointments.Abstraction;
 using NSubstitute;
 using Xunit;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -43,26 +44,6 @@ public sealed class AppointmentRequesterPhonePolicyTests
     }
 
     [Fact]
-    public async Task Create_uses_request_phone_when_profile_phone_missing()
-    {
-        var fixture = CreateStaffFixture(profilePhone: null);
-        var command = fixture.Command with { RequesterPhoneNumber = "+57 301 555 1234" };
-
-        Appointment? added = null;
-        fixture.Appointments.AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                added = call.ArgAt<Appointment>(0);
-                return Task.CompletedTask;
-            });
-
-        await fixture.CreateSut.Handle(command, CancellationToken.None);
-
-        Assert.NotNull(added);
-        Assert.Equal("573015551234", added!.RequesterPhoneNumber?.Value);
-    }
-
-    [Fact]
     public async Task CreateMy_uses_profile_phone_when_request_differs()
     {
         // Reusa el fixture de CreateMy via handler real: se cubre en CreateMy tests actualizados.
@@ -71,7 +52,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
         var clients = Substitute.For<IClientRepository>();
 
         var userId = Guid.NewGuid();
-        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
+        var client = TestClients.Create(userId, "1234567890", null, phoneNumber: "3001234567");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
@@ -92,34 +73,6 @@ public sealed class AppointmentRequesterPhonePolicyTests
     }
 
     [Fact]
-    public async Task Resolve_uses_request_when_profile_missing()
-    {
-        var unitOfWork = Substitute.For<IUnitOfWork>();
-        var clientPets = Substitute.For<IClientPetRepository>();
-        var clients = Substitute.For<IClientRepository>();
-
-        var userId = Guid.NewGuid();
-        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: null);
-        var species = new SpeciesEntity("Canino");
-        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
-        var clientPet = new ClientPetEntity(client, pet, true);
-
-        unitOfWork.ClientPetsRepository.Returns(clientPets);
-        unitOfWork.ClientsRepository.Returns(clients);
-        clientPets.GetByIdAsync(clientPet.Id, Arg.Any<CancellationToken>()).Returns(clientPet);
-        clients.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
-
-        var phone = await AppointmentRequesterPhonePolicy.ResolveAsync(
-            unitOfWork,
-            clientPet.Id,
-            "+57 301 555 1234",
-            requirePhone: true,
-            CancellationToken.None);
-
-        Assert.Equal("573015551234", phone);
-    }
-
-    [Fact]
     public async Task Update_realigns_requester_phone_to_profile_when_stale()
     {
         var unitOfWork = Substitute.For<IUnitOfWork>();
@@ -134,7 +87,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
         var availability = new Availability(
             veterinarianId, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(18, 0));
         var userId = Guid.NewGuid();
-        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
+        var client = TestClients.Create(userId, "1234567890", null, phoneNumber: "3001234567");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);
@@ -192,7 +145,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
         Assert.Equal("3001234567", appointment.RequesterPhoneNumber?.Value);
     }
 
-    private static StaffFixture CreateStaffFixture(string? profilePhone)
+    private static StaffFixture CreateStaffFixture(string profilePhone)
     {
         var unitOfWork = Substitute.For<IUnitOfWork>();
         var appointments = Substitute.For<IAppointmentRepository>();
@@ -207,7 +160,7 @@ public sealed class AppointmentRequesterPhonePolicyTests
             veterinarianId, DayOfWeek.Monday, new TimeOnly(8, 0), new TimeOnly(18, 0));
 
         var userId = Guid.NewGuid();
-        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: profilePhone);
+        var client = TestClients.Create(userId, "1234567890", null, phoneNumber: profilePhone);
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);

@@ -47,8 +47,16 @@ public sealed class UpdateClientOwnerProfileCommandHandler
 
         // Mismo rol de siempre: este endpoint nunca cambia el rol del dueño.
         user.Update(request.FullName, request.Email, user.RoleId);
+        client.Update(
+            client.UserId,
+            request.FullName,
+            request.Email,
+            client.IdentificationNumber.Value,
+            client.PhoneNumber.Value,
+            client.Address?.Value);
 
         await _uow.UsersRepository.UpdateAsync(user, cancellationToken);
+        await _uow.ClientsRepository.UpdateAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
     }
 }

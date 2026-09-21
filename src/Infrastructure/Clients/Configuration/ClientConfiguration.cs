@@ -29,6 +29,28 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => Guid.Parse(str))
             .IsRequired();
 
+        builder.Property(client => client.FullName)
+            .HasColumnName("FULL_NAME")
+            .HasColumnType("VARCHAR2(150)")
+            .HasConversion(name => name.Value, str => ClientFullName.Create(str))
+            .IsRequired();
+
+        builder.Property(client => client.Email)
+            .HasColumnName("EMAIL")
+            .HasColumnType("VARCHAR2(150)")
+            .HasConversion(email => email.Value, str => ClientEmail.Create(str))
+            .IsRequired();
+
+        builder.HasIndex(client => client.Email)
+            .IsUnique()
+            .HasDatabaseName("UX_CLIENTS_EMAIL");
+
+        builder.Property(client => client.IsActive)
+            .HasColumnName("IS_ACTIVE")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
+            .IsRequired();
+
         builder.Property(client => client.IdentificationNumber)
             .HasColumnName("IDENTIFICATION_NUMBER")
             .HasMaxLength(ClientIdentificationNumber.MaxLength)
@@ -57,19 +79,14 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
             .HasColumnName("PHONE_NUMBER")
             .HasMaxLength(ClientPhoneNumber.MaxLength)
             .HasConversion(
-                phone => phone == null ? null : phone.Value,
-                str => ClientPhoneNumber.CreateOptional(str))
-            .IsRequired(false);
+                phone => phone.Value,
+                str => ClientPhoneNumber.Create(str))
+            .IsRequired();
 
-        // UNIQUE nullable: varios NULL permitidos; filtro alinea con migración EF Oracle.
+        // UNIQUE obligatorio: el teléfono es requerido, sin filtro.
         builder.HasIndex(client => client.PhoneNumber)
             .IsUnique()
-            .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER")
-            .HasFilter("\"PHONE_NUMBER\" IS NOT NULL");
-
-        builder.Property(client => client.RegistrationDate)
-            .HasColumnName("REGISTRATION_DATE")
-            .IsRequired();
+            .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER");
 
         builder.Property(client => client.CreatedAt)
             .HasColumnName("CREATED_AT")

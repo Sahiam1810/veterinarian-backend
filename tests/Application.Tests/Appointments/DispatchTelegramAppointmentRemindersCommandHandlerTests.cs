@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -286,7 +287,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
         var species = new SpeciesEntity("Perro");
         var race = new RaceEntity("Labrador", species);
         var pet = new PetEntity(petName, 5, "F", 10m, null, species, race);
-        var client = new ClientEntity(ownerUserId, "1234567890", null);
+        var client = TestClients.Create(ownerUserId, "1234567890", null);
         var clientPet = new ClientPetEntity(client, pet, true);
         SetProperty(clientPet, nameof(ClientPetEntity.Client), client);
         SetProperty(clientPet, nameof(ClientPetEntity.Pet), pet);

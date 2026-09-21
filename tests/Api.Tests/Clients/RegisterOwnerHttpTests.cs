@@ -249,7 +249,7 @@ public sealed class RegisterOwnerApiFactory : WebApplicationFactory<AuthControll
             .Returns(_ => new RegisterOwnerResult(Guid.NewGuid(), Guid.NewGuid()));
 
         Sender.Send(Arg.Any<Application.Clients.UseCases.GetClientByIdQuery>(), Arg.Any<CancellationToken>())
-            .Returns(_ => new Domain.Clients.Entities.ClientEntity(
+            .Returns(_ => Api.Tests.Support.TestClients.Create(
                 userId: Guid.NewGuid(),
                 identificationNumber: "1234567890",
                 address: "Calle Falsa 123",

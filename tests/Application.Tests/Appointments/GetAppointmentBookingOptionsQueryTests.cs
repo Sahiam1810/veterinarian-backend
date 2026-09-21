@@ -13,6 +13,7 @@ using NSubstitute;
 using Xunit;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserEntity = Domain.Users.Entities.Users;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -26,7 +27,7 @@ public sealed class GetAppointmentBookingOptionsQueryTests
         var accountId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
-        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: null);
+        var client = TestClients.Create(userId, "1234567890", null);
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
@@ -44,7 +45,8 @@ public sealed class GetAppointmentBookingOptionsQueryTests
         Assert.Equal("Luna", Assert.Single(result.Pets).Name);
         Assert.Equal("Consulta", Assert.Single(result.Services).Name);
         Assert.Equal("Dra. Ana", Assert.Single(result.Veterinarians).FullName);
-        Assert.True(result.RequiresRequesterPhoneNumber);
+        // El teléfono del cliente es obligatorio: nunca hace falta pedir el del solicitante.
+        Assert.False(result.RequiresRequesterPhoneNumber);
     }
 
     [Fact]

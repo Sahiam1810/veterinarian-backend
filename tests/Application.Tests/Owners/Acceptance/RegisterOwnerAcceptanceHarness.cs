@@ -238,6 +238,17 @@ internal sealed class InMemoryClients : IClientRepository
             && (!excludedId.HasValue || client.Id != excludedId.Value)));
     }
 
+    public Task<bool> ExistsByEmailAsync(
+        string email,
+        CancellationToken cancellationToken,
+        Guid? excludedId = null)
+    {
+        var expected = ClientEmail.Create(email).Value;
+        return Task.FromResult(Items.Any(client =>
+            client.Email.Value == expected
+            && (!excludedId.HasValue || client.Id != excludedId.Value)));
+    }
+
     public Task<bool> ExistsByPhoneAsync(
         string phoneNumber,
         CancellationToken cancellationToken,
@@ -267,6 +278,12 @@ internal sealed class InMemoryClients : IClientRepository
         var expected = ClientIdentificationNumber.Create(identificationNumber).Value;
         return Task.FromResult(Items.FirstOrDefault(client =>
             client.IdentificationNumber.Value == expected));
+    }
+
+    public Task<ClientEntity?> GetByEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        var expected = ClientEmail.Create(email).Value;
+        return Task.FromResult(Items.FirstOrDefault(client => client.Email.Value == expected));
     }
 
     public Task<ClientEntity?> GetByPhoneAsync(string phoneNumber, CancellationToken cancellationToken)
