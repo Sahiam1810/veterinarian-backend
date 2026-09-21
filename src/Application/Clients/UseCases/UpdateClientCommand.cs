@@ -8,11 +8,12 @@ namespace Application.Clients.UseCases;
 
 public sealed record UpdateClientCommand(
     Guid Id,
-    Guid UserId,
+    string FullName,
+    string Email,
     string IdentificationNumber,
-    string? Address,
-    DateTime? RegistrationDate = null,
-    string? PhoneNumber = null) : IRequest;
+    string? PhoneNumber = null,
+    string? Address = null,
+    bool IsActive = true) : IRequest;
 
 public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCommand>
 {
@@ -31,12 +32,6 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
             throw new NotFoundException("Cliente no encontrado.");
         }
 
-        var user = await _uow.UsersRepository.GetByIdAsync(request.UserId, cancellationToken);
-        if (user is null)
-        {
-            throw new NotFoundException("Usuario no encontrado.");
-        }
-
         var exists = await _uow.ClientsRepository.ExistsByIdentificationNumberAsync(
             request.IdentificationNumber,
             cancellationToken,
@@ -44,17 +39,21 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
 
         if (exists)
         {
-            throw new ConflictException("Ya existe otro cliente con ese número de identificación.");
+            throw new ConflictException(
+                "Ya existe otro cliente con ese número de identificación.",
+                ClientErrorCodes.IdentificationAlreadyInUse);
         }
 
-        var userAlreadyHasClient = await _uow.ClientsRepository.ExistsByUserIdAsync(
-            request.UserId,
+        var emailInUse = await _uow.ClientsRepository.ExistsByEmailAsync(
+            request.Email,
             cancellationToken,
             request.Id);
 
-        if (userAlreadyHasClient)
+        if (emailInUse)
         {
-            throw new ConflictException("Ese usuario ya tiene otro perfil de cliente asociado.");
+            throw new ConflictException(
+                "Ya existe otro cliente con ese correo electrónico.",
+                ClientErrorCodes.EmailAlreadyInUse);
         }
 
         // Update no deja el teléfono vacío: Create exige dígitos válidos.
@@ -72,11 +71,20 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
         }
 
         client.Update(
-            request.UserId,
+            request.FullName,
+            request.Email,
             request.IdentificationNumber,
-            request.Address,
-            request.RegistrationDate,
-            phoneNumber.Value);
+            phoneNumber.Value,
+            request.Address);
+
+        if (request.IsActive)
+        {
+            client.Activate();
+        }
+        else
+        {
+            client.Deactivate();
+        }
 
         await _uow.ClientsRepository.UpdateAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

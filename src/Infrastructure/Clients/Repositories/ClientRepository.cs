@@ -1,4 +1,4 @@
-﻿using Application.Clients.Abstraction;
+using Application.Clients.Abstraction;
 using Domain.Clients.Entities;
 using Domain.Clients.ValueObjects; // ðŸ‘ˆ 1. Importante para usar ClientIdentificationNumber
 using Infrastructure.Persistence;
@@ -121,6 +121,21 @@ public sealed class ClientRepository : IClientRepository
     {
         var query = _context.Set<ClientEntity>()
             .Where(c => c.UserId == userId);
+
+        if (excludedId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludedId.Value);
+        }
+
+        return await query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken, Guid? excludedId = null)
+    {
+        var emailVo = ClientEmail.Create(email);
+
+        var query = _context.Set<ClientEntity>()
+            .Where(c => c.Email == emailVo);
 
         if (excludedId.HasValue)
         {

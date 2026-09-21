@@ -9,9 +9,13 @@ public static class OwnerRegistrationErrors
 {
     private const string GenericDescription = "Owner registration failed.";
 
-    public static readonly Error EmailAlreadyInUse = AuthenticationErrors.UserAlreadyExists;
+    public static readonly Error EmailAlreadyInUse = new(
+        ClientErrorCodes.EmailAlreadyInUse,
+        GenericDescription);
 
-    public static readonly Error IdentificationAlreadyInUse = AuthenticationErrors.IdentificationNumberAlreadyExists;
+    public static readonly Error IdentificationAlreadyInUse = new(
+        ClientErrorCodes.IdentificationAlreadyInUse,
+        GenericDescription);
 
     public static readonly Error PhoneAlreadyInUse = new(
         ClientErrorCodes.PhoneAlreadyInUse,
@@ -29,7 +33,4 @@ public static class OwnerRegistrationErrors
         "OwnerRegistration.ProofPurposeInvalid",
         GenericDescription);
 
-    public static readonly Error ClientRoleMissing = new(
-        "OwnerRegistration.ClientRoleMissing",
-        GenericDescription);
 }

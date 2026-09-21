@@ -73,17 +73,17 @@ public sealed class CompleteTelegramRegistrationCommandHandler(
                     transactionToken);
 
                 var link = TelegramUserLink.Create(
-                    registerResult.UserId,
+                    registerResult.ClientId,
                     session.TelegramUserId,
                     session.TelegramChatId,
                     now);
 
                 await unitOfWork.UserLinksRepository.AddAsync(link, transactionToken);
-                session.Complete(registerResult.UserId, now);
+                session.Complete(registerResult.ClientId, now);
                 await unitOfWork.RegistrationSessionsRepository.UpdateAsync(session, transactionToken);
 
                 completed = Result<CompletedTelegramRegistration>.Success(
-                    new CompletedTelegramRegistration(registerResult.UserId, session.TelegramChatId));
+                    new CompletedTelegramRegistration(registerResult.ClientId, session.TelegramChatId));
             }
             catch (ConflictException ex)
             {

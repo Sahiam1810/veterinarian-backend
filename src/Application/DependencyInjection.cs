@@ -20,7 +20,6 @@ public static class DependencyInjection
         });
         services.AddValidatorsFromAssemblyContaining<ApplicationAssemblyMarker>();
         services.AddScoped<IAgentMessageDispatcher, AgentMessageDispatcher>();
-        services.AddScoped<IRegisterOwnerFromStaff, RegisterOwnerFromStaff>();
         services.AddScoped<IRegisterOwnerFromBot, RegisterOwnerFromBot>();
         services.AddScoped<IRegisterOwnerFromTelegram, RegisterOwnerFromTelegram>();
         services.AddScoped<IRegisterOwnerCleanup, RegisterOwnerCleanupStub>();

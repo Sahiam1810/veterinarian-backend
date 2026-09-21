@@ -36,7 +36,11 @@ public sealed class ChatConversationClientResolver(
             return ChatConversationClientInfo.Empty;
         }
 
-        var user = await uow.UsersRepository.GetByIdAsync(client.UserId, cancellationToken);
-        return new ChatConversationClientInfo(client.Id, user?.FullName, client.PhoneNumber?.Value);
+        if (client.UserId is null)
+        {
+            return new ChatConversationClientInfo(client.Id, client.FullName.Value, client.PhoneNumber?.Value);
+        }
+
+        return new ChatConversationClientInfo(client.Id, client.FullName.Value, client.PhoneNumber?.Value);
     }
 }

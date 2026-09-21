@@ -31,19 +31,13 @@ public sealed class RegisterOwnerCommandHandler(
         var email = UserEmail.Create(request.Email).Value;
         var phone = ClientPhoneNumber.Create(request.PhoneNumber).Value;
 
-        var clientRole = await unitOfWork.RolesRepository.GetByNameAsync(
-            WebPlatformAccess.ClientRoleName,
-            cancellationToken)
-            ?? throw new NotFoundException(
-                OwnerRegistrationErrors.ClientRoleMissing.Description);
-
-        var emailInUse = await unitOfWork.UsersRepository.ExistsByEmailAsync(
+        var emailInUse = await unitOfWork.ClientsRepository.ExistsByEmailAsync(
             email,
             cancellationToken);
         if (emailInUse)
         {
             throw new ConflictException(
-                "Ya existe un usuario con ese correo electrónico.",
+                "Ya existe un cliente con ese correo electrónico.",
                 OwnerRegistrationErrors.EmailAlreadyInUse.Code);
         }
 
@@ -75,29 +69,21 @@ public sealed class RegisterOwnerCommandHandler(
                 await ConsumeRegisterProofAsync(email, request, transactionToken);
             }
 
-            var user = new UserEntity(
+            var client = new ClientEntity(
                 request.FullName.Trim(),
                 email,
-                passwordHash: null,
-                clientRole.Id);
-
-            await unitOfWork.UsersRepository.AddAsync(user, transactionToken);
-
-            var client = new ClientEntity(
-                user.Id,
                 request.IdentificationNumber,
-                request.Address,
-                phoneNumber: phone);
+                phoneNumber: phone,
+                address: request.Address);
 
             await unitOfWork.ClientsRepository.AddAsync(client, transactionToken);
-            result = new RegisterOwnerResult(user.Id, client.Id);
+            result = new RegisterOwnerResult(client.Id);
         }, cancellationToken);
 
         // Ids + canal; nunca email, teléfono, cédula ni proof.
         logger.LogInformation(
-            "Owner registered. UserId={UserId} ClientId={ClientId} Channel={Channel}",
-            result!.UserId,
-            result.ClientId,
+            "Owner registered. ClientId={ClientId} Channel={Channel}",
+            result!.ClientId,
             request.Channel);
 
         return result;

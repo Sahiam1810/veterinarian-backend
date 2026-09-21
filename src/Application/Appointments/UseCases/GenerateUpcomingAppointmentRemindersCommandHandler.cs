@@ -1,4 +1,4 @@
-using Application.Appointments.Abstraction;
+ using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Notifications.Abstraction;
 using Domain.Appointments.Entities;
@@ -61,7 +61,7 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandler(
             var localStart = TimeZoneInfo.ConvertTimeFromUtc(appointment.ScheduledStart, timeZone);
 
             var ownerReminder = new Notification(
-                appointment.ClientPet!.Client!.UserId,
+                appointment.ClientPet!.Client!.Id,
                 appointment.Id,
                 BuildOwnerMessage(appointment, localStart),
                 now,
