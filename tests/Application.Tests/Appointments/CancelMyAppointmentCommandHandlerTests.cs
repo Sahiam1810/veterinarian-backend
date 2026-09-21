@@ -15,7 +15,6 @@ using Domain.Species.Entities;
 using Domain.StatusAppointments.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
@@ -80,6 +79,23 @@ public sealed class CancelMyAppointmentCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_rejects_an_unknown_client()
+    {
+        var fixture = new Fixture("AGENDADA");
+        var command = fixture.Command with { ClientId = Guid.NewGuid() };
+
+        var exception = await Assert.ThrowsAsync<NotFoundException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+
+        Assert.Equal("Cliente no encontrado.", exception.Message);
+        await fixture.Appointments.DidNotReceive().GetByIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+        await fixture.UnitOfWork.DidNotReceive().SaveChangesAsync(
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_rejects_an_owned_appointment_in_another_terminal_status()
     {
         var fixture = new Fixture("ATENDIDA");
@@ -109,7 +125,6 @@ public sealed class CancelMyAppointmentCommandHandlerTests
         public IAppointmentStatusHistoryRepository Histories { get; } =
             Substitute.For<IAppointmentStatusHistoryRepository>();
 
-        public UserAccountEntity Account { get; }
         public ClientEntity Client { get; }
         public Appointment Appointment { get; }
         public StatusAppointment CancelledStatus { get; } = new("CANCELADA", null);
@@ -118,8 +133,6 @@ public sealed class CancelMyAppointmentCommandHandlerTests
 
         public Fixture(string currentStatusName)
         {
-            var userId = Guid.NewGuid();
-            Account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
             Client = TestClients.Create("1095914051", null);
             var species = new SpeciesEntity("Perro");
             var pet = new PetEntity(
@@ -148,19 +161,15 @@ public sealed class CancelMyAppointmentCommandHandlerTests
                 "Control");
             Command = new CancelMyAppointmentCommand(
                 Appointment.Id,
-                Account.Id,
+                Client.Id,
                 "Cancelada desde Telegram");
 
             UnitOfWork.AppointmentsRepository.Returns(Appointments);
             UnitOfWork.ClientPetsRepository.Returns(ClientPets);
             UnitOfWork.StatusAppointmentsRepository.Returns(Statuses);
             UnitOfWork.AppointmentStatusHistoriesRepository.Returns(Histories);
-            UnitOfWork.UserAccountsRepository.GetByIdAsync(
-                    Account.Id,
-                    Arg.Any<CancellationToken>())
-                .Returns(Account);
-            UnitOfWork.ClientsRepository.GetByUserIdAsync(
-                    Account.UserId,
+            UnitOfWork.ClientsRepository.GetByIdAsync(
+                    Client.Id,
                     Arg.Any<CancellationToken>())
                 .Returns(Client);
             Appointments.GetByIdAsync(Appointment.Id, Arg.Any<CancellationToken>())

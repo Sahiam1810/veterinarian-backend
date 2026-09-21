@@ -7,7 +7,7 @@ public sealed class CreateMyAppointmentCommandValidator
 {
     public CreateMyAppointmentCommandValidator()
     {
-        RuleFor(command => command.UserAccountId).NotEmpty();
+        RuleFor(command => command.ClientId).NotEmpty();
         RuleFor(command => command.PetId).NotEmpty();
         RuleFor(command => command.VeterinarianId).NotEmpty();
         RuleFor(command => command.ServiceId).NotEmpty();

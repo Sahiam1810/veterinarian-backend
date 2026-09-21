@@ -6,7 +6,7 @@ using MediatR;
 namespace Application.Appointments.UseCases;
 
 public sealed record GetMyAppointmentsQuery(
-    Guid UserAccountId,
+    Guid ClientId,
     AppointmentQueryScope Scope = AppointmentQueryScope.All)
     : IRequest<IReadOnlyCollection<Appointment>>;
 
@@ -17,17 +17,8 @@ public sealed class GetMyAppointmentsQueryHandler(
 {
     public async Task<IReadOnlyCollection<Appointment>> Handle(GetMyAppointmentsQuery request, CancellationToken cancellationToken)
     {
-        var account = await uow.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken);
-        if (account is null)
-        {
-            throw new NotFoundException("Cuenta de usuario no encontrada.");
-        }
-
-        var client = await uow.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
-        if (client is null)
-        {
-            return Array.Empty<Appointment>();
-        }
+        var client = await uow.ClientsRepository.GetByIdAsync(request.ClientId, cancellationToken)
+            ?? throw new NotFoundException("Cliente no encontrado.");
 
         var clientPets = await uow.ClientPetsRepository.GetByClientIdAsync(client.Id, cancellationToken);
         if (clientPets.Count == 0)

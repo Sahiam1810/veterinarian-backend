@@ -39,7 +39,7 @@ public sealed class BotPetsApiTests(TelegramAgentApiFactory factory)
     public async Task Delegated_token_lists_only_pets_for_its_subject()
     {
         factory.Sender.Send(
-                Arg.Is<GetMyPetsQuery>(query => query.UserAccountId == TelegramAgentApiFactory.AccountId),
+                Arg.Is<GetMyPetsQuery>(query => query.ClientId == TelegramAgentApiFactory.ClientId),
                 Arg.Any<CancellationToken>())
             .Returns(Array.Empty<OwnedPetProfile>());
         using var client = factory.CreateJwtClient("telegram_agent");
@@ -58,7 +58,7 @@ public sealed class BotPetsApiTests(TelegramAgentApiFactory factory)
         var profile = Profile(speciesId, raceId);
         factory.Sender.Send(
                 Arg.Is<RegisterMyPetCommand>(command =>
-                    command.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    command.ClientId == TelegramAgentApiFactory.ClientId &&
                     command.SpeciesId == speciesId &&
                     command.RaceId == raceId),
                 Arg.Any<CancellationToken>())
@@ -94,7 +94,7 @@ public sealed class BotPetsApiTests(TelegramAgentApiFactory factory)
         var profile = Profile(speciesId, raceId);
         factory.Sender.Send(
                 Arg.Is<UpdateMyPetProfileCommand>(command =>
-                    command.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    command.ClientId == TelegramAgentApiFactory.ClientId &&
                     command.PetId == petId &&
                     command.ExpectedUpdatedAt == expectedVersion),
                 Arg.Any<CancellationToken>())
@@ -141,7 +141,7 @@ public sealed class TelegramAgentApiFactory : WebApplicationFactory<AuthControll
     private static readonly RsaTestKeys Keys = RsaTestKeys.Create();
     private readonly Dictionary<string, string?> originalEnvironment = [];
 
-    public static readonly Guid AccountId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    public static readonly Guid ClientId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     public ISender Sender { get; } = Substitute.For<ISender>();
 
     public TelegramAgentApiFactory()
@@ -223,7 +223,7 @@ public sealed class TelegramAgentApiFactory : WebApplicationFactory<AuthControll
         };
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, subject ?? AccountId.ToString()),
+            new(JwtRegisteredClaimNames.Sub, subject ?? ClientId.ToString()),
             new("person_id", Guid.NewGuid().ToString()),
             new("role_id", Guid.NewGuid().ToString()),
             new("role", "Cliente")

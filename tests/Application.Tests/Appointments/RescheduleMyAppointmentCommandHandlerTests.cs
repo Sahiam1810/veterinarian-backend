@@ -15,11 +15,9 @@ using Domain.Races.Entities;
 using Domain.Services.Entities;
 using Domain.Species.Entities;
 using Domain.StatusAppointments.Entities;
-using Domain.UserAccounts.Entities;
 using Domain.VeterinarianAbsences.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
@@ -38,6 +36,21 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
         await Assert.ThrowsAsync<ForbiddenException>(
             () => fixture.Sut.Handle(fixture.Command, CancellationToken.None));
 
+        await fixture.Appointments.DidNotReceive().UpdateAsync(
+            Arg.Any<Appointment>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_an_unknown_client()
+    {
+        var fixture = new Fixture();
+        var command = fixture.Command with { ClientId = Guid.NewGuid() };
+
+        var exception = await Assert.ThrowsAsync<NotFoundException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+
+        Assert.Equal("Cliente no encontrado.", exception.Message);
         await fixture.Appointments.DidNotReceive().UpdateAsync(
             Arg.Any<Appointment>(),
             Arg.Any<CancellationToken>());
@@ -195,7 +208,6 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
         public IVeterinarianAbsenceRepository Absences { get; } =
             Substitute.For<IVeterinarianAbsenceRepository>();
 
-        public UserAccountEntity Account { get; }
         public ClientEntity Client { get; }
         public ClientPetEntity ClientPet { get; }
         public Appointment Appointment { get; }
@@ -206,8 +218,6 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
 
         public Fixture()
         {
-            var userId = Guid.NewGuid();
-            Account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
             Client = TestClients.Create("1095914051", null);
             var species = new SpeciesEntity("Perro");
             var pet = new PetEntity(
@@ -240,7 +250,7 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
                 new TimeOnly(12, 0));
             Command = new RescheduleMyAppointmentCommand(
                 Appointment.Id,
-                Account.Id,
+                Client.Id,
                 NewAvailability.Id,
                 new DateTime(2026, 9, 11, 15, 0, 0, DateTimeKind.Utc),
                 new DateTime(2026, 9, 11, 15, 30, 0, DateTimeKind.Utc),
@@ -251,12 +261,8 @@ public sealed class RescheduleMyAppointmentCommandHandlerTests
             UnitOfWork.AvailabilitiesRepository.Returns(Availabilities);
             UnitOfWork.ClientPetsRepository.Returns(ClientPets);
             UnitOfWork.StatusAppointmentsRepository.Returns(Statuses);
-            UnitOfWork.UserAccountsRepository.GetByIdAsync(
-                    Account.Id,
-                    Arg.Any<CancellationToken>())
-                .Returns(Account);
-            UnitOfWork.ClientsRepository.GetByUserIdAsync(
-                    Account.UserId,
+            UnitOfWork.ClientsRepository.GetByIdAsync(
+                    Client.Id,
                     Arg.Any<CancellationToken>())
                 .Returns(Client);
             ClientPets.GetByClientIdAsync(Client.Id, Arg.Any<CancellationToken>())

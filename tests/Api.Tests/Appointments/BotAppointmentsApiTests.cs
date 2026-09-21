@@ -28,7 +28,7 @@ public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
     {
         factory.Sender.Send(
                 Arg.Is<GetMyAppointmentsQuery>(query =>
-                    query.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    query.ClientId == TelegramAgentApiFactory.ClientId &&
                     query.Scope == AppointmentQueryScope.Upcoming),
                 Arg.Any<CancellationToken>())
             .Returns(Array.Empty<Appointment>());
@@ -50,7 +50,7 @@ public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
             false);
         factory.Sender.Send(
                 Arg.Is<GetAppointmentBookingOptionsQuery>(query =>
-                    query.UserAccountId == TelegramAgentApiFactory.AccountId),
+                    query.ClientId == TelegramAgentApiFactory.ClientId),
                 Arg.Any<CancellationToken>())
             .Returns(result);
         using var client = factory.CreateJwtClient("telegram_agent");
@@ -71,7 +71,7 @@ public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
         var date = new DateOnly(2026, 9, 10);
         factory.Sender.Send(
                 Arg.Is<GetAppointmentBookingSlotsQuery>(query =>
-                    query.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    query.ClientId == TelegramAgentApiFactory.ClientId &&
                     query.VeterinarianId == veterinarianId &&
                     query.ServiceId == serviceId &&
                     query.Date == date),
@@ -106,7 +106,7 @@ public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
             null);
         factory.Sender.Send(
                 Arg.Is<CreateMyAppointmentCommand>(command =>
-                    command.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    command.ClientId == TelegramAgentApiFactory.ClientId &&
                     command.PetId == petId &&
                     command.IdempotencyKey == "telegram-update-123"),
                 Arg.Any<CancellationToken>())
@@ -133,7 +133,7 @@ public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
         var appointmentId = Guid.NewGuid();
         factory.Sender.Send(
                 Arg.Is<CancelMyAppointmentCommand>(command =>
-                    command.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    command.ClientId == TelegramAgentApiFactory.ClientId &&
                     command.AppointmentId == appointmentId &&
                     command.Comment == "Ya no puedo asistir"),
                 Arg.Any<CancellationToken>())
@@ -157,7 +157,7 @@ public sealed class BotAppointmentsApiTests(TelegramAgentApiFactory factory)
         factory.Sender.Send(
                 Arg.Is<RescheduleMyAppointmentCommand>(command =>
                     command.AppointmentId == appointmentId &&
-                    command.UserAccountId == TelegramAgentApiFactory.AccountId &&
+                    command.ClientId == TelegramAgentApiFactory.ClientId &&
                     command.AvailabilityId == availabilityId &&
                     command.ScheduledStart == scheduledStart &&
                     command.ScheduledEnd == scheduledEnd &&

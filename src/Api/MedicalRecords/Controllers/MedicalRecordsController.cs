@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.MedicalRecords.Dtos;
@@ -18,19 +17,14 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
     [HttpGet]
     [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene todas las historias médicas")]
-    [EndpointDescription("Retorna el listado de historias médicas: completo para el personal, o solo de sus propias mascotas si quien consulta es un cliente.")]
+    [EndpointDescription("Retorna el listado completo de historias médicas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<MedicalRecordResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IReadOnlyCollection<MedicalRecordResponse>>> GetAll(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
         var records = await sender.Send(
-            new GetAllMedicalRecordsQuery(userAccountId),
+            new GetAllMedicalRecordsQuery(),
             cancellationToken);
 
         return Ok(records.ToResponse());
@@ -39,7 +33,7 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
     [HttpGet("{id:guid}")]
     [RequirePermission("Historiales Clínicos", PermissionAction.View)]
     [EndpointSummary("Obtiene una historia médica por su ID")]
-    [EndpointDescription("Retorna la información detallada de una historia médica específica, si el personal la consulta o si pertenece a una mascota del cliente autenticado.")]
+    [EndpointDescription("Retorna la información detallada de una historia médica específica.")]
     [ProducesResponseType(typeof(MedicalRecordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -47,21 +41,10 @@ public sealed class MedicalRecordsController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
         var record = await sender.Send(
-            new GetMedicalRecordByIdQuery(id, userAccountId),
+            new GetMedicalRecordByIdQuery(id),
             cancellationToken);
 
         return Ok(record.ToResponse());
-    }
-
-    private bool TryGetUserAccountId(out Guid userAccountId)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        return Guid.TryParse(subject, out userAccountId);
     }
 }

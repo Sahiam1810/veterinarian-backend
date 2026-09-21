@@ -15,7 +15,7 @@ public sealed record AppointmentBookingSlot(
     string? ShiftName = null);
 
 public sealed record GetAppointmentBookingSlotsQuery(
-    Guid UserAccountId,
+    Guid ClientId,
     Guid VeterinarianId,
     Guid ServiceId,
     DateOnly Date) : IRequest<IReadOnlyCollection<AppointmentBookingSlot>>;
@@ -31,7 +31,7 @@ public sealed class GetAppointmentBookingSlotsQueryHandler(
         GetAppointmentBookingSlotsQuery request,
         CancellationToken cancellationToken)
     {
-        await EnsureClientAsync(request.UserAccountId, cancellationToken);
+        await EnsureClientAsync(request.ClientId, cancellationToken);
         var service = await unitOfWork.ServicesRepository.GetByIdAsync(
             request.ServiceId,
             cancellationToken)
@@ -88,14 +88,10 @@ public sealed class GetAppointmentBookingSlotsQueryHandler(
             roomOverlaps);
     }
 
-    private async Task EnsureClientAsync(Guid userAccountId, CancellationToken cancellationToken)
+    private async Task EnsureClientAsync(Guid clientId, CancellationToken cancellationToken)
     {
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
-            userAccountId,
-            cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-        _ = await unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken)
-            ?? throw new NotFoundException("El usuario no tiene un perfil de cliente asociado.");
+        _ = await unitOfWork.ClientsRepository.GetByIdAsync(clientId, cancellationToken)
+            ?? throw new NotFoundException("Cliente no encontrado.");
     }
 
     private static DateTime ToUtc(DateTime local, TimeZoneInfo timeZone) =>

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Vaccinations.Dtos;
@@ -97,18 +96,10 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
         [FromBody] UpdateVaccinationRequest request,
         CancellationToken cancellationToken)
     {
-        TryGetUserAccountId(out var userAccountId);
-
         await sender.Send(
-            request.ToCommand(id, userAccountId),
+            request.ToCommand(id),
             cancellationToken);
 
         return NoContent();
-    }
-
-    private bool TryGetUserAccountId(out Guid userAccountId)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        return Guid.TryParse(subject, out userAccountId);
     }
 }

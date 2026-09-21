@@ -6,7 +6,7 @@ using MediatR;
 namespace Application.Pets.UseCases;
 
 public sealed record UpdateMyPetProfileCommand(
-    Guid UserAccountId,
+    Guid ClientId,
     Guid PetId,
     string? Name,
     int? Age,
@@ -31,15 +31,9 @@ public sealed class UpdateMyPetProfileCommandHandler
         UpdateMyPetProfileCommand request,
         CancellationToken cancellationToken)
     {
-        var account = await _uow.UserAccountsRepository.GetByIdAsync(
-            request.UserAccountId, cancellationToken);
-        if (account is null)
-            throw new NotFoundException("Cuenta de usuario no encontrada.");
-
-        var client = await _uow.ClientsRepository.GetByUserIdAsync(
-            account.UserId, cancellationToken);
-        if (client is null)
-            throw new NotFoundException("El usuario autenticado no tiene un perfil de cliente asociado.");
+        var client = await _uow.ClientsRepository.GetByIdAsync(
+            request.ClientId, cancellationToken)
+            ?? throw new NotFoundException("Cliente no encontrado.");
 
         var ownsPet = await _uow.ClientPetsRepository.ExistsByClientAndPetAsync(
             client.Id, request.PetId, cancellationToken);

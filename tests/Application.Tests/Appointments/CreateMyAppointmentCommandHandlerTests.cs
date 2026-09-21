@@ -13,12 +13,10 @@ using Domain.Races.Entities;
 using Domain.Services.Entities;
 using Domain.Species.Entities;
 using Domain.StatusAppointments.Entities;
-using Domain.UserAccounts.Entities;
 using Domain.Users.Entities;
 using Domain.Veterinarians.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserEntity = Domain.Users.Entities.Users;
 using Application.Tests.Common;
 
@@ -42,6 +40,33 @@ public sealed class CreateMyAppointmentCommandHandlerTests
         Assert.NotNull(result.BookingRequestKeyHash);
         await fixture.Appointments.Received(1)
             .AddAsync(result, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_an_unknown_client()
+    {
+        var fixture = new Fixture();
+        var command = fixture.Command with { ClientId = Guid.NewGuid() };
+
+        var exception = await Assert.ThrowsAsync<NotFoundException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+
+        Assert.Equal("Cliente no encontrado.", exception.Message);
+        await fixture.Appointments.DidNotReceive()
+            .AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_a_pet_that_belongs_to_another_client()
+    {
+        var fixture = new Fixture();
+        var command = fixture.Command with { PetId = Guid.NewGuid() };
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+
+        await fixture.Appointments.DidNotReceive()
+            .AddAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -109,7 +134,7 @@ public sealed class CreateMyAppointmentCommandHandlerTests
         var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
 
         Assert.Same(existing, result);
-        await fixture.UnitOfWork.UserAccountsRepository.DidNotReceive()
+        await fixture.UnitOfWork.ClientsRepository.DidNotReceive()
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -225,9 +250,6 @@ public sealed class CreateMyAppointmentCommandHandlerTests
 
         public Fixture()
         {
-            var accountId = Guid.NewGuid();
-            var userId = Guid.NewGuid();
-            var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
             var client = TestClients.Create("1234567890", null, phoneNumber: "3001234567");
             var species = new SpeciesEntity("Canino");
             var pet = new PetEntity(
@@ -243,16 +265,12 @@ public sealed class CreateMyAppointmentCommandHandlerTests
             Availability = new Availability(
                 Veterinarian.Id, DayOfWeek.Thursday, new TimeOnly(9, 0), new TimeOnly(12, 0));
             Command = new CreateMyAppointmentCommand(
-                accountId, pet.Id, Veterinarian.Id, Service.Id,
+                client.Id, pet.Id, Veterinarian.Id, Service.Id,
                 new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc),
                 "Control", null, "booking-message-001");
 
             UnitOfWork.AppointmentsRepository.Returns(Appointments);
             UnitOfWork.AvailabilitiesRepository.Returns(Availabilities);
-            UnitOfWork.UserAccountsRepository.GetByIdAsync(accountId, Arg.Any<CancellationToken>())
-                .Returns(account);
-            UnitOfWork.ClientsRepository.GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
-                .Returns(client);
             UnitOfWork.ClientPetsRepository.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
                 .Returns(new[] { ClientPet });
             UnitOfWork.ClientPetsRepository.GetByIdAsync(ClientPet.Id, Arg.Any<CancellationToken>())

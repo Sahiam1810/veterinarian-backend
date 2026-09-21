@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Api.Common.Security;
 using Api.Pets.Dtos;
 using Api.Pets.Mappings;
@@ -24,12 +23,12 @@ public sealed class BotPetsController(ISender sender) : ControllerBase
     public async Task<ActionResult<IReadOnlyCollection<OwnedPetProfileResponseDto>>> GetOwned(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
-        var pets = await sender.Send(new GetMyPetsQuery(userAccountId), cancellationToken);
+        var pets = await sender.Send(new GetMyPetsQuery(clientId), cancellationToken);
         return Ok(pets.Select(pet => pet.ToDto()).ToArray());
     }
 
@@ -66,14 +65,14 @@ public sealed class BotPetsController(ISender sender) : ControllerBase
         [FromBody] CreateOwnedPetDto request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         var profile = await sender.Send(
             new RegisterMyPetCommand(
-                userAccountId,
+                clientId,
                 request.Name,
                 request.Age,
                 request.Gender,
@@ -99,14 +98,14 @@ public sealed class BotPetsController(ISender sender) : ControllerBase
         [FromBody] UpdateOwnedPetProfileDto request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         var profile = await sender.Send(
             new UpdateMyPetProfileCommand(
-                userAccountId,
+                clientId,
                 petId,
                 request.Name,
                 request.Age,
@@ -120,11 +119,5 @@ public sealed class BotPetsController(ISender sender) : ControllerBase
             cancellationToken);
 
         return Ok(profile.ToDto());
-    }
-
-    private bool TryGetUserAccountId(out Guid userAccountId)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        return Guid.TryParse(subject, out userAccountId) && userAccountId != Guid.Empty;
     }
 }

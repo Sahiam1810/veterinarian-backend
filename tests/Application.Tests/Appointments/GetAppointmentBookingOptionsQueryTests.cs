@@ -11,7 +11,6 @@ using Domain.Species.Entities;
 using Domain.Veterinarians.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserEntity = Domain.Users.Entities.Users;
 using Application.Tests.Common;
 
@@ -24,9 +23,6 @@ public sealed class GetAppointmentBookingOptionsQueryTests
     [Fact]
     public async Task Handle_returns_only_owned_pets_active_services_and_active_veterinarians()
     {
-        var accountId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
         var client = TestClients.Create("1234567890", null);
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
@@ -36,11 +32,11 @@ public sealed class GetAppointmentBookingOptionsQueryTests
         var inactiveService = new Service(Guid.NewGuid(), "Baño", 60, 40000m, false);
         var veterinarian = CreateVeterinarian("Dra. Ana", true);
         var inactiveVeterinarian = CreateVeterinarian("Dr. Inactivo", false);
-        Configure(accountId, account, client, clientPet, pet, activeService, inactiveService,
+        Configure(client, clientPet, pet, activeService, inactiveService,
             veterinarian, inactiveVeterinarian);
 
         var result = await new GetAppointmentBookingOptionsQueryHandler(unitOfWork)
-            .Handle(new GetAppointmentBookingOptionsQuery(accountId), CancellationToken.None);
+            .Handle(new GetAppointmentBookingOptionsQuery(client.Id), CancellationToken.None);
 
         Assert.Equal("Luna", Assert.Single(result.Pets).Name);
         Assert.Equal("Consulta", Assert.Single(result.Services).Name);
@@ -50,29 +46,25 @@ public sealed class GetAppointmentBookingOptionsQueryTests
     }
 
     [Fact]
-    public async Task Handle_without_client_profile_is_not_found()
+    public async Task Handle_with_unknown_client_is_not_found()
     {
-        var accountId = Guid.NewGuid();
-        var account = new UserAccountEntity(Guid.NewGuid(), "cliente", "cliente@test.com", "Activo");
-        unitOfWork.UserAccountsRepository.GetByIdAsync(accountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, Arg.Any<CancellationToken>())
+        var clientId = Guid.NewGuid();
+        unitOfWork.ClientsRepository.GetByIdAsync(clientId, Arg.Any<CancellationToken>())
             .Returns((ClientEntity?)null);
 
         var action = () => new GetAppointmentBookingOptionsQueryHandler(unitOfWork)
-            .Handle(new GetAppointmentBookingOptionsQuery(accountId), CancellationToken.None);
+            .Handle(new GetAppointmentBookingOptionsQuery(clientId), CancellationToken.None);
 
-        await Assert.ThrowsAsync<NotFoundException>(action);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(action);
+        Assert.Equal("Cliente no encontrado.", exception.Message);
     }
 
     private void Configure(
-        Guid accountId, UserAccountEntity account, ClientEntity client, ClientPetEntity clientPet,
+        ClientEntity client, ClientPetEntity clientPet,
         PetEntity pet, Service activeService, Service inactiveService,
         Veterinarian veterinarian, Veterinarian inactiveVeterinarian)
     {
-        unitOfWork.UserAccountsRepository.GetByIdAsync(accountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, Arg.Any<CancellationToken>())
+        unitOfWork.ClientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>())
             .Returns(client);
         unitOfWork.ClientPetsRepository.GetByClientIdAsync(client.Id, Arg.Any<CancellationToken>())
             .Returns(new[] { clientPet });

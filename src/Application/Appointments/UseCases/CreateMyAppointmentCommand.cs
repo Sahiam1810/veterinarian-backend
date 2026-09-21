@@ -11,7 +11,7 @@ using MediatR;
 namespace Application.Appointments.UseCases;
 
 public sealed record CreateMyAppointmentCommand(
-    Guid UserAccountId,
+    Guid ClientId,
     Guid PetId,
     Guid VeterinarianId,
     Guid ServiceId,
@@ -32,7 +32,7 @@ public sealed class CreateMyAppointmentCommandHandler(
         CancellationToken cancellationToken)
     {
         var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
-        var hash = HashKey(request.UserAccountId, request.IdempotencyKey.Trim());
+        var hash = HashKey(request.ClientId, request.IdempotencyKey.Trim());
         var existing = await unitOfWork.AppointmentsRepository
             .GetByBookingRequestKeyHashAsync(hash, cancellationToken);
         if (existing is not null)
@@ -41,14 +41,10 @@ public sealed class CreateMyAppointmentCommandHandler(
             return existing;
         }
 
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
-            request.UserAccountId,
+        var client = await unitOfWork.ClientsRepository.GetByIdAsync(
+            request.ClientId,
             cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(
-            account.UserId,
-            cancellationToken)
-            ?? throw new NotFoundException("El usuario no tiene un perfil de cliente asociado.");
+            ?? throw new NotFoundException("Cliente no encontrado.");
         var clientPets = await unitOfWork.ClientPetsRepository.GetByClientIdAsync(
             client.Id,
             cancellationToken);
@@ -230,9 +226,9 @@ public sealed class CreateMyAppointmentCommandHandler(
         }
     }
 
-    private static string HashKey(Guid userAccountId, string key)
+    private static string HashKey(Guid clientId, string key)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{userAccountId:N}:{key}"));
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{clientId:N}:{key}"));
         return Convert.ToHexString(bytes);
     }
 

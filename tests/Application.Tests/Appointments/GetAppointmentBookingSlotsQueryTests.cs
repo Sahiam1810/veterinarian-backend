@@ -1,6 +1,7 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.Common.Exceptions;
 using Application.VeterinarianAbsences.Abstraction;
 using Domain.VeterinarianAbsences.Entities;
 using Domain.Appointments.Entities;
@@ -10,7 +11,6 @@ using Domain.Services.Entities;
 using Domain.Veterinarians.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using UserEntity = Domain.Users.Entities.Users;
 using Application.Tests.Common;
 
@@ -22,6 +22,20 @@ public sealed class GetAppointmentBookingSlotsQueryTests
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly BookingSettings settings = new();
     private readonly IVeterinarianAbsenceRepository absences = Substitute.For<IVeterinarianAbsenceRepository>();
+
+    [Fact]
+    public async Task Handle_rejects_an_unknown_client()
+    {
+        var fixture = ConfigureBookingData();
+
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => Handler().Handle(
+            new GetAppointmentBookingSlotsQuery(
+                Guid.NewGuid(), fixture.Veterinarian.Id, fixture.Service.Id,
+                new DateOnly(2026, 9, 3)),
+            CancellationToken.None));
+
+        Assert.Equal("Cliente no encontrado.", exception.Message);
+    }
 
     [Fact]
     public async Task Handle_generates_service_sized_utc_slots_and_removes_occupied_time()
@@ -39,7 +53,7 @@ public sealed class GetAppointmentBookingSlotsQueryTests
 
         var result = await Handler().Handle(
             new GetAppointmentBookingSlotsQuery(
-                fixture.AccountId, fixture.Veterinarian.Id, fixture.Service.Id,
+                fixture.ClientId, fixture.Veterinarian.Id, fixture.Service.Id,
                 new DateOnly(2026, 9, 3)),
             CancellationToken.None);
 
@@ -63,7 +77,7 @@ public sealed class GetAppointmentBookingSlotsQueryTests
 
         var action = () => Handler().Handle(
             new GetAppointmentBookingSlotsQuery(
-                fixture.AccountId, fixture.Veterinarian.Id, fixture.Service.Id,
+                fixture.ClientId, fixture.Veterinarian.Id, fixture.Service.Id,
                 DateOnly.Parse(date)),
             CancellationToken.None);
 
@@ -87,7 +101,7 @@ public sealed class GetAppointmentBookingSlotsQueryTests
 
         var result = await Handler().Handle(
             new GetAppointmentBookingSlotsQuery(
-                fixture.AccountId, fixture.Veterinarian.Id, fixture.Service.Id,
+                fixture.ClientId, fixture.Veterinarian.Id, fixture.Service.Id,
                 new DateOnly(2026, 9, 3)),
             CancellationToken.None);
 
@@ -106,8 +120,6 @@ public sealed class GetAppointmentBookingSlotsQueryTests
 
     private BookingFixture ConfigureBookingData()
     {
-        var accountId = Guid.NewGuid();
-        var account = new UserAccountEntity(Guid.NewGuid(), "cliente", "cliente@test.com", "Activo");
         var client = TestClients.Create("1234567890", null);
         var service = new Service(Guid.NewGuid(), "Consulta", 30, 50000m);
         var user = new UserEntity("Dra. Ana", "ana@test.com", "hash", Guid.NewGuid());
@@ -115,9 +127,7 @@ public sealed class GetAppointmentBookingSlotsQueryTests
         typeof(Veterinarian).GetProperty(nameof(Veterinarian.User))!.SetValue(veterinarian, user);
         var availability = new Availability(
             veterinarian.Id, DayOfWeek.Thursday, new TimeOnly(9, 0), new TimeOnly(12, 0));
-        unitOfWork.UserAccountsRepository.GetByIdAsync(accountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, Arg.Any<CancellationToken>())
+        unitOfWork.ClientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>())
             .Returns(client);
         unitOfWork.ServicesRepository.GetByIdAsync(service.Id, Arg.Any<CancellationToken>())
             .Returns(service);
@@ -138,11 +148,11 @@ public sealed class GetAppointmentBookingSlotsQueryTests
                 veterinarian.Id, Arg.Any<DateTime>(), Arg.Any<DateTime>(),
                 Arg.Any<CancellationToken>())
             .Returns(Array.Empty<VeterinarianAbsence>());
-        return new BookingFixture(accountId, service, veterinarian, availability);
+        return new BookingFixture(client.Id, service, veterinarian, availability);
     }
 
     private sealed record BookingFixture(
-        Guid AccountId, Service Service, Veterinarian Veterinarian, Availability Availability);
+        Guid ClientId, Service Service, Veterinarian Veterinarian, Availability Availability);
 
     private sealed class BookingSettings : IAppointmentBookingSettings
     {
