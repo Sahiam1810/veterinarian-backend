@@ -6,6 +6,7 @@ using Domain.ContactVerification.Enums;
 namespace Application.ContactVerification.UseCases;
 
 // Claim OTP por cédula: resuelve el email en servidor (lookup público no expone PII).
+// El sujeto de la reclamación es el id del cliente (el cliente no tiene usuario).
 public sealed class RequestClaimEmailByIdentificationHandler(
     IUnitOfWork unitOfWork,
     IRequestContactEmailVerification requestEmail) : IRequestClaimEmailByIdentification
@@ -33,7 +34,7 @@ public sealed class RequestClaimEmailByIdentificationHandler(
             new RequestContactEmailVerification(
                 email,
                 ContactVerificationPurpose.Claim,
-                client.UserId),
+                client.Id),
             cancellationToken);
 
         return new RequestClaimEmailByIdentificationResult(
@@ -41,7 +42,7 @@ public sealed class RequestClaimEmailByIdentificationHandler(
             otp.ExpiresAt,
             otp.Channel,
             MaskEmail(email),
-            client.UserId,
+            client.Id,
             client.Id,
             client.FullName.Value,
             email);

@@ -426,7 +426,7 @@ public sealed class ProcessTelegramUpdateHandler(
             if (idleFor <= settings.PrivateAccessIdleLifetime)
             {
                 return await conversationContextProvider.ResolveAsync(
-                    userLink.PersonId,
+                    userLink.ClientId,
                     binding.ConversationId,
                     idempotencyKey,
                     "Telegram",

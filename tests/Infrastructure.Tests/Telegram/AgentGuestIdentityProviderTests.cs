@@ -66,7 +66,6 @@ public sealed class AgentGuestIdentityProviderTests
         });
         using var keys = new JwtRsaKeyMaterial(options);
         var client = new ClientEntity(
-            Guid.NewGuid(),
             "Cliente Telegram",
             "cliente@telegram.test",
             "1234567890",
@@ -124,7 +123,7 @@ public sealed class AgentGuestIdentityProviderTests
             .Returns((ClientEntity?)null);
 
         var inactiveClient = new ClientEntity(
-            Guid.NewGuid(), "Cliente Inactivo", "inactivo@test.com", "9999999999", "3000000000", null);
+            "Cliente Inactivo", "inactivo@test.com", "9999999999", "3000000000", null);
         inactiveClient.Deactivate();
         clientsRepository.GetByIdAsync(inactiveClient.Id, Arg.Any<CancellationToken>())
             .Returns(inactiveClient);

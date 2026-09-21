@@ -296,7 +296,6 @@ public sealed class PersistentConversationContextProviderTests
         clients.GetByIdAsync(PersonId, token)
             .Returns(Task.FromResult<Domain.Clients.Entities.ClientEntity?>(
                 new Domain.Clients.Entities.ClientEntity(
-                    Guid.NewGuid(),
                     "Samuel Calderón",
                     "samuel@example.test",
                     "1234567890",

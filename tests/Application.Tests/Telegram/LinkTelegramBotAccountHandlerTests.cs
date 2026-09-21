@@ -102,7 +102,7 @@ public sealed class LinkTelegramBotAccountHandlerTests
 
     private static ClientEntity CreateClient(string name, string email)
     {
-        return new ClientEntity(Guid.NewGuid(), name, email, "1234567890", "3001234567", "Calle 1");
+        return new ClientEntity(name, email, "1234567890", "3001234567", "Calle 1");
     }
 
     private static Fixture CreateFixture()
