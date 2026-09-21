@@ -41,25 +41,17 @@ using Application.MessageTypes.Abstraction;
 
 using Application.EscalationStatuses.Abstraction;
 
-
-
-
-
 using Application.Notifications.Abstraction;
 
 using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatAiRunErrors.Abstraction;
 using Application.ChatAiRunMetrics.Abstraction;
 using Application.ChatAiRuns.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
@@ -88,13 +80,11 @@ public interface IUnitOfWork
 
     ITypeServiceRepository TypeServicesRepository { get; }
 
-
     IServiceRepository ServicesRepository { get; }
 
     ISpecialtyRepository SpecialtiesRepository { get; }
 
     IClientPetRepository ClientPetsRepository { get; }
-
 
     IVeterinarianRepository VeterinariansRepository { get; }
 
@@ -102,11 +92,9 @@ public interface IUnitOfWork
 
     ISenderTypeRepository SenderTypesRepository { get; }
 
-
     IAiRunStatusRepository AiRunStatusesRepository { get; }
 
     IConversationStatusRepository ConversationStatusesRepository { get; }
-
 
     IMessageTypeRepository MessageTypesRepository { get; }
 
@@ -128,10 +116,7 @@ public interface IUnitOfWork
 
     IAiModelRepository AiModelsRepository { get; }
 
-
     IChatConversationRepository ChatConversationsRepository { get; }
-
-    IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
 
     IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
 
@@ -139,15 +124,9 @@ public interface IUnitOfWork
 
     IChatMessageRepository ChatMessagesRepository { get; }
 
-    IChatAttachmentRepository ChatAttachmentsRepository { get; }
-
     IChatEscalationRepository ChatEscalationsRepository { get; }
 
-    IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository { get; }
-
     IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
-
-    IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
 
     IChatAiRunRepository ChatAiRunsRepository { get; }
 

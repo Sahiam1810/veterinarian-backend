@@ -4,7 +4,6 @@ using Application.ChatAiRunErrors.Abstraction;
 using Application.ChatAiRunMetrics.Abstraction;
 using Application.ChatAiRuns.Abstraction;
 using Application.ChatAiRuns.UseCase;
-using Application.ChatAttachments.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
@@ -472,7 +471,6 @@ public sealed class ChatAiRunTests
 
         public IChatAiRunMetricsRepository ChatAiRunMetricsRepository => null!;
         public IChatAiRunErrorRepository ChatAiRunErrorsRepository => null!;
-        public IChatAttachmentRepository ChatAttachmentsRepository => null!;
         public IChatParticipantRepository ChatParticipantsRepository => null!;
 
         public Application.Roles.Abstraction.IRolesRepository RolesRepository => null!;
@@ -501,12 +499,9 @@ public sealed class ChatAiRunTests
         public Application.Notifications.Abstraction.INotificationRepository NotificationsRepository => null!;
         public Application.Diagnostics.Abstraction.IDiagnosticRepository DiagnosticsRepository => null!;
         public Application.AgentHumans.Abstraction.IAgentHumanRepository AgentHumansRepository => null!;
-        public Application.ChatConversationAssignments.Abstraction.IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public Application.ChatConversationAiSettings.Abstraction.IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;
         public Application.ChatEscalations.Abstraction.IChatEscalationRepository ChatEscalationsRepository => null!;
-        public Application.ChatEscalationStatusHistories.Abstraction.IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
         public Application.ChatEscalationResolutions.Abstraction.IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
-        public Application.ChatEscalationAssignments.Abstraction.IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
         public Application.ProviderModelsAi.Abstraction.IProviderModelAiRepository ProviderModelsAiRepository => null!;
         public Application.UserAccounts.Abstraction.IUserAccountsRepository UserAccountsRepository => null!;
         public Application.UserCredentials.Abstraction.IUserCredentialsRepository UserCredentialsRepository => null!;

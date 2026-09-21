@@ -1,11 +1,8 @@
 using System.Reflection;
 using Api.AgentHumans.Controllers;
-using Api.ChatConversationAssignments.Controllers;
 using Api.ChatConversations.Controllers;
-using Api.ChatEscalationAssignments.Controllers;
 using Api.ChatEscalationResolutions.Controllers;
 using Api.ChatEscalations.Controllers;
-using Api.ChatEscalationStatusHistories.Controllers;
 using Api.ChatMessages.Controllers;
 using Api.ChatParticipants.Controllers;
 using Api.Common.Security;
@@ -60,19 +57,6 @@ public sealed class ChatPermissionsAuthorizationTests
     [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.GetById), "Escalamientos", PermissionAction.View)]
     [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.GetByChatEscalationId), "Escalamientos", PermissionAction.View)]
     [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.Update), "Escalamientos", PermissionAction.Edit)]
-    // ChatEscalationAssignmentController — solo lectura para Recepcionista
-    [InlineData(typeof(ChatEscalationAssignmentController), nameof(ChatEscalationAssignmentController.GetAll), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationAssignmentController), nameof(ChatEscalationAssignmentController.GetById), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationAssignmentController), nameof(ChatEscalationAssignmentController.GetByChatEscalationId), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationAssignmentController), nameof(ChatEscalationAssignmentController.GetByAgentHumanId), "Escalamientos", PermissionAction.View)]
-    // ChatConversationAssignmentController — solo lectura para Recepcionista
-    [InlineData(typeof(ChatConversationAssignmentController), nameof(ChatConversationAssignmentController.GetAll), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatConversationAssignmentController), nameof(ChatConversationAssignmentController.GetByConversationId), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatConversationAssignmentController), nameof(ChatConversationAssignmentController.GetByAgentHumanId), "Escalamientos", PermissionAction.View)]
-    // ChatEscalationStatusHistoryController — solo lectura para Recepcionista
-    [InlineData(typeof(ChatEscalationStatusHistoryController), nameof(ChatEscalationStatusHistoryController.GetAll), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationStatusHistoryController), nameof(ChatEscalationStatusHistoryController.GetById), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationStatusHistoryController), nameof(ChatEscalationStatusHistoryController.GetByChatEscalationId), "Escalamientos", PermissionAction.View)]
     // Catálogos del Chat — solo lectura, mismo patrón que PrioritiesController
     [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.GetAll), "Catálogos del Chat", PermissionAction.View)]
     [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.GetById), "Catálogos del Chat", PermissionAction.View)]
@@ -112,19 +96,6 @@ public sealed class ChatPermissionsAuthorizationTests
     // ChatEscalationController / ChatEscalationResolutionController: borrar sigue siendo administrativo.
     [InlineData(typeof(ChatEscalationController), nameof(ChatEscalationController.Delete))]
     [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.Delete))]
-    // ChatEscalationAssignmentController / ChatConversationAssignmentController: la asignación
-    // formal a un agente humano queda fuera de esta ronda (ver Ticket B1, "Fuera de alcance") —
-    // sigue siendo administrativa en su totalidad salvo la lectura ya cubierta arriba.
-    [InlineData(typeof(ChatEscalationAssignmentController), nameof(ChatEscalationAssignmentController.Create))]
-    [InlineData(typeof(ChatEscalationAssignmentController), nameof(ChatEscalationAssignmentController.Update))]
-    [InlineData(typeof(ChatEscalationAssignmentController), nameof(ChatEscalationAssignmentController.Delete))]
-    [InlineData(typeof(ChatConversationAssignmentController), nameof(ChatConversationAssignmentController.Create))]
-    [InlineData(typeof(ChatConversationAssignmentController), nameof(ChatConversationAssignmentController.Update))]
-    [InlineData(typeof(ChatConversationAssignmentController), nameof(ChatConversationAssignmentController.Delete))]
-    // ChatEscalationStatusHistoryController: historial de auditoría, solo lectura para Recepcionista.
-    [InlineData(typeof(ChatEscalationStatusHistoryController), nameof(ChatEscalationStatusHistoryController.Create))]
-    [InlineData(typeof(ChatEscalationStatusHistoryController), nameof(ChatEscalationStatusHistoryController.Update))]
-    [InlineData(typeof(ChatEscalationStatusHistoryController), nameof(ChatEscalationStatusHistoryController.Delete))]
     // Catálogos del Chat: administrar el catálogo en sí (no solo leerlo) sigue siendo administrativo.
     [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.Create))]
     [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.Update))]
@@ -156,9 +127,6 @@ public sealed class ChatPermissionsAuthorizationTests
     [InlineData(typeof(AgentHumanController))]
     [InlineData(typeof(ChatEscalationController))]
     [InlineData(typeof(ChatEscalationResolutionController))]
-    [InlineData(typeof(ChatEscalationAssignmentController))]
-    [InlineData(typeof(ChatConversationAssignmentController))]
-    [InlineData(typeof(ChatEscalationStatusHistoryController))]
     [InlineData(typeof(ConversationStatusesController))]
     [InlineData(typeof(SenderTypesController))]
     [InlineData(typeof(MessageTypesController))]

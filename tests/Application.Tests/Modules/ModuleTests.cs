@@ -271,15 +271,11 @@ public sealed class ModuleTests
         public Application.AgentHumans.Abstraction.IAgentHumanRepository AgentHumansRepository => null!;
         public Application.AiModels.Abstraction.IAiModelRepository AiModelsRepository => null!;
         public Application.ChatConversations.Abstraction.IChatConversationRepository ChatConversationsRepository => null!;
-        public Application.ChatConversationAssignments.Abstraction.IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public Application.ChatConversationAiSettings.Abstraction.IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;
         public Application.ChatParticipants.Abstraction.IChatParticipantRepository ChatParticipantsRepository => null!;
         public Application.ChatMessages.Abstraction.IChatMessageRepository ChatMessagesRepository => null!;
-        public Application.ChatAttachments.Abstraction.IChatAttachmentRepository ChatAttachmentsRepository => null!;
         public Application.ChatEscalations.Abstraction.IChatEscalationRepository ChatEscalationsRepository => null!;
-        public Application.ChatEscalationStatusHistories.Abstraction.IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
         public Application.ChatEscalationResolutions.Abstraction.IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
-        public Application.ChatEscalationAssignments.Abstraction.IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
         public Application.ChatAiRuns.Abstraction.IChatAiRunRepository ChatAiRunsRepository => null!;
         public Application.ChatAiRunMetrics.Abstraction.IChatAiRunMetricsRepository ChatAiRunMetricsRepository => null!;
         public Application.ChatAiRunErrors.Abstraction.IChatAiRunErrorRepository ChatAiRunErrorsRepository => null!;
