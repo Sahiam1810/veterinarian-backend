@@ -1,4 +1,3 @@
-using Application.AccountStatements.Abstraction;
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
@@ -32,8 +31,6 @@ using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 
-using Application.AiRunStatuses.Abstraction;
-
 using Application.ConversationStatuses.Abstraction;
 
 using Application.MessageTypes.Abstraction;
@@ -48,7 +45,6 @@ using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
-using Infrastructure.AccountStatements.Repositories;
 using Infrastructure.Agent.Configuration;
 using Infrastructure.Agent.Conversations;
 using Infrastructure.Agent.Http;
@@ -64,41 +60,19 @@ using Infrastructure.Vaccinations.Repositories;
 using Infrastructure.Clients.Repositories;
 
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
-using Application.Telegram.Linking;
-using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
-using Infrastructure.AiModels.Repository;
-using Infrastructure.ChatConversationAssignments.Repository;
-using Infrastructure.ChatConversationAiSettings.Repository;
 using Infrastructure.ChatConversations.Repository;
-using Infrastructure.ChatEscalationAssignments.Repository;
 using Infrastructure.ChatEscalationResolutions.Repository;
 using Infrastructure.ChatEscalations.Repository;
-using Infrastructure.ChatEscalationStatusHistories.Repository;
-using Infrastructure.ChatAiRunErrors.Repository;
-using Infrastructure.ChatAiRunMetrics.Repository;
-using Infrastructure.ChatAiRuns.Repository;
-using Infrastructure.ChatAttachments.Repository;
 using Infrastructure.ChatMessages.Repository;
 using Infrastructure.ChatParticipants.Repository;
-using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
 using Infrastructure.Diagnostics.Repositories;
@@ -131,8 +105,6 @@ using Infrastructure.Priorities.Repositories;
 
 using Infrastructure.SenderTypes.Repositories;
 
-using Infrastructure.AiRunStatuses.Repositories;
-
 using Infrastructure.ConversationStatuses.Repositories;
 
 using Infrastructure.MessageTypes.Repositories;
@@ -153,7 +125,6 @@ using Infrastructure.Telegram.Security;
 using Infrastructure.Telegram.Http;
 using Infrastructure.Chat.Configuration;
 using Infrastructure.Telegram.Workers;
-using Infrastructure.Telegram.Identity;
 using Infrastructure.Email;
 using Infrastructure.Email.Configuration;
 using Infrastructure.Messaging;
@@ -164,8 +135,6 @@ using Application.ContactVerification.UseCases;
 using Application.Owners.Abstractions;
 using Application.Owners.Adapters;
 using Infrastructure.Verification;
-using Infrastructure.Verification.Configuration;
-using Infrastructure.Verification.Repositories;
 using Infrastructure.Verification.Security;
 using Infrastructure.ContactVerification;
 using Infrastructure.ContactVerification.Configuration;
@@ -219,8 +188,6 @@ public static class DependencyInjection
 
         services.AddScoped<ISenderTypeRepository, SenderTypeRepository>();
 
-        services.AddScoped<IAiRunStatusRepository, AiRunStatusRepository>();
-
         services.AddScoped<IConversationStatusRepository, ConversationStatusRepository>();
 
         services.AddScoped<IMessageTypeRepository, MessageTypeRepository>();
@@ -234,7 +201,6 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, ClientRepository>();
 
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
-        services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
         services.AddScoped<IVeterinarianAbsenceRepository, VeterinarianAbsenceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
@@ -244,44 +210,18 @@ public static class DependencyInjection
         services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
         services.AddScoped<IVaccinationRepository, VaccinationRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
-        services.AddScoped<IAiModelRepository, AiModelRepository>();
         services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
-        services.AddScoped<IChatConversationAssignmentRepository, ChatConversationAssignmentRepository>();
-        services.AddScoped<IChatConversationAiSettingRepository, ChatConversationAiSettingRepository>();
         services.AddScoped<IChatParticipantRepository, ChatParticipantRepository>();
         services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
-        services.AddScoped<IChatAttachmentRepository, ChatAttachmentRepository>();
         services.AddScoped<IChatEscalationRepository, ChatEscalationRepository>();
-        services.AddScoped<IChatEscalationStatusHistoryRepository, ChatEscalationStatusHistoryRepository>();
         services.AddScoped<IChatEscalationResolutionRepository, ChatEscalationResolutionRepository>();
-        services.AddScoped<IChatEscalationAssignmentRepository, ChatEscalationAssignmentRepository>();
-        services.AddScoped<IChatAiRunRepository, ChatAiRunRepository>();
-        services.AddScoped<IChatAiRunMetricsRepository, ChatAiRunMetricsRepository>();
-        services.AddScoped<IChatAiRunErrorRepository, ChatAiRunErrorRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
-        services.AddScoped<ITelegramLinkCodeRepository, TelegramLinkCodeRepository>();
         services.AddScoped<ITelegramUserLinkRepository, TelegramUserLinkRepository>();
         services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
-        services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
-        services.AddScoped<ITelegramRegistrationSessionRepository, TelegramRegistrationSessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
-        services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
-        services.AddScoped<ITelegramRegistrationService, TelegramRegistrationService>();
-        services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
-        services.AddSingleton<TelegramRegistrationProtector>(provider =>
-        {
-            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
-            var key = !string.IsNullOrWhiteSpace(options.RegistrationProtectionKeyBase64)
-                ? options.RegistrationProtectionKeyBase64
-                : Convert.ToBase64String(new byte[32]);
-            return new TelegramRegistrationProtector(key);
-        });
-        services.AddSingleton<ITelegramRegistrationProtector>(provider =>
-            provider.GetRequiredService<TelegramRegistrationProtector>());
         services.AddSingleton<IOtpProtector>(provider =>
         {
             var contactOptions = provider.GetRequiredService<IOptions<ContactVerificationOptions>>().Value;
@@ -290,29 +230,19 @@ public static class DependencyInjection
                 return new OtpProtector(contactOptions.OtpPepperBase64);
             }
 
-            var appointmentOptions = provider.GetRequiredService<IOptions<AppointmentVerificationOptions>>().Value;
-            if (!string.IsNullOrWhiteSpace(appointmentOptions.OtpPepperBase64))
-            {
-                return new OtpProtector(appointmentOptions.OtpPepperBase64);
-            }
-
             var telegramOptions = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
             if (!string.IsNullOrWhiteSpace(telegramOptions.OtpPepperBase64))
             {
                 return new OtpProtector(telegramOptions.OtpPepperBase64);
             }
 
-            // Pepper de desarrollo cuando los OTP de contacto/cita/Telegram están apagados.
+            // Pepper de desarrollo cuando los OTP de contacto/Telegram están apagados.
             return new OtpProtector(Convert.ToBase64String(new byte[32]));
         });
-        services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
-        services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
         services.AddScoped<IVerificationCodeSender, SmtpEmailVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioSmsVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();
         services.AddScoped<IVerificationCodeDispatcher, VerificationCodeDispatcher>();
-        services.AddScoped<IAppointmentActionVerificationSessionRepository, AppointmentActionVerificationSessionRepository>();
-        services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
         services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
         services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
         services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestHandler>();
@@ -353,8 +283,6 @@ public static class DependencyInjection
         services.AddOptions<TwilioOptions>()
             .Bind(configuration.GetSection(TwilioOptions.SectionName))
             .ValidateOnStart();
-        services.AddOptions<AppointmentVerificationOptions>()
-            .Bind(configuration.GetSection(AppointmentVerificationOptions.SectionName));
         services.AddSingleton<IValidateOptions<ContactVerificationOptions>, ContactVerificationOptionsValidator>();
         services.AddOptions<ContactVerificationOptions>()
             .Bind(configuration.GetSection(ContactVerificationOptions.SectionName))
@@ -368,7 +296,6 @@ public static class DependencyInjection
             return new ConfiguredTelegramRuntimeSettings(
                 options.GuestModeEnabled,
                 options.BotUsername,
-                TimeSpan.FromMinutes(options.LinkCodeTtlMinutes),
                 TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),
                 options.WorkerConcurrency,
                 TimeSpan.FromSeconds(options.ProcessingLeaseSeconds),
@@ -377,17 +304,8 @@ public static class DependencyInjection
                 Guid.Parse(options.PendingEscalationStatusId),
                 Guid.Parse(options.TextMessageTypeId),
                 Guid.Parse(options.HumanAgentSenderTypeId),
-                TimeSpan.FromMinutes(options.OtpTtlMinutes),
-                options.OtpMaximumAttempts,
-                TimeSpan.FromSeconds(options.OtpResendSeconds),
                 TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours),
-                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes),
-                options.RegistrationEnabled,
-                options.RegistrationCompletionUrl,
-                TimeSpan.FromMinutes(options.RegistrationOtpTtlMinutes),
-                TimeSpan.FromMinutes(options.RegistrationTokenTtlMinutes),
-                options.RegistrationMaxOtpAttempts,
-                TimeSpan.FromSeconds(options.RegistrationResendSeconds));
+                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes));
         });
 
         var telegramOptions = configuration

@@ -1,5 +1,4 @@
 using System.Reflection;
-using Api.Appointments.Controllers;
 using Api.Auth.Controllers;
 using Api.Clients.Controllers;
 using Api.Common.Security;
@@ -23,8 +22,6 @@ public sealed class AnonymousChannelRateLimitCoverageTests
     [InlineData(typeof(ContactVerificationController), "RequestEmail", RateLimitPolicies.ContactEmailRequest)]
     [InlineData(typeof(ContactVerificationController), "ConfirmEmail", RateLimitPolicies.ContactEmailConfirm)]
     [InlineData(typeof(BotOwnersController), "Register", RateLimitPolicies.BotOwnerRegistration)]
-    [InlineData(typeof(MyAppointmentsController), "RequestCode", RateLimitPolicies.AppointmentOtpRequest)]
-    [InlineData(typeof(MyAppointmentsController), "ConfirmCode", RateLimitPolicies.AppointmentOtpConfirm)]
     [InlineData(typeof(TelegramWebhookController), "Receive", RateLimitPolicies.TelegramWebhook)]
     public void Endpoint_has_expected_rate_limit_policy(Type controller, string methodName, string policy)
     {
@@ -40,20 +37,6 @@ public sealed class AnonymousChannelRateLimitCoverageTests
     }
 
     [Fact]
-    public void TelegramRegistrationController_has_class_level_telegram_registration_policy()
-    {
-        var attribute = typeof(TelegramRegistrationController)
-            .GetCustomAttribute<EnableRateLimitingAttribute>();
-        Assert.NotNull(attribute);
-        Assert.Equal(RateLimitPolicies.TelegramRegistration, attribute!.PolicyName);
-
-        var methods = typeof(TelegramRegistrationController)
-            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-        Assert.Contains(methods, m => m.GetCustomAttribute<HttpGetAttribute>() is not null);
-        Assert.Contains(methods, m => m.GetCustomAttribute<HttpPostAttribute>() is not null);
-    }
-
-    [Fact]
     public void RateLimitPolicies_declares_all_anexo_a_constants()
     {
         string[] expected =
@@ -65,10 +48,7 @@ public sealed class AnonymousChannelRateLimitCoverageTests
             RateLimitPolicies.ContactEmailRequest,
             RateLimitPolicies.ContactEmailConfirm,
             RateLimitPolicies.BotOwnerRegistration,
-            RateLimitPolicies.TelegramRegistration,
-            RateLimitPolicies.TelegramWebhook,
-            RateLimitPolicies.AppointmentOtpRequest,
-            RateLimitPolicies.AppointmentOtpConfirm
+            RateLimitPolicies.TelegramWebhook
         ];
 
         Assert.Equal(expected.Length, expected.Distinct(StringComparer.Ordinal).Count());

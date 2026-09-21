@@ -1,6 +1,5 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.Security.Errors;
 using Domain.Roles;
 using MediatR;
 
@@ -9,8 +8,6 @@ namespace Application.UserAccounts.UseCase;
 public sealed class UpdateUserAccountCommandHandler
     : IRequestHandler<UpdateUserAccountCommand>
 {
-    private const string ClientRoleName = "Cliente";
-
     private readonly IUnitOfWork _uow;
 
     public UpdateUserAccountCommandHandler(IUnitOfWork uow)
@@ -27,8 +24,6 @@ public sealed class UpdateUserAccountCommandHandler
             cancellationToken)
             ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
 
-        // Update no cambia UserId, pero reactivar/editar una account de Cliente
-        // reabriría el agujero de login; misma regla que Create.
         var user = await _uow.UsersRepository.GetByIdAsync(
             account.UserId,
             cancellationToken);
@@ -45,20 +40,11 @@ public sealed class UpdateUserAccountCommandHandler
                 "La cuenta SuperAdmin no se puede modificar desde la administración de cuentas.");
         }
 
-        var role = await _uow.RolesRepository.GetByIdAsync(
+        _ = await _uow.RolesRepository.GetByIdAsync(
             user.RoleId,
-            cancellationToken);
-
-        if (role is null)
-        {
-            throw new NotFoundException(
+            cancellationToken)
+            ?? throw new NotFoundException(
                 "El rol del usuario asociado no existe.");
-        }
-
-        if (string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal))
-        {
-            throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
-        }
 
         var usernameInUse = await _uow.UserAccountsRepository.ExistsByUsernameAsync(
             request.Username,

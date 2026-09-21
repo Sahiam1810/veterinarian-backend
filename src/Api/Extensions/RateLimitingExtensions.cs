@@ -37,11 +37,6 @@ public static class RateLimitingExtensions
                 CreatePartition(GetPartitionKey(context), settings.RefreshPermitLimit, settings.RefreshWindowSeconds));
             options.AddPolicy(RateLimitPolicies.TelegramWebhook, context =>
                 CreatePartition(GetPartitionKey(context), settings.TelegramWebhookPermitLimit, settings.TelegramWebhookWindowSeconds));
-            options.AddPolicy(RateLimitPolicies.TelegramRegistration, context =>
-                CreatePartition(
-                    GetPartitionKey(context),
-                    settings.TelegramRegistrationPermitLimit,
-                    settings.TelegramRegistrationWindowSeconds));
             options.AddPolicy(RateLimitPolicies.ClientIdentificationLookup, context =>
                 CreatePartition(
                     GetPartitionKey(context),
@@ -52,16 +47,6 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.ClientPhoneLookupPermitLimit,
                     settings.ClientPhoneLookupWindowSeconds));
-            options.AddPolicy(RateLimitPolicies.AppointmentOtpRequest, context =>
-                CreatePartition(
-                    GetPartitionKey(context),
-                    settings.AppointmentOtpRequestPermitLimit,
-                    settings.AppointmentOtpRequestWindowSeconds));
-            options.AddPolicy(RateLimitPolicies.AppointmentOtpConfirm, context =>
-                CreatePartition(
-                    GetPartitionKey(context),
-                    settings.AppointmentOtpConfirmPermitLimit,
-                    settings.AppointmentOtpConfirmWindowSeconds));
             options.AddPolicy(RateLimitPolicies.ContactEmailRequest, context =>
                 CreatePartition(
                     GetPartitionKey(context),

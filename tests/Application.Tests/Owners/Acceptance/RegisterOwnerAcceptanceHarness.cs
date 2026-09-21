@@ -179,11 +179,6 @@ internal sealed class InMemoryClients : IClientRepository
             && (!excludedId.HasValue || client.Id != excludedId.Value)));
     }
 
-    public Task<bool> ExistsByUserIdAsync(
-        Guid userId, CancellationToken cancellationToken, Guid? excludedId = null) =>
-        Task.FromResult(Items.Any(client =>
-            client.UserId == userId && (!excludedId.HasValue || client.Id != excludedId.Value)));
-
     public Task<IReadOnlyCollection<ClientEntity>> GetAllAsync(CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
@@ -212,9 +207,6 @@ internal sealed class InMemoryClients : IClientRepository
             client.PhoneNumber?.Value == expected));
     }
 
-    public Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken) =>
-        Task.FromResult(Items.FirstOrDefault(client => client.UserId == userId));
-
     public Task<ClientEntity?> GetByLookupAsync(
         string? identificationNumber, string? phoneNumber, CancellationToken cancellationToken)
     {
@@ -239,13 +231,4 @@ internal sealed class InMemoryClients : IClientRepository
 
     public Task DeleteAsync(ClientEntity client, CancellationToken cancellationToken) =>
         throw new NotSupportedException();
-
-    public Task<Guid?> GetIdByUserIdAsync(Guid userId, CancellationToken cancellationToken) =>
-        Task.FromResult(Items.FirstOrDefault(client => client.UserId == userId)?.Id);
-
-    public Task DeleteByUserIdAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        Items.RemoveAll(client => client.UserId == userId);
-        return Task.CompletedTask;
-    }
 }

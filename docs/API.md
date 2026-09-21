@@ -5,8 +5,9 @@ usuarios. Fuente de verdad del cambio: [`docs/contracts/clientes-usuarios-api-v2
 Los cuerpos, parámetros, respuestas y códigos HTTP precisos se publican en
 Swagger al ejecutar la API en `Development` (`/swagger`).
 
-Las rutas marcadas **(retirar)** dejan de ser producto vigente (tareas D1–D4 /
-limpieza del frente); no las use en integraciones nuevas.
+Las rutas retiradas por la limpieza del frente (catálogos y ejecuciones de IA,
+adjuntos y asignaciones del chat, estados de cuenta, código de vinculación y
+registro web de Telegram, OTP de citas) **ya no existen** y no aparecen aquí.
 
 ## Convenciones de acceso
 
@@ -57,7 +58,6 @@ como constante de código.
 
 | Método | Ruta | Acceso | Resultado |
 | --- | --- | --- | --- |
-| GET | `/api/clients/me` | Legacy | `410 Gone`. |
 | GET | `/api/pets/mine` | Legacy | `410 Gone`. |
 | POST | `/api/pets/mine` | Legacy | `410 Gone`. |
 | PATCH | `/api/pets/mine/{petId:guid}` | Legacy | `410 Gone`. |
@@ -66,16 +66,10 @@ como constante de código.
 | GET | `/api/appointments/booking/options` | Legacy | `410 Gone`. |
 | GET | `/api/appointments/booking/slots` | Legacy | `410 Gone`. |
 | POST | `/api/appointments/mine` | Legacy | `410 Gone`. |
-| PATCH | `/api/appointments/mine/{id:guid}/cancel` | Legacy | `410 Gone`. |
-| GET | `/api/accountstatements/mine` | Legacy **(retirar)** | `410 Gone`. |
 | GET | `/api/vaccinations/mine` | Legacy | `410 Gone`. |
 
-La cancelación de cita sin portal permanece disponible mediante OTP:
-
-| Método | Ruta | Acceso | Uso |
-| --- | --- | --- | --- |
-| POST | `/api/appointments/mine/{id:guid}/request-code` | Anónimo, rate limit | Solicita OTP para una acción de cita. |
-| POST | `/api/appointments/mine/{id:guid}/confirm-code` | Anónimo, rate limit | Confirma el OTP y ejecuta la acción solicitada. |
+El bot cancela y reprograma citas con `/api/bot/appointments` (ver «Agente, Telegram y
+operaciones de dueño»); ya no hay OTP de citas.
 
 ## Operación de clínica
 
@@ -87,8 +81,8 @@ phoneNumber, address?, isActive, createdAt, updatedAt }`. **Sin** `userId` ni
 phoneNumber, address? }`. `PUT` body: `{ fullName, email, identificationNumber,
 phoneNumber, address?, isActive }`.
 
-Eliminados (consolidados en `POST`/`PUT /api/clients`): `POST
-/api/clients/register-owner`, `PUT /api/clients/{id}/owner-profile`.
+El alta con nombre y correo, y la edición del perfil del dueño, están consolidadas en
+`POST` y `PUT /api/clients`; ya no hay endpoints separados para eso.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -163,6 +157,7 @@ Eliminados (consolidados en `POST`/`PUT /api/clients`): `POST
 | GET | `/api/appointments/{id:guid}` | Staff |
 | POST | `/api/appointments` | `Citas.Create` |
 | PATCH | `/api/appointments/{appointmentId:guid}/status` | `Citas.Edit` |
+| PATCH | `/api/appointments/{appointmentId:guid}/cancel` | `Citas.Delete` |
 | PUT | `/api/appointments/{id:guid}` | `Reprogramación de Citas.Edit` |
 | DELETE | `/api/appointments/{id:guid}` | `SuperAdminOnly` |
 | POST | `/api/appointments/{appointmentId:guid}/medical-record` | `Historiales Clínicos.Create` |
@@ -185,16 +180,8 @@ Eliminados (consolidados en `POST`/`PUT /api/clients`): `POST
 
 ### Cobros, notificaciones, reportes y estados
 
-`/api/accountstatements/*` **(retirar, D3/U2):** el módulo de estados de cuenta
-deja de existir; no lo use en integraciones nuevas.
-
 | Método | Ruta | Acceso |
 | --- | --- | --- |
-| POST | `/api/accountstatements` | `Cuentas y Pagos.Create` **(retirar)** |
-| GET | `/api/accountstatements/{id:guid}` | Staff **(retirar)** |
-| GET | `/api/accountstatements/by-account/{accountId:guid}` | Staff **(retirar)** |
-| PATCH | `/api/accountstatements/{id:guid}/status` | `Cuentas y Pagos.Edit` **(retirar)** |
-| DELETE | `/api/accountstatements/{id:guid}` | `Cuentas y Pagos.Delete` **(retirar)** |
 | GET | `/api/notifications` | `Notificaciones.View` |
 | GET | `/api/notifications/{id:guid}` | `Notificaciones.View` |
 | GET | `/api/notifications/user/{userId:guid}` | `Notificaciones.View` |
@@ -274,10 +261,8 @@ de módulo.
 | POST | `/api/integrations/telegram/webhook` | Anónimo, rate limit + secreto de Telegram | Recibe actualizaciones de Telegram. |
 | POST | `/api/integrations/telegram/bot-link` | `TelegramGuestLinkOnly` | Body `{ clientId }`. Vincula el Telegram invitado con un cliente recién registrado (ventana corta). **200** `{ linkId }`. No crea cuenta fantasma. |
 | POST | `/api/integrations/telegram/bot-link/claim` | `TelegramGuestLinkOnly` | Body `{ sessionId, proof }`. Vincula un cliente ya existente tras OTP Claim. **200** `{ linkId, fullName }`. |
-| POST | `/api/integrations/telegram/link-codes` | Autenticado **(retirar, D4/U3)** | Flujo legacy de código/`/start <code>`; reemplazado por `bot-link`. |
-| GET | `/telegram/registration/complete` | Anónimo **(retirar, D4/U3)** | Formulario web de registro Telegram; fuera de producto. |
-| POST | `/telegram/registration/complete` | Anónimo **(retirar, D4/U3)** | Completa el registro web Telegram; fuera de producto. |
 | GET | `/api/bot/pets` | Bot interno | Lista mascotas del dueño delegado. |
+| POST | `/api/bot/pets/query-by-claim-proof` | Anónimo, rate limit | Lista mascotas con un proof `Claim` de un solo uso, sin crear vínculo (consulta temporal desde un Telegram invitado). Body `{ sessionId, proof }`. |
 | POST | `/api/bot/pets` | Bot interno | Registra una mascota del dueño delegado. |
 | PATCH | `/api/bot/pets/{petId:guid}` | Bot interno | Actualiza una mascota del dueño delegado. |
 | GET | `/api/bot/appointments` | Bot interno | Lista citas propias. |
@@ -288,40 +273,14 @@ de módulo.
 | PATCH | `/api/bot/appointments/{appointmentId:guid}/cancel` | Bot interno | Cancela una cita propia. |
 | PATCH | `/api/bot/appointments/{appointmentId:guid}/reschedule` | Bot interno | Reprograma una cita propia. |
 
-## Administración conversacional e IA
+## Administración conversacional
 
 **No todo en esta sección es `AdminOnly`.** Varios controladores usan permisos
 granulares (`Chat.*`, `Escalamientos.*`, `Catálogos del Chat.*`,
 `Plataforma.View`) en sus acciones de lectura, y a veces también en alta y
-edición — solo un subconjunto de acciones (casi siempre las de borrado y las
-de catálogos de solo-IA) exige realmente `AdminOnly`. Cada tabla siguiente
+edición — solo un subconjunto de acciones (casi siempre las de borrado)
+exige realmente `AdminOnly`. Cada tabla siguiente
 indica la política real de cada endpoint.
-
-### Catálogos de IA (`AdminOnly` en todo el controlador) **(retirar, D1)**
-
-Estas rutas de proveedores/modelos/runs de IA dejan de ser producto; no las
-use en integraciones nuevas.
-
-| Método | Ruta | Acceso |
-| --- | --- | --- |
-| GET | `/api/ai/providers` | `AdminOnly` |
-| GET | `/api/ai/providers/{id:guid}` | `AdminOnly` |
-| POST | `/api/ai/providers` | `AdminOnly` |
-| PUT | `/api/ai/providers/{id:guid}` | `AdminOnly` |
-| PATCH | `/api/ai/providers/{id:guid}/activate` | `AdminOnly` |
-| PATCH | `/api/ai/providers/{id:guid}/deactivate` | `AdminOnly` |
-| GET | `/api/ai/models` | `AdminOnly` |
-| GET | `/api/ai/models/{id:guid}` | `AdminOnly` |
-| GET | `/api/ai/models/by-provider/{providerId:guid}` | `AdminOnly` |
-| POST | `/api/ai/models` | `AdminOnly` |
-| PUT | `/api/ai/models/{id:guid}` | `AdminOnly` |
-| PATCH | `/api/ai/models/{id:guid}/activate` | `AdminOnly` |
-| PATCH | `/api/ai/models/{id:guid}/deactivate` | `AdminOnly` |
-| GET | `/api/airunstatuses` | `AdminOnly` |
-| GET | `/api/airunstatuses/{id:guid}` | `AdminOnly` |
-| POST | `/api/airunstatuses` | `AdminOnly` |
-| PUT | `/api/airunstatuses/{id:guid}` | `AdminOnly` |
-| DELETE | `/api/airunstatuses/{id:guid}` | `AdminOnly` |
 
 ### Catálogos del chat (lectura granular, escritura `AdminOnly`)
 
@@ -360,9 +319,8 @@ resto es `AdminOnly`. `Priorities` es la excepción — sus `GET` piden
 
 ### Agentes humanos
 
-`/api/chat/user-profiles` **eliminados** (tabla `CHAT_USER_PROFILES` fuera del
-modelo). Un participante de chat usa `clientId` o `agentHumanId`, no
-`chatUserProfileId`.
+Los perfiles de chat fueron eliminados del modelo. Un participante de chat se
+identifica con `clientId` o `agentHumanId`, nunca con un perfil.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -374,11 +332,7 @@ modelo). Un participante de chat usa `clientId` o `agentHumanId`, no
 | PATCH | `/api/chat/agent-humans/{id:guid}/activate` | `AdminOnly` |
 | PATCH | `/api/chat/agent-humans/{id:guid}/deactivate` | `AdminOnly` |
 
-### Conversaciones y su configuración de IA
-
-Rutas de `conversation-ai-settings` y asignaciones de conversación de solo-IA
-**(retirar)** cuando aplique la limpieza del frente; la bandeja de
-conversaciones/escalamientos sigue vigente.
+### Conversaciones
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -390,28 +344,14 @@ conversaciones/escalamientos sigue vigente.
 | PATCH | `/api/chat/conversations/{id:guid}/ai-enabled` | `Chat.Edit` |
 | PATCH | `/api/chat/conversations/{id:guid}/close` | `Chat.Edit` |
 | PATCH | `/api/chat/conversations/{id:guid}/reopen` | `Chat.Edit` |
-| GET | `/api/chat/conversation-ai-settings` | `AdminOnly` |
-| GET | `/api/chat/conversation-ai-settings/{id:guid}` | `AdminOnly` |
-| GET | `/api/chat/conversation-ai-settings/by-conversation/{conversationId:guid}` | `AdminOnly` |
-| POST | `/api/chat/conversation-ai-settings` | `AdminOnly` |
-| PUT | `/api/chat/conversation-ai-settings/{id:guid}` | `AdminOnly` |
-| DELETE | `/api/chat/conversation-ai-settings/{id:guid}` | `AdminOnly` |
-| POST | `/api/chat/conversation-assignments` | `AdminOnly` |
-| GET | `/api/chat/conversation-assignments` | `Escalamientos.View` |
-| GET | `/api/chat/conversation-assignments/{chatConversationId:guid}` | `Escalamientos.View` |
-| GET | `/api/chat/conversation-assignments/by-agent/{agentHumanId:guid}` | `Escalamientos.View` |
-| PUT | `/api/chat/conversation-assignments/{chatConversationId:guid}` | `AdminOnly` |
-| DELETE | `/api/chat/conversation-assignments/{chatConversationId:guid}` | `AdminOnly` |
 
-### Participantes, mensajes y adjuntos
+### Participantes y mensajes
 
 `ChatParticipants`: body/respuesta con `clientId?` o `agentHumanId?` (exactamente
-una identidad). **Sin** `chatUserProfileId` ni `aiModelId`.
+una identidad). Ya no lleva perfil de chat ni modelo de IA.
 
 Crear: `{ chatConversationId, participantTypeId, clientId?, agentHumanId? }`.
 Cambiar identidad: `{ clientId?, agentHumanId? }`.
-
-`ChatAttachments` **(retirar)** junto con la limpieza de tablas de adjuntos.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
@@ -422,24 +362,6 @@ Cambiar identidad: `{ clientId?, agentHumanId? }`.
 | POST | `/api/chat/messages` | `Chat.Create` |
 | GET | `/api/chat/messages/{id:guid}` | `Chat.View` |
 | GET | `/api/chat/messages/conversation/{chatConversationId:guid}` | `Chat.View` |
-| GET | `/api/chat/attachments/{id:guid}` | `AdminOnly` **(retirar)** |
-| GET | `/api/chat/attachments/message/{chatMessageId:guid}` | `AdminOnly` **(retirar)** |
-| POST | `/api/chat/attachments` | `AdminOnly` **(retirar)** |
-
-### Ejecuciones de IA (`AdminOnly`) **(retirar, D1)**
-
-| Método | Ruta | Acceso |
-| --- | --- | --- |
-| GET | `/api/chat/ai-runs/{id:guid}` | `AdminOnly` |
-| GET | `/api/chat/ai-runs/conversation/{chatConversationId:guid}` | `AdminOnly` |
-| POST | `/api/chat/ai-runs` | `AdminOnly` |
-| PATCH | `/api/chat/ai-runs/{id:guid}/status` | `AdminOnly` |
-| GET | `/api/chat/ai-run-metrics/{id:guid}` | `AdminOnly` |
-| GET | `/api/chat/ai-run-metrics/run/{chatAiRunId:guid}` | `AdminOnly` |
-| POST | `/api/chat/ai-run-metrics` | `AdminOnly` |
-| GET | `/api/chat/ai-run-errors/{id:guid}` | `AdminOnly` |
-| GET | `/api/chat/ai-run-errors/run/{chatAiRunId:guid}` | `AdminOnly` |
-| POST | `/api/chat/ai-run-errors` | `AdminOnly` |
 
 ### Escalamientos
 
@@ -451,22 +373,9 @@ Cambiar identidad: `{ clientId?, agentHumanId? }`.
 | GET | `/api/chat/escalations/by-conversation/{chatConversationId:guid}` | `Escalamientos.View` |
 | PUT | `/api/chat/escalations/{id:guid}` | `Escalamientos.Edit` |
 | DELETE | `/api/chat/escalations/{id:guid}` | `AdminOnly` |
-| POST | `/api/chat/escalation-assignments` | `AdminOnly` |
-| GET | `/api/chat/escalation-assignments` | `Escalamientos.View` |
-| GET | `/api/chat/escalation-assignments/{id:guid}` | `Escalamientos.View` |
-| GET | `/api/chat/escalation-assignments/by-escalation/{chatEscalationId:guid}` | `Escalamientos.View` |
-| GET | `/api/chat/escalation-assignments/by-agent/{agentHumanId:guid}` | `Escalamientos.View` |
-| PUT | `/api/chat/escalation-assignments/{id:guid}` | `AdminOnly` |
-| DELETE | `/api/chat/escalation-assignments/{id:guid}` | `AdminOnly` |
 | POST | `/api/chat/escalation-resolutions` | `Escalamientos.Create` |
 | GET | `/api/chat/escalation-resolutions` | `Escalamientos.View` |
 | GET | `/api/chat/escalation-resolutions/{id:guid}` | `Escalamientos.View` |
 | GET | `/api/chat/escalation-resolutions/by-escalation/{chatEscalationId:guid}` | `Escalamientos.View` |
 | PUT | `/api/chat/escalation-resolutions/{id:guid}` | `Escalamientos.Edit` |
 | DELETE | `/api/chat/escalation-resolutions/{id:guid}` | `AdminOnly` |
-| POST | `/api/chat/escalation-status-histories` | `AdminOnly` |
-| GET | `/api/chat/escalation-status-histories` | `Escalamientos.View` |
-| GET | `/api/chat/escalation-status-histories/{id:guid}` | `Escalamientos.View` |
-| GET | `/api/chat/escalation-status-histories/by-escalation/{chatEscalationId:guid}` | `Escalamientos.View` |
-| PUT | `/api/chat/escalation-status-histories/{id:guid}` | `AdminOnly` |
-| DELETE | `/api/chat/escalation-status-histories/{id:guid}` | `AdminOnly` |

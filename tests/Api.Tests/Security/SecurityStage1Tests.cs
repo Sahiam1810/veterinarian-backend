@@ -1,20 +1,19 @@
-// Suite Etapa 1 (seguridad de acceso a plataforma) — tarea 1.5.
-// Congela 1.1–1.4: Cliente sin JWT; sin fabricar account/credentials de Cliente.
+// Suite Etapa 1 (seguridad de acceso a plataforma) — tarea 1.5, adaptada T10.
+// USERS es solo personal: un rol llamado "Cliente" no tiene trato especial.
 //
 // Matriz:
 // A SuperAdmin OK
 // B Staff Admin OK
-// C Cliente con creds legacy → Authentication.PlatformAccessDenied (sin tokens)
+// C Rol llamado Cliente con creds válidas → emite tokens (sin bloqueo)
 // D Email inexistente → Authentication.InvalidCredentials
-// E CreateUserAccount Cliente → Authentication.PlatformAccessDenied
-// F CreateUserCredentials Cliente → Authentication.PlatformAccessDenied
+// E CreateUserAccount con rol Cliente → crea cuenta (sin PlatformAccessDenied)
+// F CreateUserCredentials con rol Cliente → crea credenciales (sin PlatformAccessDenied)
 //
 // Run: dotnet test --filter FullyQualifiedName~SecurityStage1
 
 using System.IdentityModel.Tokens.Jwt;
 using Api.Tests.Support;
 using Application.Common.Abstractions;
-using Application.Common.Exceptions;
 using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
@@ -171,12 +170,12 @@ public sealed class SecurityStage1Tests : IDisposable
         Assert.Equal(adminRole.Name.Value, token.Claims.Single(c => c.Type == "role").Value);
     }
 
-    // Caso C — fixture legacy a propósito; login debe denegar igual.
+    // Caso C — un rol llamado "Cliente" no bloquea login de plataforma.
     [Fact]
-    public async Task Login_ClientRole_EvenWithValidPassword_ReturnsPlatformAccessDenied()
+    public async Task Login_RoleNamedCliente_WithValidPassword_IssuesTokens()
     {
-        var clientRole = new RoleEntity("Cliente", "Cliente de la veterinaria");
-        var clientUser = new UserEntity("Cliente Test", "cliente.login@huellitas.test", null, clientRole.Id);
+        var clientRole = new RoleEntity("Cliente", "Nombre de rol sin trato especial");
+        var clientUser = new UserEntity("Cliente Test", "cliente.login@huellitas.test", "hash", clientRole.Id);
         var clientAccount = new UserAccountEntity(clientUser.Id, "clientelogin", "cliente.login@huellitas.test", "Activo");
         var rawPassword = "ClientPassword123!";
         var clientCredentials = new UserCredentialEntity(clientAccount.Id, _passwordHasher.Hash(rawPassword));
@@ -193,9 +192,9 @@ public sealed class SecurityStage1Tests : IDisposable
         var result = await _authService.LoginAsync(
             "cliente.login@huellitas.test", rawPassword, CancellationToken.None);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, result.Error.Code);
-        // Result fallido: no hay Value/tokens (acceso a Value lanzaría).
+        Assert.True(result.IsSuccess);
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.RefreshToken));
     }
 
     // Caso D — anti-enumeración (mismo code que credenciales inválidas).
@@ -215,32 +214,37 @@ public sealed class SecurityStage1Tests : IDisposable
 
     // Caso E
     [Fact]
-    public async Task CreateUserAccount_ForClientRole_IsRejectedWithStableCode()
+    public async Task CreateUserAccount_ForRoleNamedCliente_CreatesAccount()
     {
-        var clientRole = new RoleEntity("Cliente", "Rol Cliente");
-        var clientUser = new UserEntity("Cliente Dummy", "cliente.account@huellitas.test", null, clientRole.Id);
+        var clientRole = new RoleEntity("Cliente", "Nombre de rol sin trato especial");
+        var clientUser = new UserEntity("Cliente Dummy", "cliente.account@huellitas.test", "hash", clientRole.Id);
 
         _usersRepository.GetByIdAsync(clientUser.Id, Arg.Any<CancellationToken>()).Returns(clientUser);
         _rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>()).Returns(clientRole);
+        _userAccountRepository.ExistsByUserIdAsync(clientUser.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
+        _userAccountRepository.ExistsByUsernameAsync("clienteuser", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
+        _userAccountRepository.ExistsByMailAsync("cliente.account@huellitas.test", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
 
         var handler = new CreateUserAccountCommandHandler(_unitOfWork);
         var command = new CreateUserAccountCommand(
             clientUser.Id, "clienteuser", "cliente.account@huellitas.test", "Activo");
 
-        var ex = await Assert.ThrowsAsync<ForbiddenException>(
-            () => handler.Handle(command, CancellationToken.None));
+        var accountId = await handler.Handle(command, CancellationToken.None);
 
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
-        await _userAccountRepository.DidNotReceive().AddAsync(
+        Assert.NotEqual(Guid.Empty, accountId);
+        await _userAccountRepository.Received(1).AddAsync(
             Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
     }
 
     // Caso F
     [Fact]
-    public async Task CreateUserCredentials_ForClientAccount_IsRejectedWithStableCode()
+    public async Task CreateUserCredentials_ForRoleNamedCliente_CreatesCredentials()
     {
-        var clientRole = new RoleEntity("Cliente", "Rol Cliente");
-        var clientUser = new UserEntity("Cliente Dummy", "cliente.creds@huellitas.test", null, clientRole.Id);
+        var clientRole = new RoleEntity("Cliente", "Nombre de rol sin trato especial");
+        var clientUser = new UserEntity("Cliente Dummy", "cliente.creds@huellitas.test", "hash", clientRole.Id);
         var clientAccount = new UserAccountEntity(
             clientUser.Id, "clientecreds", "cliente.creds@huellitas.test", "Activo");
 
@@ -250,15 +254,16 @@ public sealed class SecurityStage1Tests : IDisposable
             .Returns(clientUser);
         _rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>())
             .Returns(clientRole);
+        _userCredentialRepository.ExistsByAccountIdAsync(clientAccount.Id, Arg.Any<CancellationToken>())
+            .Returns(false);
 
         var handler = new CreateUserCredentialsCommandHandler(_unitOfWork, _passwordHasher);
         var command = new CreateUserCredentialsCommand(clientAccount.Id, "Password123!");
 
-        var ex = await Assert.ThrowsAsync<ForbiddenException>(
-            () => handler.Handle(command, CancellationToken.None));
+        var credentialId = await handler.Handle(command, CancellationToken.None);
 
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
-        await _userCredentialRepository.DidNotReceive().AddAsync(
+        Assert.NotEqual(Guid.Empty, credentialId);
+        await _userCredentialRepository.Received(1).AddAsync(
             Arg.Any<UserCredentialEntity>(), Arg.Any<CancellationToken>());
     }
 

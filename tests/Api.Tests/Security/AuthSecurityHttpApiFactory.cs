@@ -67,8 +67,6 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
             ["RateLimiting__LoginWindowSeconds"] = "60",
             ["RateLimiting__RefreshPermitLimit"] = "1000",
             ["RateLimiting__RefreshWindowSeconds"] = "60",
-            ["RateLimiting__TelegramRegistrationPermitLimit"] = "1000",
-            ["RateLimiting__TelegramRegistrationWindowSeconds"] = "60",
             ["RateLimiting__TelegramWebhookPermitLimit"] = "1000",
             ["RateLimiting__TelegramWebhookWindowSeconds"] = "60"
         };

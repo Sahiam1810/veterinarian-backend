@@ -95,10 +95,6 @@ public sealed class TelegramOptionsValidatorTests
         PublicWebhookUrl = "https://example.test",
         WorkerConcurrency = workerConcurrency,
         OtpPepperBase64 = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
-        RegistrationEnabled = true,
-        RegistrationCompletionUrl = "https://example.test/register",
-        RegistrationProtectionKeyBase64 =
-            Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
         PrivateAccessAbsoluteTtlHours = absoluteHours,
         PrivateAccessIdleTtlMinutes = idleMinutes,
         PendingEscalationStatusId = pendingEscalationStatusId,

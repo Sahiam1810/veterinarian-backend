@@ -8,7 +8,6 @@ using Application.ChatMessages.UseCase;
 using Application.ChatParticipants.UseCase;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
-using Application.Telegram.Linking;
 using Application.Telegram.Messages;
 using Domain.Telegram.Entities;
 using Domain.Telegram.Enums;
@@ -94,13 +93,9 @@ public sealed class ProcessTelegramUpdateHandler(
                 return;
             }
 
-            if (messageText.StartsWith("/start ", StringComparison.Ordinal))
-            {
-                await ProcessLinkCodeAsync(update, messageText[7..].Trim(), cancellationToken);
-                return;
-            }
-
-            if (string.Equals(messageText, "/start", StringComparison.OrdinalIgnoreCase))
+            // Todo /start (con o sin payload) responde el mismo mensaje de bienvenida.
+            if (string.Equals(messageText, "/start", StringComparison.OrdinalIgnoreCase) ||
+                messageText.StartsWith("/start ", StringComparison.OrdinalIgnoreCase))
             {
                 await DeliverAsync(update, GuestStartReply, cancellationToken);
                 return;
@@ -172,9 +167,9 @@ public sealed class ProcessTelegramUpdateHandler(
             // mensaje que disparó el escalamiento, no solo la razón resumida que
             // queda en ChatEscalation.Reason. La respuesta del agente de IA queda
             // deliberadamente diferida (Decisión 2, Ticket B3): no hay todavía un
-            // AiModel/ChatParticipant "Agente IA" sembrado, y crear uno placeholder
-            // solo para esto acoplaría este ticket al sistema de métricas de costo
-            // de IA (ChatAiRuns/ChatAiRunMetrics), que nadie pidió todavía.
+            // ChatParticipant "Agente IA" sembrado, y crear uno placeholder
+            // solo para esto acoplaría este ticket a un sistema de métricas de costo
+            // que nadie pidió todavía.
             await PersistClientMessageAsync(context.ConversationId, messageText, cancellationToken);
 
             if (context.IsEscalated)
@@ -388,27 +383,6 @@ public sealed class ProcessTelegramUpdateHandler(
         string.IsNullOrWhiteSpace(result.Message)
             ? "Tu conversación está siendo atendida por un asesor."
             : result.Message;
-
-    private async Task ProcessLinkCodeAsync(
-        TelegramInboundUpdate update,
-        string code,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await sender.Send(
-                new ConsumeTelegramLinkCodeCommand(code, update.TelegramUserId, update.TelegramChatId),
-                cancellationToken);
-            await DeliverAsync(update, "Tu cuenta de Huellitas quedó vinculada correctamente.", cancellationToken);
-        }
-        catch (TelegramIntegrationException exception) when (
-            exception is TelegramLinkCodeInvalidException
-                or TelegramIdentityConflictException
-                or TelegramAccountUnavailableException)
-        {
-            await DeliverAsync(update, "El código de vinculación es inválido, ya fue usado o venció.", cancellationToken);
-        }
-    }
 
     private async Task<AgentConversationContext> ResolveConversationAsync(
         TelegramUserLink userLink,

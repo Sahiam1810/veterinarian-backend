@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
-using Api.AccountStatements.Controllers;
 using Api.Common.Security.Permissions;
 using Api.Modules.Controllers;
 using Api.Priorities.Controllers;
@@ -19,7 +18,6 @@ public sealed class PlatformAccessAuthorizationTests
 
     public static IEnumerable<object[]> PlatformViewControllerActions()
     {
-        yield return [typeof(AccountStatementsController), nameof(AccountStatementsController.GetById)];
         yield return [typeof(ModulesController), nameof(ModulesController.GetAll)];
         yield return [typeof(PrioritiesController), nameof(PrioritiesController.GetAll)];
     }

@@ -1,6 +1,5 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.Security.Errors;
 using MediatR;
 using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
 
@@ -9,8 +8,6 @@ namespace Application.UserCredentials.UseCase;
 public sealed class CreateUserCredentialsCommandHandler
     : IRequestHandler<CreateUserCredentialsCommand, Guid>
 {
-    private const string ClientRoleName = "Cliente";
-
     private readonly IUnitOfWork _uow;
     private readonly IPasswordHasher _passwordHasher;
 
@@ -46,21 +43,11 @@ public sealed class CreateUserCredentialsCommandHandler
                 "El usuario de la cuenta especificada no existe.");
         }
 
-        var role = await _uow.RolesRepository.GetByIdAsync(
+        _ = await _uow.RolesRepository.GetByIdAsync(
             user.RoleId,
-            cancellationToken);
-
-        if (role is null)
-        {
-            throw new NotFoundException(
+            cancellationToken)
+            ?? throw new NotFoundException(
                 "El rol del usuario especificado no existe.");
-        }
-
-        // 1.4: Cliente no tiene login de plataforma; no crear USER_CREDENTIALS.
-        if (string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal))
-        {
-            throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
-        }
 
         var credentialsExist = await _uow.UserCredentialsRepository.ExistsByAccountIdAsync(
             request.AccountId,

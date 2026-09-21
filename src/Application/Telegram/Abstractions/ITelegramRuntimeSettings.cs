@@ -6,13 +6,9 @@ public interface ITelegramRuntimeSettings
 
     string BotUsername { get; }
 
-    TimeSpan LinkCodeTtl { get; }
-
     TimeSpan WorkerPollInterval { get; }
 
-    /// <summary>
-    /// Slots paralelos del worker de Telegram (chats distintos). Mismo chat sigue en serie.
-    /// </summary>
+    // Slots paralelos del worker de Telegram (chats distintos). Mismo chat sigue en serie.
     int WorkerConcurrency { get; }
 
     TimeSpan ProcessingLease { get; }
@@ -37,25 +33,7 @@ public interface ITelegramRuntimeSettings
     // el reenvío.
     Guid HumanAgentSenderTypeId { get; }
 
-    TimeSpan OtpLifetime { get; }
-
-    int OtpMaximumAttempts { get; }
-
-    TimeSpan OtpResendInterval { get; }
-
     TimeSpan PrivateAccessAbsoluteLifetime { get; }
 
     TimeSpan PrivateAccessIdleLifetime { get; }
-
-    bool RegistrationEnabled { get; }
-
-    string RegistrationCompletionUrl { get; }
-
-    TimeSpan RegistrationOtpLifetime { get; }
-
-    TimeSpan RegistrationTokenLifetime { get; }
-
-    int RegistrationMaximumOtpAttempts { get; }
-
-    TimeSpan RegistrationResendInterval { get; }
 }

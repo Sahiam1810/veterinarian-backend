@@ -2,11 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Api.Telegram.Dtos;
 
-public sealed record CreateTelegramLinkCodeResponse(
-    string Code,
-    string DeepLink,
-    DateTimeOffset ExpiresAt);
-
+// DTOs del bot-link y del webhook de Telegram.
 public sealed record LinkTelegramBotAccountRequest(Guid ClientId);
 
 public sealed record LinkTelegramBotAccountResponse(Guid LinkId);
