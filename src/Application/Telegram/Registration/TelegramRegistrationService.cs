@@ -236,7 +236,7 @@ public sealed class TelegramRegistrationService(
             return new TelegramRegistrationOutcome(true, "No fue posible vincular la cuenta.");
         }
 
-        var personLink = await unitOfWork.UserLinksRepository.GetByPersonIdAsync(
+        var personLink = await unitOfWork.UserLinksRepository.GetByClientIdAsync(
             session.PersonId.Value, cancellationToken);
         if (personLink is { IsActive: true } && personLink.TelegramUserId != update.TelegramUserId)
         {

@@ -87,11 +87,13 @@ public sealed class CreateChatEscalationCommandHandlerTests
     public async Task Escalation_resolves_client_name_and_phone_from_the_linked_participant()
     {
         var fixture = CreateFixture();
-        var userId = Guid.NewGuid();
-        var profile = ChatUserProfile.Create(userId, null, null, null);
+        var clientId = Guid.NewGuid();
+        var profile = ChatUserProfile.Create(clientId, null, null, null);
         var clientParticipant = ChatParticipant.Create(
             ConversationId, ClientParticipantTypeId, chatUserProfileId: profile.Id);
+
         var client = TestClients.Create("1234567890", null, phoneNumber: "3001234567", fullName: "Ana Pérez");
+
 
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
@@ -106,7 +108,7 @@ public sealed class CreateChatEscalationCommandHandlerTests
             .GetByIdAsync(profile.Id, default)
             .Returns(profile);
         fixture.Uow.ClientsRepository
-            .GetByUserIdAsync(userId, default)
+            .GetByIdAsync(profile.UserId, default)
             .Returns(client);
 
         await fixture.Handler.Handle(

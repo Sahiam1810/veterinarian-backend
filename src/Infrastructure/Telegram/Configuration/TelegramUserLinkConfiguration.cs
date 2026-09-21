@@ -1,7 +1,7 @@
+using Domain.Clients.Entities;
 using Domain.Telegram.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using UserEntity = Domain.Users.Entities.Users;
 
 namespace Infrastructure.Telegram.Configuration;
 
@@ -14,7 +14,7 @@ public sealed class TelegramUserLinkConfiguration
         builder.HasKey(link => link.Id);
         builder.Property(link => link.Id).HasColumnName("ID").HasColumnType("VARCHAR2(36)")
             .HasConversion(value => value.ToString(), value => Guid.Parse(value)).ValueGeneratedNever();
-        builder.Property(link => link.PersonId).HasColumnName("PERSON_ID").HasColumnType("VARCHAR2(36)")
+        builder.Property(link => link.ClientId).HasColumnName("CLIENT_ID").HasColumnType("VARCHAR2(36)")
             .HasConversion(value => value.ToString(), value => Guid.Parse(value)).IsRequired();
         builder.Property(link => link.TelegramUserId).HasColumnName("TELEGRAM_USER_ID").HasColumnType("NUMBER(19)").IsRequired();
         builder.Property(link => link.TelegramChatId).HasColumnName("TELEGRAM_CHAT_ID").HasColumnType("NUMBER(19)").IsRequired();
@@ -22,7 +22,7 @@ public sealed class TelegramUserLinkConfiguration
         builder.Property(link => link.UnlinkedAt).HasColumnName("UNLINKED_AT").HasColumnType("TIMESTAMP");
         builder.Property(link => link.CreatedAt).HasColumnName("CREATED_AT").HasColumnType("TIMESTAMP").IsRequired();
         builder.Property(link => link.UpdatedAt).HasColumnName("UPDATED_AT").HasColumnType("TIMESTAMP");
-        builder.HasOne<UserEntity>().WithMany().HasForeignKey(link => link.PersonId)
-            .HasConstraintName("FK_TELEGRAM_USER_LINKS_USERS").OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ClientEntity>().WithMany().HasForeignKey(link => link.ClientId)
+            .HasConstraintName("FK_TELEGRAM_USER_LINKS_CLIENTS").OnDelete(DeleteBehavior.Restrict);
     }
 }

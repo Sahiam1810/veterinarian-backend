@@ -7,7 +7,7 @@ public sealed record CreateTelegramLinkCodeResponse(
     string DeepLink,
     DateTimeOffset ExpiresAt);
 
-public sealed record LinkTelegramBotAccountRequest(Guid PersonId);
+public sealed record LinkTelegramBotAccountRequest(Guid ClientId);
 
 public sealed record LinkTelegramBotAccountResponse(Guid LinkId);
 

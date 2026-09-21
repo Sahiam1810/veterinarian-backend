@@ -23,7 +23,7 @@ public sealed class PersistentConversationContextProvider(
         cancellationToken.ThrowIfCancellationRequested();
         _ = idempotencyKey;
 
-        _ = await unitOfWork.UsersRepository.GetByIdAsync(personId, cancellationToken)
+        _ = await unitOfWork.ClientsRepository.GetByIdAsync(personId, cancellationToken)
             ?? throw new AgentConversationForbiddenException();
 
         if (requestedConversationId is { } conversationId)

@@ -20,7 +20,7 @@ namespace Api.Telegram.Controllers;
 public sealed class TelegramBotLinkController(ISender sender) : ControllerBase
 {
     [HttpPost]
-    [EndpointSummary("Vincula la persona registrada/encontrada por el bot con el Telegram invitado actual")]
+    [EndpointSummary("Vincula el cliente registrado o encontrado por el bot con el Telegram invitado actual")]
     [ProducesResponseType(typeof(LinkTelegramBotAccountResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -38,7 +38,7 @@ public sealed class TelegramBotLinkController(ISender sender) : ControllerBase
         }
 
         var linkId = await sender.Send(
-            new LinkTelegramBotAccountCommand(request.PersonId, telegramUserId),
+            new LinkTelegramBotAccountCommand(request.ClientId, telegramUserId),
             cancellationToken);
         return Ok(new LinkTelegramBotAccountResponse(linkId));
     }

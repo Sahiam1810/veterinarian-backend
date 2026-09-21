@@ -8,7 +8,7 @@ public sealed class TelegramUserLink : BaseEntity<Guid>
     {
     }
 
-    public Guid PersonId { get; private set; }
+    public Guid ClientId { get; private set; }
 
     public long TelegramUserId { get; private set; }
 
@@ -21,19 +21,19 @@ public sealed class TelegramUserLink : BaseEntity<Guid>
     public bool IsActive => UnlinkedAt is null;
 
     public static TelegramUserLink Create(
-        Guid personId,
+        Guid clientId,
         long telegramUserId,
         long telegramChatId,
         DateTime linkedAt)
     {
-        EnsurePersonId(personId);
+        EnsureClientId(clientId);
         EnsureExternalId(telegramUserId, nameof(telegramUserId));
         EnsureExternalId(telegramChatId, nameof(telegramChatId));
 
         return new TelegramUserLink
         {
             Id = Guid.NewGuid(),
-            PersonId = personId,
+            ClientId = clientId,
             TelegramUserId = telegramUserId,
             TelegramChatId = telegramChatId,
             LinkedAt = linkedAt,
@@ -69,13 +69,13 @@ public sealed class TelegramUserLink : BaseEntity<Guid>
         UpdatedAt = unlinkedAt;
     }
 
-    private static void EnsurePersonId(Guid personId)
+    private static void EnsureClientId(Guid clientId)
     {
-        if (personId == Guid.Empty)
+        if (clientId == Guid.Empty)
         {
             throw new ArgumentException(
-                "El identificador de la persona es obligatorio.",
-                nameof(personId));
+                "El identificador del cliente es obligatorio.",
+                nameof(clientId));
         }
     }
 

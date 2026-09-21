@@ -1,15 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
-using Application.Permissions.Claims;
-using Application.Permissions.UseCases;
-using Application.Roles.Abstraction;
+using Application.Clients.Abstraction;
 using Application.Telegram.Abstractions;
-using Application.UserAccounts.Abstraction;
-using Application.Users.Abstraction;
+using Application.Telegram.Errors;
+using Domain.Clients.Entities;
+using Domain.Roles;
 using Infrastructure.Security.Options;
 using Infrastructure.Security.Tokens;
 using Infrastructure.Telegram.Security;
-using MediatR;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
@@ -33,12 +31,9 @@ public sealed class AgentGuestIdentityProviderTests
         using var keys = new JwtRsaKeyMaterial(options);
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.DelegatedTokenLifetime.Returns(TimeSpan.FromMinutes(5));
-        var sender = Substitute.For<ISender>();
+        var clientsRepository = Substitute.For<IClientRepository>();
         var provider = new AgentDelegatedIdentityProvider(
-            Substitute.For<IUsersRepository>(),
-            Substitute.For<IUserAccountsRepository>(),
-            Substitute.For<IRolesRepository>(),
-            sender,
+            clientsRepository,
             settings,
             new JwtTokenIssuer(options, keys, TimeProvider.System));
 
@@ -55,14 +50,10 @@ public sealed class AgentGuestIdentityProviderTests
         Assert.Equal("TelegramGuest", token.Claims.Single(x => x.Type == "role").Value);
         Assert.Equal("1001", token.Claims.Single(x => x.Type == "telegram_user_id").Value);
         Assert.DoesNotContain(token.Claims, claim => claim.Type == "token_use");
-        Assert.DoesNotContain(token.Claims, claim => claim.Type == PermissionClaimValue.ClaimType);
-        await sender.DidNotReceive().Send(
-            Arg.Any<GetUserPermissionClaimsQuery>(),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Linked_identity_contains_the_current_user_permissions()
+    public async Task Linked_identity_issues_delegated_token_for_client_with_sub_email_and_preferred_username()
     {
         using var rsa = RSA.Create(2048);
         var options = Options.Create(new JwtOptions
@@ -74,51 +65,80 @@ public sealed class AgentGuestIdentityProviderTests
             KeyId = "test-key"
         });
         using var keys = new JwtRsaKeyMaterial(options);
-        var roleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var user = new Domain.Users.Entities.Users(
-            "Telegram User",
-            "telegram@huellitas.test",
-            null,
-            roleId);
-        var account = new Domain.UserAccounts.Entities.UserAccounts(
-            user.Id,
-            "telegramuser",
-            "telegram@huellitas.test",
-            "Activo");
-        var role = new Domain.Roles.Entities.Roles("Administrador", "Staff");
-        var usersRepository = Substitute.For<IUsersRepository>();
-        var accountsRepository = Substitute.For<IUserAccountsRepository>();
-        var rolesRepository = Substitute.For<IRolesRepository>();
-        var sender = Substitute.For<ISender>();
+        var client = new ClientEntity(
+            Guid.NewGuid(),
+            "Cliente Telegram",
+            "cliente@telegram.test",
+            "1234567890",
+            "3001234567",
+            "Calle 123");
+        var clientsRepository = Substitute.For<IClientRepository>();
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.DelegatedTokenLifetime.Returns(TimeSpan.FromMinutes(5));
-        usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
-        accountsRepository.GetByUserIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(account);
-        rolesRepository.GetByIdAsync(roleId, Arg.Any<CancellationToken>()).Returns(role);
-        sender.Send(
-                Arg.Is<GetUserPermissionClaimsQuery>(query =>
-                    query.RoleId == roleId && query.UserId == user.Id),
-                Arg.Any<CancellationToken>())
-            .Returns(["perm:Mascotas:View"]);
+        clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
+
         var provider = new AgentDelegatedIdentityProvider(
-            usersRepository,
-            accountsRepository,
-            rolesRepository,
-            sender,
+            clientsRepository,
             settings,
             new JwtTokenIssuer(options, keys, TimeProvider.System));
 
-        var identity = await provider.GetAsync(user.Id, CancellationToken.None);
+        var identity = await provider.GetAsync(client.Id, CancellationToken.None);
         var token = new JwtSecurityTokenHandler().ReadJwtToken(identity.AccessToken);
 
-        Assert.Contains(
-            token.Claims,
-            claim => claim.Type == PermissionClaimValue.ClaimType &&
-                     claim.Value == "perm:Mascotas:View");
+        Assert.Equal(client.Id, identity.PersonId);
+        Assert.Equal("Cliente", identity.Role);
+
+        // Verification of sub, email, and preferred_username claims
+        Assert.Equal(client.Id.ToString(), token.Claims.Single(claim => claim.Type == JwtRegisteredClaimNames.Sub || claim.Type == "sub").Value);
+        Assert.Equal("cliente@telegram.test", token.Claims.Single(claim => claim.Type == "email" || claim.Type == JwtRegisteredClaimNames.Email).Value);
+        Assert.Equal("cliente@telegram.test", token.Claims.Single(claim => claim.Type == "preferred_username").Value);
+
+        Assert.Equal(client.Id.ToString(), token.Claims.Single(claim => claim.Type == "person_id").Value);
+        Assert.Equal(SystemRoles.ClientRoleId.ToString(), token.Claims.Single(claim => claim.Type == "role_id").Value);
+        Assert.Equal("Cliente", token.Claims.Single(claim => claim.Type == "role").Value);
         Assert.Equal(
             "telegram_agent",
             token.Claims.Single(claim => claim.Type == "token_use").Value);
         Assert.DoesNotContain(token.Claims, claim => claim.Type == "telegram_user_id");
+    }
+
+    [Fact]
+    public async Task Linked_identity_throws_when_client_is_missing_or_inactive()
+    {
+        using var rsa = RSA.Create(2048);
+        var options = Options.Create(new JwtOptions
+        {
+            Issuer = "Veterinaria.Api",
+            Audience = "Veterinaria.Client",
+            PrivateKeyPemBase64 = Encode(rsa.ExportPkcs8PrivateKeyPem()),
+            PublicKeyPemBase64 = Encode(rsa.ExportSubjectPublicKeyInfoPem()),
+            KeyId = "test-key"
+        });
+        using var keys = new JwtRsaKeyMaterial(options);
+        var clientsRepository = Substitute.For<IClientRepository>();
+        var settings = Substitute.For<ITelegramRuntimeSettings>();
+        settings.DelegatedTokenLifetime.Returns(TimeSpan.FromMinutes(5));
+
+        var missingClientId = Guid.NewGuid();
+        clientsRepository.GetByIdAsync(missingClientId, Arg.Any<CancellationToken>())
+            .Returns((ClientEntity?)null);
+
+        var inactiveClient = new ClientEntity(
+            Guid.NewGuid(), "Cliente Inactivo", "inactivo@test.com", "9999999999", "3000000000", null);
+        inactiveClient.Deactivate();
+        clientsRepository.GetByIdAsync(inactiveClient.Id, Arg.Any<CancellationToken>())
+            .Returns(inactiveClient);
+
+        var provider = new AgentDelegatedIdentityProvider(
+            clientsRepository,
+            settings,
+            new JwtTokenIssuer(options, keys, TimeProvider.System));
+
+        await Assert.ThrowsAsync<TelegramAccountUnavailableException>(() =>
+            provider.GetAsync(missingClientId, CancellationToken.None));
+
+        await Assert.ThrowsAsync<TelegramAccountUnavailableException>(() =>
+            provider.GetAsync(inactiveClient.Id, CancellationToken.None));
     }
 
     private static string Encode(string pem) =>

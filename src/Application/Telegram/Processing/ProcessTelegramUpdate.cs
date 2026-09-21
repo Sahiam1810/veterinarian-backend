@@ -301,7 +301,7 @@ public sealed class ProcessTelegramUpdateHandler(
         long correlationSourceId,
         CancellationToken cancellationToken)
     {
-        var identity = await identityProvider.GetAsync(userLink.PersonId, cancellationToken);
+        var identity = await identityProvider.GetAsync(userLink.ClientId, cancellationToken);
         var result = await dispatcher.DispatchAsync(
             new AgentMessageDispatchRequest(
                 messageText,
@@ -420,6 +420,7 @@ public sealed class ProcessTelegramUpdateHandler(
             cancellationToken);
         if (binding is { Closed: false })
         {
+
             var lastActivity = binding.LastMessageAt ?? binding.CreatedAt;
             var idleFor = timeProvider.GetUtcNow().UtcDateTime - lastActivity;
             if (idleFor <= settings.PrivateAccessIdleLifetime)
@@ -434,6 +435,7 @@ public sealed class ProcessTelegramUpdateHandler(
 
             await sender.Send(
                 new CloseChatConversationCommand(binding.ConversationId),
+
                 cancellationToken);
             logger.LogInformation(
                 "Closed idle Telegram conversation {ConversationId} after {IdleMinutes} minutes.",
@@ -445,7 +447,7 @@ public sealed class ProcessTelegramUpdateHandler(
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
             created = await conversationContextProvider.ResolveAsync(
-                userLink.PersonId,
+                userLink.ClientId,
                 null,
                 idempotencyKey,
                 "Telegram",

@@ -4,9 +4,6 @@ using Application.Common.Abstractions;
 
 namespace Application.ChatConversations.Enrichment;
 
-// Ticket B7: extraído de CreateChatEscalationCommandHandler.ResolveClientAsync
-// (Ticket B5) para reutilizarlo también en los listados REST de
-// conversaciones y escalamientos — antes solo lo usaba el broadcast de SignalR.
 public sealed class ChatConversationClientResolver(
     IUnitOfWork uow,
     IAgentConversationDefaults conversationDefaults) : IChatConversationClientResolver
@@ -30,12 +27,13 @@ public sealed class ChatConversationClientResolver(
             return ChatConversationClientInfo.Empty;
         }
 
-        var client = await uow.ClientsRepository.GetByUserIdAsync(profile.UserId, cancellationToken);
+        var client = await uow.ClientsRepository.GetByIdAsync(profile.UserId, cancellationToken);
         if (client is null)
         {
             return ChatConversationClientInfo.Empty;
         }
 
         return new ChatConversationClientInfo(client.Id, client.FullName.Value, client.PhoneNumber?.Value);
+
     }
 }

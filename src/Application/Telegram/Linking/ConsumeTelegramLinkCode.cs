@@ -35,13 +35,13 @@ public sealed class ConsumeTelegramLinkCodeHandler(
 
         var externalLink = await unitOfWork.UserLinksRepository
             .GetByTelegramUserIdAsync(request.TelegramUserId, cancellationToken);
-        if (externalLink is not null && externalLink.PersonId != code.PersonId)
+        if (externalLink is not null && externalLink.ClientId != code.PersonId)
         {
             throw new TelegramIdentityConflictException();
         }
 
         var link = externalLink ?? await unitOfWork.UserLinksRepository
-            .GetByPersonIdAsync(code.PersonId, cancellationToken);
+            .GetByClientIdAsync(code.PersonId, cancellationToken);
         if (link is null)
         {
             link = TelegramUserLink.Create(

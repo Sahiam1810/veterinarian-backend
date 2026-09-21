@@ -55,8 +55,9 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
         var ownerId = Guid.NewGuid();
         var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         ArrangeAppointments(appointment);
-        links.GetByPersonIdAsync(ownerId, Arg.Any<CancellationToken>())
-            .Returns(TelegramUserLink.Create(ownerId, 99, 1001, Now.UtcDateTime));
+        var clientId = appointment.ClientPet!.Client!.Id;
+        links.GetByClientIdAsync(clientId, Arg.Any<CancellationToken>())
+            .Returns(TelegramUserLink.Create(clientId, 99, 1001, Now.UtcDateTime));
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
 
@@ -85,7 +86,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     {
         var ownerId = Guid.NewGuid();
         ArrangeAppointments(CreateAppointment(ownerId, "Luna", "CONFIRMADA", Now.UtcDateTime.AddHours(1)));
-        links.GetByPersonIdAsync(ownerId, Arg.Any<CancellationToken>())
+        links.GetByClientIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((TelegramUserLink?)null);
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
@@ -102,10 +103,12 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     public async Task Handle_treats_revoked_link_as_missing()
     {
         var ownerId = Guid.NewGuid();
-        ArrangeAppointments(CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1)));
-        var link = TelegramUserLink.Create(ownerId, 99, 1001, Now.UtcDateTime);
+        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var clientId = appointment.ClientPet!.Client!.Id;
+        ArrangeAppointments(appointment);
+        var link = TelegramUserLink.Create(clientId, 99, 1001, Now.UtcDateTime);
         link.Revoke(Now.UtcDateTime);
-        links.GetByPersonIdAsync(ownerId, Arg.Any<CancellationToken>()).Returns(link);
+        links.GetByClientIdAsync(clientId, Arg.Any<CancellationToken>()).Returns(link);
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
 
@@ -176,8 +179,9 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
         var ownerId = Guid.NewGuid();
         var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         ArrangeAppointments(appointment);
-        links.GetByPersonIdAsync(ownerId, Arg.Any<CancellationToken>())
-            .Returns(TelegramUserLink.Create(ownerId, 99, 1001, Now.UtcDateTime));
+        var clientId = appointment.ClientPet!.Client!.Id;
+        links.GetByClientIdAsync(clientId, Arg.Any<CancellationToken>())
+            .Returns(TelegramUserLink.Create(clientId, 99, 1001, Now.UtcDateTime));
 
         var result = await Sut().Handle(Command(), CancellationToken.None);
 
@@ -224,9 +228,11 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
     public async Task Handle_does_not_persist_when_telegram_send_fails()
     {
         var ownerId = Guid.NewGuid();
-        ArrangeAppointments(CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1)));
-        links.GetByPersonIdAsync(ownerId, Arg.Any<CancellationToken>())
-            .Returns(TelegramUserLink.Create(ownerId, 99, 1001, Now.UtcDateTime));
+        var appointment = CreateAppointment(ownerId, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
+        var clientId = appointment.ClientPet!.Client!.Id;
+        ArrangeAppointments(appointment);
+        links.GetByClientIdAsync(clientId, Arg.Any<CancellationToken>())
+            .Returns(TelegramUserLink.Create(clientId, 99, 1001, Now.UtcDateTime));
         bot.SendTextAsync(Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new TelegramDeliveryException());
 
@@ -246,10 +252,12 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
         var first = CreateAppointment(ownerA, "Luna", "AGENDADA", Now.UtcDateTime.AddHours(1));
         var second = CreateAppointment(ownerB, "Rocky", "CONFIRMADA", Now.UtcDateTime.AddMinutes(55));
         ArrangeAppointments(first, second);
-        links.GetByPersonIdAsync(ownerA, Arg.Any<CancellationToken>())
-            .Returns(TelegramUserLink.Create(ownerA, 1, 11, Now.UtcDateTime));
-        links.GetByPersonIdAsync(ownerB, Arg.Any<CancellationToken>())
-            .Returns(TelegramUserLink.Create(ownerB, 2, 22, Now.UtcDateTime));
+        var clientAId = first.ClientPet!.Client!.Id;
+        var clientBId = second.ClientPet!.Client!.Id;
+        links.GetByClientIdAsync(clientAId, Arg.Any<CancellationToken>())
+            .Returns(TelegramUserLink.Create(clientAId, 1, 11, Now.UtcDateTime));
+        links.GetByClientIdAsync(clientBId, Arg.Any<CancellationToken>())
+            .Returns(TelegramUserLink.Create(clientBId, 2, 22, Now.UtcDateTime));
         bot.SendTextAsync(11, Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new TelegramDeliveryException());
 

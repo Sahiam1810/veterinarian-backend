@@ -217,8 +217,8 @@ public sealed class TelegramChatLinkingService(
         var activeChatLink = await unitOfWork.UserLinksRepository.GetByTelegramChatIdAsync(
             update.TelegramChatId,
             cancellationToken);
-        if ((activeUserLink is not null && activeUserLink.PersonId != session.PersonId.Value) ||
-            (activeChatLink is not null && activeChatLink.PersonId != session.PersonId.Value))
+        if ((activeUserLink is not null && activeUserLink.ClientId != session.PersonId.Value) ||
+            (activeChatLink is not null && activeChatLink.ClientId != session.PersonId.Value))
         {
             session.Cancel(now.UtcDateTime);
             await unitOfWork.LinkingSessionsRepository.UpdateAsync(session, cancellationToken);
@@ -228,7 +228,7 @@ public sealed class TelegramChatLinkingService(
                 "Este chat ya está vinculado a otra cuenta de Huellitas.");
         }
 
-        var personLink = await unitOfWork.UserLinksRepository.GetByPersonIdAsync(
+        var personLink = await unitOfWork.UserLinksRepository.GetByClientIdAsync(
             session.PersonId.Value,
             cancellationToken);
         if (personLink is { IsActive: true } &&
