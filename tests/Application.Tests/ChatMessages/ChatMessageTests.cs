@@ -3,13 +3,9 @@ using Application.AgentHumans.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Availabilities.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatMessages.UseCase;
 using Application.ChatParticipants.Abstraction;
@@ -495,11 +491,8 @@ public sealed class ChatMessageTests
         public IMessageTypeRepository MessageTypesRepository { get; }
         public IChatParticipantRepository ChatParticipantsRepository { get; }
         public IChatMessageRepository ChatMessagesRepository { get; }
-        public IChatAttachmentRepository ChatAttachmentsRepository => null!;
         public IChatEscalationRepository ChatEscalationsRepository => null!;
-        public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
         public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
-        public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
 
         public IRolesRepository RolesRepository => null!;
         public Application.RolePermissions.Abstraction.IRolePermissionsRepository RolePermissionsRepository => null!;
@@ -525,7 +518,6 @@ public sealed class ChatMessageTests
         public INotificationRepository NotificationsRepository => null!;
         public IDiagnosticRepository DiagnosticsRepository => null!;
         public IAgentHumanRepository AgentHumansRepository => null!;
-        public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public IUserAccountsRepository UserAccountsRepository => null!;
         public IUserCredentialsRepository UserCredentialsRepository => null!;
         public IClientRepository ClientsRepository => null!;

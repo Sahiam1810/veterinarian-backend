@@ -33,18 +33,11 @@ using Application.MessageTypes.Abstraction;
 
 using Application.EscalationStatuses.Abstraction;
 
-
-
-
 using Application.Notifications.Abstraction;
 using Application.AgentHumans.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.UserAccounts.Abstraction;
@@ -75,21 +68,15 @@ public sealed class UnitOfWork : IUnitOfWork
         IPetRepository petsRepository,
         IUserAccountsRepository userAccountsRepository,
         IUserCredentialsRepository userCredentialsRepository,
-
         IClientRepository clientsRepository,
-
         IUserTokensRepository userTokensRepository,
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
-
         IAccountStatementsRepository accountStatementsRepository,
-
         ISenderTypeRepository senderTypesRepository,
         IVeterinarianRepository veterinariansRepository,
-
         IConversationStatusRepository conversationStatusesRepository,
         IMessageTypeRepository messageTypesRepository,
-
         IPriorityRepository prioritiesRepository,
         IEscalationStatusRepository escalationStatusesRepository,
         IAvailabilityRepository availabilitiesRepository,
@@ -101,14 +88,10 @@ public sealed class UnitOfWork : IUnitOfWork
         IVaccinationRepository vaccinationsRepository,
         IAgentHumanRepository agentHumansRepository,
         IChatConversationRepository chatConversationsRepository,
-        IChatConversationAssignmentRepository chatConversationAssignmentsRepository,
         IChatParticipantRepository chatParticipantsRepository,
         IChatMessageRepository chatMessagesRepository,
-        IChatAttachmentRepository chatAttachmentsRepository,
         IChatEscalationRepository chatEscalationsRepository,
-        IChatEscalationStatusHistoryRepository chatEscalationStatusHistoriesRepository,
-        IChatEscalationResolutionRepository chatEscalationResolutionsRepository,
-        IChatEscalationAssignmentRepository chatEscalationAssignmentsRepository)
+        IChatEscalationResolutionRepository chatEscalationResolutionsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -124,27 +107,17 @@ public sealed class UnitOfWork : IUnitOfWork
         ServicesRepository = servicesRepository;
         UserAccountsRepository = userAccountsRepository;
         UserCredentialsRepository = userCredentialsRepository;
-
         ClientsRepository = clientsRepository;
-
         UserTokensRepository = userTokensRepository;
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
-
         AccountStatementsRepository = accountStatementsRepository;
-
-
         VeterinariansRepository = veterinariansRepository;
-
         PrioritiesRepository = prioritiesRepository;
-
         SenderTypesRepository = senderTypesRepository;
-
         ConversationStatusesRepository = conversationStatusesRepository;
         MessageTypesRepository = messageTypesRepository;
-
         EscalationStatusesRepository = escalationStatusesRepository;
-
         AvailabilitiesRepository = availabilitiesRepository;
         AppointmentsRepository = appointmentsRepository;
         AppointmentStatusHistoriesRepository = appointmentStatusHistoriesRepository;
@@ -154,14 +127,10 @@ public sealed class UnitOfWork : IUnitOfWork
         VaccinationsRepository = vaccinationsRepository;
         AgentHumansRepository = agentHumansRepository;
         ChatConversationsRepository = chatConversationsRepository;
-        ChatConversationAssignmentsRepository = chatConversationAssignmentsRepository;
         ChatParticipantsRepository = chatParticipantsRepository;
         ChatMessagesRepository = chatMessagesRepository;
-        ChatAttachmentsRepository = chatAttachmentsRepository;
         ChatEscalationsRepository = chatEscalationsRepository;
-        ChatEscalationStatusHistoriesRepository = chatEscalationStatusHistoriesRepository;
         ChatEscalationResolutionsRepository = chatEscalationResolutionsRepository;
-        ChatEscalationAssignmentsRepository = chatEscalationAssignmentsRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -174,33 +143,20 @@ public sealed class UnitOfWork : IUnitOfWork
     public IUsersRepository UsersRepository { get; }
     public IUserAccountsRepository UserAccountsRepository { get; }
     public IUserCredentialsRepository UserCredentialsRepository { get; }
-
     public IClientRepository ClientsRepository { get; }
-
     public IUserTokensRepository UserTokensRepository { get; }
-
     public IAccountStatementsRepository AccountStatementsRepository { get; }
-
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
     public ITypeServiceRepository TypeServicesRepository { get; }
-
     public IServiceRepository ServicesRepository { get; }
-
     public ISpecialtyRepository SpecialtiesRepository { get; }
     public IClientPetRepository ClientPetsRepository { get; }
-
     public IVeterinarianRepository VeterinariansRepository { get; }
-
     public IPriorityRepository PrioritiesRepository { get; }
-
     public ISenderTypeRepository SenderTypesRepository { get; }
     public IConversationStatusRepository ConversationStatusesRepository { get; }
-
-
     public IMessageTypeRepository MessageTypesRepository { get; }
-
     public IEscalationStatusRepository EscalationStatusesRepository { get; }
-
     public IAvailabilityRepository AvailabilitiesRepository { get; }
     public IAppointmentRepository AppointmentsRepository { get; }
     public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
@@ -210,14 +166,10 @@ public sealed class UnitOfWork : IUnitOfWork
     public IDiagnosticRepository DiagnosticsRepository { get; }
     public IAgentHumanRepository AgentHumansRepository { get; }
     public IChatConversationRepository ChatConversationsRepository { get; }
-    public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
     public IChatParticipantRepository ChatParticipantsRepository { get; }
     public IChatMessageRepository ChatMessagesRepository { get; }
-    public IChatAttachmentRepository ChatAttachmentsRepository { get; }
     public IChatEscalationRepository ChatEscalationsRepository { get; }
-    public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository { get; }
     public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
-    public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -232,7 +184,6 @@ public sealed class UnitOfWork : IUnitOfWork
             throw conflict;
         }
     }
-
 
     public async Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> action,

@@ -269,14 +269,10 @@ public sealed class ModuleTests
         public Application.Diagnostics.Abstraction.IDiagnosticRepository DiagnosticsRepository => null!;
         public Application.AgentHumans.Abstraction.IAgentHumanRepository AgentHumansRepository => null!;
         public Application.ChatConversations.Abstraction.IChatConversationRepository ChatConversationsRepository => null!;
-        public Application.ChatConversationAssignments.Abstraction.IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public Application.ChatParticipants.Abstraction.IChatParticipantRepository ChatParticipantsRepository => null!;
         public Application.ChatMessages.Abstraction.IChatMessageRepository ChatMessagesRepository => null!;
-        public Application.ChatAttachments.Abstraction.IChatAttachmentRepository ChatAttachmentsRepository => null!;
         public Application.ChatEscalations.Abstraction.IChatEscalationRepository ChatEscalationsRepository => null!;
-        public Application.ChatEscalationStatusHistories.Abstraction.IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
         public Application.ChatEscalationResolutions.Abstraction.IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
-        public Application.ChatEscalationAssignments.Abstraction.IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
         public Application.UserAccounts.Abstraction.IUserAccountsRepository UserAccountsRepository => null!;
         public Application.UserCredentials.Abstraction.IUserCredentialsRepository UserCredentialsRepository => null!;
         public Application.Clients.Abstraction.IClientRepository ClientsRepository => null!;

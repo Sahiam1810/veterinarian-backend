@@ -39,20 +39,12 @@ using Application.MessageTypes.Abstraction;
 
 using Application.EscalationStatuses.Abstraction;
 
-
-
-
-
 using Application.Notifications.Abstraction;
 
 using Application.AgentHumans.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 
@@ -80,13 +72,11 @@ public interface IUnitOfWork
 
     ITypeServiceRepository TypeServicesRepository { get; }
 
-
     IServiceRepository ServicesRepository { get; }
 
     ISpecialtyRepository SpecialtiesRepository { get; }
 
     IClientPetRepository ClientPetsRepository { get; }
-
 
     IVeterinarianRepository VeterinariansRepository { get; }
 
@@ -96,7 +86,6 @@ public interface IUnitOfWork
 
 
     IConversationStatusRepository ConversationStatusesRepository { get; }
-
 
     IMessageTypeRepository MessageTypesRepository { get; }
 
@@ -118,21 +107,14 @@ public interface IUnitOfWork
 
     IChatConversationRepository ChatConversationsRepository { get; }
 
-    IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
-
     IChatParticipantRepository ChatParticipantsRepository { get; }
 
     IChatMessageRepository ChatMessagesRepository { get; }
 
-    IChatAttachmentRepository ChatAttachmentsRepository { get; }
-
     IChatEscalationRepository ChatEscalationsRepository { get; }
-
-    IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository { get; }
 
     IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
 
-    IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
 
     IUserAccountsRepository UserAccountsRepository { get; }
 
