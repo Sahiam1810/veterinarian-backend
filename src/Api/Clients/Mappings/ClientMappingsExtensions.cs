@@ -49,9 +49,6 @@ public static class ClientMappingsExtensions
             entity.CreatedAt,
             entity.CreatedAt,
             entity.UpdatedAt,
-            // User ya viene cargado por .Include(c => c.User) en el repositorio.
-
-            // Si por algún motivo el navegador es nulo, se devuelve null/true sin reventar.
             entity.FullName.Value,
             entity.Email.Value,
             entity.IsActive

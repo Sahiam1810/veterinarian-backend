@@ -5,6 +5,7 @@ using Application.Common.Exceptions;
 using Domain.Clients.Entities;
 using NSubstitute;
 using Xunit;
+using Application.Tests.Common;
 
 namespace Application.Tests.Clients;
 
@@ -24,7 +25,7 @@ public sealed class GetClientByPhoneQueryHandlerTests
     [Fact]
     public async Task Handle_returns_client_when_phone_matches()
     {
-        var client = new ClientEntity(
+        var client = TestClients.Create(
             Guid.NewGuid(),
             "1234567890",
             "Calle 1",

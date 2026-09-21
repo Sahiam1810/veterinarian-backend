@@ -83,7 +83,7 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => ClientPhoneNumber.Create(str))
             .IsRequired();
 
-        // UNIQUE nullable: varios NULL permitidos; filtro alinea con migración EF Oracle.
+        // UNIQUE obligatorio: el teléfono es requerido, sin filtro.
         builder.HasIndex(client => client.PhoneNumber)
             .IsUnique()
             .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER");

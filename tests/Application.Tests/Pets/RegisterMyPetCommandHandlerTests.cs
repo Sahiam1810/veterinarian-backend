@@ -16,6 +16,7 @@ using Domain.UserAccounts.Entities;
 using NSubstitute;
 using Xunit;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using Application.Tests.Common;
 
 namespace Application.Tests.Pets;
 
@@ -83,7 +84,7 @@ public sealed class RegisterMyPetCommandHandlerTests
         {
             var userId = Guid.NewGuid();
             var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Active");
-            Client = new ClientEntity(userId, "1234567890", null);
+            Client = TestClients.Create(userId, "1234567890", null);
             var species = new SpeciesEntity("Canino");
             var race = new RaceEntity("Mestizo", species);
 

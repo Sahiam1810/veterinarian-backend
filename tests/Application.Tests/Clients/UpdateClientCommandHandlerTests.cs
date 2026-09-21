@@ -8,6 +8,7 @@ using Domain.Clients.Entities;
 using NSubstitute;
 using Xunit;
 using UserEntity = Domain.Users.Entities.Users;
+using Application.Tests.Common;
 
 namespace Application.Tests.Clients;
 
@@ -28,7 +29,7 @@ public sealed class UpdateClientCommandHandlerTests
     [Fact]
     public async Task Handle_throws_conflict_when_the_new_user_already_has_another_client_profile()
     {
-        var client = new ClientEntity(Guid.NewGuid(), "1234567890", "Calle Falsa 123");
+        var client = TestClients.Create(Guid.NewGuid(), "1234567890", "Calle Falsa 123");
         var newUser = new UserEntity("Otro Usuario", "otro@huellitas.test", "hash", Guid.NewGuid());
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
@@ -49,7 +50,7 @@ public sealed class UpdateClientCommandHandlerTests
     [Fact]
     public async Task Handle_excludes_its_own_id_when_checking_for_a_duplicate_user()
     {
-        var client = new ClientEntity(Guid.NewGuid(), "1234567890", "Calle Falsa 123");
+        var client = TestClients.Create(Guid.NewGuid(), "1234567890", "Calle Falsa 123");
         var user = new UserEntity("Ana Cliente", "ana@huellitas.test", "hash", Guid.NewGuid());
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
@@ -74,7 +75,7 @@ public sealed class UpdateClientCommandHandlerTests
     [Fact]
     public async Task Handle_persists_the_updated_client_with_a_normalized_phone_number()
     {
-        var client = new ClientEntity(Guid.NewGuid(), "1234567890", "Calle Falsa 123", phoneNumber: "3001234567");
+        var client = TestClients.Create(Guid.NewGuid(), "1234567890", "Calle Falsa 123", phoneNumber: "3001234567");
         var user = new UserEntity("Ana Cliente", "ana@huellitas.test", "hash", Guid.NewGuid());
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
@@ -98,7 +99,7 @@ public sealed class UpdateClientCommandHandlerTests
     public async Task Handle_allows_keeping_own_phone_number()
     {
         var user = new UserEntity("Ana Cliente", "ana-upd@huellitas.test", "hash", Guid.NewGuid());
-        var client = new ClientEntity(user.Id, "1234567890", "Calle Falsa 123", phoneNumber: "3001234567");
+        var client = TestClients.Create(user.Id, "1234567890", "Calle Falsa 123", phoneNumber: "3001234567");
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
@@ -125,7 +126,7 @@ public sealed class UpdateClientCommandHandlerTests
     public async Task Handle_throws_typed_conflict_when_another_client_has_the_phone()
     {
         var user = new UserEntity("Ana Cliente", "ana-upd2@huellitas.test", "hash", Guid.NewGuid());
-        var client = new ClientEntity(user.Id, "1234567890", "Calle Falsa 123", phoneNumber: "3001112233");
+        var client = TestClients.Create(user.Id, "1234567890", "Calle Falsa 123", phoneNumber: "3001112233");
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);

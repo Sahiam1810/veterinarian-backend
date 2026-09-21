@@ -17,6 +17,7 @@ using Domain.Species.Entities;
 using Domain.StatusAppointments.Entities;
 using NSubstitute;
 using Xunit;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -51,7 +52,7 @@ public sealed class UpdateAppointmentCommandHandlerTests
     public UpdateAppointmentCommandHandlerTests()
     {
         var userId = Guid.NewGuid();
-        ownedClient = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
+        ownedClient = TestClients.Create(userId, "1234567890", null, phoneNumber: "3001234567");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         ownedClientPet = new ClientPetEntity(ownedClient, pet, true);

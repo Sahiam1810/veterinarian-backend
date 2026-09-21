@@ -16,6 +16,7 @@ using Domain.Species.Entities;
 using Domain.VeterinarianAbsences.Entities;
 using NSubstitute;
 using Xunit;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -119,7 +120,7 @@ public sealed class AppointmentConfiguredScheduleTests
         var veterinarianId = Guid.NewGuid();
         var availability = new Availability(veterinarianId, dayOfWeek, startTime, endTime);
         var userId = Guid.NewGuid();
-        var client = new ClientEntity(userId, "1234567890", null, phoneNumber: "3001234567");
+        var client = TestClients.Create(userId, "1234567890", null, phoneNumber: "3001234567");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         var clientPet = new ClientPetEntity(client, pet, true);

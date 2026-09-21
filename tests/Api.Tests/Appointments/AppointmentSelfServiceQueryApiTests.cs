@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
 using Xunit;
 using UserEntity = Domain.Users.Entities.Users;
+using Api.Tests.Support;
 
 namespace Api.Tests.Appointments;
 
@@ -69,7 +70,7 @@ public sealed class AppointmentSelfServiceQueryApiTests
 
     private static Appointment CreateAppointmentWithDetails()
     {
-        var client = new ClientEntity(Guid.NewGuid(), "1234567890", "Calle 1");
+        var client = TestClients.Create(Guid.NewGuid(), "1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna", 4, "F", 12m, null,

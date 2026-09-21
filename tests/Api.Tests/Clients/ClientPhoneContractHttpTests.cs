@@ -160,7 +160,7 @@ public sealed class ClientPhoneContractApiFactory : WebApplicationFactory<AuthCo
 
     public ClientPhoneContractApiFactory()
     {
-        var existing = new ClientEntity(
+        var existing = TestClients.Create(
             ExistingUserId,
             "1234567890",
             "Calle Falsa 123",

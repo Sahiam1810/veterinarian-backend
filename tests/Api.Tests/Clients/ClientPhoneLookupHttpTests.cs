@@ -150,11 +150,10 @@ public sealed class ClientPhoneLookupApiFactory : WebApplicationFactory<AuthCont
     }
 
     internal static ClientEntity CreateKnownClient() =>
-        new(
+        TestClients.Create(
             Guid.Parse("bbbbbbbb-2222-2222-2222-222222222222"),
             "1234567890",
             "Calle Falsa 123",
-            registrationDate: new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
             phoneNumber: "3001234567");
 
     internal static Dictionary<string, string> BuildEnvironment(int phoneLookupPermitLimit) =>

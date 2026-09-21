@@ -13,6 +13,7 @@ using Domain.Veterinarians.Entities;
 using NSubstitute;
 using Xunit;
 using UserEntity = Domain.Users.Entities.Users;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -35,7 +36,7 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandlerTests
         var species = new SpeciesEntity("Perro");
         var race = new RaceEntity("Labrador", species);
         var pet = new PetEntity("Milu", 5, "F", 10m, null, species, race);
-        var client = new ClientEntity(ownerUserId, "1234567890", null);
+        var client = TestClients.Create(ownerUserId, "1234567890", null);
         var clientPet = new ClientPetEntity(client, pet, true);
         SetProperty(clientPet, nameof(ClientPetEntity.Client), client);
         SetProperty(clientPet, nameof(ClientPetEntity.Pet), pet);

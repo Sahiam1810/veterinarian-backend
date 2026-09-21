@@ -15,6 +15,7 @@ using Domain.UserAccounts.Entities;
 using NSubstitute;
 using Xunit;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
@@ -67,7 +68,7 @@ public sealed class GetMyAppointmentByIdQueryHandlerTests
     private (ClientPetEntity ClientPet, Appointment Appointment) ArrangeOwnedAppointment()
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
-        var client = new ClientEntity(UserId, "1234567890", "Calle 1");
+        var client = TestClients.Create(UserId, "1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna",

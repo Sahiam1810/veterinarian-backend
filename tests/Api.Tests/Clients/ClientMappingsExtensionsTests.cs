@@ -2,6 +2,7 @@ using Api.Clients.Mappings;
 using Domain.Clients.Entities;
 using Xunit;
 using UserEntity = Domain.Users.Entities.Users;
+using Api.Tests.Support;
 
 namespace Api.Tests.Clients;
 
@@ -9,8 +10,8 @@ public sealed class ClientMappingsExtensionsTests
 {
     // S17: el directorio de dueños de Recepcionista mostraba "Cliente Sin Nombre"
     // porque dependía de una segunda llamada a /api/Users (sin permiso para ese
-    // rol) para resolver el nombre. El dato ya viene cargado por el
-    // .Include(c => c.User) del repositorio -- ToDto() debe exponerlo directo.
+    // rol) para resolver el nombre. Nombre, correo y estado son del propio
+    // cliente -- ToDto() debe exponerlos directo.
     [Fact]
     public void ToDto_uses_client_owned_identity()
     {
@@ -30,9 +31,7 @@ public sealed class ClientMappingsExtensionsTests
         Assert.False(response.IsActive);
     }
 
-    // Si el navigation property no se cargó (no debería pasar dado el
-    // .Include(c => c.User) del repositorio), ToDto() no debe reventar: los
-    // campos derivados de User caen a null/true en vez de lanzar.
+    // El DTO no depende de la navegación User (el repositorio ya no la carga).
     [Fact]
     public void ToDto_does_not_require_user_navigation()
     {
@@ -61,11 +60,10 @@ public sealed class ClientMappingsExtensionsTests
     [Fact]
     public void ToIdentificationLookupResponse_never_exposes_address_or_phone_number()
     {
-        var client = new ClientEntity(
+        var client = TestClients.Create(
             userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Falsa 123",
-            registrationDate: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             phoneNumber: "3001234567");
 
         var response = client.ToIdentificationLookupResponse();
@@ -73,7 +71,7 @@ public sealed class ClientMappingsExtensionsTests
         Assert.Equal(client.Id, response.Id);
         Assert.Equal(client.UserId, response.UserId);
         Assert.Equal("1234567890", response.IdentificationNumber);
-        Assert.Equal(client.RegistrationDate, response.RegistrationDate);
+        Assert.Equal(client.CreatedAt, response.RegistrationDate);
 
         var responseProperties = response.GetType().GetProperties().Select(p => p.Name);
         Assert.DoesNotContain("Address", responseProperties);
@@ -84,11 +82,10 @@ public sealed class ClientMappingsExtensionsTests
     [Fact]
     public void ToPhoneLookupResponse_never_exposes_address_or_phone_number()
     {
-        var client = new ClientEntity(
+        var client = TestClients.Create(
             userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Falsa 123",
-            registrationDate: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             phoneNumber: "3001234567");
 
         var response = client.ToPhoneLookupResponse();
@@ -96,7 +93,7 @@ public sealed class ClientMappingsExtensionsTests
         Assert.Equal(client.Id, response.Id);
         Assert.Equal(client.UserId, response.UserId);
         Assert.Equal("1234567890", response.IdentificationNumber);
-        Assert.Equal(client.RegistrationDate, response.RegistrationDate);
+        Assert.Equal(client.CreatedAt, response.RegistrationDate);
 
         var responseProperties = response.GetType().GetProperties().Select(p => p.Name);
         Assert.DoesNotContain("Address", responseProperties);

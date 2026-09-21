@@ -7,6 +7,7 @@ using Domain.Clients.Entities;
 using NSubstitute;
 using Xunit;
 using UserEntity = Domain.Users.Entities.Users;
+using Application.Tests.Common;
 
 namespace Application.Tests.Clients;
 
@@ -29,7 +30,7 @@ public sealed class UpdateClientOwnerProfileCommandHandlerTests
     {
         var roleId = Guid.NewGuid();
         var user = new UserEntity("Carlitos Mesa", "carlitos@gmail.com", null, roleId);
-        var client = new ClientEntity(user.Id, "1232222222", "Transversal 2D # 1W - 05");
+        var client = TestClients.Create(user.Id, "1232222222", "Transversal 2D # 1W - 05");
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
@@ -50,7 +51,7 @@ public sealed class UpdateClientOwnerProfileCommandHandlerTests
     public async Task Handle_excludes_its_own_user_id_when_checking_for_a_duplicate_email()
     {
         var user = new UserEntity("Ana Cliente", "ana@huellitas.test", null, Guid.NewGuid());
-        var client = new ClientEntity(user.Id, "1234567890", "Calle Falsa 123");
+        var client = TestClients.Create(user.Id, "1234567890", "Calle Falsa 123");
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
@@ -68,7 +69,7 @@ public sealed class UpdateClientOwnerProfileCommandHandlerTests
     public async Task Handle_throws_conflict_when_the_new_email_is_already_used_by_another_user()
     {
         var user = new UserEntity("Ana Cliente", "ana@huellitas.test", null, Guid.NewGuid());
-        var client = new ClientEntity(user.Id, "1234567890", "Calle Falsa 123");
+        var client = TestClients.Create(user.Id, "1234567890", "Calle Falsa 123");
 
         clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
