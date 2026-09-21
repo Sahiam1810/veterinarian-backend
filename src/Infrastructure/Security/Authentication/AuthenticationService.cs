@@ -33,8 +33,6 @@ public sealed class AuthenticationService(
 {
     private const string ActiveStatus = "Activo";
     private const string RefreshTokenType = "refresh";
-    // Rol canónico: Cliente no entra a la plataforma (chatbot / teléfono).
-    private const string ClientRoleName = "Cliente";
 
     private readonly JwtOptions jwtOptions = options.Value;
     public async Task<Result<AuthenticationTokens>> LoginAsync(
@@ -78,13 +76,6 @@ public sealed class AuthenticationService(
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidCredentials);
-        }
-
-        // 1.1: aunque existan account+password legacy, Cliente no obtiene JWT de plataforma.
-        if (IsClientRole(identity.Role))
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.PlatformAccessDenied);
         }
 
         var sessionStartedAt = ToUnspecifiedUtc(timeProvider.GetUtcNow());
@@ -143,13 +134,6 @@ public sealed class AuthenticationService(
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidRefreshToken);
-        }
-
-        // No renovar sesión de plataforma para rol Cliente (dato legacy).
-        if (IsClientRole(identity.Role))
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.PlatformAccessDenied);
         }
 
         // Propagate the original login instant; never restart the session clock.
@@ -288,9 +272,6 @@ public sealed class AuthenticationService(
     private static bool IsActiveAccount(UserAccountEntity? account) =>
         account is not null &&
         string.Equals(account.Status, ActiveStatus, StringComparison.Ordinal);
-
-    private static bool IsClientRole(string roleName) =>
-        string.Equals(roleName, ClientRoleName, StringComparison.Ordinal);
 
     private static DateTime ToUnspecifiedUtc(DateTimeOffset instant) =>
         DateTime.SpecifyKind(instant.UtcDateTime, DateTimeKind.Unspecified);

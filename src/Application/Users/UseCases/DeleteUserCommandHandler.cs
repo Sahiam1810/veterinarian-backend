@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Users.UseCase;
 
-// Borra User + perfil vet/cliente + notificaciones/chat (sin vistas separadas obligatorias).
+// Borra User + perfil vet + notificaciones/chat (sin vistas separadas obligatorias).
 public sealed class DeleteUserCommandHandler(IUnitOfWork uow)
     : IRequestHandler<DeleteUserCommand>
 {
@@ -56,20 +56,6 @@ public sealed class DeleteUserCommandHandler(IUnitOfWork uow)
                 }
 
                 await uow.VeterinariansRepository.DeleteByUserIdAsync(user.Id, ct);
-            }
-
-            // Cliente: solo si no tiene mascotas (activas o inactivas) a su nombre
-            var clientId = await uow.ClientsRepository.GetIdByUserIdAsync(user.Id, ct);
-            if (clientId.HasValue)
-            {
-                var links = await uow.ClientPetsRepository.GetByClientIdAsync(clientId.Value, ct);
-                if (links.Count > 0)
-                {
-                    throw new ConflictException(
-                        "El cliente tiene mascotas asociadas. Elimínalas desde Mascotas antes de borrar al cliente.");
-                }
-
-                await uow.ClientsRepository.DeleteByUserIdAsync(user.Id, ct);
             }
 
             await uow.NotificationsRepository.DeleteByUserIdAsync(user.Id, ct);

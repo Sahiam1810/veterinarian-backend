@@ -1,7 +1,5 @@
 using Application.Common.Abstractions;
-using Application.Common.Exceptions;
 using Application.Roles.Abstraction;
-using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
 using Application.UserAccounts.UseCase;
 using Application.Users.Abstraction;
@@ -13,6 +11,7 @@ using UserEntity = Domain.Users.Entities.Users;
 
 namespace Application.Tests.UserAccounts;
 
+// T10: UpdateUserAccount ya no bloquea por nombre de rol "Cliente".
 public sealed class UpdateUserAccountCommandHandlerClientBlockTests
 {
     private static readonly Guid StaffRoleId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
@@ -37,22 +36,23 @@ public sealed class UpdateUserAccountCommandHandlerClientBlockTests
     }
 
     [Fact]
-    public async Task Handle_throws_forbidden_with_PlatformAccessDenied_code_when_account_is_Cliente()
+    public async Task Handle_updates_account_when_role_is_named_Cliente()
     {
-        var user = new UserEntity("Cliente", "cliente@huellitas.test", null, ClientRoleId);
+        var user = new UserEntity("Cliente", "cliente@huellitas.test", "hash", ClientRoleId);
         var account = new UserAccountEntity(user.Id, "cliente", "cliente@huellitas.test", "Activo");
         userAccountsRepository.GetByIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(account);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        userAccountsRepository.ExistsByUsernameAsync("cliente2", Arg.Any<CancellationToken>(), account.Id)
+            .Returns(false);
+        userAccountsRepository.ExistsByMailAsync("cliente2@huellitas.test", Arg.Any<CancellationToken>(), account.Id)
+            .Returns(false);
 
-        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
-            sut.Handle(
-                new UpdateUserAccountCommand(account.Id, "cliente2", "cliente2@huellitas.test", "Activo"),
-                CancellationToken.None));
+        await sut.Handle(
+            new UpdateUserAccountCommand(account.Id, "cliente2", "cliente2@huellitas.test", "Activo"),
+            CancellationToken.None);
 
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Description, ex.Message);
-        await userAccountsRepository.DidNotReceive().UpdateAsync(
-            Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
+        await userAccountsRepository.Received(1).UpdateAsync(account, Arg.Any<CancellationToken>());
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

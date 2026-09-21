@@ -1,7 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Roles.Abstraction;
-using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
 using Application.UserAccounts.UseCase;
 using Application.Users.Abstraction;
@@ -77,23 +76,25 @@ public sealed class UpdateUserAccountCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_throws_forbidden_with_PlatformAccessDenied_when_account_user_is_Cliente()
+    public async Task Handle_updates_account_when_user_role_is_named_Cliente()
     {
         var clientRole = new RoleEntity("Cliente", null);
-        var user = new UserEntity("Cliente Ana", "cliente@huellitas.test", null, clientRole.Id);
+        var user = new UserEntity("Cliente Ana", "cliente@huellitas.test", "hash", clientRole.Id);
         var account = new UserAccountEntity(user.Id, "cliente", "cliente@huellitas.test", "Inactivo");
 
         userAccountsRepository.GetByIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(account);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>()).Returns(clientRole);
+        userAccountsRepository.ExistsByUsernameAsync("cliente", Arg.Any<CancellationToken>(), account.Id)
+            .Returns(false);
+        userAccountsRepository.ExistsByMailAsync("cliente@huellitas.test", Arg.Any<CancellationToken>(), account.Id)
+            .Returns(false);
 
-        // Reactivar no debe abrirse para Cliente.
         var command = new UpdateUserAccountCommand(account.Id, "cliente", "cliente@huellitas.test", "Activo");
 
-        var ex = await Assert.ThrowsAsync<ForbiddenException>(() => sut.Handle(command, CancellationToken.None));
+        await sut.Handle(command, CancellationToken.None);
 
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
-        await userAccountsRepository.DidNotReceive().UpdateAsync(
-            Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
+        Assert.Equal("Activo", account.Status);
+        await userAccountsRepository.Received(1).UpdateAsync(account, Arg.Any<CancellationToken>());
     }
 }

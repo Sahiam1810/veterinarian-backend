@@ -1,6 +1,5 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Application.Security.Errors;
 using MediatR;
 using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 
@@ -9,8 +8,6 @@ namespace Application.UserAccounts.UseCase;
 public sealed class CreateUserAccountCommandHandler
     : IRequestHandler<CreateUserAccountCommand, Guid>
 {
-    private const string ClientRoleName = "Cliente";
-
     private readonly IUnitOfWork _uow;
 
     public CreateUserAccountCommandHandler(IUnitOfWork uow)
@@ -32,21 +29,11 @@ public sealed class CreateUserAccountCommandHandler
                 "El usuario especificado no existe.");
         }
 
-        var role = await _uow.RolesRepository.GetByIdAsync(
+        _ = await _uow.RolesRepository.GetByIdAsync(
             user.RoleId,
-            cancellationToken);
-
-        if (role is null)
-        {
-            throw new NotFoundException(
+            cancellationToken)
+            ?? throw new NotFoundException(
                 "El rol del usuario especificado no existe.");
-        }
-
-        // Cliente no tiene login staff: no asociar USER_ACCOUNTS.
-        if (string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal))
-        {
-            throw new ForbiddenException(AuthenticationErrors.PlatformAccessDenied);
-        }
 
         var userAlreadyHasAccount = await _uow.UserAccountsRepository.ExistsByUserIdAsync(
             request.UserId,
