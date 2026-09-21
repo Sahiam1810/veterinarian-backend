@@ -14,6 +14,10 @@ public sealed record ClientEmail
 
     public string Value { get; }
 
+    // Misma regla de formato que Create, sin lanzar (para validadores).
+    public static bool IsValidFormat(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && Pattern.IsMatch(value.Trim().ToLowerInvariant());
+
     public static ClientEmail Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

@@ -166,7 +166,7 @@ public sealed class AppointmentRepositoryDetailsTests
         var clientUser = new UserEntity("Samuel Calderón", "samuel@example.com", "hash", Guid.NewGuid());
         var veterinarianUser = new UserEntity(
             "Dra. Ana Pérez", "ana@example.com", "hash", Guid.NewGuid());
-        var client = new ClientEntity(clientUser.Id, "Samuel Calderón", "samuel@example.com", "1234567890", "3001234567", "Calle 1");
+        var client = new ClientEntity("Samuel Calderón", "samuel@example.com", "1234567890", "3001234567", "Calle 1");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna",

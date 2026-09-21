@@ -60,15 +60,19 @@ public sealed class GenerateUpcomingAppointmentRemindersCommandHandler(
         {
             var localStart = TimeZoneInfo.ConvertTimeFromUtc(appointment.ScheduledStart, timeZone);
 
-            var ownerReminder = new Notification(
-                appointment.ClientPet!.Client!.UserId,
-                appointment.Id,
-                BuildOwnerMessage(appointment, localStart),
-                now,
-                ReminderStatus,
-                ReminderType);
-            await unitOfWork.NotificationsRepository.AddAsync(ownerReminder, cancellationToken);
-            reminders.Add(ownerReminder);
+            // El aviso al dueño solo existe si el cliente tiene usuario (legado): la T8 lo elimina.
+            if (appointment.ClientPet!.Client!.UserId is { } ownerUserId)
+            {
+                var ownerReminder = new Notification(
+                    ownerUserId,
+                    appointment.Id,
+                    BuildOwnerMessage(appointment, localStart),
+                    now,
+                    ReminderStatus,
+                    ReminderType);
+                await unitOfWork.NotificationsRepository.AddAsync(ownerReminder, cancellationToken);
+                reminders.Add(ownerReminder);
+            }
 
             if (appointment.Veterinarian is not null)
             {

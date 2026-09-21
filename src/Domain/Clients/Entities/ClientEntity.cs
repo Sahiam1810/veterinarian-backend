@@ -11,7 +11,6 @@ public sealed class ClientEntity : BaseEntity<Guid>
     }
 
     public ClientEntity(
-        Guid userId,
         string fullName,
         string email,
         string identificationNumber,
@@ -19,7 +18,6 @@ public sealed class ClientEntity : BaseEntity<Guid>
         string? address)
     {
         Id = Guid.NewGuid();
-        UserId = userId;
         FullName = ClientFullName.Create(fullName);
         Email = ClientEmail.Create(email);
         IdentificationNumber = ClientIdentificationNumber.Create(identificationNumber);
@@ -28,7 +26,8 @@ public sealed class ClientEntity : BaseEntity<Guid>
         IsActive = true;
     }
 
-    public Guid UserId { get; private set; }
+    // Vestigio de la separación clientes/usuarios: opcional hasta que la T11 lo elimine.
+    public Guid? UserId { get; private set; }
 
     public ClientFullName FullName { get; private set; } = null!;
 
@@ -47,14 +46,12 @@ public sealed class ClientEntity : BaseEntity<Guid>
     public UserEntity? User { get; private set; }
 
     public void Update(
-        Guid userId,
         string fullName,
         string email,
         string identificationNumber,
         string phoneNumber,
         string? address)
     {
-        UserId = userId;
         FullName = ClientFullName.Create(fullName);
         Email = ClientEmail.Create(email);
         IdentificationNumber = ClientIdentificationNumber.Create(identificationNumber);

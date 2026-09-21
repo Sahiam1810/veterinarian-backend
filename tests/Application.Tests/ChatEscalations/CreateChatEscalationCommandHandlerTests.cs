@@ -91,8 +91,7 @@ public sealed class CreateChatEscalationCommandHandlerTests
         var profile = ChatUserProfile.Create(userId, null, null, null);
         var clientParticipant = ChatParticipant.Create(
             ConversationId, ClientParticipantTypeId, chatUserProfileId: profile.Id);
-        var client = TestClients.Create(userId, "1234567890", null, phoneNumber: "3001234567");
-        var user = new UserEntity("Ana Pérez", "ana@example.test", null, Guid.NewGuid());
+        var client = TestClients.Create("1234567890", null, phoneNumber: "3001234567", fullName: "Ana Pérez");
 
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
@@ -109,14 +108,12 @@ public sealed class CreateChatEscalationCommandHandlerTests
         fixture.Uow.ClientsRepository
             .GetByUserIdAsync(userId, default)
             .Returns(client);
-        fixture.Uow.UsersRepository
-            .GetByIdAsync(userId, default)
-            .Returns(user);
 
         await fixture.Handler.Handle(
             new CreateChatEscalationCommand(ConversationId, EscalationStatusId, false, "asesor", null),
             default);
 
+        // El nombre sale del propio cliente, sin consultar USERS.
         await fixture.ChatRealtimeNotifier.Received(1).NotifyEscalationCreatedAsync(
             Arg.Is<ChatEscalationCreatedPayload>(payload =>
                 payload.ClientId == client.Id &&

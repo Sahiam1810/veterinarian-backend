@@ -364,8 +364,6 @@ public static class DependencyInjection
         services.AddOptions<RegisterOwnerOptions>()
             .Bind(configuration.GetSection(RegisterOwnerOptions.SectionName));
         services.AddScoped<IRegisterOwnerSettings, ConfiguredRegisterOwnerSettings>();
-        // 4.1: adaptador staff sobre el RegisterOwnerCommand ya existente (sin User/Account/Credentials extra).
-        services.AddScoped<IRegisterOwnerFromStaff, RegisterOwnerFromStaff>();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;

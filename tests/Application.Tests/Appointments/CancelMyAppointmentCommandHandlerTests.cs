@@ -120,7 +120,7 @@ public sealed class CancelMyAppointmentCommandHandlerTests
         {
             var userId = Guid.NewGuid();
             Account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
-            Client = TestClients.Create(userId, "1095914051", null);
+            Client = TestClients.Create("1095914051", null);
             var species = new SpeciesEntity("Perro");
             var pet = new PetEntity(
                 "Pacho",

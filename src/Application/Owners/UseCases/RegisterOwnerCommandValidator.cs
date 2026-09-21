@@ -1,6 +1,5 @@
 using Application.Clients.Errors;
 using Domain.Clients.ValueObjects;
-using Domain.Users.ValueObjects;
 using FluentValidation;
 
 namespace Application.Owners.UseCases;
@@ -12,12 +11,12 @@ public sealed class RegisterOwnerCommandValidator : AbstractValidator<RegisterOw
         RuleFor(command => command.FullName)
             .NotEmpty()
             .WithMessage("El nombre completo es obligatorio.")
-            .MaximumLength(150);
+            .MaximumLength(ClientFullName.MaxLength);
 
         RuleFor(command => command.Email)
             .NotEmpty()
             .EmailAddress()
-            .MaximumLength(UserEmail.MaxLength);
+            .MaximumLength(ClientEmail.MaxLength);
 
         RuleFor(command => command.IdentificationNumber)
             .NotEmpty()

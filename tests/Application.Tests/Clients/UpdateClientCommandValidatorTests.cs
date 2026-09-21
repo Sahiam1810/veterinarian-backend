@@ -45,10 +45,58 @@ public sealed class UpdateClientCommandValidatorTests
         Assert.Equal("573015551234", ClientPhoneNumber.Create(command.PhoneNumber!).Value);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Validate_rejects_a_blank_full_name(string name)
+    {
+        var result = validator.TestValidate(Valid() with { FullName = name });
+
+        result.ShouldHaveValidationErrorFor(c => c.FullName);
+    }
+
+    [Fact]
+    public void Validate_rejects_a_full_name_longer_than_the_maximum()
+    {
+        var result = validator.TestValidate(Valid() with { FullName = new string('a', 151) });
+
+        result.ShouldHaveValidationErrorFor(c => c.FullName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("no-es-un-correo")]
+    [InlineData("sin@dominio")]
+    public void Validate_rejects_a_missing_or_malformed_email(string email)
+    {
+        var result = validator.TestValidate(Valid() with { Email = email });
+
+        result.ShouldHaveValidationErrorFor(c => c.Email);
+    }
+
+    [Fact]
+    public void Validate_rejects_an_email_longer_than_the_maximum()
+    {
+        var result = validator.TestValidate(Valid() with { Email = new string('a', 146) + "@x.co" });
+
+        result.ShouldHaveValidationErrorFor(c => c.Email);
+    }
+
+    [Fact]
+    public void Validate_accepts_a_valid_name_and_email()
+    {
+        var result = validator.TestValidate(Valid());
+
+        result.ShouldNotHaveValidationErrorFor(c => c.FullName);
+        result.ShouldNotHaveValidationErrorFor(c => c.Email);
+    }
+
     private static UpdateClientCommand Valid() => new(
         Id: Guid.NewGuid(),
-        UserId: Guid.NewGuid(),
+        FullName: "Ana Cliente",
+        Email: "ana@huellitas.test",
         IdentificationNumber: "1234567890",
+        PhoneNumber: "3001234567",
         Address: "Calle Falsa 123",
-        PhoneNumber: "3001234567");
+        IsActive: true);
 }

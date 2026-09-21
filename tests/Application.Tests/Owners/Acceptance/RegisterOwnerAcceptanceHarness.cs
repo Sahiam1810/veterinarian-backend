@@ -6,47 +6,28 @@ using Application.Owners.Abstractions;
 using Application.Owners.Enums;
 using Application.Owners.Errors;
 using Application.Owners.UseCases;
-using Application.Roles.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
-using Application.Users.Abstraction;
 using Application.Verification.Abstractions;
 using Domain.Clients.Entities;
 using Domain.Clients.ValueObjects;
 using Domain.ContactVerification.Enums;
-using Domain.Roles.Entities;
 using NSubstitute;
-using RoleEntity = Domain.Roles.Entities.Roles;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
-using UserEntity = Domain.Users.Entities.Users;
 
 namespace Application.Tests.Owners.Acceptance;
 
-// Doubles in-memory del kickoff: repos + ConsumeProof. Sin SMTP ni HTTP 4.1–4.4.
+// Doubles in-memory: repositorio de clientes + ConsumeProof. El alta de dueño no toca USERS.
 internal sealed class RegisterOwnerAcceptanceHarness
 {
     public const string EmailHashPrefix = "email:";
 
-    public RoleEntity ClientRole { get; } = new("Cliente", "Dueño");
-    public InMemoryUsers Users { get; } = new();
     public InMemoryClients Clients { get; } = new();
-    public InMemoryAccounts Accounts { get; } = new();
-    public InMemoryCredentials Credentials { get; } = new();
     public FakeConsumeProof ConsumeProof { get; } = new();
     public FakeEmailHasher EmailHasher { get; } = new();
     public IUnitOfWork UnitOfWork { get; }
-    public InMemoryRoles Roles { get; }
 
     public RegisterOwnerAcceptanceHarness()
     {
-        Roles = new InMemoryRoles(ClientRole);
         UnitOfWork = Substitute.For<IUnitOfWork>();
-        UnitOfWork.UsersRepository.Returns(Users);
         UnitOfWork.ClientsRepository.Returns(Clients);
-        UnitOfWork.RolesRepository.Returns(Roles);
-        UnitOfWork.UserAccountsRepository.Returns(Accounts);
-        UnitOfWork.UserCredentialsRepository.Returns(Credentials);
         UnitOfWork
             .ExecuteInTransactionAsync(Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<Func<CancellationToken, Task>>()(CancellationToken.None));
@@ -153,68 +134,6 @@ internal sealed class FakeConsumeProof : IConsumeContactVerificationProof
         ContactVerificationPurpose Purpose,
         string DestinationHash,
         bool Consumed);
-}
-
-internal sealed class InMemoryRoles(RoleEntity clientRole) : IRolesRepository
-{
-    public Task<RoleEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        Task.FromResult<RoleEntity?>(id == clientRole.Id ? clientRole : null);
-
-    public Task<RoleEntity?> GetByNameAsync(string name, CancellationToken cancellationToken) =>
-        Task.FromResult<RoleEntity?>(
-            string.Equals(name, "Cliente", StringComparison.Ordinal) ? clientRole : null);
-
-    public Task<IReadOnlyCollection<RoleEntity>> GetAllAsync(CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task<bool> ExistsByNameAsync(
-        string name, CancellationToken cancellationToken, Guid? excludedId = null) =>
-        throw new NotSupportedException();
-
-    public Task AddAsync(RoleEntity role, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task UpdateAsync(RoleEntity role, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task DeleteAsync(RoleEntity role, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-}
-
-internal sealed class InMemoryUsers : IUsersRepository
-{
-    public List<UserEntity> Items { get; } = [];
-
-    public Task AddAsync(UserEntity user, CancellationToken cancellationToken)
-    {
-        Items.Add(user);
-        return Task.CompletedTask;
-    }
-
-    public Task<UserEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        Task.FromResult(Items.FirstOrDefault(user => user.Id == id));
-
-    public Task<bool> ExistsByEmailAsync(
-        string email,
-        CancellationToken cancellationToken,
-        Guid? excludedId = null)
-    {
-        var normalized = email.Trim().ToLowerInvariant();
-        return Task.FromResult(Items.Any(user =>
-            user.Email.Value == normalized && (!excludedId.HasValue || user.Id != excludedId.Value)));
-    }
-
-    public Task<IReadOnlyCollection<UserEntity>> GetAllAsync(CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task UpdateAsync(UserEntity user, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task DeleteAsync(UserEntity user, CancellationToken cancellationToken)
-    {
-        Items.Remove(user);
-        return Task.CompletedTask;
-    }
 }
 
 internal sealed class InMemoryClients : IClientRepository
@@ -329,71 +248,4 @@ internal sealed class InMemoryClients : IClientRepository
         Items.RemoveAll(client => client.UserId == userId);
         return Task.CompletedTask;
     }
-}
-
-internal sealed class InMemoryAccounts : IUserAccountsRepository
-{
-    public List<UserAccountEntity> Items { get; } = [];
-
-    public Task AddAsync(UserAccountEntity account, CancellationToken cancellationToken)
-    {
-        Items.Add(account);
-        return Task.CompletedTask;
-    }
-
-    public Task<bool> ExistsByUserIdAsync(
-        Guid userId, CancellationToken cancellationToken, Guid? excludedId = null) =>
-        Task.FromResult(Items.Any(account =>
-            account.UserId == userId && (!excludedId.HasValue || account.Id != excludedId.Value)));
-
-    public Task<UserAccountEntity?> GetByMailAsync(string mail, CancellationToken cancellationToken) =>
-        Task.FromResult(Items.FirstOrDefault(account =>
-            string.Equals(account.Mail.Value, mail, StringComparison.OrdinalIgnoreCase)));
-
-    public Task<IReadOnlyCollection<UserAccountEntity>> GetAllAsync(CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task<UserAccountEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task<UserAccountEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken) =>
-        Task.FromResult(Items.FirstOrDefault(account => account.UserId == userId));
-
-    public Task<bool> ExistsByUsernameAsync(
-        string username, CancellationToken cancellationToken, Guid? excludedId = null) =>
-        throw new NotSupportedException();
-
-    public Task<bool> ExistsByMailAsync(
-        string mail, CancellationToken cancellationToken, Guid? excludedId = null) =>
-        throw new NotSupportedException();
-
-    public Task UpdateAsync(UserAccountEntity account, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task DeleteAsync(UserAccountEntity account, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-}
-
-internal sealed class InMemoryCredentials : IUserCredentialsRepository
-{
-    public List<UserCredentialsEntity> Items { get; } = [];
-
-    public Task AddAsync(UserCredentialsEntity credentials, CancellationToken cancellationToken)
-    {
-        Items.Add(credentials);
-        return Task.CompletedTask;
-    }
-
-    public Task<UserCredentialsEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
-
-    public Task<UserCredentialsEntity?> GetByAccountIdAsync(
-        Guid accountId, CancellationToken cancellationToken) =>
-        Task.FromResult(Items.FirstOrDefault(item => item.AccountId == accountId));
-
-    public Task<bool> ExistsByAccountIdAsync(Guid accountId, CancellationToken cancellationToken) =>
-        Task.FromResult(Items.Any(item => item.AccountId == accountId));
-
-    public Task UpdateAsync(UserCredentialsEntity credentials, CancellationToken cancellationToken) =>
-        throw new NotSupportedException();
 }

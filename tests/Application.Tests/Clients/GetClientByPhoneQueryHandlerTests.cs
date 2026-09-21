@@ -26,7 +26,6 @@ public sealed class GetClientByPhoneQueryHandlerTests
     public async Task Handle_returns_client_when_phone_matches()
     {
         var client = TestClients.Create(
-            Guid.NewGuid(),
             "1234567890",
             "Calle 1",
             phoneNumber: "3001234567");

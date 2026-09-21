@@ -70,7 +70,7 @@ public sealed class AppointmentSelfServiceQueryApiTests
 
     private static Appointment CreateAppointmentWithDetails()
     {
-        var client = TestClients.Create(Guid.NewGuid(), "1234567890", "Calle 1");
+        var client = TestClients.Create("1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna", 4, "F", 12m, null,

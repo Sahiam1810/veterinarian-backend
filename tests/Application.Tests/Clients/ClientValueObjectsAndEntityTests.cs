@@ -22,10 +22,20 @@ public sealed class ClientValueObjectsAndEntityTests
     }
 
     [Fact]
+    public void Client_is_created_without_a_user_and_active()
+    {
+        var client = new ClientEntity("Ana", "ana@test.com", "123", "3001234567", null);
+
+        Assert.Null(client.UserId);
+        Assert.Null(client.User);
+        Assert.True(client.IsActive);
+    }
+
+    [Fact]
     public void Client_requires_phone_and_tracks_activation()
     {
-        Assert.Throws<ArgumentException>(() => new ClientEntity(Guid.NewGuid(), "Ana", "ana@test.com", "123", "", null));
-        var client = new ClientEntity(Guid.NewGuid(), "Ana", "ana@test.com", "123", "3001234567", null);
+        Assert.Throws<ArgumentException>(() => new ClientEntity("Ana", "ana@test.com", "123", "", null));
+        var client = new ClientEntity("Ana", "ana@test.com", "123", "3001234567", null);
         client.Deactivate();
         Assert.False(client.IsActive);
         Assert.NotNull(client.UpdatedAt);

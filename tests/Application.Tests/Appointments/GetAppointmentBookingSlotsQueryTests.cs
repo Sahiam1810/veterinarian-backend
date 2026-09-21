@@ -108,7 +108,7 @@ public sealed class GetAppointmentBookingSlotsQueryTests
     {
         var accountId = Guid.NewGuid();
         var account = new UserAccountEntity(Guid.NewGuid(), "cliente", "cliente@test.com", "Activo");
-        var client = TestClients.Create(account.UserId, "1234567890", null);
+        var client = TestClients.Create("1234567890", null);
         var service = new Service(Guid.NewGuid(), "Consulta", 30, 50000m);
         var user = new UserEntity("Dra. Ana", "ana@test.com", "hash", Guid.NewGuid());
         var veterinarian = new Veterinarian(user.Id, Guid.NewGuid(), "VET001");

@@ -20,7 +20,7 @@ public sealed class BotOwnersController(IRegisterOwnerFromBot registerOwner) : C
     [EndpointDescription(
         "Endpoint anónimo rate-limited para bot. Por decisión de negocio, no exige " +
         "ni valida ningún código o proof de verificación. " +
-        "No crea password/USER_ACCOUNTS: el login web de ese email sigue denegado. " +
+        "Crea solo el cliente en CLIENTS, sin usuario, cuenta ni contraseña: el cliente no accede a la plataforma. " +
         "Tras 201, el Client es localizable por los lookups Etapa 2 (cédula/teléfono) con los mismos datos. " +
         "Errores de negocio: application/problem+json con `code` estable (400/409/429). " +
         "El front/bot mapea por code, no por mensajes ni formato legacy.")]
@@ -41,7 +41,7 @@ public sealed class BotOwnersController(IRegisterOwnerFromBot registerOwner) : C
                 request.Address),
             cancellationToken);
 
-        var response = new RegisterOwnerBotResponse(result.UserId, result.ClientId);
+        var response = new RegisterOwnerBotResponse(result.ClientId);
         return Created($"/api/owners/bot/{result.ClientId}", response);
     }
 }

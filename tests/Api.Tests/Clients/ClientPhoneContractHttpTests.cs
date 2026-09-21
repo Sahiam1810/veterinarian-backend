@@ -40,13 +40,13 @@ public sealed class ClientPhoneContractHttpTests : IClassFixture<ClientPhoneCont
     public async Task Post_without_phone_returns_400_with_PhoneRequired_code()
     {
         using var client = factory.CreateAuthenticatedClient();
-        var userId = Guid.NewGuid();
 
         using var response = await client.PostAsJsonAsync(
             "/api/clients",
             new
             {
-                userId,
+                fullName = "Ana Cliente",
+                email = "ana@huellitas.test",
                 identificationNumber = "1234567890",
                 address = "Calle Falsa 123"
             });
@@ -64,7 +64,8 @@ public sealed class ClientPhoneContractHttpTests : IClassFixture<ClientPhoneCont
             "/api/clients",
             new
             {
-                userId = Guid.NewGuid(),
+                fullName = "Ana Cliente",
+                email = "ana@huellitas.test",
                 identificationNumber = "1234567890",
                 address = "Calle Falsa 123",
                 phoneNumber = "123"
@@ -78,13 +79,13 @@ public sealed class ClientPhoneContractHttpTests : IClassFixture<ClientPhoneCont
     public async Task Post_with_valid_phone_returns_201_and_normalized_digits()
     {
         using var client = factory.CreateAuthenticatedClient();
-        var userId = Guid.NewGuid();
 
         using var response = await client.PostAsJsonAsync(
             "/api/clients",
             new
             {
-                userId,
+                fullName = "Ana Cliente",
+                email = "ana@huellitas.test",
                 identificationNumber = "1234567890",
                 address = "Calle Falsa 123",
                 phoneNumber = "+57 (300) 123-4567"
@@ -105,10 +106,12 @@ public sealed class ClientPhoneContractHttpTests : IClassFixture<ClientPhoneCont
             $"/api/clients/{factory.ExistingClientId}",
             new
             {
-                userId = factory.ExistingUserId,
+                fullName = "Ana Cliente",
+                email = "ana@huellitas.test",
                 identificationNumber = "1234567890",
                 address = "Calle Falsa 123",
-                phoneNumber = ""
+                phoneNumber = "",
+                isActive = true
             });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -124,13 +127,45 @@ public sealed class ClientPhoneContractHttpTests : IClassFixture<ClientPhoneCont
             $"/api/clients/{factory.ExistingClientId}",
             new
             {
-                userId = factory.ExistingUserId,
+                fullName = "Ana Cliente",
+                email = "ana@huellitas.test",
                 identificationNumber = "1234567890",
                 address = "Calle Falsa 123",
-                phoneNumber = "+57 301 555 0000"
+                phoneNumber = "+57 301 555 0000",
+                isActive = true
             });
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Post_without_name_or_email_returns_400()
+    {
+        using var client = factory.CreateAuthenticatedClient();
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/clients",
+            new { identificationNumber = "1234567890", phoneNumber = "3001234567" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Put_without_isActive_returns_400_instead_of_deactivating_the_client()
+    {
+        using var client = factory.CreateAuthenticatedClient();
+
+        using var response = await client.PutAsJsonAsync(
+            $"/api/clients/{factory.ExistingClientId}",
+            new
+            {
+                fullName = "Ana Cliente",
+                email = "ana@huellitas.test",
+                identificationNumber = "1234567890",
+                phoneNumber = "3001234567"
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private static void AssertViolationCode(string json, string expectedCode)
@@ -151,17 +186,14 @@ public sealed class ClientPhoneContractApiFactory : WebApplicationFactory<AuthCo
 
     private readonly Dictionary<string, string?> originalEnvironment = [];
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
     private ClientEntity? created;
 
-    public Guid ExistingUserId { get; } = Guid.NewGuid();
     public Guid ExistingClientId { get; }
 
     public ClientPhoneContractApiFactory()
     {
         var existing = TestClients.Create(
-            ExistingUserId,
             "1234567890",
             "Calle Falsa 123",
             phoneNumber: "3001234567");
@@ -190,17 +222,13 @@ public sealed class ClientPhoneContractApiFactory : WebApplicationFactory<AuthCo
             Environment.SetEnvironmentVariable(setting.Key, setting.Value);
         }
 
-        unitOfWork.UsersRepository.Returns(usersRepository);
         unitOfWork.ClientsRepository.Returns(clientsRepository);
         unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
-
-        usersRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(_ => new UserEntity("Ana", "ana@huellitas.test", "hash", Guid.NewGuid()));
 
         clientsRepository.ExistsByIdentificationNumberAsync(
                 Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
-        clientsRepository.ExistsByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+        clientsRepository.ExistsByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
         clientsRepository.ExistsByPhoneAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);

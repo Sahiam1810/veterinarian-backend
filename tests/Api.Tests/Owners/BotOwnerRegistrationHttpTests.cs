@@ -40,12 +40,11 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
     public async Task Register_ValidData_Returns201_WithoutSecrets_AndWithoutAnyProof()
     {
         factory.ResetRegisterOwner();
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var clientId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         factory.RegisterOwner.RegisterAsync(
                 Arg.Any<RegisterOwnerFromBotRequest>(),
                 Arg.Any<CancellationToken>())
-            .Returns(new RegisterOwnerResult(userId, clientId));
+            .Returns(new RegisterOwnerResult(clientId));
 
         using var client = factory.CreateAnonymousClient();
 
@@ -54,8 +53,8 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
         using var document = JsonDocument.Parse(body);
-        Assert.Equal(userId, document.RootElement.GetProperty("userId").GetGuid());
         Assert.Equal(clientId, document.RootElement.GetProperty("clientId").GetGuid());
+        Assert.False(document.RootElement.TryGetProperty("userId", out _));
         Assert.False(document.RootElement.TryGetProperty("password", out _));
         Assert.False(document.RootElement.TryGetProperty("passwordHash", out _));
         Assert.False(document.RootElement.TryGetProperty("otp", out _));
@@ -69,8 +68,8 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
     }
 
     [Theory]
-    [InlineData("Authentication.UserAlreadyExists")]
-    [InlineData("Authentication.IdentificationNumberAlreadyExists")]
+    [InlineData(ClientErrorCodes.EmailAlreadyInUse)]
+    [InlineData(ClientErrorCodes.IdentificationAlreadyInUse)]
     [InlineData("Clients.PhoneAlreadyInUse")]
     public async Task Register_Duplicates_Return409_ProblemJson_WithStableCode(string expectedCode)
     {
@@ -116,10 +115,10 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
     {
         var cases = new (Exception Exception, HttpStatusCode Status, string Code)[]
         {
-            (new ConflictException("dup", AuthenticationErrors.UserAlreadyExists.Code),
-                HttpStatusCode.Conflict, AuthenticationErrors.UserAlreadyExists.Code),
-            (new ConflictException("dup", AuthenticationErrors.IdentificationNumberAlreadyExists.Code),
-                HttpStatusCode.Conflict, AuthenticationErrors.IdentificationNumberAlreadyExists.Code),
+            (new ConflictException("dup", ClientErrorCodes.EmailAlreadyInUse),
+                HttpStatusCode.Conflict, ClientErrorCodes.EmailAlreadyInUse),
+            (new ConflictException("dup", ClientErrorCodes.IdentificationAlreadyInUse),
+                HttpStatusCode.Conflict, ClientErrorCodes.IdentificationAlreadyInUse),
             (new ConflictException("dup", ClientErrorCodes.PhoneAlreadyInUse),
                 HttpStatusCode.Conflict, ClientErrorCodes.PhoneAlreadyInUse)
         };
@@ -162,7 +161,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
                 Arg.Any<CancellationToken>())
             .Returns<Task<RegisterOwnerResult>>(_ =>
                 throw new ConflictException(
-                    "Ya existe un usuario con ese correo electrónico.",
+                    "Ya existe un cliente con ese correo electrónico.",
                     OwnerRegistrationErrors.EmailAlreadyInUse.Code));
 
         using var client = factory.CreateAnonymousClient();
@@ -177,7 +176,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
             response.Content.Headers.ContentType?.MediaType);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(
-            AuthenticationErrors.UserAlreadyExists.Code,
+            ClientErrorCodes.EmailAlreadyInUse,
             document.RootElement.GetProperty("code").GetString());
     }
 
@@ -205,7 +204,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
             response.Content.Headers.ContentType?.MediaType);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(
-            AuthenticationErrors.IdentificationNumberAlreadyExists.Code,
+            ClientErrorCodes.IdentificationAlreadyInUse,
             document.RootElement.GetProperty("code").GetString());
     }
 
@@ -264,7 +263,7 @@ public sealed class BotOwnerRegistrationHttpTests : IClassFixture<BotOwnerRegist
             .OrderBy(n => n)
             .ToArray();
 
-        Assert.Equal(["ClientId", "UserId"], properties);
+        Assert.Equal(["ClientId"], properties);
         Assert.Null(typeof(RegisterOwnerBotRequest).GetProperty("RequireContactProofs"));
         Assert.Null(typeof(RegisterOwnerBotRequest).GetProperty("Password"));
         Assert.Null(typeof(RegisterOwnerFromBotRequest).GetProperty("Password"));
@@ -321,7 +320,7 @@ public sealed class BotOwnerRegistrationChannelContractTests
             .Returns(call =>
             {
                 captured = call.Arg<RegisterOwnerCommand>();
-                return new RegisterOwnerResult(Guid.NewGuid(), Guid.NewGuid());
+                return new RegisterOwnerResult(Guid.NewGuid());
             });
 
         using var client = factory.CreateAnonymousClient();
@@ -357,7 +356,7 @@ public class BotOwnerRegistrationApiFactory : WebApplicationFactory<AuthControll
         RegisterOwner.RegisterAsync(
                 Arg.Any<RegisterOwnerFromBotRequest>(),
                 Arg.Any<CancellationToken>())
-            .Returns(new RegisterOwnerResult(Guid.NewGuid(), Guid.NewGuid()));
+            .Returns(new RegisterOwnerResult(Guid.NewGuid()));
     }
 
     public BotOwnerRegistrationApiFactory()

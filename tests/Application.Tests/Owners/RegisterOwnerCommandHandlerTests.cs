@@ -7,20 +7,11 @@ using Application.Owners.Abstractions;
 using Application.Owners.Enums;
 using Application.Owners.Errors;
 using Application.Owners.UseCases;
-using Application.Roles.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
-using Application.Users.Abstraction;
 using Application.Verification.Abstractions;
 using Domain.Clients.Entities;
 using Domain.ContactVerification.Enums;
-using Domain.Roles.Entities;
 using NSubstitute;
 using Xunit;
-using RoleEntity = Domain.Roles.Entities.Roles;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
-using UserEntity = Domain.Users.Entities.Users;
 
 namespace Application.Tests.Owners;
 
@@ -35,29 +26,19 @@ public sealed class RegisterOwnerCommandHandlerTests
     private const string Proof = "single-use-proof";
 
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
-    private readonly IUsersRepository users = Substitute.For<IUsersRepository>();
     private readonly IClientRepository clients = Substitute.For<IClientRepository>();
-    private readonly IRolesRepository roles = Substitute.For<IRolesRepository>();
-    private readonly IUserAccountsRepository accounts = Substitute.For<IUserAccountsRepository>();
-    private readonly IUserCredentialsRepository credentials = Substitute.For<IUserCredentialsRepository>();
     private readonly IConsumeContactVerificationProof consumeProof =
         Substitute.For<IConsumeContactVerificationProof>();
     private readonly IOtpProtector otpProtector = Substitute.For<IOtpProtector>();
-    private readonly RoleEntity clientRole = new("Cliente", "Dueño");
 
     public RegisterOwnerCommandHandlerTests()
     {
-        unitOfWork.UsersRepository.Returns(users);
         unitOfWork.ClientsRepository.Returns(clients);
-        unitOfWork.RolesRepository.Returns(roles);
-        unitOfWork.UserAccountsRepository.Returns(accounts);
-        unitOfWork.UserCredentialsRepository.Returns(credentials);
         unitOfWork
             .ExecuteInTransactionAsync(Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Func<CancellationToken, Task>>()(CancellationToken.None));
 
-        roles.GetByNameAsync("Cliente", Arg.Any<CancellationToken>()).Returns(clientRole);
-        users.ExistsByEmailAsync(Email, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
+        clients.ExistsByEmailAsync(Email, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
         clients.ExistsByIdentificationNumberAsync(Identification, Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
             .Returns(false);
         clients.ExistsByPhoneAsync(Phone, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(false);
@@ -65,29 +46,23 @@ public sealed class RegisterOwnerCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_staff_without_proof_flag_creates_client_user_without_password_or_login()
+    public async Task Handle_staff_without_proof_flag_creates_only_the_client()
     {
         var sut = CreateSut(requireStaffProof: false);
-        UserEntity? persistedUser = null;
         ClientEntity? persistedClient = null;
-        users.AddAsync(Arg.Do<UserEntity>(user => persistedUser = user), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
         clients.AddAsync(Arg.Do<ClientEntity>(client => persistedClient = client), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         var result = await sut.Handle(StaffCommand(), CancellationToken.None);
 
-        Assert.NotNull(persistedUser);
-        Assert.Null(persistedUser!.PasswordHash);
-        Assert.Equal(clientRole.Id, persistedUser.RoleId);
-        Assert.Equal(Email, persistedUser.Email.Value);
         Assert.NotNull(persistedClient);
-        Assert.Equal(result.UserId, persistedUser.Id);
         Assert.Equal(result.ClientId, persistedClient!.Id);
+        Assert.Equal("Ana Dueña", persistedClient.FullName.Value);
+        Assert.Equal(Email, persistedClient.Email.Value);
+        Assert.Null(persistedClient.UserId);
+        Assert.True(persistedClient.IsActive);
         await consumeProof.DidNotReceive().ConsumeAsync(
             Arg.Any<ConsumeContactVerificationProof>(), Arg.Any<CancellationToken>());
-        await accounts.DidNotReceive().AddAsync(Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
-        await credentials.DidNotReceive().AddAsync(Arg.Any<UserCredentialsEntity>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -107,7 +82,7 @@ public sealed class RegisterOwnerCommandHandlerTests
             Arg.Is<ConsumeContactVerificationProof>(p =>
                 p.SessionId == ProofSessionId && p.Proof == Proof),
             Arg.Any<CancellationToken>());
-        await users.Received(1).AddAsync(Arg.Any<UserEntity>(), Arg.Any<CancellationToken>());
+        await clients.Received(1).AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -120,7 +95,7 @@ public sealed class RegisterOwnerCommandHandlerTests
                 CancellationToken.None));
 
         Assert.Equal(OwnerRegistrationErrors.ProofRequired.Code, error.Code);
-        await users.DidNotReceive().AddAsync(Arg.Any<UserEntity>(), Arg.Any<CancellationToken>());
+        await clients.DidNotReceive().AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -132,11 +107,11 @@ public sealed class RegisterOwnerCommandHandlerTests
             StaffCommand() with { Channel = RegisterOwnerChannel.Telegram },
             CancellationToken.None);
 
-        Assert.NotEqual(Guid.Empty, result.UserId);
+        Assert.NotEqual(Guid.Empty, result.ClientId);
         await consumeProof.DidNotReceive().ConsumeAsync(
             Arg.Any<ConsumeContactVerificationProof>(),
             Arg.Any<CancellationToken>());
-        await users.Received(1).AddAsync(Arg.Any<UserEntity>(), Arg.Any<CancellationToken>());
+        await clients.Received(1).AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -165,7 +140,7 @@ public sealed class RegisterOwnerCommandHandlerTests
             sut.Handle(BotCommand(), CancellationToken.None));
 
         Assert.Equal(OwnerRegistrationErrors.ProofPurposeInvalid.Code, error.Code);
-        await users.DidNotReceive().AddAsync(Arg.Any<UserEntity>(), Arg.Any<CancellationToken>());
+        await clients.DidNotReceive().AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -188,7 +163,7 @@ public sealed class RegisterOwnerCommandHandlerTests
     [Fact]
     public async Task Handle_throws_conflict_when_email_exists()
     {
-        users.ExistsByEmailAsync(Email, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(true);
+        clients.ExistsByEmailAsync(Email, Arg.Any<CancellationToken>(), Arg.Any<Guid?>()).Returns(true);
         var sut = CreateSut(requireStaffProof: false);
 
         var error = await Assert.ThrowsAsync<ConflictException>(() =>

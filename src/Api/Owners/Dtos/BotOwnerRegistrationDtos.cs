@@ -9,4 +9,4 @@ public sealed record RegisterOwnerBotRequest(
     string? Address = null);
 
 // Respuesta pública: ids creados; sin password, hash, OTP, proof ni sesión sensible.
-public sealed record RegisterOwnerBotResponse(Guid UserId, Guid ClientId);
+public sealed record RegisterOwnerBotResponse(Guid ClientId);

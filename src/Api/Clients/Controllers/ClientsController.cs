@@ -3,9 +3,6 @@ using Api.Clients.Mappings;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.Clients.UseCases;
-using Application.Common.Exceptions;
-using Application.Security.Errors;
-using Application.Owners.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,19 +13,8 @@ namespace Api.Clients.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ClientsController(ISender sender, IRegisterOwnerFromStaff registerOwnerFromStaff) : ControllerBase
+public class ClientsController(ISender sender) : ControllerBase
 {
-    // GET /api/clients/me - portal Cliente retirado (Etapa 5): siempre 410.
-    [HttpGet("me")]
-    [AllowAnonymous]
-    [EndpointSummary("Portal Cliente retirado")]
-    [EndpointDescription("Ruta legacy del portal JWT Cliente. Responde 410 Gone (ClientPortal.Gone); usar chatbot/staff.")]
-    [ProducesResponseType(StatusCodes.Status410Gone)]
-    public Task<ActionResult<ClientResponseDto>> GetMe(CancellationToken ct)
-    {
-        throw new GoneException(ClientPortalErrors.Gone);
-    }
-
     // GET /api/clients/by-identification/{identificationNumber}
     [HttpGet("by-identification/{identificationNumber}")]
     [AllowAnonymous]
@@ -112,10 +98,9 @@ public class ClientsController(ISender sender, IRegisterOwnerFromStaff registerO
     [HttpPost]
     [RequirePermission("Clientes", PermissionAction.Create)]
     [EndpointSummary("Registra un nuevo cliente")]
-    [EndpointDescription("Crea un nuevo registro de cliente asociándolo a un usuario existente.")]
+    [EndpointDescription("Crea un cliente con sus propios datos (nombre, correo, cédula, teléfono y dirección). El cliente no tiene usuario ni acceso a la plataforma.")]
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ClientResponseDto>> Create([FromBody] CreateClientDto dto, CancellationToken ct)
     {
@@ -125,58 +110,16 @@ public class ClientsController(ISender sender, IRegisterOwnerFromStaff registerO
         return CreatedAtAction(nameof(GetById), new { id }, client.ToDto());
     }
 
-    // POST /api/clients/register-owner
-    [HttpPost("register-owner")]
-    [RequirePermission("Clientes", PermissionAction.Create)]
-    [EndpointSummary("Registra un dueño (Staff)")]
-    [EndpointDescription("Alta de un dueño/cliente por recepción/admin usando el núcleo RegisterOwner existente. " +
-        "No crea acceso a la plataforma: no genera cuenta de acceso, credenciales ni contraseña.")]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ClientResponseDto>> RegisterOwner(
-        [FromBody] RegisterOwnerDto dto,
-        CancellationToken ct)
-    {
-        var result = await registerOwnerFromStaff.RegisterAsync(dto.ToRequest(), ct);
-
-        var client = await sender.Send(new GetClientByIdQuery(result.ClientId), ct);
-        return CreatedAtAction(nameof(GetById), new { id = result.ClientId }, client.ToDto());
-    }
-
     // PUT /api/clients/{id}
     [HttpPut("{id:guid}")]
     [RequirePermission("Clientes", PermissionAction.Edit)]
     [EndpointSummary("Actualiza los datos de un cliente")]
-    [EndpointDescription("Modifica los datos de un cliente existente identificado por su ID.")]
+    [EndpointDescription("Modifica los datos de un cliente existente (nombre, correo, cédula, teléfono, dirección y estado activo). Cédula, correo y teléfono deben ser únicos entre los demás clientes.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientDto dto, CancellationToken ct)
-    {
-        await sender.Send(dto.ToCommand(id), ct);
-
-        return NoContent();
-    }
-
-    // PUT /api/clients/{id}/owner-profile
-    [HttpPut("{id:guid}/owner-profile")]
-    [RequirePermission("Clientes", PermissionAction.Edit)]
-    [EndpointSummary("Actualiza nombre y correo del dueño asociado a un cliente")]
-    [EndpointDescription("Actualiza el nombre completo y correo del User vinculado a este Client, sin " +
-        "tocar su rol ni requerir permiso sobre 'Usuarios'. Pensado para roles con acceso solo a " +
-        "'Clientes' (ej. Recepcionista) que no pueden llamar PUT /api/Users directamente.")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateOwnerProfile(
-        Guid id,
-        [FromBody] UpdateClientOwnerProfileDto dto,
-        CancellationToken ct)
     {
         await sender.Send(dto.ToCommand(id), ct);
 

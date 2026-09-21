@@ -30,7 +30,7 @@ public sealed class ClientRepositoryEmailTests
     public async Task GetByEmailAsync_matches_ignoring_case_and_surrounding_spaces()
     {
         await using var context = CreateContext();
-        var client = TestClients.Create(Guid.NewGuid(), email: "ana.perez@test.com");
+        var client = TestClients.Create(email: "ana.perez@test.com");
         context.Set<ClientEntity>().Add(client);
         await context.SaveChangesAsync();
         var repository = new ClientRepository(context);
@@ -56,7 +56,7 @@ public sealed class ClientRepositoryEmailTests
     public async Task ExistsByEmailAsync_detects_an_existing_email()
     {
         await using var context = CreateContext();
-        context.Set<ClientEntity>().Add(TestClients.Create(Guid.NewGuid(), email: "ana@test.com"));
+        context.Set<ClientEntity>().Add(TestClients.Create(email: "ana@test.com"));
         await context.SaveChangesAsync();
         var repository = new ClientRepository(context);
 
@@ -68,7 +68,7 @@ public sealed class ClientRepositoryEmailTests
     public async Task ExistsByEmailAsync_ignores_the_excluded_client()
     {
         await using var context = CreateContext();
-        var client = TestClients.Create(Guid.NewGuid(), email: "ana@test.com");
+        var client = TestClients.Create(email: "ana@test.com");
         context.Set<ClientEntity>().Add(client);
         await context.SaveChangesAsync();
         var repository = new ClientRepository(context);

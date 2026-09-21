@@ -39,7 +39,7 @@ public sealed class GetMyAccountStatementsQueryHandlerTests
         => WithId(new UserAccountEntity(userId, "user", "user@example.com", "Active"), id);
 
     private static ClientEntity CreateClient(Guid userId, string identificationNumber)
-        => WithId(TestClients.Create(userId, identificationNumber, "Address"), Guid.NewGuid());
+        => WithId(TestClients.Create(identificationNumber, "Address"), Guid.NewGuid());
 
     private static TEntity WithId<TEntity, TId>(TEntity entity, TId id)
         where TEntity : BaseEntity<TId>

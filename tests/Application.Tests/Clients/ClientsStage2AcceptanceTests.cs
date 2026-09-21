@@ -4,7 +4,7 @@
 // A Create con phone normalizado -> CUBIERTA
 //   CreateClientCommandHandlerTests.Handle_persists_the_client_with_a_normalized_phone_number
 // B Phone duplicado al crear -> CUBIERTA (tarea 2.1 + índice BD)
-//   CreateClientCommandHandlerTests.Handle_throws_conflict_when_phone_is_already_in_use
+//   CreateClientCommandHandlerTests.Handle_throws_phone_conflict_with_its_code
 // C by-phone anónimo -> CUBIERTA (tarea 2.2)
 //   GetClientByPhoneQueryHandlerTests + ClientPhoneLookupHttpTests
 // D Lookup staff -> CUBIERTA (tarea 2.3)
@@ -37,7 +37,7 @@ public sealed class ClientsStage2AcceptanceTests
         Assert.NotNull(method);
         Assert.Contains(
             typeof(CreateClientCommandHandlerTests).GetMethods(),
-            m => m.Name == nameof(CreateClientCommandHandlerTests.Handle_throws_conflict_when_phone_is_already_in_use));
+            m => m.Name == nameof(CreateClientCommandHandlerTests.Handle_throws_phone_conflict_with_its_code));
     }
 
     // Caso C

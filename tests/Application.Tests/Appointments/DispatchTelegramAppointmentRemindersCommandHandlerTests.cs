@@ -287,7 +287,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandlerTests
         var species = new SpeciesEntity("Perro");
         var race = new RaceEntity("Labrador", species);
         var pet = new PetEntity(petName, 5, "F", 10m, null, species, race);
-        var client = TestClients.Create(ownerUserId, "1234567890", null);
+        var client = TestClients.Create("1234567890", null).WithLegacyUserId(ownerUserId);
         var clientPet = new ClientPetEntity(client, pet, true);
         SetProperty(clientPet, nameof(ClientPetEntity.Client), client);
         SetProperty(clientPet, nameof(ClientPetEntity.Pet), pet);

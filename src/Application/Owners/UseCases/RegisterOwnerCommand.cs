@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Application.Owners.UseCases;
 
-// Alta transaccional de dueño: User Cliente sin hash + Client. Sin account/credentials.
+// Alta transaccional de dueño: crea solo el Client (sin usuario, cuenta ni credenciales).
 public sealed record RegisterOwnerCommand(
     string FullName,
     string Email,

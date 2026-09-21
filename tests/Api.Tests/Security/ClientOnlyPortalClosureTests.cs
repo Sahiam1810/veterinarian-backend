@@ -35,7 +35,6 @@ namespace Api.Tests.Security;
 public sealed class ClientOnlyPortalSurfaceTests
 {
     [Theory]
-    [InlineData(typeof(ClientsController), "GetMe")]
     [InlineData(typeof(PetsController), "GetMine")]
     [InlineData(typeof(PetsController), "RegisterMine")]
     [InlineData(typeof(PetsController), "UpdateMine")]
@@ -116,7 +115,6 @@ public sealed class ClientOnlyPortalClosureHttpTests : IClassFixture<ClientOnlyP
     }
 
     [Theory]
-    [InlineData("/api/clients/me")]
     [InlineData("/api/pets/mine")]
     [InlineData("/api/appointments/mine")]
     [InlineData("/api/appointments/booking/options")]
