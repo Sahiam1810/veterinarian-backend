@@ -3,6 +3,7 @@ using Application.Clients.Errors;
 using Application.Clients.UseCases;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.Tests.Common;
 using Domain.Clients.Entities;
 using NSubstitute;
 using Xunit;
@@ -50,6 +51,19 @@ public sealed class CreateClientCommandHandlerTests
         Assert.Equal("ana@huellitas.test", created.Email.Value);
         Assert.True(created.IsActive);
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Acceptance_PostClients_persists_only_in_CLIENTS()
+    {
+        var command = new CreateClientCommand(
+            "Ana Cliente", "ana@huellitas.test", "1234567890", "3001234567", "Calle 1");
+
+        await sut.Handle(command, CancellationToken.None);
+
+        await clientsRepository.Received(1).AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
+        UnitOfWorkAssertions.AssertOnlyRepositoriesAccessed(
+            unitOfWork, nameof(IUnitOfWork.ClientsRepository));
     }
 
     // El handler pasa por ClientPhoneNumber.Create (solo dígitos).

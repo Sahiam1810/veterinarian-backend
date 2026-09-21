@@ -1,5 +1,6 @@
 using Application.Clients.Errors;
 using Application.Clients.UseCases;
+using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.ContactVerification.Errors;
 using Application.Owners.Abstractions;
@@ -7,6 +8,7 @@ using Application.Owners.Adapters;
 using Application.Owners.Enums;
 using Application.Owners.Errors;
 using Application.Owners.UseCases;
+using Application.Tests.Common;
 using MediatR;
 using NSubstitute;
 using Xunit;
@@ -38,6 +40,21 @@ public sealed class RegisterOwnerStage4AcceptanceTests
         Assert.Equal(Email, client.Email.Value);
         Assert.True(client.IsActive);
         Assert.Empty(harness.ConsumeProof.ConsumedSessionIds);
+    }
+
+    [Fact]
+    public async Task Acceptance_OwnersBot_persists_only_in_CLIENTS()
+    {
+        var harness = new RegisterOwnerAcceptanceHarness();
+        var adapter = new RegisterOwnerFromBot(ForwardingSender(harness, requireStaffProof: false));
+
+        await adapter.RegisterAsync(
+            new RegisterOwnerFromBotRequest(FullName, Email, Identification, Phone, "Calle 1"),
+            CancellationToken.None);
+
+        Assert.Single(harness.Clients.Items);
+        UnitOfWorkAssertions.AssertOnlyRepositoriesAccessed(
+            harness.UnitOfWork, nameof(IUnitOfWork.ClientsRepository));
     }
 
     // Tras el alta por bot, cédula y teléfono resuelven por los mismos queries de lookup.
