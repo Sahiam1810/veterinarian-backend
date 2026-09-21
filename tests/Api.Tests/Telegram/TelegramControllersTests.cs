@@ -15,26 +15,6 @@ namespace Api.Tests.Telegram;
 public sealed class TelegramControllersTests
 {
     [Fact]
-    public async Task Link_code_uses_authenticated_person_claim()
-    {
-        var personId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var sender = Substitute.For<ISender>();
-        sender.Send(Arg.Any<CreateTelegramLinkCodeCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new TelegramLinkCodeResult("code", "https://t.me/bot?start=code", DateTimeOffset.UtcNow));
-        var controller = new TelegramLinkCodesController(sender)
-        {
-            ControllerContext = ContextWithClaim("person_id", personId.ToString())
-        };
-
-        var result = await controller.Create(default);
-
-        Assert.IsType<ObjectResult>(result.Result);
-        await sender.Received(1).Send(
-            Arg.Is<CreateTelegramLinkCodeCommand>(command => command.PersonId == personId),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task Bot_link_uses_the_telegram_user_id_claim_from_the_guest_token()
     {
         var personId = Guid.Parse("33333333-3333-3333-3333-333333333333");

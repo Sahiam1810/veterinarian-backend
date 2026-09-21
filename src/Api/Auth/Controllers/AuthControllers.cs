@@ -41,9 +41,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     };
 
     // Registro público eliminado: el Cliente nunca se loguea (solo
-    // interactúa vía chatbot), así que no existe un flujo de auto-registro
-    // con contraseña. La vinculación por Telegram sigue su propio flujo
-    // (TelegramRegistrationController), que no depende de este endpoint.
+    // interactúa vía chatbot). El alta/vinculación va por owners/bot + bot-link.
 
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.Login)]

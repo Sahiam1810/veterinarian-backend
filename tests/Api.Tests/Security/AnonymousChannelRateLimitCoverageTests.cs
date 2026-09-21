@@ -37,20 +37,6 @@ public sealed class AnonymousChannelRateLimitCoverageTests
     }
 
     [Fact]
-    public void TelegramRegistrationController_has_class_level_telegram_registration_policy()
-    {
-        var attribute = typeof(TelegramRegistrationController)
-            .GetCustomAttribute<EnableRateLimitingAttribute>();
-        Assert.NotNull(attribute);
-        Assert.Equal(RateLimitPolicies.TelegramRegistration, attribute!.PolicyName);
-
-        var methods = typeof(TelegramRegistrationController)
-            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-        Assert.Contains(methods, m => m.GetCustomAttribute<HttpGetAttribute>() is not null);
-        Assert.Contains(methods, m => m.GetCustomAttribute<HttpPostAttribute>() is not null);
-    }
-
-    [Fact]
     public void RateLimitPolicies_declares_all_anexo_a_constants()
     {
         string[] expected =
@@ -62,7 +48,6 @@ public sealed class AnonymousChannelRateLimitCoverageTests
             RateLimitPolicies.ContactEmailRequest,
             RateLimitPolicies.ContactEmailConfirm,
             RateLimitPolicies.BotOwnerRegistration,
-            RateLimitPolicies.TelegramRegistration,
             RateLimitPolicies.TelegramWebhook
         ];
 

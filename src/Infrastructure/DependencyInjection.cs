@@ -67,8 +67,6 @@ using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
-using Application.Telegram.Linking;
-using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.ChatConversations.Repository;
 using Infrastructure.ChatEscalationResolutions.Repository;
@@ -127,7 +125,6 @@ using Infrastructure.Telegram.Security;
 using Infrastructure.Telegram.Http;
 using Infrastructure.Chat.Configuration;
 using Infrastructure.Telegram.Workers;
-using Infrastructure.Telegram.Identity;
 using Infrastructure.Email;
 using Infrastructure.Email.Configuration;
 using Infrastructure.Messaging;
@@ -219,28 +216,12 @@ public static class DependencyInjection
         services.AddScoped<IChatEscalationRepository, ChatEscalationRepository>();
         services.AddScoped<IChatEscalationResolutionRepository, ChatEscalationResolutionRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
-        services.AddScoped<ITelegramLinkCodeRepository, TelegramLinkCodeRepository>();
         services.AddScoped<ITelegramUserLinkRepository, TelegramUserLinkRepository>();
         services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
-        services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
-        services.AddScoped<ITelegramRegistrationSessionRepository, TelegramRegistrationSessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
-        services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
-        services.AddScoped<ITelegramRegistrationService, TelegramRegistrationService>();
-        services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
-        services.AddSingleton<TelegramRegistrationProtector>(provider =>
-        {
-            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
-            var key = !string.IsNullOrWhiteSpace(options.RegistrationProtectionKeyBase64)
-                ? options.RegistrationProtectionKeyBase64
-                : Convert.ToBase64String(new byte[32]);
-            return new TelegramRegistrationProtector(key);
-        });
-        services.AddSingleton<ITelegramRegistrationProtector>(provider =>
-            provider.GetRequiredService<TelegramRegistrationProtector>());
         services.AddSingleton<IOtpProtector>(provider =>
         {
             var contactOptions = provider.GetRequiredService<IOptions<ContactVerificationOptions>>().Value;
@@ -258,8 +239,6 @@ public static class DependencyInjection
             // Pepper de desarrollo cuando los OTP de contacto/Telegram están apagados.
             return new OtpProtector(Convert.ToBase64String(new byte[32]));
         });
-        services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
-        services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
         services.AddScoped<IVerificationCodeSender, SmtpEmailVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioSmsVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();
@@ -317,7 +296,6 @@ public static class DependencyInjection
             return new ConfiguredTelegramRuntimeSettings(
                 options.GuestModeEnabled,
                 options.BotUsername,
-                TimeSpan.FromMinutes(options.LinkCodeTtlMinutes),
                 TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),
                 options.WorkerConcurrency,
                 TimeSpan.FromSeconds(options.ProcessingLeaseSeconds),
@@ -326,17 +304,8 @@ public static class DependencyInjection
                 Guid.Parse(options.PendingEscalationStatusId),
                 Guid.Parse(options.TextMessageTypeId),
                 Guid.Parse(options.HumanAgentSenderTypeId),
-                TimeSpan.FromMinutes(options.OtpTtlMinutes),
-                options.OtpMaximumAttempts,
-                TimeSpan.FromSeconds(options.OtpResendSeconds),
                 TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours),
-                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes),
-                options.RegistrationEnabled,
-                options.RegistrationCompletionUrl,
-                TimeSpan.FromMinutes(options.RegistrationOtpTtlMinutes),
-                TimeSpan.FromMinutes(options.RegistrationTokenTtlMinutes),
-                options.RegistrationMaxOtpAttempts,
-                TimeSpan.FromSeconds(options.RegistrationResendSeconds));
+                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes));
         });
 
         var telegramOptions = configuration

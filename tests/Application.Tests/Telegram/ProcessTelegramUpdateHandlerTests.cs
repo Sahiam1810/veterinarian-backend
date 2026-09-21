@@ -82,6 +82,28 @@ public sealed class ProcessTelegramUpdateHandlerTests
     }
 
     [Fact]
+    public async Task Start_with_payload_returns_the_same_guest_welcome_message()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(49, "/start abc123");
+        fixture.Updates.GetByIdAsync(49, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default)
+            .Returns((TelegramUserLink?)null);
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(49), default);
+
+        Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            Arg.Is<string>(text =>
+                text.Contains("generales", StringComparison.OrdinalIgnoreCase)),
+            default);
+        await fixture.Sender.DidNotReceive().Send(
+            Arg.Any<IRequest>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task General_guest_response_is_delivered_without_automatic_linking_suffix()
     {
         var fixture = CreateFixture();

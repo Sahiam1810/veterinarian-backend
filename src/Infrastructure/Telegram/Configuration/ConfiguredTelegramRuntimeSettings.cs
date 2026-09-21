@@ -5,7 +5,6 @@ namespace Infrastructure.Telegram.Configuration;
 public sealed record ConfiguredTelegramRuntimeSettings(
     bool GuestModeEnabled,
     string BotUsername,
-    TimeSpan LinkCodeTtl,
     TimeSpan WorkerPollInterval,
     int WorkerConcurrency,
     TimeSpan ProcessingLease,
@@ -14,14 +13,5 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     Guid PendingEscalationStatusId,
     Guid TextMessageTypeId,
     Guid HumanAgentSenderTypeId,
-    TimeSpan OtpLifetime,
-    int OtpMaximumAttempts,
-    TimeSpan OtpResendInterval,
     TimeSpan PrivateAccessAbsoluteLifetime,
-    TimeSpan PrivateAccessIdleLifetime,
-    bool RegistrationEnabled,
-    string RegistrationCompletionUrl,
-    TimeSpan RegistrationOtpLifetime,
-    TimeSpan RegistrationTokenLifetime,
-    int RegistrationMaximumOtpAttempts,
-    TimeSpan RegistrationResendInterval) : ITelegramRuntimeSettings;
+    TimeSpan PrivateAccessIdleLifetime) : ITelegramRuntimeSettings;
