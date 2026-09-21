@@ -149,6 +149,65 @@ public sealed class ProcessTelegramUpdateHandlerTests
             1001,
             "Para agendar necesito tu nombre, cédula, correo y teléfono.",
             default);
+        await fixture.Identity.DidNotReceive().GetAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Guest_link_with_resume_message_continues_as_authenticated_client()
+    {
+        var fixture = CreateFixture();
+        var guestId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var update = ProcessingUpdate(61, "Ana Perez\n123456789\nana@example.test\n3001234567");
+        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
+        fixture.Settings.GuestModeEnabled.Returns(true);
+        fixture.Updates.GetByIdAsync(61, default).Returns(update);
+        fixture.Identity.GetGuest(1001)
+            .Returns(new AgentDelegatedIdentity(guestId, "TelegramGuest", "guest-token"));
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default)
+            .Returns(
+                (TelegramUserLink?)null,
+                userLink);
+        fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
+            .Returns(new TelegramConversationBinding(
+                ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
+        fixture.Context.ResolveAsync(
+                PersonId,
+                ConversationId,
+                "telegram-update-61-resume",
+                "Telegram",
+                default)
+            .Returns(new AgentConversationContext(ConversationId, "web", false));
+        fixture.Identity.GetAsync(PersonId, default)
+            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "guest-token",
+                default)
+            .Returns(Result(
+                "¡Listo, Ana! Guardé tu registro. Continúo con lo que estabas haciendo.",
+                AgentAccessRequirement.None,
+                "Quiero agendar una cita para Medicina interna"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Is<AgentMessageDispatchRequest>(request =>
+                    request.Message == "Quiero agendar una cita para Medicina interna" &&
+                    request.Role == "Cliente" &&
+                    request.PersonId == PersonId),
+                Arg.Any<AgentConversationContext>(),
+                "delegated-token",
+                default)
+            .Returns(Result("¿Para cuál mascota quieres la cita?"));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(61), default);
+
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            Arg.Is<string>(text =>
+                text.Contains("Guardé tu registro", StringComparison.Ordinal) &&
+                text.Contains("¿Para cuál mascota", StringComparison.Ordinal)),
+            default);
     }
 
     [Fact]
@@ -187,7 +246,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Updates.GetByIdAsync(43, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
+            .Returns(new TelegramConversationBinding(ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
         fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-43-verified", "Telegram", default)
             .Returns(new AgentConversationContext(ConversationId, "web", false));
         fixture.Identity.GetAsync(PersonId, default)
@@ -220,7 +279,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Updates.GetByIdAsync(80, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
+            .Returns(new TelegramConversationBinding(ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
         fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-80-verified", "Telegram", default)
             .Returns(new AgentConversationContext(ConversationId, "web", false));
         fixture.Identity.GetAsync(PersonId, default)
@@ -261,7 +320,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Updates.GetByIdAsync(81, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
+            .Returns(new TelegramConversationBinding(ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
         fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-81-verified", "Telegram", default)
             .Returns(new AgentConversationContext(ConversationId, "web", false));
         fixture.Identity.GetAsync(PersonId, default)
@@ -301,7 +360,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Updates.GetByIdAsync(70, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
+            .Returns(new TelegramConversationBinding(ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
         fixture.Context.ResolveAsync(
                 PersonId,
                 ConversationId,
@@ -348,7 +407,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Updates.GetByIdAsync(71, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
+            .Returns(new TelegramConversationBinding(ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
         // Ya hay un escalamiento activo sin resolver: IConversationContextProvider ya lo
         // refleja en IsEscalated (mismo IActiveConversationEscalationReader que usa
         // PersistentConversationContextProvider).
@@ -387,7 +446,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Updates.GetByIdAsync(73, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
+            .Returns(new TelegramConversationBinding(ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
         fixture.Context.ResolveAsync(
                 PersonId,
                 ConversationId,
@@ -497,7 +556,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         fixture.Updates.GetByIdAsync(52, default).Returns(update);
         fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
         fixture.ConversationLinks.GetBindingAsync(userLink.Id, default)
-            .Returns(new TelegramConversationBinding(ConversationId, false));
+            .Returns(new TelegramConversationBinding(ConversationId, false, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(-5)));
         fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-52-verified", "Telegram", default)
             .Returns(new AgentConversationContext(ConversationId, "web", false));
         fixture.Identity.GetAsync(PersonId, default)

@@ -126,7 +126,7 @@ public sealed class AgentMessagingHttpClientTests
     }
 
     [Fact]
-    public async Task Send_rejects_resume_message_without_identity_verification()
+    public async Task Send_accepts_resume_message_with_none_access_requirement()
     {
         var json = SuccessJson().Replace(
             "\"accessRequirement\":\"identity_verification\"",
@@ -134,8 +134,10 @@ public sealed class AgentMessagingHttpClientTests
             StringComparison.Ordinal);
         var client = CreateClient(Respond(HttpStatusCode.OK, json));
 
-        await Assert.ThrowsAsync<AgentContractException>(
-            () => client.SendAsync(Envelope(), "secret-token", default));
+        var result = await client.SendAsync(Envelope(), "secret-token", default);
+
+        Assert.Equal(AgentAccessRequirement.None, result.AccessRequirement);
+        Assert.Equal("Quiero agendar una cita", result.ResumeMessage);
     }
 
     [Fact]
