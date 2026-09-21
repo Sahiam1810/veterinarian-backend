@@ -39,6 +39,7 @@ Todos los usuarios de Staff tienen cuenta creada en `USER_ACCOUNTS` (`STATUS = '
 | **Auxiliar** | `auxiliar@veterinaria.com` | `auxiliar` | ✅ Sí |
 
 > **Nota:** Los dueños de mascota (clientes) no se modelan como usuarios de plataforma: viven en `CLIENTS` y se identifican vía chatbot/Telegram.
+
 ---
 
 ## Valores mínimos esperados
