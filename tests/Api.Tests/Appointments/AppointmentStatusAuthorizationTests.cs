@@ -69,7 +69,7 @@ public sealed class AppointmentStatusAuthorizationTests
     }
 
     [Fact]
-    public void AppointmentsController_Update_requires_ReprogramacionDeCitas_Edit_permission()
+    public void AppointmentsController_Update_requires_Citas_Edit_permission()
     {
         var method = typeof(AppointmentsController).GetMethod(nameof(AppointmentsController.Update));
         Assert.NotNull(method);
@@ -77,7 +77,7 @@ public sealed class AppointmentStatusAuthorizationTests
         var authorizeAttributes = method.GetCustomAttributes<AuthorizeAttribute>().ToArray();
         var authorizeAttribute = Assert.Single(authorizeAttributes);
         Assert.IsType<RequirePermissionAttribute>(authorizeAttribute);
-        Assert.Equal($"perm:Reprogramación de Citas:{PermissionAction.Edit}", authorizeAttribute.Policy);
+        Assert.Equal($"perm:Citas:{PermissionAction.Edit}", authorizeAttribute.Policy);
     }
 
     [Fact]

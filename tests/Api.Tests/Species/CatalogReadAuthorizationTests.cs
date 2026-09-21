@@ -18,7 +18,9 @@ public sealed class CatalogReadAuthorizationTests
     {
         var getAll = controllerType.GetMethod("GetAll")!;
 
-        Assert.Single(getAll.GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true));
-        Assert.Empty(getAll.GetCustomAttributes(typeof(RequirePermissionAttribute), inherit: true));
+        var requirePermission = Assert.Single(
+            getAll.GetCustomAttributes(typeof(RequirePermissionAttribute), inherit: true));
+        var permissionAttribute = Assert.IsType<RequirePermissionAttribute>(requirePermission);
+        Assert.Equal("perm:Especies y Razas:View", permissionAttribute.Policy);
     }
 }
