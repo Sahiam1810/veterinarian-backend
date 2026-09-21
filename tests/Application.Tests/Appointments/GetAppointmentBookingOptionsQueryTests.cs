@@ -27,7 +27,7 @@ public sealed class GetAppointmentBookingOptionsQueryTests
         var accountId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Activo");
-        var client = TestClients.Create(userId, "1234567890", null);
+        var client = TestClients.Create("1234567890", null);
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));

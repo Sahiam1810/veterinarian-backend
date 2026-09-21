@@ -87,7 +87,11 @@ public sealed class ClientStaffLookupHttpTests : IClassFixture<ClientStaffLookup
         Assert.Equal("1234567890", body.GetProperty("identificationNumber").GetString());
         Assert.Equal("3001234567", body.GetProperty("phoneNumber").GetString());
         Assert.True(body.TryGetProperty("address", out _));
-        Assert.True(body.TryGetProperty("userId", out _));
+        Assert.False(body.TryGetProperty("userId", out _));
+        Assert.False(body.TryGetProperty("registrationDate", out _));
+        Assert.True(body.TryGetProperty("fullName", out _));
+        Assert.True(body.TryGetProperty("email", out _));
+        Assert.True(body.GetProperty("isActive").GetBoolean());
     }
 
     [Fact]
@@ -186,7 +190,6 @@ public sealed class ClientStaffLookupApiFactory : WebApplicationFactory<AuthCont
     private void ConfigureSenderDefaults()
     {
         var clientEntity = TestClients.Create(
-            userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Operativa 10",
             phoneNumber: "3001234567");

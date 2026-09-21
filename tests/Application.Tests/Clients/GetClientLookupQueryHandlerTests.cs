@@ -24,7 +24,6 @@ public sealed class GetClientLookupQueryHandlerTests
     public async Task Handle_returns_client_when_lookup_matches()
     {
         var client = TestClients.Create(
-            userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Falsa 123",
             phoneNumber: "3001234567");

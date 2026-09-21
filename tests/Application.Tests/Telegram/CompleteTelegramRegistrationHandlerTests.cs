@@ -27,14 +27,16 @@ public sealed class CompleteTelegramRegistrationHandlerTests
         var session = ProfileSession();
         fixture.Sessions.GetByCompletionTokenHashAsync(Hash, default).Returns(session);
         fixture.RegisterOwner.RegisterAsync(Arg.Any<RegisterOwnerFromTelegramRequest>(), default)
-            .Returns(new RegisterOwnerResult(PersonId, ClientId));
+            .Returns(new RegisterOwnerResult(ClientId));
 
         var result = await fixture.Handler.Handle(Command(), default);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(PersonId, result.Value.PersonId);
+        Assert.Equal(ClientId, result.Value.PersonId);
         await fixture.Links.Received(1).AddAsync(
-            Arg.Is<TelegramUserLink>(link => link.ClientId == PersonId), default);
+
+            Arg.Is<TelegramUserLink>(link => link.PersonId == ClientId), default);
+
         Assert.Equal(TelegramRegistrationSessionStatus.Completed, session.Status);
         await fixture.RegisterOwner.Received(1).RegisterAsync(
             Arg.Is<RegisterOwnerFromTelegramRequest>(r =>

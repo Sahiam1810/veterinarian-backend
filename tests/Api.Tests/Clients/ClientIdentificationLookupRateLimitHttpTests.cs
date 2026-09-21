@@ -56,7 +56,6 @@ public sealed class ClientIdentificationLookupRateLimitedApiFactory : WebApplica
         }
 
         var knownClient = TestClients.Create(
-            Guid.Parse("cccccccc-3333-3333-3333-333333333333"),
             "9001002003",
             "N/A",
             phoneNumber: "3000000001");

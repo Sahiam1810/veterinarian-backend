@@ -8,10 +8,11 @@ using MediatR;
 namespace Application.Clients.UseCases;
 
 public sealed record CreateClientCommand(
-    Guid UserId,
+    string FullName,
+    string Email,
     string IdentificationNumber,
-    string? Address,
-    string? PhoneNumber = null) : IRequest<Guid>;
+    string PhoneNumber,
+    string? Address = null) : IRequest<Guid>;
 
 public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCommand, Guid>
 {
@@ -24,28 +25,26 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
 
     public async Task<Guid> Handle(CreateClientCommand request, CancellationToken cancellationToken)
     {
-        var user = await _uow.UsersRepository.GetByIdAsync(request.UserId, cancellationToken);
-        if (user is null)
-        {
-            throw new NotFoundException("Usuario no encontrado.");
-        }
-
         var exists = await _uow.ClientsRepository.ExistsByIdentificationNumberAsync(
             request.IdentificationNumber,
             cancellationToken);
 
         if (exists)
         {
-            throw new ConflictException("Ya existe un cliente con ese número de identificación.");
+            throw new ConflictException(
+                "Ya existe un cliente con ese número de identificación.",
+                ClientErrorCodes.IdentificationAlreadyInUse);
         }
 
-        var userAlreadyHasClient = await _uow.ClientsRepository.ExistsByUserIdAsync(
-            request.UserId,
+        var emailInUse = await _uow.ClientsRepository.ExistsByEmailAsync(
+            request.Email,
             cancellationToken);
 
-        if (userAlreadyHasClient)
+        if (emailInUse)
         {
-            throw new ConflictException("Ese usuario ya tiene un perfil de cliente asociado.");
+            throw new ConflictException(
+                "Ya existe un cliente con ese correo electrónico.",
+                ClientErrorCodes.EmailAlreadyInUse);
         }
 
         // Normaliza y persiste dígitos; unicidad en app + índice UX_CLIENTS_PHONE_NUMBER en BD.
@@ -62,9 +61,8 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
         }
 
         var client = new ClientEntity(
-            request.UserId,
-            user.FullName,
-            user.Email.Value,
+            request.FullName,
+            request.Email,
             request.IdentificationNumber,
             phoneNumber.Value,
             request.Address);

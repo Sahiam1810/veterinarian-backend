@@ -130,6 +130,37 @@ public sealed class ContactVerificationHttpTests : IClassFixture<ContactVerifica
         Assert.Equal(429, document.RootElement.GetProperty("status").GetInt32());
         Assert.Equal("RateLimit.Exceeded", document.RootElement.GetProperty("code").GetString());
     }
+
+    [Fact]
+    public async Task RequestClaimByIdentification_ExistingClient_Returns202_WithMaskedEmail_WithoutRawEmail()
+    {
+        using var client = factory.CreateAnonymousClient();
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/contact-verification/email/request-claim-by-identification",
+            new { IdentificationNumber = "1234567890" });
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(body);
+        Assert.True(document.RootElement.TryGetProperty("sessionId", out _));
+        Assert.Equal("a***@huellitas.test", document.RootElement.GetProperty("maskedEmail").GetString());
+        Assert.Equal("Ana Pérez", document.RootElement.GetProperty("fullName").GetString());
+        Assert.False(document.RootElement.TryGetProperty("email", out _));
+        Assert.DoesNotContain("ana@huellitas.test", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RequestClaimByIdentification_UnknownClient_Returns404()
+    {
+        using var client = factory.CreateAnonymousClient();
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/contact-verification/email/request-claim-by-identification",
+            new { IdentificationNumber = "4044044040" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }
 
 public class ContactVerificationApiFactory : WebApplicationFactory<AuthController>
@@ -214,6 +245,29 @@ public class ContactVerificationApiFactory : WebApplicationFactory<AuthControlle
             services.AddSingleton(request);
             services.RemoveAll<IContactVerificationSessionRepository>();
             services.AddSingleton(sessions);
+
+            var claimById = Substitute.For<IRequestClaimEmailByIdentification>();
+            claimById.RequestAsync(Arg.Any<RequestClaimEmailByIdentification>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    var input = call.ArgAt<RequestClaimEmailByIdentification>(0);
+                    if (input.IdentificationNumber == "4044044040")
+                    {
+                        throw new Application.Common.Exceptions.NotFoundException("Cliente no encontrado.");
+                    }
+
+                    return new RequestClaimEmailByIdentificationResult(
+                        Guid.NewGuid(),
+                        DateTime.UtcNow.AddMinutes(10),
+                        ContactVerificationChannel.Email,
+                        "a***@huellitas.test",
+                        Guid.NewGuid(),
+                        Guid.NewGuid(),
+                        "Ana Pérez",
+                        "ana@huellitas.test");
+                });
+            services.RemoveAll<IRequestClaimEmailByIdentification>();
+            services.AddSingleton(claimById);
         });
     }
 

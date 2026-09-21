@@ -84,7 +84,7 @@ public sealed class RegisterMyPetCommandHandlerTests
         {
             var userId = Guid.NewGuid();
             var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Active");
-            Client = TestClients.Create(userId, "1234567890", null);
+            Client = TestClients.Create("1234567890", null);
             var species = new SpeciesEntity("Canino");
             var race = new RaceEntity("Mestizo", species);
 

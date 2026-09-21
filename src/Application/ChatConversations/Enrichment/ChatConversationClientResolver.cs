@@ -33,6 +33,7 @@ public sealed class ChatConversationClientResolver(
             return ChatConversationClientInfo.Empty;
         }
 
-        return new ChatConversationClientInfo(client.Id, client.FullName?.Value, client.PhoneNumber?.Value);
+        return new ChatConversationClientInfo(client.Id, client.FullName.Value, client.PhoneNumber?.Value);
+
     }
 }

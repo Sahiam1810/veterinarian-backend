@@ -27,4 +27,9 @@ public interface ITelegramConversationLinkRepository
         CancellationToken cancellationToken);
 }
 
-public sealed record TelegramConversationBinding(Guid ConversationId, bool Closed);
+public sealed record TelegramConversationBinding(
+    Guid ConversationId,
+    bool Closed,
+    DateTime? LastMessageAt,
+    DateTime CreatedAt);
+

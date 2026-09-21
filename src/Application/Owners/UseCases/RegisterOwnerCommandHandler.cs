@@ -5,15 +5,12 @@ using Application.ContactVerification.Errors;
 using Application.Owners.Abstractions;
 using Application.Owners.Enums;
 using Application.Owners.Errors;
-using Application.Security;
 using Application.Verification.Abstractions;
 using Domain.Clients.Entities;
 using Domain.Clients.ValueObjects;
 using Domain.ContactVerification.Enums;
-using Domain.Users.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using UserEntity = Domain.Users.Entities.Users;
 
 namespace Application.Owners.UseCases;
 
@@ -28,22 +25,16 @@ public sealed class RegisterOwnerCommandHandler(
         RegisterOwnerCommand request,
         CancellationToken cancellationToken)
     {
-        var email = UserEmail.Create(request.Email).Value;
+        var email = ClientEmail.Create(request.Email).Value;
         var phone = ClientPhoneNumber.Create(request.PhoneNumber).Value;
 
-        var clientRole = await unitOfWork.RolesRepository.GetByNameAsync(
-            WebPlatformAccess.ClientRoleName,
-            cancellationToken)
-            ?? throw new NotFoundException(
-                OwnerRegistrationErrors.ClientRoleMissing.Description);
-
-        var emailInUse = await unitOfWork.UsersRepository.ExistsByEmailAsync(
+        var emailInUse = await unitOfWork.ClientsRepository.ExistsByEmailAsync(
             email,
             cancellationToken);
         if (emailInUse)
         {
             throw new ConflictException(
-                "Ya existe un usuario con ese correo electrónico.",
+                "Ya existe un cliente con ese correo electrónico.",
                 OwnerRegistrationErrors.EmailAlreadyInUse.Code);
         }
 
@@ -75,31 +66,21 @@ public sealed class RegisterOwnerCommandHandler(
                 await ConsumeRegisterProofAsync(email, request, transactionToken);
             }
 
-            var user = new UserEntity(
-                request.FullName.Trim(),
-                email,
-                passwordHash: null,
-                clientRole.Id);
-
-            await unitOfWork.UsersRepository.AddAsync(user, transactionToken);
-
             var client = new ClientEntity(
-                user.Id,
                 request.FullName.Trim(),
                 email,
                 request.IdentificationNumber,
-                phone,
-                request.Address);
+                phoneNumber: phone,
+                address: request.Address);
 
             await unitOfWork.ClientsRepository.AddAsync(client, transactionToken);
-            result = new RegisterOwnerResult(user.Id, client.Id);
+            result = new RegisterOwnerResult(client.Id);
         }, cancellationToken);
 
         // Ids + canal; nunca email, teléfono, cédula ni proof.
         logger.LogInformation(
-            "Owner registered. UserId={UserId} ClientId={ClientId} Channel={Channel}",
-            result!.UserId,
-            result.ClientId,
+            "Owner registered. ClientId={ClientId} Channel={Channel}",
+            result!.ClientId,
             request.Channel);
 
         return result;

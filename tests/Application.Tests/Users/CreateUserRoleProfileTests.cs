@@ -55,36 +55,30 @@ public sealed class CreateUserRoleProfileTests
     }
 
     [Fact]
-    public async Task Create_cliente_persiste_fila_Client_en_la_misma_transaccion()
+    public async Task Create_usuario_de_personal_no_crea_fila_Client()
     {
-        var clientRole = new RoleEntity("Cliente", "Dueño");
-        rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>()).Returns(clientRole);
+        var staffRole = new RoleEntity("Recepcionista", "Gestiona agenda");
+        rolesRepository.GetByIdAsync(staffRole.Id, Arg.Any<CancellationToken>()).Returns(staffRole);
+        passwordHasher.Hash("Password123!").Returns("hash");
 
         UserEntity? persistedUser = null;
-        ClientEntity? persistedClient = null;
         usersRepository.AddAsync(Arg.Do<UserEntity>(u => persistedUser = u), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
-        clientsRepository.AddAsync(Arg.Do<ClientEntity>(c => persistedClient = c), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         var sut = new CreateUserCommandHandler(unitOfWork, passwordHasher);
         var userId = await sut.Handle(
             new CreateUserCommand(
-                "Ana Dueña",
-                "ana@huellitas.test",
-                Password: null,
-                RoleId: clientRole.Id,
-                ClientIdentificationNumber: "1234567890",
-                ClientPhoneNumber: "3001234567"),
+                "Maria Recepcion",
+                "maria@huellitas.test",
+                Password: "Password123!",
+                RoleId: staffRole.Id),
             CancellationToken.None);
 
         Assert.NotNull(persistedUser);
         Assert.Equal(userId, persistedUser!.Id);
-        Assert.Null(persistedUser.PasswordHash);
-        Assert.NotNull(persistedClient);
-        Assert.Equal(userId, persistedClient!.UserId);
-        Assert.Equal("1234567890", persistedClient.IdentificationNumber.Value);
-        Assert.Equal("3001234567", persistedClient.PhoneNumber!.Value);
+        Assert.Equal("hash", persistedUser.PasswordHash);
+        await clientsRepository.DidNotReceive()
+            .AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
         await veterinariansRepository.DidNotReceive()
             .AddAsync(Arg.Any<Veterinarian>(), Arg.Any<CancellationToken>());
     }

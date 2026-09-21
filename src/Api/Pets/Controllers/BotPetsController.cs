@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Api.Pets.Controllers;
 
@@ -29,6 +30,28 @@ public sealed class BotPetsController(ISender sender) : ControllerBase
         }
 
         var pets = await sender.Send(new GetMyPetsQuery(userAccountId), cancellationToken);
+        return Ok(pets.Select(pet => pet.ToDto()).ToArray());
+    }
+
+    [HttpPost("query-by-claim-proof")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.ContactEmailConfirm)]
+    [EndpointSummary("Lista mascotas con proof Claim temporal (sin bot-link)")]
+    [EndpointDescription(
+        "Consume el proof de un solo uso emitido tras OTP Claim. No crea TELEGRAM_USER_LINKS. "
+        + "Pensado para consulta desde Telegram invitado (celular prestado).")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<OwnedPetProfileResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<IReadOnlyCollection<OwnedPetProfileResponseDto>>> QueryByClaimProof(
+        [FromBody] QueryPetsByClaimProofRequest request,
+        CancellationToken cancellationToken)
+    {
+        var pets = await sender.Send(
+            new QueryPetsByClaimProof(request.SessionId, request.Proof),
+            cancellationToken);
         return Ok(pets.Select(pet => pet.ToDto()).ToArray());
     }
 

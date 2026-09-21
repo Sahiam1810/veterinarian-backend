@@ -36,7 +36,9 @@ public sealed class ClientPhoneLookupHttpTests : IClassFixture<ClientPhoneLookup
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var root = document.RootElement;
         Assert.Equal(factory.KnownClient.Id, root.GetProperty("id").GetGuid());
-        Assert.Equal(factory.KnownClient.UserId, root.GetProperty("userId").GetGuid());
+        Assert.False(root.TryGetProperty("userId", out _));
+        Assert.True(root.TryGetProperty("createdAt", out _));
+        Assert.False(root.TryGetProperty("registrationDate", out _));
         Assert.Equal("1234567890", root.GetProperty("identificationNumber").GetString());
         Assert.False(root.TryGetProperty("address", out _));
         Assert.False(root.TryGetProperty("phoneNumber", out _));
@@ -151,7 +153,6 @@ public sealed class ClientPhoneLookupApiFactory : WebApplicationFactory<AuthCont
 
     internal static ClientEntity CreateKnownClient() =>
         TestClients.Create(
-            Guid.Parse("bbbbbbbb-2222-2222-2222-222222222222"),
             "1234567890",
             "Calle Falsa 123",
             phoneNumber: "3001234567");

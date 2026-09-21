@@ -45,7 +45,8 @@ public sealed class GetMyPetsQueryHandler : IRequestHandler<GetMyPetsQuery, IRea
             pet.Age,
             pet.Gender.Value,
             pet.Weight.Value,
-            pet.Observations.Value,
+            // EF deja Observations en null cuando OBSERVATIONS es NULL en Oracle.
+            pet.Observations?.Value,
             pet.SpeciesId,
             pet.Species.Name.Value,
             pet.RaceId,

@@ -994,20 +994,31 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("CREATED_AT");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(150)")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("VARCHAR2(150)")
+                        .HasColumnName("FULL_NAME");
+
                     b.Property<string>("IdentificationNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("NVARCHAR2(20)")
                         .HasColumnName("IDENTIFICATION_NUMBER");
 
+                    b.Property<int>("IsActive")
+                        .HasColumnType("NUMBER(1)")
+                        .HasColumnName("IS_ACTIVE");
+
                     b.Property<string>("PhoneNumber")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("NVARCHAR2(20)")
                         .HasColumnName("PHONE_NUMBER");
-
-                    b.Property<DateTime>("RegistrationDate")
-                        .HasColumnType("TIMESTAMP(7)")
-                        .HasColumnName("REGISTRATION_DATE");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7)")
@@ -1020,13 +1031,16 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CLIENTS_EMAIL");
+
                     b.HasIndex("IdentificationNumber")
                         .IsUnique();
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique()
-                        .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER")
-                        .HasFilter("\"PHONE_NUMBER\" IS NOT NULL");
+                        .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER");
 
                     b.HasIndex("UserId")
                         .IsUnique();

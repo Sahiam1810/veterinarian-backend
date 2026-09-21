@@ -15,7 +15,7 @@ public sealed class ClientPortalGoneExceptionContractTests
     {
         var handler = new GlobalExceptionHandler();
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Path = "/api/clients/me";
+        httpContext.Request.Path = "/api/pets/mine";
         httpContext.Response.Body = new MemoryStream();
 
         var handled = await handler.TryHandleAsync(

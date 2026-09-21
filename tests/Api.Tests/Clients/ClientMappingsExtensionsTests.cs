@@ -16,7 +16,6 @@ public sealed class ClientMappingsExtensionsTests
     public void ToDto_uses_client_owned_identity()
     {
         var client = new ClientEntity(
-            userId: Guid.NewGuid(),
             fullName: "Ana Perez",
             email: "Ana.Perez@Test.com",
             identificationNumber: "1234567890",
@@ -36,7 +35,6 @@ public sealed class ClientMappingsExtensionsTests
     public void ToDto_does_not_require_user_navigation()
     {
         var client = new ClientEntity(
-            userId: Guid.NewGuid(),
             fullName: "Ana Cliente",
             email: "ana@test.com",
             identificationNumber: "9876543210",
@@ -61,7 +59,6 @@ public sealed class ClientMappingsExtensionsTests
     public void ToIdentificationLookupResponse_never_exposes_address_or_phone_number()
     {
         var client = TestClients.Create(
-            userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Falsa 123",
             phoneNumber: "3001234567");
@@ -69,9 +66,9 @@ public sealed class ClientMappingsExtensionsTests
         var response = client.ToIdentificationLookupResponse();
 
         Assert.Equal(client.Id, response.Id);
-        Assert.Equal(client.UserId, response.UserId);
         Assert.Equal("1234567890", response.IdentificationNumber);
-        Assert.Equal(client.CreatedAt, response.RegistrationDate);
+        Assert.Equal(client.CreatedAt, response.CreatedAt);
+        Assert.DoesNotContain("UserId", response.GetType().GetProperties().Select(p => p.Name));
 
         var responseProperties = response.GetType().GetProperties().Select(p => p.Name);
         Assert.DoesNotContain("Address", responseProperties);
@@ -83,7 +80,6 @@ public sealed class ClientMappingsExtensionsTests
     public void ToPhoneLookupResponse_never_exposes_address_or_phone_number()
     {
         var client = TestClients.Create(
-            userId: Guid.NewGuid(),
             identificationNumber: "1234567890",
             address: "Calle Falsa 123",
             phoneNumber: "3001234567");
@@ -91,9 +87,9 @@ public sealed class ClientMappingsExtensionsTests
         var response = client.ToPhoneLookupResponse();
 
         Assert.Equal(client.Id, response.Id);
-        Assert.Equal(client.UserId, response.UserId);
         Assert.Equal("1234567890", response.IdentificationNumber);
-        Assert.Equal(client.CreatedAt, response.RegistrationDate);
+        Assert.Equal(client.CreatedAt, response.CreatedAt);
+        Assert.DoesNotContain("UserId", response.GetType().GetProperties().Select(p => p.Name));
 
         var responseProperties = response.GetType().GetProperties().Select(p => p.Name);
         Assert.DoesNotContain("Address", responseProperties);

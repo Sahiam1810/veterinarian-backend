@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Application.Agent.Abstractions;
 using Application.Agent.Errors;
 using Application.Agent.Messages;
+using Application.ChatConversations.UseCase;
 using Application.ChatEscalations.UseCase;
 using Application.ChatMessages.UseCase;
 using Application.ChatParticipants.UseCase;
@@ -126,10 +127,32 @@ public sealed class ProcessTelegramUpdateHandler(
                     // mensaje requiere datos del cliente (agendar cita, registrar
                     // mascota), el propio agente los recolecta en la conversación
                     // y registra al cliente directamente (ver módulo de agendamiento).
+                    //
+                    // Tras un registro/vinculación conversacional exitoso, el agente
+                    // puede devolver resumeMessage. En ese caso el link ya existe:
+                    // reenviamos el intent canónico con identidad Cliente para no
+                    // perder el flujo (p. ej. cita del servicio ya elegido).
                     var guestResult = await DispatchGuestMessageAsync(
                         update,
                         messageText,
                         cancellationToken);
+                    var linkedAfterGuest = await unitOfWork.UserLinksRepository
+                        .GetByTelegramUserIdAsync(update.TelegramUserId, cancellationToken);
+                    if (linkedAfterGuest is not null &&
+                        !string.IsNullOrWhiteSpace(guestResult.ResumeMessage))
+                    {
+                        var resumed = await ResumeAfterGuestLinkAsync(
+                            update,
+                            linkedAfterGuest,
+                            guestResult.ResumeMessage!,
+                            cancellationToken);
+                        await DeliverAsync(
+                            update,
+                            CombineGuestAndResumed(guestResult.Message, resumed.Message),
+                            cancellationToken);
+                        return;
+                    }
+
                     await DeliverAsync(update, ResponseText(guestResult), cancellationToken);
                     return;
                 }
@@ -218,6 +241,56 @@ public sealed class ProcessTelegramUpdateHandler(
             context,
             identity.AccessToken,
             cancellationToken);
+    }
+
+    private async Task<AgentMessageResult> ResumeAfterGuestLinkAsync(
+        TelegramInboundUpdate update,
+        TelegramUserLink userLink,
+        string resumeMessage,
+        CancellationToken cancellationToken)
+    {
+        var idempotencyKey = $"telegram-update-{update.Id}-resume";
+        var context = await ResolveConversationAsync(userLink, idempotencyKey, cancellationToken);
+        await PersistClientMessageAsync(context.ConversationId, resumeMessage, cancellationToken);
+        if (context.IsEscalated)
+        {
+            return new AgentMessageResult(
+                null,
+                context.ConversationId,
+                CreateCorrelationId(update.Id),
+                "human_controlled",
+                null,
+                null,
+                null,
+                null,
+                new AgentRagResult("skipped", "skipped", null, 0, 0, false, false),
+                AgentAccessRequirement.None);
+        }
+
+        return await DispatchAuthenticatedAsync(
+            context,
+            userLink,
+            resumeMessage,
+            idempotencyKey,
+            update.Id,
+            cancellationToken);
+    }
+
+    private static string CombineGuestAndResumed(string? guestMessage, string? resumedMessage)
+    {
+        var guest = string.IsNullOrWhiteSpace(guestMessage) ? null : guestMessage.Trim();
+        var resumed = string.IsNullOrWhiteSpace(resumedMessage) ? null : resumedMessage.Trim();
+        if (guest is null)
+        {
+            return resumed ?? "Tu conversación está siendo atendida por un asesor.";
+        }
+
+        if (resumed is null)
+        {
+            return guest;
+        }
+
+        return $"{guest}\n\n{resumed}";
     }
 
     private async Task<AgentMessageResult> DispatchAuthenticatedAsync(
@@ -347,12 +420,27 @@ public sealed class ProcessTelegramUpdateHandler(
             cancellationToken);
         if (binding is { Closed: false })
         {
-            return await conversationContextProvider.ResolveAsync(
-                userLink.ClientId,
-                binding.ConversationId,
-                idempotencyKey,
-                "Telegram",
+
+            var lastActivity = binding.LastMessageAt ?? binding.CreatedAt;
+            var idleFor = timeProvider.GetUtcNow().UtcDateTime - lastActivity;
+            if (idleFor <= settings.PrivateAccessIdleLifetime)
+            {
+                return await conversationContextProvider.ResolveAsync(
+                    userLink.PersonId,
+                    binding.ConversationId,
+                    idempotencyKey,
+                    "Telegram",
+                    cancellationToken);
+            }
+
+            await sender.Send(
+                new CloseChatConversationCommand(binding.ConversationId),
+
                 cancellationToken);
+            logger.LogInformation(
+                "Closed idle Telegram conversation {ConversationId} after {IdleMinutes} minutes.",
+                binding.ConversationId,
+                idleFor.TotalMinutes);
         }
 
         AgentConversationContext? created = null;

@@ -1,58 +1,41 @@
 using Api.Clients.Dtos;
 using Application.Clients.UseCases;
-using Application.Owners.Abstractions;
 using Domain.Clients.Entities;
 
 namespace Api.Clients.Mappings;
 
 public static class ClientMappingsExtensions
 {
-    public static RegisterOwnerFromStaffRequest ToRequest(this RegisterOwnerDto dto) =>
+    public static CreateClientCommand ToCommand(this CreateClientDto dto) =>
         new(
             dto.FullName,
             dto.Email,
             dto.IdentificationNumber,
-            dto.PhoneNumber,
-            dto.Address,
-            dto.ContactProofSessionId,
-            dto.ContactProof);
-
-    public static CreateClientCommand ToCommand(this CreateClientDto dto) =>
-        new(
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.PhoneNumber);
+            dto.PhoneNumber ?? string.Empty,
+            dto.Address);
 
     public static UpdateClientCommand ToCommand(this UpdateClientDto dto, Guid id) =>
         new(
             id,
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.PhoneNumber);
-
-    public static UpdateClientOwnerProfileCommand ToCommand(this UpdateClientOwnerProfileDto dto, Guid clientId) =>
-        new(
-            clientId,
             dto.FullName,
-            dto.Email);
+            dto.Email,
+            dto.IdentificationNumber,
+            dto.PhoneNumber ?? string.Empty,
+            dto.Address,
+            dto.IsActive ?? throw new ArgumentException("El estado del cliente es obligatorio.", nameof(dto)));
 
     public static ClientResponseDto ToDto(this ClientEntity entity)
     {
         return new ClientResponseDto(
             entity.Id,
-            entity.UserId,
-            entity.IdentificationNumber.Value,
-            entity.Address?.Value,
-            entity.PhoneNumber.Value,
-            entity.CreatedAt,
-            entity.CreatedAt,
-            entity.UpdatedAt,
             entity.FullName.Value,
             entity.Email.Value,
-            entity.IsActive
-
+            entity.IsActive,
+            entity.IdentificationNumber.Value,
+            entity.PhoneNumber.Value,
+            entity.Address?.Value,
+            entity.CreatedAt,
+            entity.UpdatedAt
         );
     }
 
@@ -60,7 +43,6 @@ public static class ClientMappingsExtensions
     {
         return new ClientIdentificationLookupResponseDto(
             entity.Id,
-            entity.UserId,
             entity.IdentificationNumber.Value,
             entity.CreatedAt
         );
@@ -71,7 +53,6 @@ public static class ClientMappingsExtensions
     {
         return new ClientPhoneLookupResponseDto(
             entity.Id,
-            entity.UserId,
             entity.IdentificationNumber.Value,
             entity.CreatedAt
         );

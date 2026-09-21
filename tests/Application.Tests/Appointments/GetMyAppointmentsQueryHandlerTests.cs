@@ -48,7 +48,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
     public async Task Handle_SEC_01_T01_client_with_profile_returns_only_own_appointments()
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
-        var client = TestClients.Create(UserId, "1234567890", "Calle 1");
+        var client = TestClients.Create("1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
         var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Firulais", 3, "M", 10m, null, species, race);
@@ -123,7 +123,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
     public async Task Handle_SEC_01_T04_no_client_does_not_receive_other_client_appointments()
     {
         var account = new UserAccountEntity(UserId, "vet", "vet@test.com", "Active");
-        var otherClient = TestClients.Create(OtherUserId, "0987654321", "Calle 2");
+        var otherClient = TestClients.Create("0987654321", "Calle 2");
         var species = new SpeciesEntity("Canino");
         var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Otro", 2, "F", 8m, null, species, race);
@@ -160,7 +160,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
         using var cts = new CancellationTokenSource();
         var cancellationToken = cts.Token;
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
-        var client = TestClients.Create(UserId, "1234567890", "Calle 1");
+        var client = TestClients.Create("1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
         var race = new RaceEntity("Mestizo", species);
         var pet = new PetEntity("Firulais", 3, "M", 10m, null, species, race);
@@ -246,7 +246,7 @@ public sealed class GetMyAppointmentsQueryHandlerTests
     private Appointment[] ArrangeOwnedAppointments(params Appointment[] appointments)
     {
         var account = new UserAccountEntity(UserId, "cliente", "cliente@test.com", "Active");
-        var client = TestClients.Create(UserId, "1234567890", "Calle 1");
+        var client = TestClients.Create("1234567890", "Calle 1");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity(
             "Firulais",

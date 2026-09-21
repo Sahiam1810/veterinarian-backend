@@ -56,10 +56,8 @@ public sealed class CreateUserCommandHandler
                 "Ya existe un usuario con ese correo electrónico.");
         }
 
-        // Cliente nunca se loguea (solo interactúa vía chatbot): sin contraseña.
-        var isClientRole = string.Equals(role.Name.Value, ClientRoleName, StringComparison.Ordinal);
         var isVeterinarianRole = string.Equals(role.Name.Value, VeterinarianRoleName, StringComparison.Ordinal);
-        var passwordHash = isClientRole ? null : _passwordHasher.Hash(request.Password!);
+        var passwordHash = _passwordHasher.Hash(request.Password!);
 
         Guid createdUserId = Guid.Empty;
 
@@ -75,58 +73,13 @@ public sealed class CreateUserCommandHandler
             await _uow.SaveChangesAsync(ct);
             createdUserId = user.Id;
 
-            if (isClientRole)
-            {
-                await EnsureClientProfileAsync(user.Id, request, ct);
-            }
-            else if (isVeterinarianRole)
+            if (isVeterinarianRole)
             {
                 await EnsureVeterinarianProfileAsync(user.Id, request, ct);
             }
         }, cancellationToken);
 
         return createdUserId;
-    }
-
-    // Crea la fila Clients en el alta del usuario (evita auto-sync en pantallas de lectura).
-    private async Task EnsureClientProfileAsync(
-        Guid userId,
-        CreateUserCommand request,
-        CancellationToken cancellationToken)
-    {
-        if (await _uow.ClientsRepository.ExistsByUserIdAsync(userId, cancellationToken))
-        {
-            return;
-        }
-
-        var identification = string.IsNullOrWhiteSpace(request.ClientIdentificationNumber)
-            ? BuildPlaceholderIdentification(userId)
-            : request.ClientIdentificationNumber.Trim();
-
-        var phone = string.IsNullOrWhiteSpace(request.ClientPhoneNumber)
-            ? BuildPlaceholderPhone(userId)
-            : ClientPhoneNumber.Normalize(request.ClientPhoneNumber);
-
-        if (await _uow.ClientsRepository.ExistsByIdentificationNumberAsync(identification, cancellationToken))
-        {
-            identification = BuildPlaceholderIdentification(userId);
-        }
-
-        if (await _uow.ClientsRepository.ExistsByPhoneAsync(phone, cancellationToken))
-        {
-            phone = BuildPlaceholderPhone(userId);
-        }
-
-        var client = new ClientEntity(
-            userId,
-            request.FullName,
-            request.Email,
-            identification,
-            phone,
-            request.ClientAddress);
-
-        await _uow.ClientsRepository.AddAsync(client, cancellationToken);
-        await _uow.SaveChangesAsync(cancellationToken);
     }
 
     // Crea la fila Veterinarians en el alta del usuario con especialidad/licencia dadas o por defecto.

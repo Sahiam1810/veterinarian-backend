@@ -27,7 +27,7 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
             .HasConversion(
                 guid => guid.ToString(),
                 str => Guid.Parse(str))
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(client => client.FullName)
             .HasColumnName("FULL_NAME")
@@ -62,8 +62,7 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
         builder.HasIndex(client => client.IdentificationNumber)
             .IsUnique();
 
-        // Un usuario no puede tener dos perfiles de cliente -- si no, /clients/me
-        // (GetByUserIdAsync + FirstOrDefault) sería no determinístico.
+        // Único, pero USER_ID es opcional: Oracle admite varios NULL en un índice único.
         builder.HasIndex(client => client.UserId)
             .IsUnique();
 
@@ -99,6 +98,7 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
         builder.HasOne(client => client.User)
             .WithMany()
             .HasForeignKey(client => client.UserId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

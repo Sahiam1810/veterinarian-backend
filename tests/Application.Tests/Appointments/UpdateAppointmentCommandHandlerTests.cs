@@ -52,7 +52,7 @@ public sealed class UpdateAppointmentCommandHandlerTests
     public UpdateAppointmentCommandHandlerTests()
     {
         var userId = Guid.NewGuid();
-        ownedClient = TestClients.Create(userId, "1234567890", null, phoneNumber: "3001234567");
+        ownedClient = TestClients.Create("1234567890", null, phoneNumber: "3001234567");
         var species = new SpeciesEntity("Canino");
         var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
         ownedClientPet = new ClientPetEntity(ownedClient, pet, true);

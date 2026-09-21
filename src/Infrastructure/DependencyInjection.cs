@@ -319,6 +319,7 @@ public static class DependencyInjection
         services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
         services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
         services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestHandler>();
+        services.AddScoped<IRequestClaimEmailByIdentification, RequestClaimEmailByIdentificationHandler>();
         services.AddScoped<IConfirmContactEmailVerification, ConfirmContactEmailVerificationHandler>();
         services.AddScoped<IConsumeContactVerificationProof, ConsumeContactVerificationProofHandler>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
@@ -364,8 +365,6 @@ public static class DependencyInjection
         services.AddOptions<RegisterOwnerOptions>()
             .Bind(configuration.GetSection(RegisterOwnerOptions.SectionName));
         services.AddScoped<IRegisterOwnerSettings, ConfiguredRegisterOwnerSettings>();
-        // 4.1: adaptador staff sobre el RegisterOwnerCommand ya existente (sin User/Account/Credentials extra).
-        services.AddScoped<IRegisterOwnerFromStaff, RegisterOwnerFromStaff>();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;

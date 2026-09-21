@@ -15,7 +15,8 @@ namespace Api.ContactVerification.Controllers;
 [Route("api/contact-verification")]
 public sealed class ContactVerificationController(
     IRequestContactEmailVerification requestEmail,
-    IConfirmContactEmailVerification confirmEmail) : ControllerBase
+    IConfirmContactEmailVerification confirmEmail,
+    IRequestClaimEmailByIdentification requestClaimByIdentification) : ControllerBase
 {
     [HttpPost("email/request")]
     [AllowAnonymous]
@@ -43,6 +44,35 @@ public sealed class ContactVerificationController(
             result.SessionId,
             result.ExpiresAt,
             result.Channel.ToString()));
+    }
+
+    [HttpPost("email/request-claim-by-identification")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.ContactEmailRequest)]
+    [EndpointSummary("Solicita OTP Claim resolviendo el correo por cédula")]
+    [EndpointDescription(
+        "Para invitados de Telegram que solo envían cédula. Busca el cliente, envía OTP Claim "
+        + "al correo registrado y responde metadatos seguros (maskedEmail) sin OTP ni email crudo.")]
+    [ProducesResponseType(typeof(RequestClaimEmailByIdentificationResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<RequestClaimEmailByIdentificationResponse>> RequestClaimByIdentification(
+        [FromBody] RequestClaimEmailByIdentificationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await requestClaimByIdentification.RequestAsync(
+            new RequestClaimEmailByIdentification(request.IdentificationNumber),
+            cancellationToken);
+
+        return Accepted(new RequestClaimEmailByIdentificationResponse(
+            result.SessionId,
+            result.ExpiresAt,
+            result.Channel.ToString(),
+            result.MaskedEmail,
+            result.PersonId,
+            result.ClientId,
+            result.FullName));
     }
 
     [HttpPost("email/confirm")]
