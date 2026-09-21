@@ -112,6 +112,8 @@ public sealed record OwnedPetProfileResponseDto(
     DateTime UpdatedAt,
     string? PhotoUrl);
 
+public sealed record QueryPetsByClaimProofRequest(Guid SessionId, string Proof);
+
 public sealed record UpdateOwnedPetProfileDto(
     string? Name,
     int? Age,
