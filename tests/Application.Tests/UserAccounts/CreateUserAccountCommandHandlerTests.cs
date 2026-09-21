@@ -1,7 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Roles.Abstraction;
-using Application.Security.Errors;
 using Application.UserAccounts.Abstraction;
 using Application.UserAccounts.UseCase;
 using Application.Users.Abstraction;
@@ -81,24 +80,27 @@ public sealed class CreateUserAccountCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_throws_forbidden_with_PlatformAccessDenied_when_user_role_is_Cliente()
+    public async Task Handle_creates_account_when_user_role_is_named_Cliente()
     {
-        // Cliente sin password: no debe poder asociar USER_ACCOUNTS.
         var clientRole = new RoleEntity("Cliente", null);
-        var user = new UserEntity("Cliente Ana", "cliente@huellitas.test", null, clientRole.Id);
+        var user = new UserEntity("Cliente Ana", "cliente@huellitas.test", "hash", clientRole.Id);
 
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>()).Returns(clientRole);
+        userAccountsRepository.ExistsByUserIdAsync(user.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
+        userAccountsRepository.ExistsByUsernameAsync("cliente", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
+        userAccountsRepository.ExistsByMailAsync("cliente@huellitas.test", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
 
         var command = new CreateUserAccountCommand(user.Id, "cliente", "cliente@huellitas.test", "Activo");
 
-        var ex = await Assert.ThrowsAsync<ForbiddenException>(() => sut.Handle(command, CancellationToken.None));
+        var accountId = await sut.Handle(command, CancellationToken.None);
 
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied.Code, ex.Code);
-        await userAccountsRepository.DidNotReceive().AddAsync(
+        Assert.NotEqual(Guid.Empty, accountId);
+        await userAccountsRepository.Received(1).AddAsync(
             Arg.Any<Domain.UserAccounts.Entities.UserAccounts>(), Arg.Any<CancellationToken>());
-        await userAccountsRepository.DidNotReceive().ExistsByUserIdAsync(
-            Arg.Any<Guid>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>());
     }
 
     [Fact]

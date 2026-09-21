@@ -123,18 +123,17 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     }
 
     [Fact]
-    public async Task LoginAsync_client_with_valid_legacy_password_returns_PlatformAccessDenied_without_tokens()
+    public async Task LoginAsync_role_named_Cliente_with_valid_password_issues_tokens()
     {
         var fixture = ArrangeClientAccount(active: true);
         passwordHasher.Verify(Password, PasswordHash).Returns(true);
 
         var result = await sut.LoginAsync(fixture.Email, Password, CancellationToken.None);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied, result.Error);
-        Assert.DoesNotContain("Cliente", result.Error.Description, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain(fixture.Email, result.Error.Description, StringComparison.OrdinalIgnoreCase);
-        await userTokenRepository.DidNotReceive()
+        Assert.True(result.IsSuccess);
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.RefreshToken));
+        await userTokenRepository.Received(1)
             .AddAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
     }
 
@@ -186,21 +185,18 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     }
 
     [Fact]
-    public async Task RefreshAsync_client_with_valid_token_returns_PlatformAccessDenied_without_tokens()
+    public async Task RefreshAsync_role_named_Cliente_with_valid_token_issues_tokens()
     {
         var fixture = ArrangeClientAccount(active: true);
         ArrangeValidRefreshToken(fixture.AccountId);
 
         var result = await sut.RefreshAsync("raw-refresh-token", CancellationToken.None);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(AuthenticationErrors.PlatformAccessDenied, result.Error);
-        Assert.DoesNotContain("Cliente", result.Error.Description, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain(fixture.Email, result.Error.Description, StringComparison.OrdinalIgnoreCase);
-        await userTokenRepository.DidNotReceive()
+        Assert.True(result.IsSuccess);
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.RefreshToken));
+        await userTokenRepository.Received(1)
             .AddAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
-        await userTokenRepository.DidNotReceive()
-            .DeleteAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -293,7 +289,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     private AccountFixture ArrangeClientAccount(bool active)
     {
         var email = "cliente@huellitas.test";
-        var user = new UserEntity("Cliente User", email, null, ClientRoleId);
+        var user = new UserEntity("Cliente User", email, PasswordHash, ClientRoleId);
         var account = new UserAccountEntity(
             user.Id,
             "cliente",

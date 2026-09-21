@@ -27,8 +27,6 @@ using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 
-using Application.AiRunStatuses.Abstraction;
-
 using Application.ConversationStatuses.Abstraction;
 
 using Application.MessageTypes.Abstraction;
@@ -37,17 +35,11 @@ using Application.EscalationStatuses.Abstraction;
 
 using Application.Notifications.Abstraction;
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
@@ -82,7 +74,6 @@ public sealed class UnitOfWork : IUnitOfWork
         IClientPetRepository clientPetsRepository,
         IAccountStatementsRepository accountStatementsRepository,
         ISenderTypeRepository senderTypesRepository,
-        IAiRunStatusRepository aiRunStatusesRepository,
         IVeterinarianRepository veterinariansRepository,
         IConversationStatusRepository conversationStatusesRepository,
         IMessageTypeRepository messageTypesRepository,
@@ -96,17 +87,11 @@ public sealed class UnitOfWork : IUnitOfWork
         IDiagnosticRepository diagnosticsRepository,
         IVaccinationRepository vaccinationsRepository,
         IAgentHumanRepository agentHumansRepository,
-        IAiModelRepository aiModelsRepository,
         IChatConversationRepository chatConversationsRepository,
-        IChatConversationAiSettingRepository chatConversationAiSettingsRepository,
         IChatParticipantRepository chatParticipantsRepository,
         IChatMessageRepository chatMessagesRepository,
         IChatEscalationRepository chatEscalationsRepository,
-        IChatEscalationResolutionRepository chatEscalationResolutionsRepository,
-        IChatAiRunRepository chatAiRunsRepository,
-        IChatAiRunMetricsRepository chatAiRunMetricsRepository,
-        IChatAiRunErrorRepository chatAiRunErrorsRepository,
-        IProviderModelAiRepository providerModelsAiRepository)
+        IChatEscalationResolutionRepository chatEscalationResolutionsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -130,7 +115,6 @@ public sealed class UnitOfWork : IUnitOfWork
         VeterinariansRepository = veterinariansRepository;
         PrioritiesRepository = prioritiesRepository;
         SenderTypesRepository = senderTypesRepository;
-        AiRunStatusesRepository = aiRunStatusesRepository;
         ConversationStatusesRepository = conversationStatusesRepository;
         MessageTypesRepository = messageTypesRepository;
         EscalationStatusesRepository = escalationStatusesRepository;
@@ -142,17 +126,11 @@ public sealed class UnitOfWork : IUnitOfWork
         DiagnosticsRepository = diagnosticsRepository;
         VaccinationsRepository = vaccinationsRepository;
         AgentHumansRepository = agentHumansRepository;
-        AiModelsRepository = aiModelsRepository;
         ChatConversationsRepository = chatConversationsRepository;
-        ChatConversationAiSettingsRepository = chatConversationAiSettingsRepository;
         ChatParticipantsRepository = chatParticipantsRepository;
         ChatMessagesRepository = chatMessagesRepository;
         ChatEscalationsRepository = chatEscalationsRepository;
         ChatEscalationResolutionsRepository = chatEscalationResolutionsRepository;
-        ChatAiRunsRepository = chatAiRunsRepository;
-        ChatAiRunMetricsRepository = chatAiRunMetricsRepository;
-        ChatAiRunErrorsRepository = chatAiRunErrorsRepository;
-        ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -176,7 +154,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IVeterinarianRepository VeterinariansRepository { get; }
     public IPriorityRepository PrioritiesRepository { get; }
     public ISenderTypeRepository SenderTypesRepository { get; }
-    public IAiRunStatusRepository AiRunStatusesRepository { get; }
     public IConversationStatusRepository ConversationStatusesRepository { get; }
     public IMessageTypeRepository MessageTypesRepository { get; }
     public IEscalationStatusRepository EscalationStatusesRepository { get; }
@@ -188,17 +165,11 @@ public sealed class UnitOfWork : IUnitOfWork
     public INotificationRepository NotificationsRepository { get; }
     public IDiagnosticRepository DiagnosticsRepository { get; }
     public IAgentHumanRepository AgentHumansRepository { get; }
-    public IAiModelRepository AiModelsRepository { get; }
     public IChatConversationRepository ChatConversationsRepository { get; }
-    public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
     public IChatParticipantRepository ChatParticipantsRepository { get; }
     public IChatMessageRepository ChatMessagesRepository { get; }
     public IChatEscalationRepository ChatEscalationsRepository { get; }
     public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
-    public IChatAiRunRepository ChatAiRunsRepository { get; }
-    public IChatAiRunMetricsRepository ChatAiRunMetricsRepository { get; }
-    public IChatAiRunErrorRepository ChatAiRunErrorsRepository { get; }
-    public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

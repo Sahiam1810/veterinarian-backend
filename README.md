@@ -157,7 +157,7 @@ Email__FromName=Huellitas
 Email__UseTls=true
 ```
 
-`ContactVerification__OtpPepperBase64` es opcional si ya se suministra un pepper en `AppointmentVerification__OtpPepperBase64` o en Telegram. Cuando se habilita Telegram, su pepper es obligatorio. Twilio es opcional y requiere `Twilio__AccountSid`, `Twilio__AuthToken` y `Twilio__FromNumber` además de `Twilio__Enabled=true`.
+`ContactVerification__OtpPepperBase64` es opcional si ya se suministra un pepper en `Telegram__OtpPepperBase64`. La sección `AppointmentVerification__*` se retiró: si tu entorno tenía el pepper solo en `AppointmentVerification__OtpPepperBase64`, muévelo a `ContactVerification__OtpPepperBase64`. Cuando se habilita Telegram, su pepper es obligatorio. Twilio es opcional y requiere `Twilio__AccountSid`, `Twilio__AuthToken` y `Twilio__FromNumber` además de `Twilio__Enabled=true`.
 
 ### Servicio del agente
 

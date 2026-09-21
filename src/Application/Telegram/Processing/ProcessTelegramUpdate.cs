@@ -172,9 +172,9 @@ public sealed class ProcessTelegramUpdateHandler(
             // mensaje que disparó el escalamiento, no solo la razón resumida que
             // queda en ChatEscalation.Reason. La respuesta del agente de IA queda
             // deliberadamente diferida (Decisión 2, Ticket B3): no hay todavía un
-            // AiModel/ChatParticipant "Agente IA" sembrado, y crear uno placeholder
-            // solo para esto acoplaría este ticket al sistema de métricas de costo
-            // de IA (ChatAiRuns/ChatAiRunMetrics), que nadie pidió todavía.
+            // ChatParticipant "Agente IA" sembrado, y crear uno placeholder
+            // solo para esto acoplaría este ticket a un sistema de métricas de costo
+            // que nadie pidió todavía.
             await PersistClientMessageAsync(context.ConversationId, messageText, cancellationToken);
 
             if (context.IsEscalated)
