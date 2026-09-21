@@ -69,6 +69,7 @@ Siguientes frentes: fusionar usuarios y quitar permisos por usuario; borrar las 
 | **T11** | **Última:** borrar `UserId`/`User` de `ClientEntity` y los métodos `...ByUserId` |
 | **T12-A** | Documentación: `docs/API.md`, sección de dueños del `README`, `docs/contracts/api-error-codes-catalog.md` y la guía de Telegram. No se tocan los ADR. Solo toca `docs/` y `README.md`; puede empezar ya |
 | **T12-B** | Tests: barrido final de la suite y pruebas de aceptación del frente. Va después de la T11 |
+| **E1** | Seed de desarrollo: reescribir `insert_all_seeds.sql`, `limpieza_total.sql` y las reglas de `verify_seeds.sql` (personal + clientes de demo con el modelo nuevo). Solo SQL; se prueba con la migración ya aplicada |
 
 **Frontend** (repo `veterinarian-fronted`; ramas `refactor/F<n>-...` desde su `develop`):
 
@@ -82,7 +83,15 @@ Siguientes frentes: fusionar usuarios y quitar permisos por usuario; borrar las 
 
 Ninguna tarea del frontend necesita código del backend para escribirse (se guían por el contrato). Para **probar en vivo** necesitan, en `develop` del backend y con la migración aplicada: T3-T4 (F1, F2), T9 (F3, participantes) y T10 (F4).
 
-**Chatbot:** C1 (registro y búsqueda con `clientId`), C2 (flujo de identificación), C4 (tests y README). La C3 se eliminó: la validación del token no cambia en este frente.
+**Chatbot** (repo `Huellitas_ChatBot`; ramas `refactor/C<n>-...` desde su `develop`). La C3 se eliminó: la validación del token no cambia en este frente (`person_id` sigue existiendo y `userId` == `person_id` == id del cliente).
+
+| Tarea | Qué es | Depende de (en el chatbot) |
+|---|---|---|
+| **C1** | Puerto y adaptador de identidad de invitado: búsqueda, registro y `bot-link` con `clientId`; sus tests | nada |
+| **C2** | Coordinador de identificación (`guest_identification.py`): códigos de conflicto nuevos y `client_id`; sus tests | **C1** (usa el puerto) |
+| **C4** | Documentación (`README`, guía JWT, arquitectura), código muerto de códigos OTP de reprogramación y corrida final de la suite | nada (la corrida final, después de C1 y C2) |
+
+Para probar en vivo necesitan el backend en `develop` con la migración: T3-T4 (`owners/bot` y búsqueda), T5-T6 (`bot-link` y token del cliente).
 
 **Orden y dependencias del backend.** Frontend y chatbot arrancan desde el contrato sin esperar al backend.
 
@@ -98,6 +107,7 @@ Ninguna tarea del frontend necesita código del backend para escribirse (se guí
 | T11 | T1, T3-T4, T5-T6, T7, T8, T9 y T10 | (va al final, antes de la migración) |
 | T12-A | nada (solo documentación; el contrato ya está fijado) | puede ir en paralelo a todo |
 | T12-B | T11 | (va después de la T11) |
+| E1 | T1 (para conocer las columnas de `CLIENTS`); se **prueba** con la migración aplicada | debe estar en `develop` **antes** de que se avise al equipo de hacer `database update` |
 
 Orden de merge sugerido: T1; T3-T4 y T5-T6; T7; T8; T9; T10; T11; T12-B (la T12-A entra cuando esté lista).
 
