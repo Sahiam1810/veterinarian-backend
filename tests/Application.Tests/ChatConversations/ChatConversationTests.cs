@@ -1,21 +1,10 @@
-using Application.AccountStatements.Abstraction;
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
-using Application.AiRunStatuses.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Availabilities.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.Clients.Abstraction;
@@ -30,7 +19,6 @@ using Application.MessageTypes.Abstraction;
 using Application.Notifications.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Priorities.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.SenderTypes.Abstraction;
@@ -582,10 +570,6 @@ public sealed class ChatConversationTests
         public IChatConversationRepository ChatConversationsRepository { get; }
         public IChatParticipantRepository ChatParticipantsRepository => null!;
         public IChatMessageRepository ChatMessagesRepository => null!;
-        public IChatAttachmentRepository ChatAttachmentsRepository => null!;
-        public IChatAiRunRepository ChatAiRunsRepository => null!;
-        public IChatAiRunMetricsRepository ChatAiRunMetricsRepository => null!;
-        public IChatAiRunErrorRepository ChatAiRunErrorsRepository => null!;
 
         public IRolesRepository RolesRepository => null!;
         public Application.RolePermissions.Abstraction.IRolePermissionsRepository RolePermissionsRepository => null!;
@@ -602,7 +586,6 @@ public sealed class ChatConversationTests
         public IClientPetRepository ClientPetsRepository => null!;
         public IVeterinarianRepository VeterinariansRepository => null!;
         public ISenderTypeRepository SenderTypesRepository => null!;
-        public IAiRunStatusRepository AiRunStatusesRepository => null!;
         public IMessageTypeRepository MessageTypesRepository => null!;
         public IEscalationStatusRepository EscalationStatusesRepository => null!;
         public IAppointmentRepository AppointmentsRepository => null!;
@@ -612,19 +595,12 @@ public sealed class ChatConversationTests
         public INotificationRepository NotificationsRepository => null!;
         public IDiagnosticRepository DiagnosticsRepository => null!;
         public IAgentHumanRepository AgentHumansRepository => null!;
-        public IAiModelRepository AiModelsRepository => null!;
-        public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
-        public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;
         public IChatEscalationRepository ChatEscalationsRepository => null!;
-        public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
         public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
-        public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
-        public IProviderModelAiRepository ProviderModelsAiRepository => null!;
         public IUserAccountsRepository UserAccountsRepository => null!;
         public IUserCredentialsRepository UserCredentialsRepository => null!;
         public IClientRepository ClientsRepository => null!;
         public IUserTokensRepository UserTokensRepository => null!;
-        public IAccountStatementsRepository AccountStatementsRepository => null!;
         public IAvailabilityRepository AvailabilitiesRepository => null!;
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

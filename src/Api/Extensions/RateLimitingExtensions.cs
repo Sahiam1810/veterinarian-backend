@@ -47,16 +47,6 @@ public static class RateLimitingExtensions
                     GetPartitionKey(context),
                     settings.ClientPhoneLookupPermitLimit,
                     settings.ClientPhoneLookupWindowSeconds));
-            options.AddPolicy(RateLimitPolicies.AppointmentOtpRequest, context =>
-                CreatePartition(
-                    GetPartitionKey(context),
-                    settings.AppointmentOtpRequestPermitLimit,
-                    settings.AppointmentOtpRequestWindowSeconds));
-            options.AddPolicy(RateLimitPolicies.AppointmentOtpConfirm, context =>
-                CreatePartition(
-                    GetPartitionKey(context),
-                    settings.AppointmentOtpConfirmPermitLimit,
-                    settings.AppointmentOtpConfirmWindowSeconds));
             options.AddPolicy(RateLimitPolicies.ContactEmailRequest, context =>
                 CreatePartition(
                     GetPartitionKey(context),

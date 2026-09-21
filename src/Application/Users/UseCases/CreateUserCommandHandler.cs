@@ -1,7 +1,5 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Domain.Clients.Entities;
-using Domain.Clients.ValueObjects;
 using Domain.Roles;
 using Domain.Veterinarians.Entities;
 using MediatR;
@@ -12,7 +10,6 @@ namespace Application.Users.UseCase;
 public sealed class CreateUserCommandHandler
     : IRequestHandler<CreateUserCommand, Guid>
 {
-    private const string ClientRoleName = "Cliente";
     private const string VeterinarianRoleName = "Veterinario";
 
     private readonly IUnitOfWork _uow;
@@ -33,7 +30,7 @@ public sealed class CreateUserCommandHandler
         if (SystemRoles.IsSuperAdmin(request.RoleId))
         {
             throw new ForbiddenException(
-                "El rol SuperAdmin solo se asigna mediante el proceso seguro de aprovisionamiento.");
+                "El rol SuperAdmin solo se asigna mediante el flujo seguro de aprovisionamiento.");
         }
 
         var role = await _uow.RolesRepository.GetByIdAsync(
@@ -57,7 +54,7 @@ public sealed class CreateUserCommandHandler
         }
 
         var isVeterinarianRole = string.Equals(role.Name.Value, VeterinarianRoleName, StringComparison.Ordinal);
-        var passwordHash = _passwordHasher.Hash(request.Password!);
+        var passwordHash = _passwordHasher.Hash(request.Password);
 
         Guid createdUserId = Guid.Empty;
 
@@ -126,17 +123,6 @@ public sealed class CreateUserCommandHandler
         var veterinarian = new Veterinarian(userId, specialtyId.Value, licenseNumber);
         await _uow.VeterinariansRepository.AddAsync(veterinarian, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
-    }
-
-    // Identificación única derivada del Guid (máx. 20).
-    private static string BuildPlaceholderIdentification(Guid userId)
-        => $"DOC-{userId:N}"[..20];
-
-    // Teléfono de 10 dígitos único por usuario (evita choque con DOC-PENDIENTE/0000000000).
-    private static string BuildPlaceholderPhone(Guid userId)
-    {
-        var n = BitConverter.ToUInt64(userId.ToByteArray(), 0);
-        return (n % 10_000_000_000UL).ToString("D10");
     }
 
     // Licencia placeholder única (máx. 20).

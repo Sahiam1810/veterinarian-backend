@@ -1,5 +1,4 @@
 using System.Reflection;
-using Api.Appointments.Controllers;
 using Api.Auth.Controllers;
 using Api.Clients.Controllers;
 using Api.Common.Security;
@@ -23,8 +22,6 @@ public sealed class AnonymousChannelRateLimitCoverageTests
     [InlineData(typeof(ContactVerificationController), "RequestEmail", RateLimitPolicies.ContactEmailRequest)]
     [InlineData(typeof(ContactVerificationController), "ConfirmEmail", RateLimitPolicies.ContactEmailConfirm)]
     [InlineData(typeof(BotOwnersController), "Register", RateLimitPolicies.BotOwnerRegistration)]
-    [InlineData(typeof(MyAppointmentsController), "RequestCode", RateLimitPolicies.AppointmentOtpRequest)]
-    [InlineData(typeof(MyAppointmentsController), "ConfirmCode", RateLimitPolicies.AppointmentOtpConfirm)]
     [InlineData(typeof(TelegramWebhookController), "Receive", RateLimitPolicies.TelegramWebhook)]
     public void Endpoint_has_expected_rate_limit_policy(Type controller, string methodName, string policy)
     {
@@ -51,9 +48,7 @@ public sealed class AnonymousChannelRateLimitCoverageTests
             RateLimitPolicies.ContactEmailRequest,
             RateLimitPolicies.ContactEmailConfirm,
             RateLimitPolicies.BotOwnerRegistration,
-            RateLimitPolicies.TelegramWebhook,
-            RateLimitPolicies.AppointmentOtpRequest,
-            RateLimitPolicies.AppointmentOtpConfirm
+            RateLimitPolicies.TelegramWebhook
         ];
 
         Assert.Equal(expected.Length, expected.Distinct(StringComparer.Ordinal).Count());

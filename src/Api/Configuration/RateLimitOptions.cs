@@ -14,10 +14,6 @@ public sealed class RateLimitOptions
     public int ClientIdentificationLookupWindowSeconds { get; init; } = 60;
     public int ClientPhoneLookupPermitLimit { get; init; } = 20;
     public int ClientPhoneLookupWindowSeconds { get; init; } = 60;
-    public int AppointmentOtpRequestPermitLimit { get; init; } = 5;
-    public int AppointmentOtpRequestWindowSeconds { get; init; } = 60;
-    public int AppointmentOtpConfirmPermitLimit { get; init; } = 10;
-    public int AppointmentOtpConfirmWindowSeconds { get; init; } = 60;
     public int ContactEmailRequestPermitLimit { get; init; } = 5;
     public int ContactEmailRequestWindowSeconds { get; init; } = 60;
     public int ContactEmailConfirmPermitLimit { get; init; } = 10;

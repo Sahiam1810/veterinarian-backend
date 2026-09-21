@@ -4,23 +4,32 @@ Scripts para inicializar catálogos base, permisos, usuarios del staff y cuentas
 
 ## Ejecución
 
-Desde la raíz del backend con las migraciones ya aplicadas:
+Requisito: las migraciones ya aplicadas (`dotnet ef database update`). Los scripts se pueden correr desde **SQL Developer** (abrir una hoja de trabajo, pegar las líneas `@...` y pulsar **F5**) o con SQL*Plus.
+
+### Desarrollo local (recomendado): un solo script
+
+`insert_all_seeds.sql` carga todo lo necesario para trabajar: roles, módulos y permisos, catálogos (incluidos los del chat que usa el bot), personal con cuenta y contraseña, clientes de demo, mascotas, citas y una historia clínica. En SQL Developer:
+
+```sql
+SET DEFINE OFF;
+@C:\<ruta>\veterinarian-backend\database\seeds\insert_all_seeds.sql
+@C:\<ruta>\veterinarian-backend\database\seeds\verify_seeds.sql
+```
+
+Para empezar de cero: `dotnet ef database drop` + `dotnet ef database update` (o `limpieza_total.sql`, que vacía los datos sin borrar las tablas).
+
+### Instalación limpia sin datos de prueba: `extra/`
+
+`extra/apply_all.sql` carga solo catálogos, roles y permisos: **no** crea usuarios, clientes ni datos de demo.
 
 ```powershell
 $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
-& 'C:\ruta\a\sqlplus.exe' 'VET_APP@//localhost:1522/FREEPDB1' '@database\seeds\apply_all.sql'
+& 'C:\ruta\a\sqlplus.exe' 'VET_APP@//localhost:1522/FREEPDB1' '@database\seeds\extra\apply_all.sql'
 ```
 
-Orden de ejecución:
-1. `roles_seed.sql`
-2. `modules_seed.sql`
-3. `veterinary_catalogs_seed.sql` (Especies, Razas, Especialidades, Tipos de Servicio)
-4. `diagnostics_seed.sql`
-5. `status_appointments_seed.sql`
-6. `chat_conversation_catalogs_seed.sql`
-7. `chat_runtime_catalogs_seed.sql`
-8. `role_permissions_seed.sql`
-9. `users_and_accounts_seed.sql`
+Orden de ejecución: `roles_seed.sql`, `modules_seed.sql`, `role_permissions_seed.sql`, `status_appointments_seed.sql`, `chat_conversation_catalogs_seed.sql`, `chat_runtime_catalogs_seed.sql`, `veterinary_catalogs_seed.sql`, `diagnostics_seed.sql`. Si ejecutas los archivos uno por uno (por ejemplo desde SQL Developer), respeta ese orden. `apply_all.sql` termina llamando a `verify_seeds.sql`, que está en la carpeta superior: si esa última línea falla por no encontrar el archivo, ejecuta `verify_seeds.sql` aparte.
+
+> **No mezcles ambos en la misma base.** Los catálogos veterinarios de `insert_all_seeds.sql` (Canino, Felino…) son distintos de los de `extra/` (Perro, Gato…) y quedarían duplicados. Si ya cargaste uno y quieres el otro, resetea la base.
 
 ---
 
@@ -37,17 +46,18 @@ Todos los usuarios de Staff tienen cuenta creada en `USER_ACCOUNTS` (`STATUS = '
 | **Veterinario** | `veterinario@veterinaria.com` | `veterinario` | ✅ Sí |
 | **Recepcionista** | `recepcionista@veterinaria.com` | `recepcionista` | ✅ Sí |
 | **Auxiliar** | `auxiliar@veterinaria.com` | `auxiliar` | ✅ Sí |
-| **Cliente** | `cliente@veterinaria.com` | — | ❌ No (solo chatbot/OTP) |
 
-> **Nota sobre Clientes:** Por regla de seguridad, los clientes no tienen contraseña ni registro en `USER_ACCOUNTS`.
+> **Nota:** Los dueños de mascota (clientes) no se modelan como usuarios de plataforma: viven en `CLIENTS` y se identifican vía chatbot/Telegram.
 
 ---
 
 ## Valores mínimos esperados
 
+Valores de la instalación limpia (`extra/`). El seed de desarrollo (`insert_all_seeds.sql`) trae menos especies, razas y especialidades, pero los mismos catálogos del chat.
+
 | Catálogo | Cantidad mínima |
 |---|---:|
-| Roles | 6 |
+| Roles | 5 |
 | Modules | 23 |
 | Role permissions | 44 |
 | Appointment statuses | 6 |
@@ -69,11 +79,11 @@ Las cantidades reales pueden ser mayores si la clínica agregó valores propios.
 
 `role_permissions_seed.sql` solo inserta filas faltantes: si su base local ya tenía una
 fila de `ROLE_PERMISSIONS` creada por una versión anterior del seed (por ejemplo, antes
-de que existiera el módulo `Plataforma`), volver a correr `apply_all.sql` no corrige los
+de que existiera el módulo `Plataforma`), volver a correr `extra/apply_all.sql` no corrige los
 flags de esa fila. Si el rol Veterinario, Recepcionista o Auxiliar recibe 403 al usar el
 panel aunque los permisos "se vean bien", probablemente su base quedó en ese estado.
 
-Ejecute primero `apply_all.sql` (crea el módulo `Plataforma` y cualquier módulo/rol
+Ejecute primero `extra/apply_all.sql` (crea el módulo `Plataforma` y cualquier módulo/rol
 faltante) y luego:
 
 ```powershell
@@ -98,4 +108,4 @@ La operación cambia el rol y elimina los refresh tokens de esa cuenta. La perso
 ## Notas rápidas
 
 - Las inserciones son idempotentes (`MERGE INTO`), no duplican datos si se ejecutan varias veces.
-- Si se requiere vaciar completamente la base de datos para empezar de cero, ejecutar primero `cleanup_seeds.sql`.
+- Si se requiere vaciar completamente la base de datos para empezar de cero, ejecutar primero `limpieza_total.sql` (o resetear la base con `dotnet ef database drop` + `update`).

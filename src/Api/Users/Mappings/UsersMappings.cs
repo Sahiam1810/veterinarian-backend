@@ -14,9 +14,6 @@ public static class UsersMappings
             request.Email,
             request.Password,
             request.RoleId,
-            request.ClientIdentificationNumber,
-            request.ClientPhoneNumber,
-            request.ClientAddress,
             request.SpecialtyId,
             request.LicenseNumber);
     }

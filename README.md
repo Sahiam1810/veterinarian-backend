@@ -157,7 +157,7 @@ Email__FromName=Huellitas
 Email__UseTls=true
 ```
 
-`ContactVerification__OtpPepperBase64` es opcional si ya se suministra un pepper en `AppointmentVerification__OtpPepperBase64` o en Telegram. Cuando se habilita Telegram, su pepper es obligatorio. Twilio es opcional y requiere `Twilio__AccountSid`, `Twilio__AuthToken` y `Twilio__FromNumber` además de `Twilio__Enabled=true`.
+`ContactVerification__OtpPepperBase64` es opcional si ya se suministra un pepper en `Telegram__OtpPepperBase64`. La sección `AppointmentVerification__*` se retiró: si tu entorno tenía el pepper solo en `AppointmentVerification__OtpPepperBase64`, muévelo a `ContactVerification__OtpPepperBase64`. Cuando se habilita Telegram, su pepper es obligatorio. Twilio es opcional y requiere `Twilio__AccountSid`, `Twilio__AuthToken` y `Twilio__FromNumber` además de `Twilio__Enabled=true`.
 
 ### Servicio del agente
 
@@ -186,22 +186,17 @@ Telegram__BotToken=<token-de-BotFather>
 Telegram__BotUsername=<nombre-sin-arroba>
 Telegram__WebhookSecret=<solo-letras-numeros-guion-y-guion-bajo>
 Telegram__PublicWebhookUrl=https://<host-publico>
-Telegram__LinkCodeTtlMinutes=10
 Telegram__WorkerPollMilliseconds=30000
 Telegram__WorkerConcurrency=16
 Telegram__ProcessingLeaseSeconds=300
 Telegram__MaxProcessingAttempts=3
 Telegram__DelegatedTokenMinutes=5
-Telegram__OtpTtlMinutes=5
-Telegram__OtpMaximumAttempts=5
-Telegram__OtpResendSeconds=60
 Telegram__OtpPepperBase64=<Base64-de-al-menos-32-bytes-aleatorios>
 Telegram__PrivateAccessAbsoluteTtlHours=24
 Telegram__PrivateAccessIdleTtlMinutes=30
-Telegram__RegistrationProtectionKeyBase64=<Base64-de-exactamente-32-bytes-aleatorios>
 ```
 
-`Telegram__PublicWebhookUrl` debe ser HTTPS. La clave de protección cifra los datos temporales del flujo de registro; el OTP se guarda como hash. Si se usa el flujo web de finalización de registro, agregue también `Telegram__RegistrationEnabled=true` y una `Telegram__RegistrationCompletionUrl` HTTPS. La guía completa de BotFather, Cloudflare Tunnel, webhook, comandos y diagnóstico está en [docs/integrations/telegram.md](docs/integrations/telegram.md).
+`Telegram__PublicWebhookUrl` debe ser HTTPS. El OTP se guarda como hash con `Telegram__OtpPepperBase64`. Los flujos de vinculación por código (`link-codes`) y de registro web (`telegram/registration/complete`) se retiraron: el alta y la vinculación del cliente van por `POST /api/owners/bot` y `POST /api/integrations/telegram/bot-link`. La guía completa de BotFather, Cloudflare Tunnel, webhook, comandos y diagnóstico está en [docs/integrations/telegram.md](docs/integrations/telegram.md).
 
 ## Base de datos y datos iniciales
 

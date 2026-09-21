@@ -11,7 +11,7 @@ PROMPT =========================================================================
 PROMPT 1. AUDITORÍA DE SEGURIDAD Y ROLES
 PROMPT =========================================================================
 
--- A. Confirmar existencia de los 6 roles canónicos
+-- A. Confirmar existencia de los 5 roles canónicos del staff
 SELECT COUNT(*) AS CANONICAL_ROLES_COUNT 
 FROM ROLES
 WHERE ROLE_ID IN (
@@ -19,21 +19,19 @@ WHERE ROLE_ID IN (
     '11111111-1111-1111-1111-111111111111', -- Administrador
     '44444444-4444-4444-4444-444444444444', -- Veterinario
     '55555555-5555-5555-5555-555555555555', -- Recepcionista
-    '66666666-6666-6666-6666-666666666666', -- Auxiliar
-    '77777777-7777-7777-7777-777777777777'  -- Cliente
+    '66666666-6666-6666-6666-666666666666'  -- Auxiliar
 );
 
--- B. Regla de negocio: El rol Cliente NUNCA debe tener permisos web (Esperado: 0)
-SELECT COUNT(*) AS CLIENT_WEB_PERMISSIONS_COUNT
-FROM ROLE_PERMISSIONS
-WHERE ROLE_ID = '77777777-7777-7777-7777-777777777777';
+-- B. Regla de negocio: El rol Cliente NO debe existir en el catálogo de roles (Esperado: 0)
+SELECT COUNT(*) AS CLIENT_ROLE_COUNT
+FROM ROLES
+WHERE ROLE_ID = '77777777-7777-7777-7777-777777777777'
+   OR UPPER(NAME) = 'CLIENTE';
 
--- C. Regla de seguridad: Ningún usuario con rol Cliente debe tener cuenta de login (Esperado: 0)
-SELECT COUNT(*) AS CLIENTS_WITH_LOGIN_ACCOUNT
-FROM USER_ACCOUNTS ua
-JOIN USERS u ON ua.USER_ID = u.USER_ID
-JOIN ROLES r ON u.ROLE_ID = r.ROLE_ID
-WHERE UPPER(r.NAME) = 'CLIENTE';
+-- C. Regla de seguridad: Ningún cliente debe estar registrado en USERS (Esperado: 0)
+SELECT COUNT(*) AS CLIENTS_IN_USERS_COUNT
+FROM USERS
+WHERE EMAIL LIKE '%@clientes.test%';
 
 PROMPT 
 PROMPT =========================================================================
@@ -92,24 +90,39 @@ LEFT JOIN USER_CREDENTIALS uc ON ua.ACCOUNT_ID = uc.ACCOUNT_ID
 ORDER BY r.NAME, u.EMAIL;
 
 PROMPT 
+PROMPT 3.1. DETALLE DE CLIENTES REGISTRADOS (TABLA AUTÓNOMA)
 PROMPT =========================================================================
-PROMPT 4. DETALLE DE MASCOTAS Y DUEÑOS ASOCIADOS
+
+SELECT 
+    c.IDENTIFICATION_NUMBER AS CEDULA,
+    c.FULL_NAME AS NOMBRE_CLIENTE,
+    c.EMAIL AS CORREO,
+    c.PHONE_NUMBER AS TELEFONO,
+    c.ADDRESS AS DIRECCION,
+    CASE WHEN c.IS_ACTIVE = 1 THEN 'ACTIVO' ELSE 'INACTIVO' END AS ESTADO
+FROM CLIENTS c
+ORDER BY c.FULL_NAME;
+
+PROMPT 
+PROMPT =========================================================================
+PROMPT 4. DETALLE DE MASCOTAS Y DUEÑOS ASOCIADOS (CLIENTES AUTÓNOMOS)
 PROMPT =========================================================================
 
 SELECT 
     c.IDENTIFICATION_NUMBER AS CEDULA_DUENO,
-    u.FULL_NAME AS NOMBRE_DUENO,
+    c.FULL_NAME AS NOMBRE_DUENO,
+    c.EMAIL AS EMAIL_DUENO,
+    c.PHONE_NUMBER AS TEL_DUENO,
     p.NAME AS MASCOTA,
     s.NAME AS ESPECIE,
     NVL(r.NAME, 'No especificada') AS RAZA,
     cp.IS_PRIMARY_OWNER AS DUENO_PPAL
 FROM CLIENTS_PETS cp
 JOIN CLIENTS c ON cp.CLIENT_ID = c.CLIENT_ID
-JOIN USERS u ON c.USER_ID = u.USER_ID
 JOIN PETS p ON cp.PET_ID = p.PET_ID
 JOIN SPECIES s ON p.SPECIES_ID = s.SPECIES_ID
 LEFT JOIN RACES r ON p.RACE_ID = r.RACE_ID
-ORDER BY u.FULL_NAME, p.NAME;
+ORDER BY c.FULL_NAME, p.NAME;
 
 PROMPT 
 PROMPT =========================================================================

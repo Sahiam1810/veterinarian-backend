@@ -88,22 +88,7 @@ WHEN NOT MATCHED THEN
     INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
 
--- 5. Cliente (GUID fijo referenciado por role_permissions_seed.sql)
-MERGE INTO ROLES target
-USING (
-    SELECT '77777777-7777-7777-7777-777777777777' AS ID,
-           'Cliente' AS NAME,
-           'Cliente (dueño de mascota) que interactúa con el sistema a través del chatbot' AS DESCRIPTION
-    FROM DUAL
-) source
-ON (target.ROLE_ID = source.ID)
-WHEN MATCHED THEN
-    UPDATE SET target.NAME = source.NAME, target.DESCRIPTION = source.DESCRIPTION
-WHEN NOT MATCHED THEN
-    INSERT (ROLE_ID, NAME, DESCRIPTION, CREATED_AT)
-    VALUES (source.ID, source.NAME, source.DESCRIPTION, SYSTIMESTAMP);
-
 COMMIT;
 
--- Verificar en DB limpia: SELECT COUNT(*) FROM ROLES; -- esperado: 6
+-- Verificar en DB limpia: SELECT COUNT(*) FROM ROLES; -- esperado: 5
 -- Luego role_permissions_seed.sql no debe fallar por FK a ROLE_ID.
