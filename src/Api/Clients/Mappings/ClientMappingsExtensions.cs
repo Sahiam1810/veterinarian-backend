@@ -22,7 +22,6 @@ public static class ClientMappingsExtensions
             dto.UserId,
             dto.IdentificationNumber,
             dto.Address,
-            dto.RegistrationDate,
             dto.PhoneNumber);
 
     public static UpdateClientCommand ToCommand(this UpdateClientDto dto, Guid id) =>
@@ -31,7 +30,6 @@ public static class ClientMappingsExtensions
             dto.UserId,
             dto.IdentificationNumber,
             dto.Address,
-            dto.RegistrationDate,
             dto.PhoneNumber);
 
     public static UpdateClientOwnerProfileCommand ToCommand(this UpdateClientOwnerProfileDto dto, Guid clientId) =>
@@ -47,16 +45,16 @@ public static class ClientMappingsExtensions
             entity.UserId,
             entity.IdentificationNumber.Value,
             entity.Address?.Value,
-            entity.PhoneNumber?.Value,
-            entity.RegistrationDate,
+            entity.PhoneNumber.Value,
+            entity.CreatedAt,
             entity.CreatedAt,
             entity.UpdatedAt,
             // User ya viene cargado por .Include(c => c.User) en el repositorio.
 
             // Si por algún motivo el navegador es nulo, se devuelve null/true sin reventar.
-            entity.User?.FullName,
-            entity.User?.Email?.Value,
-            entity.User?.IsActive ?? true
+            entity.FullName.Value,
+            entity.Email.Value,
+            entity.IsActive
 
         );
     }
@@ -67,7 +65,7 @@ public static class ClientMappingsExtensions
             entity.Id,
             entity.UserId,
             entity.IdentificationNumber.Value,
-            entity.RegistrationDate
+            entity.CreatedAt
         );
     }
 
@@ -78,7 +76,7 @@ public static class ClientMappingsExtensions
             entity.Id,
             entity.UserId,
             entity.IdentificationNumber.Value,
-            entity.RegistrationDate
+            entity.CreatedAt
         );
     }
 }

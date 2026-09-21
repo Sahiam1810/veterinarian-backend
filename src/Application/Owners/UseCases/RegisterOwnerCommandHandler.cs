@@ -85,9 +85,11 @@ public sealed class RegisterOwnerCommandHandler(
 
             var client = new ClientEntity(
                 user.Id,
+                request.FullName.Trim(),
+                email,
                 request.IdentificationNumber,
-                request.Address,
-                phoneNumber: phone);
+                phone,
+                request.Address);
 
             await unitOfWork.ClientsRepository.AddAsync(client, transactionToken);
             result = new RegisterOwnerResult(user.Id, client.Id);

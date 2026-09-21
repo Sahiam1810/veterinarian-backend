@@ -11,7 +11,6 @@ public sealed record UpdateClientCommand(
     Guid UserId,
     string IdentificationNumber,
     string? Address,
-    DateTime? RegistrationDate = null,
     string? PhoneNumber = null) : IRequest;
 
 public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCommand>
@@ -73,10 +72,11 @@ public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCom
 
         client.Update(
             request.UserId,
+            client.FullName.Value,
+            client.Email.Value,
             request.IdentificationNumber,
-            request.Address,
-            request.RegistrationDate,
-            phoneNumber.Value);
+            phoneNumber.Value,
+            request.Address);
 
         await _uow.ClientsRepository.UpdateAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

@@ -17,17 +17,14 @@ public sealed class ClientRepository : IClientRepository
 
     public async Task<IReadOnlyCollection<ClientEntity>> GetAllAsync(CancellationToken cancellationToken)
     {
-        // Solo lectura: AsNoTracking evita rastrear Include(User) en listados (S26).
         return await _context.Set<ClientEntity>()
             .AsNoTracking()
-            .Include(c => c.User)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<ClientEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _context.Set<ClientEntity>()
-            .Include(c => c.User)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
@@ -37,8 +34,14 @@ public sealed class ClientRepository : IClientRepository
         var idVo = ClientIdentificationNumber.Create(identificationNumber);
 
         return await _context.Set<ClientEntity>()
-            .Include(c => c.User)
             .FirstOrDefaultAsync(c => c.IdentificationNumber == idVo, cancellationToken);
+    }
+
+    public async Task<ClientEntity?> GetByEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        var emailVo = ClientEmail.Create(email);
+        return await _context.Set<ClientEntity>()
+            .FirstOrDefaultAsync(c => c.Email == emailVo, cancellationToken);
     }
 
     // Match exacto por VO normalizado (solo dÃ­gitos). Unicidad BD: UX_CLIENTS_PHONE_NUMBER.
@@ -47,14 +50,12 @@ public sealed class ClientRepository : IClientRepository
         var phoneVo = ClientPhoneNumber.Create(phoneNumber);
 
         return await _context.Set<ClientEntity>()
-            .Include(c => c.User)
             .FirstOrDefaultAsync(c => c.PhoneNumber == phoneVo, cancellationToken);
     }
 
     public async Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await _context.Set<ClientEntity>()
-            .Include(c => c.User)
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
 
@@ -64,7 +65,6 @@ public sealed class ClientRepository : IClientRepository
         CancellationToken cancellationToken)
     {
         var query = _context.Set<ClientEntity>()
-            .Include(c => c.User)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(identificationNumber))
@@ -91,6 +91,18 @@ public sealed class ClientRepository : IClientRepository
         var query = _context.Set<ClientEntity>()
             .Where(c => c.IdentificationNumber == idVo);
 
+        if (excludedId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludedId.Value);
+        }
+
+        return await query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken, Guid? excludedId = null)
+    {
+        var emailVo = ClientEmail.Create(email);
+        var query = _context.Set<ClientEntity>().Where(c => c.Email == emailVo);
         if (excludedId.HasValue)
         {
             query = query.Where(c => c.Id != excludedId.Value);

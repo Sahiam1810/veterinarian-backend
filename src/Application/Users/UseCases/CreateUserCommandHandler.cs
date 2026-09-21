@@ -119,9 +119,11 @@ public sealed class CreateUserCommandHandler
 
         var client = new ClientEntity(
             userId,
+            request.FullName,
+            request.Email,
             identification,
-            request.ClientAddress,
-            phoneNumber: phone);
+            phone,
+            request.ClientAddress);
 
         await _uow.ClientsRepository.AddAsync(client, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
