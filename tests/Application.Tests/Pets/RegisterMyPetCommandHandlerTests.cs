@@ -6,16 +6,13 @@ using Application.Pets.Abstraction;
 using Application.Pets.UseCases;
 using Application.Races.Abstraction;
 using Application.Species.Abstraction;
-using Application.UserAccounts.Abstraction;
 using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
-using Domain.UserAccounts.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using Application.Tests.Common;
 
 namespace Application.Tests.Pets;
@@ -47,7 +44,7 @@ public sealed class RegisterMyPetCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_rejects_account_without_client_profile_before_creating_pet()
+    public async Task Handle_rejects_unknown_client_before_creating_pet()
     {
         var fixture = new Fixture(hasClient: false);
 
@@ -72,7 +69,6 @@ public sealed class RegisterMyPetCommandHandlerTests
 
     private sealed class Fixture
     {
-        public Guid AccountId { get; } = Guid.NewGuid();
         public ClientEntity Client { get; }
         public IUnitOfWork UnitOfWork { get; } = Substitute.For<IUnitOfWork>();
         public IPetRepository Pets { get; } = Substitute.For<IPetRepository>();
@@ -82,17 +78,13 @@ public sealed class RegisterMyPetCommandHandlerTests
 
         public Fixture(bool hasClient = true, bool hasSpecies = true)
         {
-            var userId = Guid.NewGuid();
-            var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Active");
             Client = TestClients.Create("1234567890", null);
             var species = new SpeciesEntity("Canino");
             var race = new RaceEntity("Mestizo", species);
 
-            var accounts = Substitute.For<IUserAccountsRepository>();
             var clients = Substitute.For<IClientRepository>();
             var speciesRepository = Substitute.For<ISpeciesRepository>();
             var racesRepository = Substitute.For<IRaceRepository>();
-            UnitOfWork.UserAccountsRepository.Returns(accounts);
             UnitOfWork.ClientsRepository.Returns(clients);
             UnitOfWork.SpeciesRepository.Returns(speciesRepository);
             UnitOfWork.RacesRepository.Returns(racesRepository);
@@ -104,15 +96,14 @@ public sealed class RegisterMyPetCommandHandlerTests
                 .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                     call.ArgAt<CancellationToken>(1)));
 
-            accounts.GetByIdAsync(AccountId, Arg.Any<CancellationToken>()).Returns(account);
-            clients.GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            clients.GetByIdAsync(Client.Id, Arg.Any<CancellationToken>())
                 .Returns(hasClient ? Client : null);
             speciesRepository.GetByIdAsync(species.Id, Arg.Any<CancellationToken>())
                 .Returns(hasSpecies ? species : null);
             racesRepository.GetByIdAsync(race.Id, Arg.Any<CancellationToken>()).Returns(race);
 
             Command = new RegisterMyPetCommand(
-                AccountId, "Luna", 4, "F", 12.5m, "Sana", species.Id, race.Id);
+                Client.Id, "Luna", 4, "F", 12.5m, "Sana", species.Id, race.Id);
             Sut = new RegisterMyPetCommandHandler(UnitOfWork);
         }
     }

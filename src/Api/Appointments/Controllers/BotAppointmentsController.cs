@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Api.Appointments.Dtos;
 using Api.Appointments.Mappings;
 using Api.Common.Security;
@@ -24,13 +23,13 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         [FromQuery] AppointmentQueryScope scope = AppointmentQueryScope.All,
         CancellationToken cancellationToken = default)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         var appointments = await sender.Send(
-            new GetMyAppointmentsQuery(userAccountId, scope),
+            new GetMyAppointmentsQuery(clientId, scope),
             cancellationToken);
         return Ok(appointments.ToResponse());
     }
@@ -45,13 +44,13 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         Guid appointmentId,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         var appointment = await sender.Send(
-            new GetMyAppointmentByIdQuery(appointmentId, userAccountId),
+            new GetMyAppointmentByIdQuery(appointmentId, clientId),
             cancellationToken);
         return Ok(appointment.ToResponse());
     }
@@ -65,13 +64,13 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
     public async Task<ActionResult<AppointmentBookingOptionsResponse>> GetBookingOptions(
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         var options = await sender.Send(
-            new GetAppointmentBookingOptionsQuery(userAccountId),
+            new GetAppointmentBookingOptionsQuery(clientId),
             cancellationToken);
         return Ok(options.ToResponse());
     }
@@ -89,13 +88,13 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         [FromQuery] DateOnly date,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         var slots = await sender.Send(
-            new GetAppointmentBookingSlotsQuery(userAccountId, veterinarianId, serviceId, date),
+            new GetAppointmentBookingSlotsQuery(clientId, veterinarianId, serviceId, date),
             cancellationToken);
         return Ok(slots.ToResponse());
     }
@@ -113,13 +112,13 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         [FromHeader(Name = "Idempotency-Key")] string idempotencyKey,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         var appointment = await sender.Send(
-            request.ToCommand(userAccountId, idempotencyKey),
+            request.ToCommand(clientId, idempotencyKey),
             cancellationToken);
         return Created($"/api/bot/appointments/{appointment.Id}", appointment.ToResponse());
     }
@@ -137,13 +136,13 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         [FromBody] CancelMyAppointmentRequest? request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
 
         await sender.Send(
-            new CancelMyAppointmentCommand(appointmentId, userAccountId, request?.Comment),
+            new CancelMyAppointmentCommand(appointmentId, clientId, request?.Comment),
             cancellationToken);
         return NoContent();
     }
@@ -161,7 +160,7 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         [FromBody] RescheduleMyAppointmentRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserAccountId(out var userAccountId))
+        if (!User.TryGetClientId(out var clientId))
         {
             return Unauthorized();
         }
@@ -169,7 +168,7 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
         await sender.Send(
             new RescheduleMyAppointmentCommand(
                 appointmentId,
-                userAccountId,
+                clientId,
                 request.AvailabilityId,
                 request.ScheduledStart,
                 request.ScheduledEnd,
@@ -177,11 +176,5 @@ public sealed class BotAppointmentsController(ISender sender) : ControllerBase
                 request.Notes),
             cancellationToken);
         return NoContent();
-    }
-
-    private bool TryGetUserAccountId(out Guid userAccountId)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        return Guid.TryParse(subject, out userAccountId) && userAccountId != Guid.Empty;
     }
 }

@@ -29,13 +29,6 @@ public static class AuthorizationExtensions
                 policy => policy.RequireAssertion(context => context.User.IsSuperAdmin()));
 
             options.AddPolicy(
-                AuthorizationPolicies.ClinicalHistoryReadOnly,
-                RoleOrSuperAdmin(
-                    "Administrador",
-                    "Veterinario",
-                    "Recepcionista",
-                    "Cliente"));
-            options.AddPolicy(
                 AuthorizationPolicies.TelegramAgentOnly,
                 policy => policy
                     .RequireAuthenticatedUser()

@@ -19,7 +19,7 @@ public sealed record AppointmentBookingOptionsResult(
     IReadOnlyCollection<AppointmentBookingVeterinarian> Veterinarians,
     bool RequiresRequesterPhoneNumber);
 
-public sealed record GetAppointmentBookingOptionsQuery(Guid UserAccountId)
+public sealed record GetAppointmentBookingOptionsQuery(Guid ClientId)
     : IRequest<AppointmentBookingOptionsResult>;
 
 public sealed class GetAppointmentBookingOptionsQueryHandler(IUnitOfWork unitOfWork)
@@ -29,14 +29,10 @@ public sealed class GetAppointmentBookingOptionsQueryHandler(IUnitOfWork unitOfW
         GetAppointmentBookingOptionsQuery request,
         CancellationToken cancellationToken)
     {
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
-            request.UserAccountId,
+        var client = await unitOfWork.ClientsRepository.GetByIdAsync(
+            request.ClientId,
             cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(
-            account.UserId,
-            cancellationToken)
-            ?? throw new NotFoundException("El usuario no tiene un perfil de cliente asociado.");
+            ?? throw new NotFoundException("Cliente no encontrado.");
 
         var ownerships = await unitOfWork.ClientPetsRepository.GetByClientIdAsync(
             client.Id,

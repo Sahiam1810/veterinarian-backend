@@ -29,7 +29,6 @@ public sealed class AuthorizationPoliciesTests
 
     [Theory]
     [InlineData(AuthorizationPolicies.AdminOnly)]
-    [InlineData(AuthorizationPolicies.ClinicalHistoryReadOnly)]
     public async Task Role_based_policies_allow_the_persisted_SuperAdmin_role(string policy)
     {
         var superAdmin = PersistedSuperAdmin();

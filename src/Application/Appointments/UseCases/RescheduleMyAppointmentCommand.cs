@@ -10,7 +10,7 @@ namespace Application.Appointments.UseCases;
 
 public sealed record RescheduleMyAppointmentCommand(
     Guid AppointmentId,
-    Guid UserAccountId,
+    Guid ClientId,
     Guid AvailabilityId,
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
@@ -47,13 +47,8 @@ public sealed class RescheduleMyAppointmentCommandHandler(
         }
         ValidateBookingWindow(request.ScheduledStart);
 
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
-            request.UserAccountId,
-            cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-
-        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(
-            account.UserId,
+        var client = await unitOfWork.ClientsRepository.GetByIdAsync(
+            request.ClientId,
             cancellationToken)
             ?? throw new NotFoundException("Cliente no encontrado.");
 

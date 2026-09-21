@@ -33,11 +33,11 @@ public static class AppointmentMappings
 
     public static CreateMyAppointmentCommand ToCommand(
         this CreateMyAppointmentRequest request,
-        Guid userAccountId,
+        Guid clientId,
         string idempotencyKey)
     {
         return new CreateMyAppointmentCommand(
-            userAccountId,
+            clientId,
             request.PetId,
             request.VeterinarianId,
             request.ServiceId,
