@@ -1,20 +1,10 @@
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
-using Application.AiRunStatuses.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Availabilities.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatParticipants.UseCase;
@@ -31,7 +21,6 @@ using Application.MessageTypes.Abstraction;
 using Application.Notifications.Abstraction;
 using Application.Pets.Abstraction;
 using Application.Priorities.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.SenderTypes.Abstraction;
@@ -489,9 +478,6 @@ public sealed class ChatParticipantTests
         public IClientRepository ClientsRepository { get; }
         public IAgentHumanRepository AgentHumansRepository { get; }
         public IChatParticipantRepository ChatParticipantsRepository { get; }
-        public IChatAiRunRepository ChatAiRunsRepository => null!;
-        public IChatAiRunMetricsRepository ChatAiRunMetricsRepository => null!;
-        public IChatAiRunErrorRepository ChatAiRunErrorsRepository => null!;
 
         public IRolesRepository RolesRepository => null!;
         public Application.RolePermissions.Abstraction.IRolePermissionsRepository RolePermissionsRepository => null!;
@@ -508,7 +494,6 @@ public sealed class ChatParticipantTests
         public IClientPetRepository ClientPetsRepository => null!;
         public IVeterinarianRepository VeterinariansRepository => null!;
         public IPriorityRepository PrioritiesRepository => null!;
-        public IAiRunStatusRepository AiRunStatusesRepository => null!;
         public IConversationStatusRepository ConversationStatusesRepository => null!;
         public IMessageTypeRepository MessageTypesRepository => null!;
         public IEscalationStatusRepository EscalationStatusesRepository => null!;
@@ -518,16 +503,9 @@ public sealed class ChatParticipantTests
         public IVaccinationRepository VaccinationsRepository => null!;
         public INotificationRepository NotificationsRepository => null!;
         public IDiagnosticRepository DiagnosticsRepository => null!;
-        public IAiModelRepository AiModelsRepository => null!;
-        public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
-        public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;
         public IChatMessageRepository ChatMessagesRepository => null!;
-        public IChatAttachmentRepository ChatAttachmentsRepository => null!;
         public IChatEscalationRepository ChatEscalationsRepository => null!;
-        public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository => null!;
         public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
-        public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository => null!;
-        public IProviderModelAiRepository ProviderModelsAiRepository => null!;
         public IUserAccountsRepository UserAccountsRepository => null!;
         public IUserCredentialsRepository UserCredentialsRepository => null!;
         public IUserTokensRepository UserTokensRepository => null!;

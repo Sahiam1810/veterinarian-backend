@@ -23,8 +23,6 @@ using Domain.Priorities.Entities;
 
 using Domain.SenderTypes.Entities;
 
-using Domain.AiRunStatuses.Entities;
-
 using Domain.ConversationStatuses.Entities;
 
 using Domain.MessageTypes.Entities;
@@ -86,7 +84,6 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<SenderTypeEntity> SenderTypes => Set<SenderTypeEntity>();
 
-    public DbSet<AiRunStatusEntity> AiRunStatuses => Set<AiRunStatusEntity>();
     public DbSet<ConversationStatusEntity> ConversationStatuses => Set<ConversationStatusEntity>();
     public DbSet<MessageTypeEntity> MessageTypes => Set<MessageTypeEntity>();
 

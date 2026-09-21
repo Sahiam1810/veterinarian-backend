@@ -22,13 +22,19 @@ public sealed class ClientValueObjectsAndEntityTests
     }
 
     [Fact]
-    public void Client_is_created_without_a_user_and_active()
+    public void Client_is_created_active()
     {
         var client = new ClientEntity("Ana", "ana@test.com", "123", "3001234567", null);
 
-        Assert.Null(client.UserId);
-        Assert.Null(client.User);
         Assert.True(client.IsActive);
+    }
+
+    [Fact]
+    public void Client_has_no_relationship_with_users()
+    {
+        // T11: CLIENTS es independiente de USERS; no hay UserId ni navegación a User.
+        Assert.Null(typeof(ClientEntity).GetProperty("UserId"));
+        Assert.Null(typeof(ClientEntity).GetProperty("User"));
     }
 
     [Fact]

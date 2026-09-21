@@ -1,14 +1,9 @@
-using Application.Appointments.Abstraction;
-using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
 using Application.ContactVerification.Abstractions;
 using Application.ContactVerification.UseCases;
 using Application.Verification.Abstractions;
-using Domain.Appointments.Entities;
 using Domain.ContactVerification.Entities;
 using Domain.ContactVerification.Enums;
-using Domain.Verification.Entities;
-using Domain.Verification.Enums;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -68,131 +63,12 @@ public sealed class PiiInLogsTests
     }
 
     [Fact]
-    public async Task AppointmentOtp_request_logs_do_not_contain_phone_or_otp()
-    {
-        var logger = new RecordingLogger<RequestAppointmentActionCodeCommandHandler>();
-        var unitOfWork = Substitute.For<IUnitOfWork>();
-        var appointments = Substitute.For<IAppointmentRepository>();
-        var sessions = Substitute.For<IAppointmentActionVerificationSessionRepository>();
-        var otpProtector = Substitute.For<IOtpProtector>();
-        var dispatcher = Substitute.For<IVerificationCodeDispatcher>();
-        var settings = Substitute.For<IAppointmentVerificationSettings>();
-
-        unitOfWork.AppointmentsRepository.Returns(appointments);
-        settings.OtpLifetime.Returns(TimeSpan.FromMinutes(10));
-        settings.OtpResendInterval.Returns(TimeSpan.FromMinutes(1));
-        settings.OtpMaximumAttempts.Returns(5);
-        otpProtector.Create().Returns(new GeneratedOtp(OtpCode, OtpHash));
-        otpProtector.HashPhone(Arg.Any<string>()).Returns(DestinationHash);
-
-        var appointment = new Appointment(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Now.AddDays(1).UtcDateTime,
-            Now.AddDays(1).AddHours(1).UtcDateTime,
-            notes: null,
-            requesterPhoneNumber: Phone);
-        appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
-        sessions.GetActiveByAppointmentAndActionAsync(
-                appointment.Id,
-                AppointmentVerificationAction.Cancel,
-                Arg.Any<CancellationToken>())
-            .Returns((AppointmentActionVerificationSession?)null);
-
-        var sut = new RequestAppointmentActionCodeCommandHandler(
-            unitOfWork,
-            sessions,
-            otpProtector,
-            dispatcher,
-            settings,
-            new FixedTimeProvider(Now),
-            logger);
-
-        await sut.Handle(
-            new RequestAppointmentActionCodeCommand(
-                appointment.Id,
-                Phone,
-                AppointmentVerificationAction.Cancel),
-            CancellationToken.None);
-
-        AssertLoggedMessagesContain(logger, "AppointmentId=", "SessionId=");
-        AssertNoPii(logger, Phone, OtpCode);
-    }
-
-    [Fact]
-    public async Task AppointmentOtp_delivery_failure_logs_error_code_without_phone()
-    {
-        var logger = new RecordingLogger<RequestAppointmentActionCodeCommandHandler>();
-        var unitOfWork = Substitute.For<IUnitOfWork>();
-        var appointments = Substitute.For<IAppointmentRepository>();
-        var sessions = Substitute.For<IAppointmentActionVerificationSessionRepository>();
-        var otpProtector = Substitute.For<IOtpProtector>();
-        var dispatcher = Substitute.For<IVerificationCodeDispatcher>();
-        var settings = Substitute.For<IAppointmentVerificationSettings>();
-
-        unitOfWork.AppointmentsRepository.Returns(appointments);
-        settings.OtpLifetime.Returns(TimeSpan.FromMinutes(10));
-        settings.OtpResendInterval.Returns(TimeSpan.FromMinutes(1));
-        settings.OtpMaximumAttempts.Returns(5);
-        otpProtector.Create().Returns(new GeneratedOtp(OtpCode, OtpHash));
-        otpProtector.HashPhone(Arg.Any<string>()).Returns(DestinationHash);
-        dispatcher.SendAsync(
-                Arg.Any<VerificationDeliveryChannel>(),
-                Arg.Any<string>(),
-                Arg.Any<string>(),
-                Arg.Any<DateTimeOffset>(),
-                Arg.Any<CancellationToken>())
-            .ThrowsAsync(new InvalidOperationException("sms down"));
-
-        var appointment = new Appointment(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Now.AddDays(1).UtcDateTime,
-            Now.AddDays(1).AddHours(1).UtcDateTime,
-            notes: null,
-            requesterPhoneNumber: Phone);
-        appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);
-        sessions.GetActiveByAppointmentAndActionAsync(
-                appointment.Id,
-                AppointmentVerificationAction.Cancel,
-                Arg.Any<CancellationToken>())
-            .Returns((AppointmentActionVerificationSession?)null);
-
-        var sut = new RequestAppointmentActionCodeCommandHandler(
-            unitOfWork,
-            sessions,
-            otpProtector,
-            dispatcher,
-            settings,
-            new FixedTimeProvider(Now),
-            logger);
-
-        await Assert.ThrowsAsync<Application.Common.Exceptions.ConflictException>(() =>
-            sut.Handle(
-                new RequestAppointmentActionCodeCommand(
-                    appointment.Id,
-                    Phone,
-                    AppointmentVerificationAction.Cancel),
-                CancellationToken.None));
-
-        AssertLoggedMessagesContain(logger, "ErrorCode=", "AppointmentId=");
-        AssertNoPii(logger, Phone, OtpCode);
-    }
-
-    [Fact]
     public void Owner_flow_source_log_templates_do_not_use_pii_placeholders()
     {
         var root = FindRepoRoot();
         var files = new[]
         {
             Path.Combine(root, "src", "Application", "ContactVerification", "UseCases", "ContactEmailVerificationRequestHandler.cs"),
-            Path.Combine(root, "src", "Application", "Appointments", "UseCases", "RequestAppointmentActionCodeCommand.cs"),
             Path.Combine(root, "src", "Application", "Owners", "UseCases", "RegisterOwnerCommandHandler.cs"),
             Path.Combine(root, "src", "Application", "Clients", "UseCases", "GetClientLookupQueryHandler.cs"),
             Path.Combine(root, "src", "Application", "Telegram", "Processing", "ProcessTelegramUpdate.cs"),

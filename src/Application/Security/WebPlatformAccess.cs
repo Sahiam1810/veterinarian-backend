@@ -1,13 +1,11 @@
 namespace Application.Security;
 
 /// <summary>
-/// Cliente no tiene acceso web; solo interactúa vía canal no-panel.
-/// Cualquier otro rol (incluido uno configurable nuevo) puede usar el panel.
+/// Constantes de identidad usadas fuera del catálogo de roles de BD.
+/// <see cref="ClientRoleName"/> es el nombre de rol en el JWT delegado del bot
+/// (claim <c>role</c>), no un rol persistido en ROLES.
 /// </summary>
 public static class WebPlatformAccess
 {
     public const string ClientRoleName = "Cliente";
-
-    public static bool IsClientRoleName(string? roleName) =>
-        string.Equals(roleName, ClientRoleName, StringComparison.Ordinal);
 }

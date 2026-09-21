@@ -59,7 +59,6 @@ public sealed class RegisterOwnerCommandHandlerTests
         Assert.Equal(result.ClientId, persistedClient!.Id);
         Assert.Equal("Ana Dueña", persistedClient.FullName.Value);
         Assert.Equal(Email, persistedClient.Email.Value);
-        Assert.Null(persistedClient.UserId);
         Assert.True(persistedClient.IsActive);
         await consumeProof.DidNotReceive().ConsumeAsync(
             Arg.Any<ConsumeContactVerificationProof>(), Arg.Any<CancellationToken>());

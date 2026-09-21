@@ -1,13 +1,10 @@
 namespace Api.Users.Dtos;
 
-// Perfil Cliente/Veterinario opcional: el handler los crea en la misma transacción (S26).
+// Perfil Veterinario opcional: el handler lo crea en la misma transacción.
 public sealed record CreateUserRequest(
     string FullName,
     string Email,
-    string? Password,
+    string Password,
     Guid RoleId,
-    string? ClientIdentificationNumber = null,
-    string? ClientPhoneNumber = null,
-    string? ClientAddress = null,
     Guid? SpecialtyId = null,
     string? LicenseNumber = null);
