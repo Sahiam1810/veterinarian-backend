@@ -15,8 +15,6 @@ public sealed class RateLimitOptionsValidator
             options.LoginWindowSeconds,
             options.RefreshPermitLimit,
             options.RefreshWindowSeconds,
-            options.TelegramRegistrationPermitLimit,
-            options.TelegramRegistrationWindowSeconds,
             options.TelegramWebhookPermitLimit,
             options.TelegramWebhookWindowSeconds,
             options.ClientIdentificationLookupPermitLimit,

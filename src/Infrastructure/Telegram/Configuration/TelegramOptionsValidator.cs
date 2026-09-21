@@ -9,9 +9,7 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
     {
         if (!options.Enabled)
         {
-            return options.RegistrationEnabled
-                ? ValidateOptionsResult.Fail("Telegram:RegistrationEnabled requires Telegram:Enabled=true.")
-                : ValidateOptionsResult.Success;
+            return ValidateOptionsResult.Success;
         }
 
         var failures = new List<string>();
@@ -30,7 +28,6 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
             failures.Add("Telegram:PublicWebhookUrl must be an absolute HTTPS URL.");
         }
 
-        if (options.LinkCodeTtlMinutes <= 0) failures.Add("Telegram:LinkCodeTtlMinutes must be positive.");
         if (options.WorkerPollMilliseconds <= 0) failures.Add("Telegram:WorkerPollMilliseconds must be positive.");
         if (options.WorkerConcurrency is < 1 or > 32)
             failures.Add("Telegram:WorkerConcurrency must be between 1 and 32.");
@@ -49,9 +46,6 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
             options.HumanAgentSenderTypeId,
             "Telegram:HumanAgentSenderTypeId must be a non-empty GUID.",
             failures);
-        if (options.OtpTtlMinutes is < 1 or > 15) failures.Add("Telegram:OtpTtlMinutes must be between 1 and 15.");
-        if (options.OtpMaximumAttempts is < 1 or > 10) failures.Add("Telegram:OtpMaximumAttempts must be between 1 and 10.");
-        if (options.OtpResendSeconds is < 30 or > 3600) failures.Add("Telegram:OtpResendSeconds must be between 30 and 3600.");
         if (options.PrivateAccessAbsoluteTtlHours is < 1 or > 168)
             failures.Add("Telegram:PrivateAccessAbsoluteTtlHours must be between 1 and 168.");
         if (options.PrivateAccessIdleTtlMinutes is < 1 or > 1440)
@@ -62,24 +56,6 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
             failures.Add("Telegram:PrivateAccessIdleTtlMinutes cannot exceed the absolute access lifetime.");
         }
         ValidateOtpPepper(options.OtpPepperBase64, failures);
-        ValidateRegistrationKey(options.RegistrationProtectionKeyBase64, failures);
-        if (options.RegistrationEnabled)
-        {
-            if (!Uri.TryCreate(options.RegistrationCompletionUrl, UriKind.Absolute, out var registrationUrl) ||
-                registrationUrl.Scheme != Uri.UriSchemeHttps)
-            {
-                failures.Add("Telegram:RegistrationCompletionUrl must be an absolute HTTPS URL.");
-            }
-
-            if (options.RegistrationOtpTtlMinutes is < 1 or > 15)
-                failures.Add("Telegram:RegistrationOtpTtlMinutes must be between 1 and 15.");
-            if (options.RegistrationTokenTtlMinutes is < 1 or > 60)
-                failures.Add("Telegram:RegistrationTokenTtlMinutes must be between 1 and 60.");
-            if (options.RegistrationMaxOtpAttempts is < 1 or > 10)
-                failures.Add("Telegram:RegistrationMaxOtpAttempts must be between 1 and 10.");
-            if (options.RegistrationResendSeconds is < 30 or > 3600)
-                failures.Add("Telegram:RegistrationResendSeconds must be between 30 and 3600.");
-        }
 
         return failures.Count == 0
             ? ValidateOptionsResult.Success
@@ -113,22 +89,6 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
         }
 
         failures.Add("Telegram:OtpPepperBase64 must contain at least 32 random bytes encoded as Base64.");
-    }
-
-    private static void ValidateRegistrationKey(string value, ICollection<string> failures)
-    {
-        try
-        {
-            if (Convert.FromBase64String(value).Length == 32)
-            {
-                return;
-            }
-        }
-        catch (FormatException)
-        {
-        }
-
-        failures.Add("Telegram:RegistrationProtectionKeyBase64 must contain exactly 32 random bytes encoded as Base64.");
     }
 
     [GeneratedRegex("^[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant)]
