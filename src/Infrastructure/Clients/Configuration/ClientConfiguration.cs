@@ -21,14 +21,6 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => Guid.Parse(str))
             .IsRequired();
 
-        builder.Property(client => client.UserId)
-            .HasColumnName("USER_ID")
-            .HasColumnType("VARCHAR2(36)")
-            .HasConversion(
-                guid => guid.ToString(),
-                str => Guid.Parse(str))
-            .IsRequired(false);
-
         builder.Property(client => client.FullName)
             .HasColumnName("FULL_NAME")
             .HasColumnType("VARCHAR2(150)")
@@ -62,10 +54,6 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
         builder.HasIndex(client => client.IdentificationNumber)
             .IsUnique();
 
-        // Único, pero USER_ID es opcional: Oracle admite varios NULL en un índice único.
-        builder.HasIndex(client => client.UserId)
-            .IsUnique();
-
         builder.Property(client => client.Address)
             .HasColumnName("ADDRESS")
             .HasMaxLength(ClientAddress.MaxLength)
@@ -94,11 +82,5 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
         builder.Property(client => client.UpdatedAt)
             .HasColumnName("UPDATE_AT")
             .IsRequired(false);
-
-        builder.HasOne(client => client.User)
-            .WithMany()
-            .HasForeignKey(client => client.UserId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

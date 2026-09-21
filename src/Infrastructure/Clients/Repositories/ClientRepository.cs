@@ -53,12 +53,6 @@ public sealed class ClientRepository : IClientRepository
             .FirstOrDefaultAsync(c => c.PhoneNumber == phoneVo, cancellationToken);
     }
 
-    public async Task<ClientEntity?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        return await _context.Set<ClientEntity>()
-            .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
-    }
-
     public async Task<ClientEntity?> GetByLookupAsync(
         string? identificationNumber,
         string? phoneNumber,
@@ -129,19 +123,6 @@ public sealed class ClientRepository : IClientRepository
         return await query.AnyAsync(cancellationToken);
     }
 
-    public async Task<bool> ExistsByUserIdAsync(Guid userId, CancellationToken cancellationToken, Guid? excludedId = null)
-    {
-        var query = _context.Set<ClientEntity>()
-            .Where(c => c.UserId == userId);
-
-        if (excludedId.HasValue)
-        {
-            query = query.Where(c => c.Id != excludedId.Value);
-        }
-
-        return await query.AnyAsync(cancellationToken);
-    }
-
     public async Task AddAsync(ClientEntity client, CancellationToken cancellationToken)
     {
         await _context.Set<ClientEntity>().AddAsync(client, cancellationToken);
@@ -157,29 +138,5 @@ public sealed class ClientRepository : IClientRepository
     {
         _context.Set<ClientEntity>().Remove(client);
         return Task.CompletedTask;
-    }
-
-    public async Task<Guid?> GetIdByUserIdAsync(
-        Guid userId,
-        CancellationToken cancellationToken)
-        => await _context.Set<ClientEntity>()
-            .AsNoTracking()
-            .Where(c => c.UserId == userId)
-            .Select(c => (Guid?)c.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-
-    public async Task DeleteByUserIdAsync(
-        Guid userId,
-        CancellationToken cancellationToken)
-    {
-        var client = await _context.Set<ClientEntity>()
-            .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
-
-        if (client is null)
-        {
-            return;
-        }
-
-        _context.Set<ClientEntity>().Remove(client);
     }
 }

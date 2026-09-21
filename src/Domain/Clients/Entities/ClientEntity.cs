@@ -1,6 +1,5 @@
 using Domain.Common;
 using Domain.Clients.ValueObjects;
-using UserEntity = Domain.Users.Entities.Users;
 
 namespace Domain.Clients.Entities;
 
@@ -26,9 +25,6 @@ public sealed class ClientEntity : BaseEntity<Guid>
         IsActive = true;
     }
 
-    // Vestigio de la separación clientes/usuarios: opcional hasta que la T11 lo elimine.
-    public Guid? UserId { get; private set; }
-
     public ClientFullName FullName { get; private set; } = null!;
 
     public ClientEmail Email { get; private set; } = null!;
@@ -41,9 +37,6 @@ public sealed class ClientEntity : BaseEntity<Guid>
     public ClientPhoneNumber PhoneNumber { get; private set; } = null!;
 
     public bool IsActive { get; private set; }
-
-    // Navigation property
-    public UserEntity? User { get; private set; }
 
     public void Update(
         string fullName,

@@ -34,7 +34,6 @@ public sealed class RegisterOwnerStage4AcceptanceTests
 
         var client = Assert.Single(harness.Clients.Items);
         Assert.Equal(result.ClientId, client.Id);
-        Assert.Null(client.UserId);
         Assert.Equal(FullName, client.FullName.Value);
         Assert.Equal(Email, client.Email.Value);
         Assert.True(client.IsActive);
@@ -78,7 +77,6 @@ public sealed class RegisterOwnerStage4AcceptanceTests
 
         var client = Assert.Single(harness.Clients.Items);
         Assert.Equal(result.ClientId, client.Id);
-        Assert.Null(client.UserId);
         Assert.Empty(harness.ConsumeProof.ConsumedSessionIds);
     }
 
