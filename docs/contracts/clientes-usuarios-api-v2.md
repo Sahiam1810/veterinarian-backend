@@ -119,6 +119,19 @@ Los códigos de personal (`Authentication.*`) no cambian para el alta de usuario
 - **Usuarios (`POST /api/users`) (cambia):** el rol "Cliente" ya no existe y ya no se aceptan `clientIdentificationNumber`, `clientPhoneNumber` ni `clientAddress`. La contraseña es siempre obligatoria.
 - **Catálogo de códigos de error:** al aplicar los códigos nuevos, actualizar `docs/contracts/api-error-codes-catalog.md`.
 
+## 9.1 Reclamación por OTP (invitado que escribe desde otro Telegram)
+
+Aplica cuando alguien que **ya es cliente** escribe desde un Telegram que no está vinculado. Un cliente **nuevo** se registra y se vincula **sin OTP**.
+
+**Regla de seguridad:** el código se envía **siempre al correo registrado del cliente**, resuelto por el servidor. El bot nunca elige el correo destino.
+
+- `POST /api/contact-verification/email/request-claim-by-identification` (anónimo, con límite de peticiones). Body `{ identificationNumber }`. **202** `{ sessionId, expiresAt, channel, maskedEmail }`. Sin nombre ni ids del cliente. 404 si la cédula no existe.
+- `POST /api/contact-verification/email/request` **ya no admite** el propósito `Claim` ni `subjectUserId`: solo `Register`. `Claim` responde 400 `ContactVerification.PurposeInvalid`.
+- `POST /api/contact-verification/email/confirm` sin cambios: `{ sessionId, code }` → `{ sessionId, proof }` (un solo uso).
+- **Vincular con prueba:** `POST /api/integrations/telegram/bot-link/claim`. Exige el token de invitado con `telegram_user_id`. Body `{ sessionId, proof }`. **200** `{ linkId, fullName }`. Consume el proof (propósito `Claim`); el cliente vinculado es el de la sesión. Errores: 400 (proof inválido), 401, 403, 409 (Telegram ya vinculado a otro cliente; proof ya usado o vencido).
+- **`bot-link` con `{ clientId }`** queda **solo para el registro recién hecho**: el cliente debe haberse creado hace menos de `Telegram:RegistrationLinkWindowMinutes` (10 por defecto) y no tener un vínculo activo. Si no, 403 `Telegram.ClientLinkRequiresProof`.
+- `POST /api/bot/pets/query-by-claim-proof` sin cambios (consulta temporal sin vincular).
+
 ## 10. Decisiones tomadas
 
 1. `person_id` se mantiene hasta la fusión de usuarios.
