@@ -610,7 +610,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
                     ChatParticipantEntity.Create(
                         query.ChatConversationId,
                         ClientParticipantTypeId,
-                        chatUserProfileId: Guid.NewGuid())
+                        clientId: Guid.NewGuid())
                 ];
                 return participants;
             });

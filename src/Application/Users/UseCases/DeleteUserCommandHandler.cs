@@ -74,14 +74,6 @@ public sealed class DeleteUserCommandHandler(IUnitOfWork uow)
 
             await uow.NotificationsRepository.DeleteByUserIdAsync(user.Id, ct);
 
-            var chatProfiles = await uow.ChatUserProfilesRepository.GetByUserIdAsync(
-                user.Id,
-                ct);
-            foreach (var profile in chatProfiles)
-            {
-                await uow.ChatUserProfilesRepository.DeleteAsync(profile, ct);
-            }
-
             await uow.UsersRepository.DeleteAsync(user, ct);
         }, cancellationToken);
     }

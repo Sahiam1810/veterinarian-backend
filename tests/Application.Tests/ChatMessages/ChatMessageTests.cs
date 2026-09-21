@@ -19,7 +19,6 @@ using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatMessages.UseCase;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
 using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
 using Application.Common.Abstractions;
@@ -64,7 +63,7 @@ public sealed class ChatMessageTests
     private static readonly Guid ValidParticipantId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid ValidSenderTypeId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid ValidMessageTypeId = Guid.Parse("44444444-4444-4444-4444-444444444444");
-    private static readonly Guid ValidAiModelId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid ValidAgentHumanId = Guid.Parse("55555555-5555-5555-5555-555555555555");
 
     [Fact]
     public void Create_with_valid_data_assigns_properties()
@@ -193,7 +192,7 @@ public sealed class ChatMessageTests
         var participant = ChatParticipant.Create(
             conversation.Id,
             senderType.Id,
-            aiModelId: ValidAiModelId);
+            agentHumanId: ValidAgentHumanId);
         context.Conversations[conversation.Id] = conversation;
         context.SenderTypes[senderType.Id] = senderType;
         context.MessageTypes[messageType.Id] = messageType;
@@ -270,7 +269,7 @@ public sealed class ChatMessageTests
         var participant = ChatParticipant.Create(
             conversation.Id,
             senderType.Id,
-            aiModelId: ValidAiModelId);
+            agentHumanId: ValidAgentHumanId);
         context.Conversations[conversation.Id] = conversation;
         context.Participants[participant.Id] = participant;
         var missingSenderTypeId = Guid.Parse("88888888-8888-8888-8888-888888888888");
@@ -297,7 +296,7 @@ public sealed class ChatMessageTests
         var participant = ChatParticipant.Create(
             conversation.Id,
             senderType.Id,
-            aiModelId: ValidAiModelId);
+            agentHumanId: ValidAgentHumanId);
         context.Conversations[conversation.Id] = conversation;
         context.SenderTypes[senderType.Id] = senderType;
         context.Participants[participant.Id] = participant;
@@ -327,7 +326,7 @@ public sealed class ChatMessageTests
         var participant = ChatParticipant.Create(
             otherConversation.Id,
             senderType.Id,
-            aiModelId: ValidAiModelId);
+            agentHumanId: ValidAgentHumanId);
         context.Conversations[conversation.Id] = conversation;
         context.SenderTypes[senderType.Id] = senderType;
         context.MessageTypes[messageType.Id] = messageType;
@@ -357,7 +356,7 @@ public sealed class ChatMessageTests
         var participant = ChatParticipant.Create(
             conversation.Id,
             senderType.Id,
-            aiModelId: ValidAiModelId);
+            agentHumanId: ValidAgentHumanId);
         context.Conversations[conversation.Id] = conversation;
         context.SenderTypes[senderType.Id] = senderType;
         context.SenderTypes[otherSenderType.Id] = otherSenderType;
@@ -538,7 +537,6 @@ public sealed class ChatMessageTests
         public IDiagnosticRepository DiagnosticsRepository => null!;
         public IAgentHumanRepository AgentHumansRepository => null!;
         public IAiModelRepository AiModelsRepository => null!;
-        public IChatUserProfileRepository ChatUserProfilesRepository => null!;
         public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;
         public IProviderModelAiRepository ProviderModelsAiRepository => null!;

@@ -8,7 +8,6 @@ using Api.ChatEscalations.Controllers;
 using Api.ChatEscalationStatusHistories.Controllers;
 using Api.ChatMessages.Controllers;
 using Api.ChatParticipants.Controllers;
-using Api.ChatUserProfiles.Controllers;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.ConversationStatuses.Controllers;
@@ -44,12 +43,6 @@ public sealed class ChatPermissionsAuthorizationTests
     [InlineData(typeof(ChatParticipantController), nameof(ChatParticipantController.GetById), "Chat", PermissionAction.View)]
     [InlineData(typeof(ChatParticipantController), nameof(ChatParticipantController.GetByConversationId), "Chat", PermissionAction.View)]
     [InlineData(typeof(ChatParticipantController), nameof(ChatParticipantController.ChangeIdentity), "Chat", PermissionAction.Edit)]
-    // ChatUserProfileController — módulo "Chat"
-    [InlineData(typeof(ChatUserProfileController), nameof(ChatUserProfileController.Create), "Chat", PermissionAction.Create)]
-    [InlineData(typeof(ChatUserProfileController), nameof(ChatUserProfileController.GetAll), "Chat", PermissionAction.View)]
-    [InlineData(typeof(ChatUserProfileController), nameof(ChatUserProfileController.GetById), "Chat", PermissionAction.View)]
-    [InlineData(typeof(ChatUserProfileController), nameof(ChatUserProfileController.GetByUserId), "Chat", PermissionAction.View)]
-    [InlineData(typeof(ChatUserProfileController), nameof(ChatUserProfileController.Update), "Chat", PermissionAction.Edit)]
     // AgentHumanController — módulo "Chat"
     [InlineData(typeof(AgentHumanController), nameof(AgentHumanController.Create), "Chat", PermissionAction.Create)]
     [InlineData(typeof(AgentHumanController), nameof(AgentHumanController.GetAll), "Chat", PermissionAction.View)]
@@ -111,8 +104,6 @@ public sealed class ChatPermissionsAuthorizationTests
     [Theory]
     // ChatConversationController: crear una conversación a mano sigue siendo administrativo.
     [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.Create))]
-    // ChatUserProfileController: borrar un perfil de chat sigue siendo administrativo.
-    [InlineData(typeof(ChatUserProfileController), nameof(ChatUserProfileController.Delete))]
     // AgentHumanController: el ciclo de vida del "carnet" de agente (editar/activar/desactivar)
     // sigue siendo administrativo — Recepcionista solo puede crear el suyo propio y verlo.
     [InlineData(typeof(AgentHumanController), nameof(AgentHumanController.Update))]
@@ -162,7 +153,6 @@ public sealed class ChatPermissionsAuthorizationTests
     [InlineData(typeof(ChatConversationController))]
     [InlineData(typeof(ChatMessageController))]
     [InlineData(typeof(ChatParticipantController))]
-    [InlineData(typeof(ChatUserProfileController))]
     [InlineData(typeof(AgentHumanController))]
     [InlineData(typeof(ChatEscalationController))]
     [InlineData(typeof(ChatEscalationResolutionController))]

@@ -270,7 +270,6 @@ public sealed class ModuleTests
         public Application.Diagnostics.Abstraction.IDiagnosticRepository DiagnosticsRepository => null!;
         public Application.AgentHumans.Abstraction.IAgentHumanRepository AgentHumansRepository => null!;
         public Application.AiModels.Abstraction.IAiModelRepository AiModelsRepository => null!;
-        public Application.ChatUserProfiles.Abstraction.IChatUserProfileRepository ChatUserProfilesRepository => null!;
         public Application.ChatConversations.Abstraction.IChatConversationRepository ChatConversationsRepository => null!;
         public Application.ChatConversationAssignments.Abstraction.IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public Application.ChatConversationAiSettings.Abstraction.IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;

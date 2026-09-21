@@ -3,21 +3,18 @@ namespace Api.ChatParticipants.Dtos;
 public sealed record CreateChatParticipantDto(
     Guid ChatConversationId,
     Guid ParticipantTypeId,
-    Guid? ChatUserProfileId,
-    Guid? AgentHumanId,
-    Guid? AiModelId);
+    Guid? ClientId,
+    Guid? AgentHumanId);
 
 public sealed record ChangeChatParticipantIdentityDto(
-    Guid? ChatUserProfileId,
-    Guid? AgentHumanId,
-    Guid? AiModelId);
+    Guid? ClientId,
+    Guid? AgentHumanId);
 
 public sealed record ChatParticipantResponseDto(
     Guid Id,
     Guid ChatConversationId,
     Guid ParticipantTypeId,
-    Guid? ChatUserProfileId,
+    Guid? ClientId,
     Guid? AgentHumanId,
-    Guid? AiModelId,
     DateTime CreatedAt,
     DateTime? UpdatedAt);

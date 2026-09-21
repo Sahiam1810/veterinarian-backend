@@ -78,7 +78,6 @@ using Application.ChatEscalations.Abstraction;
 using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
@@ -99,7 +98,6 @@ using Infrastructure.ChatAiRuns.Repository;
 using Infrastructure.ChatAttachments.Repository;
 using Infrastructure.ChatMessages.Repository;
 using Infrastructure.ChatParticipants.Repository;
-using Infrastructure.ChatUserProfiles.Repository;
 using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
@@ -248,7 +246,6 @@ public static class DependencyInjection
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
         services.AddScoped<IAiModelRepository, AiModelRepository>();
-        services.AddScoped<IChatUserProfileRepository, ChatUserProfileRepository>();
         services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
         services.AddScoped<IChatConversationAssignmentRepository, ChatConversationAssignmentRepository>();
         services.AddScoped<IChatConversationAiSettingRepository, ChatConversationAiSettingRepository>();

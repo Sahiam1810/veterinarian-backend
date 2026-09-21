@@ -3,7 +3,7 @@ using Domain.Common;
 namespace Domain.ChatParticipants.Entities;
 
 /// <summary>
-/// Participante de una conversación de chat con identidad polimórfica (perfil, agente humano o modelo IA).
+/// Participante de una conversación de chat: un cliente o un agente humano (exactamente uno).
 /// </summary>
 public sealed class ChatParticipant : BaseEntity<Guid>
 {
@@ -15,11 +15,9 @@ public sealed class ChatParticipant : BaseEntity<Guid>
 
     public Guid ParticipantTypeId { get; private set; }
 
-    public Guid? ChatUserProfileId { get; private set; }
+    public Guid? ClientId { get; private set; }
 
     public Guid? AgentHumanId { get; private set; }
-
-    public Guid? AiModelId { get; private set; }
 
     /// <summary>
     /// Crea un participante con exactamente una identidad válida.
@@ -27,22 +25,20 @@ public sealed class ChatParticipant : BaseEntity<Guid>
     public static ChatParticipant Create(
         Guid chatConversationId,
         Guid participantTypeId,
-        Guid? chatUserProfileId = null,
-        Guid? agentHumanId = null,
-        Guid? aiModelId = null)
+        Guid? clientId = null,
+        Guid? agentHumanId = null)
     {
         EnsureChatConversationId(chatConversationId);
         EnsureParticipantTypeId(participantTypeId);
-        EnsureExactlyOneIdentity(chatUserProfileId, agentHumanId, aiModelId);
+        EnsureExactlyOneIdentity(clientId, agentHumanId);
 
         return new ChatParticipant
         {
             Id = Guid.NewGuid(),
             ChatConversationId = chatConversationId,
             ParticipantTypeId = participantTypeId,
-            ChatUserProfileId = chatUserProfileId,
-            AgentHumanId = agentHumanId,
-            AiModelId = aiModelId
+            ClientId = clientId,
+            AgentHumanId = agentHumanId
         };
     }
 
@@ -50,15 +46,13 @@ public sealed class ChatParticipant : BaseEntity<Guid>
     /// Cambia la identidad del participante manteniendo exactamente una identidad válida.
     /// </summary>
     public void ChangeIdentity(
-        Guid? chatUserProfileId = null,
-        Guid? agentHumanId = null,
-        Guid? aiModelId = null)
+        Guid? clientId = null,
+        Guid? agentHumanId = null)
     {
-        EnsureExactlyOneIdentity(chatUserProfileId, agentHumanId, aiModelId);
+        EnsureExactlyOneIdentity(clientId, agentHumanId);
 
-        ChatUserProfileId = chatUserProfileId;
+        ClientId = clientId;
         AgentHumanId = agentHumanId;
-        AiModelId = aiModelId;
         Touch();
     }
 
@@ -87,16 +81,13 @@ public sealed class ChatParticipant : BaseEntity<Guid>
         }
     }
 
-    private static void EnsureExactlyOneIdentity(
-        Guid? chatUserProfileId,
-        Guid? agentHumanId,
-        Guid? aiModelId)
+    private static void EnsureExactlyOneIdentity(Guid? clientId, Guid? agentHumanId)
     {
-        if (chatUserProfileId == Guid.Empty)
+        if (clientId == Guid.Empty)
         {
             throw new ArgumentException(
-                "El identificador del perfil de chat no puede ser vacío.",
-                nameof(chatUserProfileId));
+                "El identificador del cliente no puede ser vacío.",
+                nameof(clientId));
         }
 
         if (agentHumanId == Guid.Empty)
@@ -106,35 +97,11 @@ public sealed class ChatParticipant : BaseEntity<Guid>
                 nameof(agentHumanId));
         }
 
-        if (aiModelId == Guid.Empty)
+        if (clientId.HasValue == agentHumanId.HasValue)
         {
             throw new ArgumentException(
-                "El identificador del modelo de IA no puede ser vacío.",
-                nameof(aiModelId));
-        }
-
-        var identityCount = 0;
-
-        if (chatUserProfileId.HasValue)
-        {
-            identityCount++;
-        }
-
-        if (agentHumanId.HasValue)
-        {
-            identityCount++;
-        }
-
-        if (aiModelId.HasValue)
-        {
-            identityCount++;
-        }
-
-        if (identityCount != 1)
-        {
-            throw new ArgumentException(
-                "El participante debe tener exactamente una identidad (perfil de chat, agente humano o modelo de IA).",
-                nameof(chatUserProfileId));
+                "El participante debe tener exactamente una identidad (cliente o agente humano).",
+                nameof(clientId));
         }
     }
 }

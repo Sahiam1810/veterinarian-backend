@@ -54,7 +54,6 @@ using Application.ChatEscalations.Abstraction;
 using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.UserCredentials.Abstraction;
@@ -113,7 +112,6 @@ public sealed class UnitOfWork : IUnitOfWork
         IVaccinationRepository vaccinationsRepository,
         IAgentHumanRepository agentHumansRepository,
         IAiModelRepository aiModelsRepository,
-        IChatUserProfileRepository chatUserProfilesRepository,
         IChatConversationRepository chatConversationsRepository,
         IChatConversationAssignmentRepository chatConversationAssignmentsRepository,
         IChatConversationAiSettingRepository chatConversationAiSettingsRepository,
@@ -175,7 +173,6 @@ public sealed class UnitOfWork : IUnitOfWork
         VaccinationsRepository = vaccinationsRepository;
         AgentHumansRepository = agentHumansRepository;
         AiModelsRepository = aiModelsRepository;
-        ChatUserProfilesRepository = chatUserProfilesRepository;
         ChatConversationsRepository = chatConversationsRepository;
         ChatConversationAssignmentsRepository = chatConversationAssignmentsRepository;
         ChatConversationAiSettingsRepository = chatConversationAiSettingsRepository;
@@ -240,7 +237,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IDiagnosticRepository DiagnosticsRepository { get; }
     public IAgentHumanRepository AgentHumansRepository { get; }
     public IAiModelRepository AiModelsRepository { get; }
-    public IChatUserProfileRepository ChatUserProfilesRepository { get; }
     public IChatConversationRepository ChatConversationsRepository { get; }
     public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
     public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }

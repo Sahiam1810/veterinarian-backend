@@ -7,9 +7,8 @@ namespace Application.ChatParticipants.UseCase;
 
 public sealed record ChangeChatParticipantIdentityCommand(
     Guid Id,
-    Guid? ChatUserProfileId,
-    Guid? AgentHumanId,
-    Guid? AiModelId) : IRequest<ChatParticipantEntity>;
+    Guid? ClientId,
+    Guid? AgentHumanId) : IRequest<ChatParticipantEntity>;
 
 public sealed class ChangeChatParticipantIdentityCommandHandler
     : IRequestHandler<ChangeChatParticipantIdentityCommand, ChatParticipantEntity>
@@ -34,15 +33,15 @@ public sealed class ChangeChatParticipantIdentityCommandHandler
                 $"No se encontró el participante '{request.Id}'.");
         }
 
-        if (request.ChatUserProfileId.HasValue)
+        if (request.ClientId.HasValue)
         {
-            var profile = await _uow.ChatUserProfilesRepository.GetByIdAsync(
-                request.ChatUserProfileId.Value,
+            var client = await _uow.ClientsRepository.GetByIdAsync(
+                request.ClientId.Value,
                 cancellationToken);
-            if (profile is null)
+            if (client is null)
             {
                 throw new NotFoundException(
-                    $"No se encontró el perfil de chat '{request.ChatUserProfileId.Value}'.");
+                    $"No se encontró el cliente '{request.ClientId.Value}'.");
             }
         }
 
@@ -59,9 +58,8 @@ public sealed class ChangeChatParticipantIdentityCommandHandler
         }
 
         participant.ChangeIdentity(
-            request.ChatUserProfileId,
-            request.AgentHumanId,
-            request.AiModelId);
+            request.ClientId,
+            request.AgentHumanId);
 
         await _uow.ChatParticipantsRepository.UpdateAsync(participant, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

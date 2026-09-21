@@ -62,7 +62,6 @@ using Application.ChatEscalations.Abstraction;
 using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
 using Application.ProviderModelsAi.Abstraction;
 
 namespace Application.Common.Abstractions;
@@ -129,7 +128,6 @@ public interface IUnitOfWork
 
     IAiModelRepository AiModelsRepository { get; }
 
-    IChatUserProfileRepository ChatUserProfilesRepository { get; }
 
     IChatConversationRepository ChatConversationsRepository { get; }
 

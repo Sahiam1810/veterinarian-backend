@@ -240,7 +240,6 @@ public sealed class ChatAiRunMetricsTests
         public Application.Notifications.Abstraction.INotificationRepository NotificationsRepository => null!;
         public Application.Diagnostics.Abstraction.IDiagnosticRepository DiagnosticsRepository => null!;
         public Application.AgentHumans.Abstraction.IAgentHumanRepository AgentHumansRepository => null!;
-        public Application.ChatUserProfiles.Abstraction.IChatUserProfileRepository ChatUserProfilesRepository => null!;
         public Application.ChatConversationAssignments.Abstraction.IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public Application.ChatConversationAiSettings.Abstraction.IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;
         public Application.ChatEscalations.Abstraction.IChatEscalationRepository ChatEscalationsRepository => null!;

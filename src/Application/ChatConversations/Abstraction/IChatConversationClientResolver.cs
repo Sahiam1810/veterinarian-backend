@@ -1,8 +1,8 @@
 namespace Application.ChatConversations.Abstraction;
 
-// Ticket B7: cliente vinculado a una conversación (participante Cliente →
-// ChatUserProfile → Client → User), reutilizado por los listados REST de
-// conversaciones/escalamientos y por el broadcast de SignalR (Ticket B5).
+// Ticket B7: cliente vinculado a una conversación (participante Cliente → Client),
+// reutilizado por los listados REST de conversaciones/escalamientos y por el
+// broadcast de SignalR (Ticket B5).
 public sealed record ChatConversationClientInfo(
     Guid? ClientId,
     string? ClientName,

@@ -19,7 +19,6 @@ using Application.ChatEscalations.Abstraction;
 using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
 using Application.Clients.Abstraction;
 using Application.ClientsPets.Abstraction;
 using Application.Common.Abstractions;
@@ -339,7 +338,6 @@ public sealed class ChatAttachmentTests
         public IDiagnosticRepository DiagnosticsRepository => null!;
         public IAgentHumanRepository AgentHumansRepository => null!;
         public IAiModelRepository AiModelsRepository => null!;
-        public IChatUserProfileRepository ChatUserProfilesRepository => null!;
         public IChatConversationRepository ChatConversationsRepository => null!;
         public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository => null!;
         public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository => null!;

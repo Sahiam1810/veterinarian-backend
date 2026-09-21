@@ -16,18 +16,12 @@ public sealed class ChatConversationClientResolver(
             conversationId, cancellationToken);
         var clientParticipant = participants.FirstOrDefault(
             participant => participant.ParticipantTypeId == conversationDefaults.ClientParticipantTypeId);
-        if (clientParticipant?.ChatUserProfileId is not { } profileId)
+        if (clientParticipant?.ClientId is not { } clientId)
         {
             return ChatConversationClientInfo.Empty;
         }
 
-        var profile = await uow.ChatUserProfilesRepository.GetByIdAsync(profileId, cancellationToken);
-        if (profile is null)
-        {
-            return ChatConversationClientInfo.Empty;
-        }
-
-        var client = await uow.ClientsRepository.GetByIdAsync(profile.UserId, cancellationToken);
+        var client = await uow.ClientsRepository.GetByIdAsync(clientId, cancellationToken);
         if (client is null)
         {
             return ChatConversationClientInfo.Empty;

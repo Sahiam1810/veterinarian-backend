@@ -3,14 +3,12 @@ using Application.ChatConversations.Abstraction;
 using Application.ChatConversations.Enrichment;
 using Application.ChatEscalations.UseCase;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Notifications.Abstraction;
 using Application.Users.Abstraction;
 using Domain.ChatConversations.Entities;
 using Domain.ChatParticipants.Entities;
-using Domain.ChatUserProfiles.Entities;
 using Domain.Clients.Entities;
 using Domain.EscalationStatuses.Entities;
 using Microsoft.Extensions.Logging;
@@ -87,13 +85,9 @@ public sealed class CreateChatEscalationCommandHandlerTests
     public async Task Escalation_resolves_client_name_and_phone_from_the_linked_participant()
     {
         var fixture = CreateFixture();
-        var clientId = Guid.NewGuid();
-        var profile = ChatUserProfile.Create(clientId, null, null, null);
-        var clientParticipant = ChatParticipant.Create(
-            ConversationId, ClientParticipantTypeId, chatUserProfileId: profile.Id);
-
         var client = TestClients.Create("1234567890", null, phoneNumber: "3001234567", fullName: "Ana Pérez");
-
+        var clientParticipant = ChatParticipant.Create(
+            ConversationId, ClientParticipantTypeId, clientId: client.Id);
 
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
@@ -104,11 +98,8 @@ public sealed class CreateChatEscalationCommandHandlerTests
         fixture.Uow.ChatParticipantsRepository
             .GetAllByConversationIdAsync(ConversationId, default)
             .Returns((IReadOnlyCollection<ChatParticipant>)new[] { clientParticipant });
-        fixture.Uow.ChatUserProfilesRepository
-            .GetByIdAsync(profile.Id, default)
-            .Returns(profile);
         fixture.Uow.ClientsRepository
-            .GetByIdAsync(profile.UserId, default)
+            .GetByIdAsync(client.Id, default)
             .Returns(client);
 
         await fixture.Handler.Handle(
