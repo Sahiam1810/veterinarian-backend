@@ -33,8 +33,6 @@ using Application.SenderTypes.Abstraction;
 
 using Application.AccountStatements.Abstraction;
 
-using Application.AiRunStatuses.Abstraction;
-
 using Application.ConversationStatuses.Abstraction;
 
 using Application.MessageTypes.Abstraction;
@@ -48,13 +46,8 @@ using Application.EscalationStatuses.Abstraction;
 using Application.Notifications.Abstraction;
 
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
 using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
 using Application.ChatAttachments.Abstraction;
 using Application.ChatEscalationAssignments.Abstraction;
 using Application.ChatEscalationResolutions.Abstraction;
@@ -62,7 +55,6 @@ using Application.ChatEscalations.Abstraction;
 using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
 
 namespace Application.Common.Abstractions;
 
@@ -103,8 +95,6 @@ public interface IUnitOfWork
     ISenderTypeRepository SenderTypesRepository { get; }
 
 
-    IAiRunStatusRepository AiRunStatusesRepository { get; }
-
     IConversationStatusRepository ConversationStatusesRepository { get; }
 
 
@@ -126,14 +116,9 @@ public interface IUnitOfWork
 
     IAgentHumanRepository AgentHumansRepository { get; }
 
-    IAiModelRepository AiModelsRepository { get; }
-
-
     IChatConversationRepository ChatConversationsRepository { get; }
 
     IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
-
-    IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
 
     IChatParticipantRepository ChatParticipantsRepository { get; }
 
@@ -148,14 +133,6 @@ public interface IUnitOfWork
     IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
 
     IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
-
-    IChatAiRunRepository ChatAiRunsRepository { get; }
-
-    IChatAiRunMetricsRepository ChatAiRunMetricsRepository { get; }
-
-    IChatAiRunErrorRepository ChatAiRunErrorsRepository { get; }
-
-    IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
     IUserAccountsRepository UserAccountsRepository { get; }
 
