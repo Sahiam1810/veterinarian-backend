@@ -84,18 +84,17 @@ PROMPT =========================================================================
 
 SELECT 
     c.IDENTIFICATION_NUMBER AS CEDULA_DUENO,
-    u.FULL_NAME AS NOMBRE_DUENO,
+    c.FULL_NAME AS NOMBRE_DUENO,
     p.NAME AS MASCOTA,
     s.NAME AS ESPECIE,
     NVL(r.NAME, 'No especificada') AS RAZA,
     cp.IS_PRIMARY_OWNER AS DUENO_PPAL
 FROM CLIENTS_PETS cp
 JOIN CLIENTS c ON cp.CLIENT_ID = c.CLIENT_ID
-JOIN USERS u ON c.USER_ID = u.USER_ID
 JOIN PETS p ON cp.PET_ID = p.PET_ID
 JOIN SPECIES s ON p.SPECIES_ID = s.SPECIES_ID
 LEFT JOIN RACES r ON p.RACE_ID = r.RACE_ID
-ORDER BY u.FULL_NAME, p.NAME;
+ORDER BY c.FULL_NAME, p.NAME;
 
 PROMPT 
 PROMPT =========================================================================
