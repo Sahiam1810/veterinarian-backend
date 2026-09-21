@@ -319,6 +319,7 @@ public static class DependencyInjection
         services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
         services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
         services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestHandler>();
+        services.AddScoped<IRequestClaimEmailByIdentification, RequestClaimEmailByIdentificationHandler>();
         services.AddScoped<IConfirmContactEmailVerification, ConfirmContactEmailVerificationHandler>();
         services.AddScoped<IConsumeContactVerificationProof, ConsumeContactVerificationProofHandler>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
