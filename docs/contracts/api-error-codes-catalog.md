@@ -3,17 +3,17 @@
 **Propósito:** el front **staff** y el bot **Telegram** traducen UX solo por `code` (no por `title` / `message` / `Description`).  
 **OTP en web:** el frontend staff **no** implementa OTP. Canal chatbot = **Telegram** únicamente (WhatsApp fuera de alcance).
 
-**Doc de etapa:** [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](../adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md).  
-**Tarea:** 6.3 — alinear catálogo + codes estables mínimos en `*Errors.cs`.
+**Contrato del refactor:** [`clientes-usuarios-api-v2.md`](clientes-usuarios-api-v2.md).  
+**Doc de etapa:** [`docs/adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md`](../adr/2026-09-07-etapa-6-rate-limit-logging-codes-foundations.md).
 
 ## Familias (para quién / qué no es)
 
 | Familia | Para quién | Qué no es |
 |---------|------------|-----------|
-| `Authentication.*` | Front staff (login / JWT / plataforma) | No es “login de dueño” ni OTP |
-| `ContactVerification.*` | Bot Telegram (Gmail / proof) | No es OTP de cita |
-| Alta dueño (`OwnerRegistration.*`, `Clients.Phone*`, aliases Auth en RegisterOwner) | Staff y bot | No pide password |
-| `Telegram.Registration.*` | Bot Telegram (enlace de alta) | No es ContactVerification Gmail ni OTP de cita |
+| `Authentication.*` | Front staff (login / JWT / plataforma) | No es “login de dueño” ni OTP; **ya no** se usan para conflictos de alta de cliente |
+| `ContactVerification.*` | Bot Telegram (Gmail / proof / Claim) | No es OTP de cita |
+| Alta cliente (`OwnerRegistration.*`, `Clients.*`) | Staff (`POST /api/clients`) y bot (`/api/owners/bot`) | No pide password al dueño |
+| `Telegram.*` (vínculo / claim) | Bot Telegram | No es ContactVerification Gmail ni OTP de cita |
 | `ClientPortal.Gone` | Quien aún llame rutas `/mine` u otras de portal | El portal Cliente no vuelve |
 | `AppointmentAction.*` (OTP de cita) | Bot Telegram | No es Gmail / ContactVerification |
 | `RateLimit.Exceeded` | Todos los anónimos / policies RL | No es 401 |
@@ -26,9 +26,8 @@
 | Rate limit | [`RateLimitErrors.cs`](../../src/Application/Security/Errors/RateLimitErrors.cs) |
 | Portal Cliente retirado | [`ClientPortalErrors.cs`](../../src/Application/Security/Errors/ClientPortalErrors.cs) |
 | Contact verification (Gmail) | [`ContactVerificationErrors.cs`](../../src/Application/ContactVerification/Errors/ContactVerificationErrors.cs) |
-| RegisterOwner | [`OwnerRegistrationErrors.cs`](../../src/Application/Owners/Errors/OwnerRegistrationErrors.cs) |
-| Teléfono cliente (validación / conflicto) | [`ClientErrorCodes.cs`](../../src/Application/Clients/Errors/ClientErrorCodes.cs) |
-| Telegram registration | [`TelegramRegistrationErrors.cs`](../../src/Application/Telegram/Registration/TelegramRegistrationErrors.cs) |
+| RegisterOwner / alta bot | [`OwnerRegistrationErrors.cs`](../../src/Application/Owners/Errors/OwnerRegistrationErrors.cs) |
+| Cliente (validación / conflicto) | [`ClientErrorCodes.cs`](../../src/Application/Clients/Errors/ClientErrorCodes.cs) |
 | OTP acción de cita | [`AppointmentActionErrors.cs`](../../src/Application/Appointments/Errors/AppointmentActionErrors.cs) |
 
 Nuevo `code` → constante/`Error` en el `*Errors.cs` correspondiente **y** una fila aquí.
@@ -50,7 +49,7 @@ Algunos endpoints legacy aún usan `ApiErrorResponse` sin `code`. No inventar `c
 
 ## Authentication.* — staff login / JWT
 
-**Para quién:** front staff. **Qué no es:** login de dueño, Gmail, OTP de cita.  
+**Para quién:** front staff. **Qué no es:** login de dueño, Gmail, OTP de cita, ni conflictos de cédula/correo de **cliente**.  
 **Fuente:** [`AuthenticationErrors.cs`](../../src/Application/Security/Errors/AuthenticationErrors.cs)
 
 | code | HTTP | Cuándo |
@@ -60,15 +59,20 @@ Algunos endpoints legacy aún usan `ApiErrorResponse` sin `code`. No inventar `c
 | `Authentication.Unauthorized` | 401 | JWT ausente/inválido (challenge) |
 | `Authentication.Forbidden` | 403 | Autenticado sin permiso de recurso |
 | `Authentication.PlatformAccessDenied` | 403 | Rol no admitido en esa plataforma/front |
-| `Authentication.UserAlreadyExists` | 409 | Email ya registrado (también vía RegisterOwner) |
-| `Authentication.IdentificationNumberAlreadyExists` | 409 | Cédula ya registrada (también vía RegisterOwner) |
-| `Authentication.InvalidRegistrationData` | 400 | Datos de registro inválidos |
+| `Authentication.InvalidRegistrationData` | 400 | Datos de registro de personal inválidos |
+
+**Retirados como códigos de alta de cliente** (usar `Clients.*`):
+
+| code (legado) | Reemplazo |
+|---------------|-----------|
+| `Authentication.UserAlreadyExists` | `Clients.EmailAlreadyInUse` |
+| `Authentication.IdentificationNumberAlreadyExists` | `Clients.IdentificationAlreadyInUse` |
 
 ---
 
 ## ContactVerification.* — Gmail / proof (Telegram)
 
-**Para quién:** bot Telegram (verificación de correo). **Qué no es:** OTP de cita (`AppointmentAction.*`).  
+**Para quién:** bot Telegram (verificación de correo; Claim por cédula). **Qué no es:** OTP de cita (`AppointmentAction.*`).  
 **Fuente:** [`ContactVerificationErrors.cs`](../../src/Application/ContactVerification/Errors/ContactVerificationErrors.cs)
 
 | code | HTTP | Cuándo |
@@ -82,41 +86,48 @@ Algunos endpoints legacy aún usan `ApiErrorResponse` sin `code`. No inventar `c
 | `ContactVerification.ProofAlreadyConsumed` | 409 | Proof ya consumido |
 | `ContactVerification.ProofExpired` | 409 | Proof vencido |
 | `ContactVerification.ChannelNotSupported` | 400 | Canal no soportado |
-| `ContactVerification.PurposeInvalid` | 400 | Purpose inválido |
+| `ContactVerification.PurposeInvalid` | 400 | Purpose inválido (p. ej. `Claim` en `email/request`; Claim va por `request-claim-by-identification`) |
 | `ContactVerification.EmailInvalid` | 400 | Formato de correo inválido |
 | `ContactVerification.DeliveryFailed` | 409 | Fallo al enviar (SMTP); sin detalle de proveedor |
 | `ContactVerification.NotImplemented` | 501 | Capacidad aún no implementada |
 
 ---
 
-## Alta dueño — OwnerRegistration.* / Clients.*
+## Alta cliente — Clients.* / OwnerRegistration.*
 
-**Para quién:** staff (`register-owner`) y bot (`/api/owners/bot`). **Qué no es:** pedir password al dueño; no es OTP de cita.  
-**Fuentes:** [`OwnerRegistrationErrors.cs`](../../src/Application/Owners/Errors/OwnerRegistrationErrors.cs), [`ClientErrorCodes.cs`](../../src/Application/Clients/Errors/ClientErrorCodes.cs)
+**Para quién:** staff (`POST /api/clients`) y bot (`POST /api/owners/bot`). **Qué no es:** pedir password al dueño; no es OTP de cita.  
+**Fuentes:** [`ClientErrorCodes.cs`](../../src/Application/Clients/Errors/ClientErrorCodes.cs), [`OwnerRegistrationErrors.cs`](../../src/Application/Owners/Errors/OwnerRegistrationErrors.cs)
 
 | code | HTTP | Cuándo |
 |------|------|--------|
-| `OwnerRegistration.ProofRequired` | 400 | Falta proof de ContactVerification |
+| `Clients.PhoneRequired` | 400 | Teléfono obligatorio |
+| `Clients.PhoneInvalidFormat` | 400 | Formato de teléfono inválido |
+| `Clients.PhoneAlreadyInUse` | 409 | Teléfono ya usado |
+| `Clients.EmailAlreadyInUse` | 409 | Correo ya usado por otro cliente |
+| `Clients.IdentificationAlreadyInUse` | 409 | Cédula ya registrada |
+| `OwnerRegistration.ProofRequired` | 400 | Falta proof de ContactVerification (alta staff con proofs exigidos) |
 | `OwnerRegistration.ProofEmailMismatch` | 400 | Proof no corresponde al email |
 | `OwnerRegistration.ProofPurposeInvalid` | 400 | Purpose del proof incorrecto |
-| `OwnerRegistration.ClientRoleMissing` | 409 | Rol Cliente no configurado en seed |
-| `Clients.PhoneRequired` | 400 | Teléfono obligatorio (validación) |
-| `Clients.PhoneInvalidFormat` | 400 | Formato de teléfono inválido |
-| `Clients.PhoneAlreadyInUse` | 409 | Teléfono ya usado (`OwnerRegistration.PhoneAlreadyInUse` alias) |
-| `Authentication.UserAlreadyExists` | 409 | Alias `OwnerRegistration.EmailAlreadyInUse` |
-| `Authentication.IdentificationNumberAlreadyExists` | 409 | Alias `OwnerRegistration.IdentificationAlreadyInUse` |
+
+`POST /api/owners/bot` responde **201** `{ clientId }` (sin `userId`).
 
 ---
 
-## Telegram.Registration.* — enlace de alta
+## Telegram — vínculo bot-link / claim
 
-**Para quién:** bot Telegram. **Qué no es:** Gmail OTP ni OTP de cita.  
-**Fuente:** [`TelegramRegistrationErrors.cs`](../../src/Application/Telegram/Registration/TelegramRegistrationErrors.cs)
+**Para quién:** bot Telegram. **Qué no es:** Gmail OTP ni OTP de cita.
 
 | code | HTTP | Cuándo |
 |------|------|--------|
-| `Telegram.Registration.InvalidOrExpired` | 400 | Enlace inválido, usado o vencido |
-| `Telegram.Registration.IdentityConflict` | 409 | Chat ya vinculado a otra identidad |
+| `Telegram.ClientLinkRequiresProof` | 403 | `bot-link` con `{ clientId }` fuera de la ventana de registro reciente o sin derecho a vínculo directo; usar Claim OTP |
+| (409 identidad) | 409 | Telegram ya vinculado a otro cliente / proof ya usado o vencido (vía `ContactVerification.*` o conflicto de vínculo) |
+
+**Retirados (D4/U3 — registro web / link-codes):**
+
+| code | Notas |
+|------|--------|
+| `Telegram.Registration.InvalidOrExpired` | Enlace web de registro; flujo eliminado |
+| `Telegram.Registration.IdentityConflict` | Idem |
 
 ---
 
@@ -168,4 +179,5 @@ No documentar `/clients/me` 200 como producto.
 2. No loguear `Description` / body con datos sensibles; en logs usar `code` + ids.
 3. Rate limit 429: siempre `RateLimit.Exceeded` (no inventar un code distinto por ruta).
 4. Distinguir **siempre** `ContactVerification.*` (Gmail) de `AppointmentAction.*` (OTP cita).
-5. No añadir WhatsApp a este catálogo.
+5. Conflictos de cliente: preferir `Clients.*`; no mapear el alta de dueño a `Authentication.UserAlreadyExists`.
+6. No añadir WhatsApp a este catálogo.

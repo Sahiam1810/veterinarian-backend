@@ -4,35 +4,26 @@ Esta integración recibe texto de chats privados y utiliza el mismo flujo del
 módulo `Agent`. Persiste la conversación, el participante y el estado técnico
 del webhook. Para un cliente **vinculado**, cada mensaje de texto que envía
 también queda guardado en `CHAT_MESSAGES` (`SenderTypesId = Cliente`) — la
-respuesta del agente de IA **no** se persiste todavía (diferido a propósito,
-ver Ticket B3 en el historial de cambios); los mensajes de invitados sin
-vincular tampoco se guardan, ya que nunca llegan a escalar (Ticket B2).
+respuesta del agente de IA **no** se persiste todavía (diferido a propósito);
+los mensajes de invitados sin vincular tampoco se guardan, ya que nunca
+llegan a escalar.
 
 Cuando un asesor humano responde desde la bandeja de Recepcionista
 (`POST /api/chat/messages` con `SenderTypesId = Agente humano`), el backend
 reenvía ese texto al mismo chat de Telegram automáticamente — ver
-`ForwardHumanChatMessageToTelegramHandler` (Ticket B4). Si el envío falla, el
-mensaje ya quedó guardado igual: solo se pierde la entrega en tiempo real, no
-el registro.
+`ForwardHumanChatMessageToTelegramHandler`. Si el envío falla, el mensaje ya
+quedó guardado igual: solo se pierde la entrega en tiempo real, no el
+registro.
 
-Por decisión de negocio, este canal **nunca envía ni valida un código de
-verificación**, ni exige que el cliente inicie sesión. Un invitado puede
-preguntar libremente sobre la veterinaria; cuando el propio agente necesita
-datos del cliente (por ejemplo, para agendar una cita), los recolecta en la
-conversación (nombre, cédula, correo, teléfono) y registra al cliente
-directamente. Ver el módulo de agendamiento del chatbot para el detalle de
-ese flujo.
+Un **cliente** es una fila en `CLIENTS` (sin `USERS`). El vínculo
+`TELEGRAM_USER_LINKS` apunta al `clientId`. Contrato:
+[`docs/contracts/clientes-usuarios-api-v2.md`](../contracts/clientes-usuarios-api-v2.md)
+(secciones 7 y 9.1).
 
 Si un cliente **ya vinculado** escribe una frase de escalamiento (por ejemplo
 "asesor" o "hablar con alguien"), el backend crea un `ChatEscalation` en
-estado Pendiente para su conversación y responde con un mensaje fijo, sin
-llamar al agente de IA en ese turno — ver `ProcessTelegramUpdateHandler`. Un
-**invitado sin vincular** que escriba lo mismo nunca escala directamente: se
-le redirige a decir qué necesita (agendar cita, registrar mascota) para que
-el flujo de identificación conversacional del chatbot lo reconozca por su
-propia cuenta. La bandeja donde un asesor humano atiende esa conversación
-escalada es responsabilidad del frontend (Recepcionista) y de los tickets de
-persistencia de mensajes y reenvío a Telegram — ambos, en construcción.
+estado Pendiente y responde con un mensaje fijo. Un **invitado sin vincular**
+que escriba lo mismo se redirige al flujo de identificación del chatbot.
 
 ## 1. Preparar la configuración
 
@@ -47,7 +38,6 @@ Telegram__BotToken=<token entregado por BotFather>
 Telegram__BotUsername=<nombre del bot sin @>
 Telegram__WebhookSecret=secreto-aleatorio-con-letras-numeros-guion-o-guion-bajo
 Telegram__PublicWebhookUrl=https://<url-publica-del-tunel>
-Telegram__LinkCodeTtlMinutes=10
 Telegram__WorkerPollMilliseconds=30000
 Telegram__WorkerConcurrency=16
 Telegram__ProcessingLeaseSeconds=300
@@ -56,13 +46,10 @@ Telegram__DelegatedTokenMinutes=5
 Telegram__PendingEscalationStatusId=85000000-0000-0000-0000-000000000001
 Telegram__TextMessageTypeId=83000000-0000-0000-0000-000000000001
 Telegram__HumanAgentSenderTypeId=82000000-0000-0000-0000-000000000003
-Telegram__OtpTtlMinutes=5
-Telegram__OtpMaximumAttempts=5
-Telegram__OtpResendSeconds=60
 Telegram__OtpPepperBase64=<32 bytes aleatorios codificados en Base64>
 Telegram__PrivateAccessAbsoluteTtlHours=24
 Telegram__PrivateAccessIdleTtlMinutes=30
-Telegram__RegistrationProtectionKeyBase64=<32 bytes aleatorios codificados en Base64>
+Telegram__RegistrationLinkWindowMinutes=10
 
 Email__Enabled=true
 Email__Host=<servidor SMTP>
@@ -76,14 +63,11 @@ Serilog__MinimumLevel__Override__Microsoft.EntityFrameworkCore.Database.Command=
 ```
 
 El worker se despierta inmediatamente cuando el webhook guarda un update.
-`Telegram__WorkerPollMilliseconds` es solamente el intervalo de respaldo para
-recuperar trabajo si una señal local se pierde; aumentarlo a 30000 no agrega
-30 segundos a la respuesta normal. `Telegram__WorkerConcurrency` define cuántos
-updates de **chats distintos** se procesan en paralelo en el mismo proceso
-(1–32); el mismo chat sigue en serie. El override de Serilog evita imprimir cada
-consulta exitosa de EF Core y conserva visibles las advertencias y errores.
+`Telegram__WorkerPollMilliseconds` es solamente el intervalo de respaldo.
+`Telegram__WorkerConcurrency` define cuántos updates de **chats distintos**
+se procesan en paralelo (1–32); el mismo chat sigue en serie.
 
-Genere el pepper una sola vez para el ambiente y consérvelo como secreto:
+Genere el pepper una sola vez para el ambiente:
 
 ```powershell
 $otpPepper = New-Object byte[] 32
@@ -93,52 +77,28 @@ try { $randomGenerator.GetBytes($otpPepper) } finally { $randomGenerator.Dispose
 ```
 
 No cambie el pepper mientras existan verificaciones pendientes. Para Gmail u
-otro proveedor con autenticación multifactor utilice una clave de aplicación,
-no la contraseña personal de la cuenta.
+otro proveedor con MFA utilice una clave de aplicación.
 
-También deben estar configurados Oracle, JWT y `Agent__Enabled=true`. Aplique
-las migraciones únicamente contra la base local confirmada:
-
-```powershell
-dotnet ef database update --project src/Infrastructure --startup-project src/Api
-```
+También deben estar configurados Oracle, JWT y `Agent__Enabled=true`. Las
+migraciones las aplica la responsable del esquema; no genere migraciones en
+tareas de producto.
 
 ## 2. Registrar el webhook
 
 ### Opción recomendada para pruebas locales: Cloudflare Quick Tunnel
-
-Desde la raíz del backend, ejecute el siguiente comando en una terminal y déjela
-abierta durante toda la prueba:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\start-telegram-cloudflare-tunnel.ps1
 ```
 
-El script no inicia el backend. Comprueba `cloudflared` y los secretos existentes,
-crea una URL temporal `trycloudflare.com`, actualiza únicamente
-`Telegram__PublicWebhookUrl` en el `.env` privado y registra el webhook. Después de
-ver la confirmación, abra otra terminal e inicie manualmente la API:
+El script no inicia el backend. Tras la confirmación:
 
 ```powershell
 dotnet run --project src/Api/Api.csproj --launch-profile http
 ```
 
-El túnel apunta de forma predeterminada a `http://localhost:5233`. Si el backend usa
-otro puerto, páselo explícitamente:
-
-```powershell
-.\scripts\start-telegram-cloudflare-tunnel.ps1 `
-  -BackendUrl http://localhost:PUERTO
-```
-
-Cada ejecución genera una URL nueva y vuelve a registrar Telegram. Use `Ctrl+C` en
-la terminal del script para detener el túnel.
-
 ### Opción manual
-
-Estos comandos leen los secretos desde variables de proceso y no los imprimen.
-Ejecute PowerShell en la misma sesión donde asignó los valores:
 
 ```powershell
 $telegramBotToken = $env:Telegram__BotToken
@@ -159,59 +119,58 @@ Invoke-RestMethod `
   -Body $webhookBody | Select-Object ok, description
 ```
 
-Compruebe el registro sin mostrar el token:
-
-```powershell
-$webhookInfo = Invoke-RestMethod `
-  -Method Get `
-  -Uri "https://api.telegram.org/bot$telegramBotToken/getWebhookInfo"
-$webhookInfo.result | Select-Object url, pending_update_count, last_error_message
-```
-
-Si cambia la URL del túnel debe ejecutar `setWebhook` otra vez.
-
-## 3. Consultas de invitado y registro sin verificación
+## 3. Invitado, registro nuevo y `/start`
 
 Con `Telegram__GuestModeEnabled=true`, cualquier chat privado puede hacer
-preguntas generales sobre la veterinaria. El backend usa una identidad técnica
-`TelegramGuest`; no crea conversaciones ni participantes para esa identidad
-mientras el chat no esté vinculado a una persona.
+preguntas generales. El backend usa la identidad técnica `TelegramGuest`.
 
-Cuando el agente necesita datos del cliente (por ejemplo, para agendar una
-cita o registrar una mascota), los recolecta directamente en la conversación
-y registra al cliente sin ningún paso de verificación adicional. No hay
-`/vincular`, `/registrar` ni comandos de sesión: una vez el chat queda
-vinculado a una persona (`TelegramUserLink`), los mensajes siguientes se
-tratan como de esa persona de forma permanente.
+`/start` y `/start <cualquier texto>` responden el mismo mensaje de
+bienvenida de invitado. **No** hay consumo de códigos de vinculación
+(`link-codes` está retirado).
 
-Use `/desvincular confirmar` para liberar el vínculo de un chat.
+Cuando el agente necesita datos del cliente, los recolecta en la conversación
+y registra con `POST /api/owners/bot` → `{ clientId }`. Luego vincula con:
 
-`Telegram__DelegatedTokenMinutes` controla únicamente el JWT interno que .NET
-genera para llamar al agente en nombre de una persona ya vinculada; es un
-detalle técnico entre el backend y el agente, no algo que el cliente vea o
-provea.
+`POST /api/integrations/telegram/bot-link`  
+Body: `{ "clientId": "<guid>" }`  
+Auth: token de invitado (`TelegramGuestLinkOnly`, claim `telegram_user_id`).  
+Respuesta: `{ "linkId": "<guid>" }`.
 
-## 4. Vinculación alternativa desde la aplicación
+Ese `bot-link` directo aplica al **registro recién hecho** (ventana
+`Telegram__RegistrationLinkWindowMinutes`, 10 por defecto). No crea cuenta
+fantasma en `USER_ACCOUNTS`.
 
-1. Inicie el chatbot, Oracle y el backend.
-2. Inicie sesión en Swagger y autorice con el access token.
-3. Ejecute `POST /api/integrations/telegram/link-codes`.
-4. Abra el `deepLink` retornado o envíe `/start <code>` al bot.
-5. Espere la confirmación de vinculación y envíe un mensaje de texto.
-6. Verifique que Oracle contenga el vínculo, la conversación y el participante.
+## 4. Reclamación por OTP (cliente existente, otro Telegram)
 
-El `update_id` evita procesar dos veces el mismo webhook.
+Aplica cuando alguien **ya es cliente** escribe desde un Telegram no vinculado.
+El código se envía **siempre al correo registrado**, resuelto por el servidor
+(el bot no elige el destino).
+
+1. `POST /api/contact-verification/email/request-claim-by-identification`  
+   Body `{ identificationNumber }` → **202**
+   `{ sessionId, expiresAt, channel, maskedEmail }`.
+2. `POST /api/contact-verification/email/confirm`  
+   Body `{ sessionId, code }` → `{ sessionId, proof }`.
+3. `POST /api/integrations/telegram/bot-link/claim`  
+   Body `{ sessionId, proof }` → **200** `{ linkId, fullName }`.
+
+`POST /api/contact-verification/email/request` **no** admite purpose `Claim`
+(responde `ContactVerification.PurposeInvalid`). Si `bot-link` con
+`{ clientId }` se usa fuera de la ventana de registro, espere
+`403 Telegram.ClientLinkRequiresProof`.
+
+Flujos **retirados** (no documentar como vigentes):
+`POST /api/integrations/telegram/link-codes`,
+`GET`/`POST /telegram/registration/complete`.
 
 ## 5. Diagnóstico rápido
 
-- `401/403` en el webhook: revise que el secreto registrado coincida con
-  `Telegram__WebhookSecret`.
-- El webhook acumula pendientes: revise el backend y Oracle; el worker solo se
-  registra cuando `Telegram__Enabled=true`.
-- El bot confirma vínculo pero no responde: compruebe `Agent__Enabled`, la URL
-  interna del agente y que el usuario vinculado siga activo.
-- `getWebhookInfo.last_error_message` ayuda a detectar túneles cerrados o
-  certificados inaccesibles.
+- `401/403` en el webhook: revise `Telegram__WebhookSecret`.
+- El webhook acumula pendientes: backend y Oracle; el worker solo se registra
+  con `Telegram__Enabled=true`.
+- El bot vincula pero no responde: `Agent__Enabled`, URL del agente y cliente
+  activo.
+- `getWebhookInfo.last_error_message` ayuda con túneles cerrados.
 
-No registre en logs ni comparta el token del bot, el secreto del webhook, JWT,
+No registre en logs el token del bot, el secreto del webhook, JWT,
 credenciales SMTP, correos o textos de usuarios.
