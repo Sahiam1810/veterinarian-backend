@@ -16,6 +16,6 @@ public class ConflictException : Exception
     {
     }
 
-    // Código estable p.ej. UserAccounts.ClientCannotHaveLogin
+    // Código estable de dominio p. ej. "Users.SomeConflict".
     public string? Code { get; }
 }

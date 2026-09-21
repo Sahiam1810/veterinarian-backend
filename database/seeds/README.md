@@ -37,17 +37,15 @@ Todos los usuarios de Staff tienen cuenta creada en `USER_ACCOUNTS` (`STATUS = '
 | **Veterinario** | `veterinario@veterinaria.com` | `veterinario` | ✅ Sí |
 | **Recepcionista** | `recepcionista@veterinaria.com` | `recepcionista` | ✅ Sí |
 | **Auxiliar** | `auxiliar@veterinaria.com` | `auxiliar` | ✅ Sí |
-| **Cliente** | `cliente@veterinaria.com` | — | ❌ No (solo chatbot/OTP) |
 
-> **Nota sobre Clientes:** Por regla de seguridad, los clientes no tienen contraseña ni registro en `USER_ACCOUNTS`.
-
+> **Nota:** Los dueños de mascota (clientes) no se modelan como usuarios de plataforma: viven en `CLIENTS` y se identifican vía chatbot/Telegram.
 ---
 
 ## Valores mínimos esperados
 
 | Catálogo | Cantidad mínima |
 |---|---:|
-| Roles | 6 |
+| Roles | 5 |
 | Modules | 23 |
 | Role permissions | 44 |
 | Appointment statuses | 6 |

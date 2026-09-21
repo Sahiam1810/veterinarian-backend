@@ -1,11 +1,9 @@
-using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Roles.Abstraction;
 using Application.Specialties.Abstraction;
 using Application.Users.Abstraction;
 using Application.Users.UseCase;
 using Application.Veterinarians.Abstraction;
-using Domain.Clients.Entities;
 using Domain.Specialties.Entities;
 using Domain.Veterinarians.Entities;
 using NSubstitute;
@@ -15,12 +13,11 @@ using UserEntity = Domain.Users.Entities.Users;
 
 namespace Application.Tests.Users;
 
-// S26: crear Usuario con rol Cliente/Veterinario debe dejar el perfil listo sin pasos extra.
+// T10: CreateUser es solo personal; Veterinario sigue provisionando su perfil.
 public sealed class CreateUserRoleProfileTests
 {
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IRolesRepository rolesRepository = Substitute.For<IRolesRepository>();
-    private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
     private readonly IVeterinarianRepository veterinariansRepository = Substitute.For<IVeterinarianRepository>();
     private readonly ISpecialtyRepository specialtiesRepository = Substitute.For<ISpecialtyRepository>();
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
@@ -30,7 +27,6 @@ public sealed class CreateUserRoleProfileTests
     {
         unitOfWork.UsersRepository.Returns(usersRepository);
         unitOfWork.RolesRepository.Returns(rolesRepository);
-        unitOfWork.ClientsRepository.Returns(clientsRepository);
         unitOfWork.VeterinariansRepository.Returns(veterinariansRepository);
         unitOfWork.SpecialtiesRepository.Returns(specialtiesRepository);
         unitOfWork
@@ -42,12 +38,6 @@ public sealed class CreateUserRoleProfileTests
         passwordHasher.Hash(Arg.Any<string>()).Returns("hashed");
         usersRepository.ExistsByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(false);
-        clientsRepository.ExistsByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(false);
-        clientsRepository.ExistsByIdentificationNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(false);
-        clientsRepository.ExistsByPhoneAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(false);
         veterinariansRepository.ExistsByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(false);
         veterinariansRepository.ExistsByLicenseNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -55,7 +45,7 @@ public sealed class CreateUserRoleProfileTests
     }
 
     [Fact]
-    public async Task Create_usuario_de_personal_no_crea_fila_Client()
+    public async Task Create_usuario_de_personal_hashea_password_y_no_crea_veterinario()
     {
         var staffRole = new RoleEntity("Recepcionista", "Gestiona agenda");
         rolesRepository.GetByIdAsync(staffRole.Id, Arg.Any<CancellationToken>()).Returns(staffRole);
@@ -77,8 +67,6 @@ public sealed class CreateUserRoleProfileTests
         Assert.NotNull(persistedUser);
         Assert.Equal(userId, persistedUser!.Id);
         Assert.Equal("hash", persistedUser.PasswordHash);
-        await clientsRepository.DidNotReceive()
-            .AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
         await veterinariansRepository.DidNotReceive()
             .AddAsync(Arg.Any<Veterinarian>(), Arg.Any<CancellationToken>());
     }
@@ -115,7 +103,5 @@ public sealed class CreateUserRoleProfileTests
         Assert.Equal(userId, persistedVet!.UserId);
         Assert.Equal(specialty.Id, persistedVet.SpecialtyId);
         Assert.Equal("CMP-998877", persistedVet.LicenseNumber);
-        await clientsRepository.DidNotReceive()
-            .AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
     }
 }

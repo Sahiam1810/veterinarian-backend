@@ -11,7 +11,7 @@ PROMPT =========================================================================
 PROMPT 1. AUDITORÍA DE SEGURIDAD Y ROLES
 PROMPT =========================================================================
 
--- A. Confirmar existencia de los 6 roles canónicos
+-- A. Confirmar existencia de los 5 roles canónicos de personal
 SELECT COUNT(*) AS CANONICAL_ROLES_COUNT 
 FROM ROLES
 WHERE ROLE_ID IN (
@@ -19,22 +19,8 @@ WHERE ROLE_ID IN (
     '11111111-1111-1111-1111-111111111111', -- Administrador
     '44444444-4444-4444-4444-444444444444', -- Veterinario
     '55555555-5555-5555-5555-555555555555', -- Recepcionista
-    '66666666-6666-6666-6666-666666666666', -- Auxiliar
-    '77777777-7777-7777-7777-777777777777'  -- Cliente
+    '66666666-6666-6666-6666-666666666666'  -- Auxiliar
 );
-
--- B. Regla de negocio: El rol Cliente NUNCA debe tener permisos web (Esperado: 0)
-SELECT COUNT(*) AS CLIENT_WEB_PERMISSIONS_COUNT
-FROM ROLE_PERMISSIONS
-WHERE ROLE_ID = '77777777-7777-7777-7777-777777777777';
-
--- C. Regla de seguridad: Ningún usuario con rol Cliente debe tener cuenta de login (Esperado: 0)
-SELECT COUNT(*) AS CLIENTS_WITH_LOGIN_ACCOUNT
-FROM USER_ACCOUNTS ua
-JOIN USERS u ON ua.USER_ID = u.USER_ID
-JOIN ROLES r ON u.ROLE_ID = r.ROLE_ID
-WHERE UPPER(r.NAME) = 'CLIENTE';
-
 PROMPT 
 PROMPT =========================================================================
 PROMPT 2. RESUMEN GLOBAL DE REGISTROS (CONTEOS)
