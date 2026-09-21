@@ -31,8 +31,6 @@ using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 
-using Application.AccountStatements.Abstraction;
-
 using Application.AiRunStatuses.Abstraction;
 
 using Application.ConversationStatuses.Abstraction;
@@ -164,8 +162,6 @@ public interface IUnitOfWork
     IClientRepository ClientsRepository { get; }
 
     IUserTokensRepository UserTokensRepository { get; }
-
-    IAccountStatementsRepository AccountStatementsRepository { get; }
 
     IAvailabilityRepository AvailabilitiesRepository { get; }
 

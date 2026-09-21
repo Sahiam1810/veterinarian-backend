@@ -251,7 +251,6 @@ public sealed class ChatAiRunMetricsTests
         public Application.UserCredentials.Abstraction.IUserCredentialsRepository UserCredentialsRepository => null!;
         public Application.Clients.Abstraction.IClientRepository ClientsRepository => null!;
         public Application.UserTokens.Abstraction.IUserTokensRepository UserTokensRepository => null!;
-        public Application.AccountStatements.Abstraction.IAccountStatementsRepository AccountStatementsRepository => null!;
         public Application.Availabilities.Abstraction.IAvailabilityRepository AvailabilitiesRepository => null!;
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

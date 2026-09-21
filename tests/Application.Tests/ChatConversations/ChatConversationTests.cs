@@ -1,4 +1,3 @@
-using Application.AccountStatements.Abstraction;
 using Application.AgentHumans.Abstraction;
 using Application.AiModels.Abstraction;
 using Application.AiRunStatuses.Abstraction;
@@ -624,7 +623,6 @@ public sealed class ChatConversationTests
         public IUserCredentialsRepository UserCredentialsRepository => null!;
         public IClientRepository ClientsRepository => null!;
         public IUserTokensRepository UserTokensRepository => null!;
-        public IAccountStatementsRepository AccountStatementsRepository => null!;
         public IAvailabilityRepository AvailabilitiesRepository => null!;
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

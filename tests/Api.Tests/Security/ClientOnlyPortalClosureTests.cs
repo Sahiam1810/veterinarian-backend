@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Api.AccountStatements.Controllers;
 using Api.Appointments.Controllers;
 using Api.Auth.Controllers;
 using Api.Clients.Controllers;
@@ -44,7 +43,6 @@ public sealed class ClientOnlyPortalSurfaceTests
     [InlineData(typeof(AppointmentsController), "GetBookingSlots")]
     [InlineData(typeof(AppointmentsController), "CreateMine")]
     [InlineData(typeof(MyAppointmentsController), "CancelMine")]
-    [InlineData(typeof(AccountStatementsController), "GetMine")]
     [InlineData(typeof(VaccinationsController), "GetMine")]
     public void Portal_action_is_allow_anonymous_without_ClientOnly(Type controllerType, string methodName)
     {
