@@ -19,7 +19,7 @@ El objetivo es **separarlos por completo**:
 - `CLIENTS` guarda **todos** los datos del cliente y **no tiene ninguna relación con `USERS`**.
 - `USERS` (y sus cuentas y credenciales) quedan **solo para el personal**.
 - El rol "Cliente" deja de existir en la base.
-- Aprovechamos para dejar la base limpia: de **58 a 32 tablas**, quitando lo que nunca se usa ni se muestra.
+- Aprovechamos para dejar la base limpia: de **58 a 33 tablas**, quitando lo que nunca se usa ni se muestra.
 
 ## 2. Modelo objetivo (resumen)
 
@@ -35,7 +35,7 @@ Estado del modelo: **boceto presentado para aprobación**. Si se ajusta, se actu
 | Servicios y citas | `TYPE_SERVICES`, `SERVICES`, `STATUS_APPOINTMENTS`, `APPOINTMENTS`, `APPOINTMENT_STATUS_HISTORIES`, `NOTIFICATIONS` |
 | Historia clínica | `DIAGNOSTICS`, `MEDICAL_RECORDS`, `VACCINATIONS` |
 | Chat y escalamiento | `AGENT_HUMANS`, `CHAT_CONVERSATIONS`, `CHAT_PARTICIPANTS`, `CHAT_MESSAGES`, `CHAT_ESCALATIONS`, `SENDER_TYPES`, `ESCALATIONS_STATUSES` |
-| Telegram | `TELEGRAM_USER_LINKS`, `TELEGRAM_INBOUND_UPDATES` |
+| Telegram | `TELEGRAM_USER_LINKS`, `TELEGRAM_INBOUND_UPDATES`, `CONTACT_VERIFICATION_SESSIONS` |
 
 Cambios clave respecto a hoy:
 
@@ -43,7 +43,9 @@ Cambios clave respecto a hoy:
 - **`USERS`** absorbe `USER_ACCOUNTS` y `USER_CREDENTIALS` (contraseña incluida). El login es solo por correo (sin `USERNAME`).
 - **`TELEGRAM_USER_LINKS`, `CHAT_PARTICIPANTS` y `NOTIFICATIONS`** apuntan a `CLIENTS` (`CLIENT_ID`). Las notificaciones tienen `USER_ID` **o** `CLIENT_ID`, uno solo.
 - **`CHAT_ESCALATIONS`** absorbe la resolución (`RESOLVED_AT`, `RESOLVED_BY`, `RESOLUTION_NOTE`); `TELEGRAM_USER_LINKS` absorbe el vínculo con la conversación.
-- **Tablas que se eliminan:** `USER_ACCOUNTS`, `USER_CREDENTIALS`, `USER_PERMISSIONS`, `ACCOUNT_STATEMENTS`, `AI_MODELS`, `PROVIDER_MODELS_AI`, `AI_RUNS_STATUSES`, `CHAT_AI_RUNS`, `CHAT_AI_RUN_ERRORS`, `CHAT_AI_RUN_METRICS`, `CHAT_CONVERSATION_AI_SETTINGS`, `CHAT_ATTACHMENTS`, `CHAT_CONVERSATION_ASSIGNMENTS`, `CHAT_ESCALATION_ASSIGNMENTS`, `CHAT_ESCALATION_STATUS_HISTORY`, `CHAT_ESCALATION_RESOLUTION`, `CHAT_USER_PROFILES`, `MESSAGE_TYPES`, `CONVERSATIONS_STATUSES`, `PRIORITY`, `CONTACT_VERIFICATION_SESSIONS`, `APPOINTMENT_ACTION_VERIFICATION_SESSIONS`, `TELEGRAM_CONVERSATION_LINKS`, `TELEGRAM_LINK_CODES`, `TELEGRAM_LINKING_SESSIONS`, `TELEGRAM_REGISTRATION_SESSIONS`.
+- **Tablas que se eliminan:** `USER_ACCOUNTS`, `USER_CREDENTIALS`, `USER_PERMISSIONS`, `ACCOUNT_STATEMENTS`, `AI_MODELS`, `PROVIDER_MODELS_AI`, `AI_RUNS_STATUSES`, `CHAT_AI_RUNS`, `CHAT_AI_RUN_ERRORS`, `CHAT_AI_RUN_METRICS`, `CHAT_CONVERSATION_AI_SETTINGS`, `CHAT_ATTACHMENTS`, `CHAT_CONVERSATION_ASSIGNMENTS`, `CHAT_ESCALATION_ASSIGNMENTS`, `CHAT_ESCALATION_STATUS_HISTORY`, `CHAT_ESCALATION_RESOLUTION`, `CHAT_USER_PROFILES`, `MESSAGE_TYPES`, `CONVERSATIONS_STATUSES`, `PRIORITY`, `APPOINTMENT_ACTION_VERIFICATION_SESSIONS`, `TELEGRAM_CONVERSATION_LINKS`, `TELEGRAM_LINK_CODES`, `TELEGRAM_LINKING_SESSIONS`, `TELEGRAM_REGISTRATION_SESSIONS`.
+- **Tabla que se conserva: `CONTACT_VERIFICATION_SESSIONS`.** Un borrador anterior de esta lista la eliminaba; **se decidió dejarla**. Guarda las sesiones del OTP por correo (código con hash, intentos, vencimiento y la prueba de un solo uso), y ese flujo sigue vigente: se usa **únicamente cuando alguien que ya es cliente escribe desde otra cuenta de Telegram** que no está vinculada, para demostrar que controla el correo registrado (contrato v2, sección 9.1). Un cliente **nuevo** se registra y se vincula sin OTP, y no pasa por esta tabla. Si se borrara, el bot no tendría cómo reconocer a un cliente que cambia de celular sin abrir el flujo a suplantaciones. **Ninguna tarea de limpieza debe borrarla, ni el módulo `ContactVerification` que la usa.**
+  - Pendiente para el frente de renombres: su columna `SUBJECT_USER_ID` hoy guarda el **id del cliente** (no tiene FK). Debe pasar a `SUBJECT_CLIENT_ID`.
 - **Atributos:** booleanos como `NUMBER(1)`, `UPDATE_AT` pasa a `UPDATED_AT`, tipos homogéneos y nombres de id en singular. Esto es de un frente posterior, **no** del frente actual.
 
 ## 3. Frentes
@@ -185,7 +187,7 @@ Pégalo tal cual en https://dbdiagram.io.
 
 ```dbml
 // Huellitas — BASE DE DATOS REESTRUCTURADA (propuesta para aprobacion)
-// Pegar tal cual en https://dbdiagram.io  ·  32 tablas (antes 58)
+// Pegar tal cual en https://dbdiagram.io  ·  33 tablas (antes 58)
 // Cambios clave: USERS = solo personal (fusiona cuentas y credenciales) · CLIENTS independiente, sin login y sin FK a USERS
 
 Table USERS {
@@ -528,6 +530,23 @@ Table TELEGRAM_INBOUND_UPDATES {
   UPDATED_AT "timestamp"
 }
 
+Table CONTACT_VERIFICATION_SESSIONS {
+  ID "varchar2(36)" [pk]
+  ATTEMPTS "number(10)" [not null]
+  CHANNEL "varchar2(20)" [not null]
+  CREATED_AT "timestamp" [not null]
+  DESTINATION_HASH "varchar2(64)" [not null]
+  EXPIRES_AT "timestamp"
+  OTP_HASH "varchar2(64)"
+  PROOF_EXPIRES_AT "timestamp"
+  PROOF_HASH "varchar2(64)"
+  PURPOSE "varchar2(20)" [not null]
+  STATUS "varchar2(20)" [not null]
+  SUBJECT_USER_ID "varchar2(36)" [note: 'guarda el id del CLIENTE (sin FK); pasa a SUBJECT_CLIENT_ID en el frente de renombres']
+  UPDATED_AT "timestamp"
+  Note: 'OTP por correo solo para reclamar un cliente existente desde otro Telegram (contrato v2, 9.1). Se conserva.'
+}
+
 // Relaciones
 Ref: AGENT_HUMANS.USER_ID > USERS.USER_ID
 Ref: APPOINTMENTS.AVAILABILITY_ID > AVAILABILITIES.AVAILABILITY_ID
@@ -624,6 +643,7 @@ TableGroup Chat_y_escalamiento {
 TableGroup Telegram {
   TELEGRAM_USER_LINKS
   TELEGRAM_INBOUND_UPDATES
+  CONTACT_VERIFICATION_SESSIONS
 }
 
 ```
