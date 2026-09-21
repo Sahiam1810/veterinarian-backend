@@ -104,7 +104,7 @@ public sealed class TelegramChatLinkingServiceTests
         var update = ProcessingUpdate(45, "123456");
         fixture.Sessions.GetActiveByTelegramUserIdAsync(1001, default).Returns(session);
         fixture.Protector.Verify("123456", Hash).Returns(true);
-        fixture.UserLinks.GetByPersonIdAsync(PersonId, default)
+        fixture.UserLinks.GetByClientIdAsync(PersonId, default)
             .Returns((TelegramUserLink?)null);
 
         var outcome = await fixture.Service.HandleAsync(update, default);
@@ -114,7 +114,7 @@ public sealed class TelegramChatLinkingServiceTests
         Assert.Equal(TelegramLinkingSessionStatus.Linked, session.Status);
         await fixture.UserLinks.Received(1).AddAsync(
             Arg.Is<TelegramUserLink>(link =>
-                link.PersonId == PersonId && link.TelegramUserId == 1001),
+                link.ClientId == PersonId && link.TelegramUserId == 1001),
             default);
     }
 
@@ -132,7 +132,7 @@ public sealed class TelegramChatLinkingServiceTests
         revoked.Revoke(Now.UtcDateTime.AddMinutes(-1));
         fixture.Sessions.GetActiveByTelegramUserIdAsync(1001, default).Returns(session);
         fixture.Protector.Verify("123456", Hash).Returns(true);
-        fixture.UserLinks.GetByPersonIdAsync(PersonId, default)
+        fixture.UserLinks.GetByClientIdAsync(PersonId, default)
             .Returns((TelegramUserLink?)null);
         fixture.UserLinks.GetByTelegramChatIdAsync(1001, default)
             .Returns((TelegramUserLink?)null);
@@ -143,7 +143,7 @@ public sealed class TelegramChatLinkingServiceTests
         Assert.Equal(TelegramLinkingSessionStatus.Linked, session.Status);
         await fixture.UserLinks.Received(1).AddAsync(
             Arg.Is<TelegramUserLink>(link =>
-                link.PersonId == PersonId && link.TelegramChatId == revoked.TelegramChatId),
+                link.ClientId == PersonId && link.TelegramChatId == revoked.TelegramChatId),
             default);
     }
 
@@ -160,7 +160,7 @@ public sealed class TelegramChatLinkingServiceTests
             Now.UtcDateTime.AddMinutes(-1));
         fixture.Sessions.GetActiveByTelegramUserIdAsync(1001, default).Returns(session);
         fixture.Protector.Verify("123456", Hash).Returns(true);
-        fixture.UserLinks.GetByPersonIdAsync(PersonId, default)
+        fixture.UserLinks.GetByClientIdAsync(PersonId, default)
             .Returns((TelegramUserLink?)null);
         fixture.UserLinks.GetByTelegramChatIdAsync(1001, default).Returns(occupied);
 

@@ -1,3 +1,4 @@
+using Application.Clients.Abstraction;
 using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
 
@@ -5,6 +6,8 @@ namespace Application.Telegram.Abstractions;
 
 public interface ITelegramUnitOfWork
 {
+    IClientRepository ClientsRepository { get; }
+
     IUsersRepository UsersRepository { get; }
 
     // Necesario para crear la cuenta fantasma (sin password) al vincular un

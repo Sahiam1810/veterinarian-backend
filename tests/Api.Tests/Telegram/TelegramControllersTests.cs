@@ -55,7 +55,7 @@ public sealed class TelegramControllersTests
             LinkTelegramBotAccountResponse response ? response.LinkId : Guid.Empty);
         await sender.Received(1).Send(
             Arg.Is<LinkTelegramBotAccountCommand>(command =>
-                command.PersonId == personId && command.TelegramUserId == 555),
+                command.ClientId == personId && command.TelegramUserId == 555),
             Arg.Any<CancellationToken>());
     }
 

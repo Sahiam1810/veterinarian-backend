@@ -84,7 +84,7 @@ public sealed class TelegramRegistrationServiceTests
         Assert.True(outcome.Consumed);
         Assert.Contains("vinculada", outcome.Reply!, StringComparison.OrdinalIgnoreCase);
         await fixture.Links.Received(1).AddAsync(
-            Arg.Is<TelegramUserLink>(link => link.PersonId == PersonId), default);
+            Arg.Is<TelegramUserLink>(link => link.ClientId == PersonId), default);
         Assert.Equal(TelegramRegistrationSessionStatus.Completed, session.Status);
     }
 

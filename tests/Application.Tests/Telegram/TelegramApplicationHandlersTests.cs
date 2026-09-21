@@ -64,7 +64,7 @@ public sealed class TelegramApplicationHandlersTests
             .Returns(new UserEntity("Samuel", "samuel@example.com", "hash", Guid.NewGuid()));
         fixture.UserLinks.GetByTelegramUserIdAsync(2002, fixture.Token)
             .Returns((TelegramUserLink?)null);
-        fixture.UserLinks.GetByPersonIdAsync(PersonId, fixture.Token)
+        fixture.UserLinks.GetByClientIdAsync(PersonId, fixture.Token)
             .Returns(existing);
         var handler = new ConsumeTelegramLinkCodeHandler(
             fixture.UnitOfWork,

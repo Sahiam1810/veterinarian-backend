@@ -228,7 +228,7 @@ public sealed class ProcessTelegramUpdateHandler(
         long correlationSourceId,
         CancellationToken cancellationToken)
     {
-        var identity = await identityProvider.GetAsync(userLink.PersonId, cancellationToken);
+        var identity = await identityProvider.GetAsync(userLink.ClientId, cancellationToken);
         var result = await dispatcher.DispatchAsync(
             new AgentMessageDispatchRequest(
                 messageText,
@@ -348,7 +348,7 @@ public sealed class ProcessTelegramUpdateHandler(
         if (binding is { Closed: false })
         {
             return await conversationContextProvider.ResolveAsync(
-                userLink.PersonId,
+                userLink.ClientId,
                 binding.ConversationId,
                 idempotencyKey,
                 "Telegram",
@@ -359,7 +359,7 @@ public sealed class ProcessTelegramUpdateHandler(
         await unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
             created = await conversationContextProvider.ResolveAsync(
-                userLink.PersonId,
+                userLink.ClientId,
                 null,
                 idempotencyKey,
                 "Telegram",

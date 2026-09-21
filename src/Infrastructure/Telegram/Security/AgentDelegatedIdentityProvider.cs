@@ -1,15 +1,11 @@
-using Application.Permissions.UseCases;
-using Application.Roles.Abstraction;
-using Application.Security.Models;
+using Application.Clients.Abstraction;
 using Application.Security.Claims;
+using Application.Security.Models;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
 using Application.Telegram.Models;
-using Application.UserAccounts.Abstraction;
-using Application.Users.Abstraction;
-using Infrastructure.Security.Tokens;
 using Domain.Roles;
-using MediatR;
+using Infrastructure.Security.Tokens;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,10 +13,7 @@ using System.Text;
 namespace Infrastructure.Telegram.Security;
 
 public sealed class AgentDelegatedIdentityProvider(
-    IUsersRepository usersRepository,
-    IUserAccountsRepository userAccountsRepository,
-    IRolesRepository rolesRepository,
-    ISender sender,
+    IClientRepository clientsRepository,
     ITelegramRuntimeSettings settings,
     JwtTokenIssuer tokenIssuer) : IAgentDelegatedIdentityProvider
 {
@@ -54,43 +47,37 @@ public sealed class AgentDelegatedIdentityProvider(
     }
 
     public async Task<AgentDelegatedIdentity> GetAsync(
-        Guid personId,
+        Guid clientId,
         CancellationToken cancellationToken)
     {
-        var user = await usersRepository.GetByIdAsync(personId, cancellationToken);
-        var account = await userAccountsRepository.GetByUserIdAsync(personId, cancellationToken);
-        if (user is null || !user.IsActive || account is null ||
-            !string.Equals(account.Status, "Activo", StringComparison.Ordinal))
+        var client = await clientsRepository.GetByIdAsync(clientId, cancellationToken);
+        if (client is null || !client.IsActive)
         {
             throw new TelegramAccountUnavailableException();
         }
 
-        var role = await rolesRepository.GetByIdAsync(user.RoleId, cancellationToken);
-        if (role is null || string.IsNullOrWhiteSpace(role.Name.Value))
-        {
-            throw new TelegramAccountUnavailableException();
-        }
+        var roleId = SystemRoles.ClientRoleId;
+        const string roleName = "Cliente";
+        var email = client.Email?.Value ?? $"cliente_{client.Id:N}@telegram.invalid";
+        var username = client.Email?.Value ?? $"cliente_{client.Id:N}";
 
         var identity = new AuthenticatedIdentity(
-            account.Id,
-            user.Id,
-            user.RoleId,
-            role.Name.Value,
-            user.FullName,
-            account.Username.Value,
-            account.Mail.Value,
-            account.Status);
-        var permissions = SystemRoles.IsSuperAdmin(identity.RoleId)
-            ? Array.Empty<string>()
-            : await sender.Send(
-                new GetUserPermissionClaimsQuery(identity.RoleId, identity.PersonId),
-                cancellationToken);
+            client.Id,
+            client.Id,
+            roleId,
+            roleName,
+            client.FullName.Value,
+            username,
+            email,
+            "Activo");
+
         var token = tokenIssuer.IssueDelegated(
             identity,
             settings.DelegatedTokenLifetime,
-            permissions,
+            Array.Empty<string>(),
             DelegatedTokenClaims.TelegramAgent);
-        return new AgentDelegatedIdentity(user.Id, role.Name.Value, token.Token);
+
+        return new AgentDelegatedIdentity(client.Id, roleName, token.Token);
     }
 
     private static Guid DeterministicId(string scope, long externalId)

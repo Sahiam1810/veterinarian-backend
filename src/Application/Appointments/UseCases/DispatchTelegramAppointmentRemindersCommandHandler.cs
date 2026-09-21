@@ -125,7 +125,7 @@ public sealed class DispatchTelegramAppointmentRemindersCommandHandler(
         }
 
         var link = await telegramUnitOfWork.UserLinksRepository
-            .GetByPersonIdAsync(ownerUserId.Value, cancellationToken);
+            .GetByClientIdAsync(appointment.ClientPet!.Client!.Id, cancellationToken);
         if (link is not { IsActive: true })
         {
             await PersistAsync(

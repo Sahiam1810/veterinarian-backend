@@ -1,6 +1,7 @@
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Agent.Errors;
+using Application.Clients.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatParticipants.Abstraction;
 using Application.ChatUserProfiles.Abstraction;
@@ -209,8 +210,8 @@ public sealed class PersistentConversationContextProviderTests
             ClientTypeId,
             chatUserProfileId: profile.Id);
         fixture.ConfigureExistingConversation(conversation, [profile], [participant]);
-        fixture.Users.GetByIdAsync(PersonId, fixture.Token)
-            .Returns(Task.FromResult<UserEntity?>(null));
+        fixture.UnitOfWork.ClientsRepository.GetByIdAsync(PersonId, fixture.Token)
+            .Returns(Task.FromResult<Domain.Clients.Entities.ClientEntity?>(null));
         var provider = fixture.CreateProvider();
 
         await Assert.ThrowsAsync<AgentConversationForbiddenException>(async () =>
@@ -284,18 +285,23 @@ public sealed class PersistentConversationContextProviderTests
         var escalationReader = Substitute.For<IActiveConversationEscalationReader>();
         var token = new CancellationTokenSource().Token;
 
+        var clients = Substitute.For<IClientRepository>();
+        unitOfWork.ClientsRepository.Returns(clients);
         unitOfWork.UsersRepository.Returns(users);
         unitOfWork.ChatUserProfilesRepository.Returns(profiles);
         unitOfWork.ChatConversationsRepository.Returns(conversations);
         unitOfWork.ChatParticipantsRepository.Returns(participants);
         unitOfWork.ConversationStatusesRepository.Returns(statuses);
         unitOfWork.SenderTypesRepository.Returns(senderTypes);
-        users.GetByIdAsync(PersonId, token)
-            .Returns(Task.FromResult<UserEntity?>(new UserEntity(
-                "Samuel Calderón",
-                "samuel@example.test",
-                "hash",
-                Guid.Parse("77777777-7777-7777-7777-777777777777"))));
+        clients.GetByIdAsync(PersonId, token)
+            .Returns(Task.FromResult<Domain.Clients.Entities.ClientEntity?>(
+                new Domain.Clients.Entities.ClientEntity(
+                    Guid.NewGuid(),
+                    "Samuel Calderón",
+                    "samuel@example.test",
+                    "1234567890",
+                    "3001234567",
+                    "Calle 123")));
         statuses.GetByIdAsync(InitialStatusId, token)
             .Returns(Task.FromResult<ConversationStatusEntity?>(new ConversationStatusEntity("Abierta")));
         senderTypes.GetByIdAsync(ClientTypeId, token)

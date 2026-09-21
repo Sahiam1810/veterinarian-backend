@@ -9,8 +9,8 @@ public interface ITelegramUserLinkRepository
         Guid id,
         CancellationToken cancellationToken);
 
-    Task<TelegramUserLink?> GetByPersonIdAsync(
-        Guid personId,
+    Task<TelegramUserLink?> GetByClientIdAsync(
+        Guid clientId,
         CancellationToken cancellationToken);
 
     Task<TelegramUserLink?> GetByTelegramUserIdAsync(

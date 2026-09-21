@@ -26,7 +26,7 @@ public sealed class TelegramPersistenceTests
         Assert.Equal("TELEGRAM_USER_LINKS", userLink.GetTableName());
         var lifecycleScopedProperties = new[]
         {
-            nameof(TelegramUserLink.PersonId),
+            nameof(TelegramUserLink.ClientId),
             nameof(TelegramUserLink.TelegramUserId),
             nameof(TelegramUserLink.TelegramChatId)
         };

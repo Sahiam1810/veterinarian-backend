@@ -11,8 +11,8 @@ public sealed class TelegramUserLinkRepository(VeterinaryDbContext context)
     public Task<TelegramUserLink?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
         context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.Id == id, cancellationToken);
 
-    public Task<TelegramUserLink?> GetByPersonIdAsync(Guid personId, CancellationToken cancellationToken) =>
-        context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.PersonId == personId, cancellationToken);
+    public Task<TelegramUserLink?> GetByClientIdAsync(Guid clientId, CancellationToken cancellationToken) =>
+        context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.ClientId == clientId, cancellationToken);
 
     public Task<TelegramUserLink?> GetByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken) =>
         context.Set<TelegramUserLink>().FirstOrDefaultAsync(
