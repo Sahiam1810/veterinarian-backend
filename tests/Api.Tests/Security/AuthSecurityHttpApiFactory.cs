@@ -152,6 +152,13 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                 [clientAccount.Mail.Value] = clientAccount
             };
 
+            var accountsByUserId = new Dictionary<Guid, UserAccountEntity>
+            {
+                [staffAAccount.UserId] = staffAAccount,
+                [staffBAccount.UserId] = staffBAccount,
+                [clientAccount.UserId] = clientAccount
+            };
+
             var usersById = new Dictionary<Guid, UserEntity>
             {
                 [staffAUser.Id] = staffAUser,
@@ -183,6 +190,13 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                 .Returns(call =>
                 {
                     accountsById.TryGetValue(call.Arg<Guid>(), out var account);
+                    return Task.FromResult<UserAccountEntity?>(account);
+                });
+            // U4: sub ya es el UserId; Revoke/GetCurrentProfile resuelven la cuenta por él.
+            userAccountsRepository.GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    accountsByUserId.TryGetValue(call.Arg<Guid>(), out var account);
                     return Task.FromResult<UserAccountEntity?>(account);
                 });
 

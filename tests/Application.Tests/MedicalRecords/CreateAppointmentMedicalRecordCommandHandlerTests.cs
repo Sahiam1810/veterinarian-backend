@@ -6,7 +6,6 @@ using Application.Diagnostics.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.MedicalRecords.UseCases;
 using Application.StatusAppointments.Abstraction;
-using Application.UserAccounts.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
@@ -20,14 +19,14 @@ using Domain.Veterinarians.Entities;
 using FluentValidation.TestHelper;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 
 namespace Application.Tests.MedicalRecords;
 
+// U4: el ownership ya resuelve el veterinario directamente por el UserId del
+// actor (el sub del JWT), sin pasar por UserAccounts.
 public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
 {
-    private static readonly Guid ActorUserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid ActorUserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly Guid ClientPetId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid AppointmentId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid OwnVeterinarianId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -38,7 +37,6 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     private static readonly Guid AtendidaStatusId = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
-    private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
     private readonly IVeterinarianRepository veterinariansRepository = Substitute.For<IVeterinarianRepository>();
     private readonly IDiagnosticRepository diagnosticsRepository = Substitute.For<IDiagnosticRepository>();
     private readonly IMedicalRecordRepository medicalRecordsRepository = Substitute.For<IMedicalRecordRepository>();
@@ -55,7 +53,6 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     public CreateAppointmentMedicalRecordCommandHandlerTests()
     {
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
-        unitOfWork.UserAccountsRepository.Returns(userAccountsRepository);
         unitOfWork.VeterinariansRepository.Returns(veterinariansRepository);
         unitOfWork.DiagnosticsRepository.Returns(diagnosticsRepository);
         unitOfWork.MedicalRecordsRepository.Returns(medicalRecordsRepository);
@@ -157,10 +154,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     public async Task MR_T04_throws_NotFoundException_when_veterinarian_profile_is_missing()
     {
         ArrangeAppointment(OwnVeterinarianId);
-        var account = WithId(new UserAccountEntity(UserId, "vet", "vet@test.com", "Active"), ActorUserAccountId);
-        userAccountsRepository.GetByIdAsync(ActorUserAccountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        veterinariansRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+        veterinariansRepository.GetByUserIdAsync(ActorUserId, Arg.Any<CancellationToken>())
             .Returns((Veterinarian?)null);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
@@ -427,11 +421,8 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
 
     private void ArrangeOwnedVeterinarian()
     {
-        var account = WithId(new UserAccountEntity(UserId, "vet", "vet@test.com", "Active"), ActorUserAccountId);
-        var veterinarian = WithId(new Veterinarian(UserId, Guid.NewGuid(), "LIC-001"), OwnVeterinarianId);
-        userAccountsRepository.GetByIdAsync(ActorUserAccountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        veterinariansRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+        var veterinarian = WithId(new Veterinarian(ActorUserId, Guid.NewGuid(), "LIC-001"), OwnVeterinarianId);
+        veterinariansRepository.GetByUserIdAsync(ActorUserId, Arg.Any<CancellationToken>())
             .Returns(veterinarian);
     }
 
@@ -459,7 +450,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
             10m,
             38.5m,
             vaccinations,
-            ActorUserAccountId,
+            ActorUserId,
             enforce);
     }
 

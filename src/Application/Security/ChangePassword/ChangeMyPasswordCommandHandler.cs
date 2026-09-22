@@ -13,8 +13,15 @@ public sealed class ChangeMyPasswordCommandHandler(
         ChangeMyPasswordCommand request,
         CancellationToken cancellationToken)
     {
+        // U4: el sub ya es el id del usuario; hay que resolver la cuenta antes de
+        // llegar a las credenciales (U5 fusionará estas tres tablas en una).
+        var account = await unitOfWork.UserAccountsRepository.GetByUserIdAsync(
+            request.UserId,
+            cancellationToken)
+            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
+
         var credentials = await unitOfWork.UserCredentialsRepository.GetByAccountIdAsync(
-            request.UserAccountId,
+            account.Id,
             cancellationToken)
             ?? throw new NotFoundException("Credenciales no encontradas.");
 

@@ -95,7 +95,8 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.NotEmpty(result.Value.RefreshToken);
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
-        Assert.Equal(account.Id.ToString(), jwt.Subject);
+        // U4: sub es el id del usuario, no el de la cuenta de login.
+        Assert.Equal(user.Id.ToString(), jwt.Subject);
         Assert.Equal(user.Id.ToString(), jwt.Claims.Single(c => c.Type == "person_id").Value);
         Assert.Equal(SystemRoles.SuperAdminId.ToString(), jwt.Claims.Single(c => c.Type == "role_id").Value);
         Assert.Equal(SystemRoles.SuperAdminName, jwt.Claims.Single(c => c.Type == "role").Value);
@@ -129,16 +130,16 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
     public async Task GetCurrentProfileAsync_returns_the_persisted_SuperAdmin_profile()
     {
         var (user, account) = ConfigurePersistedSuperAdmin();
-        accountRepository.GetByIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(account);
+        accountRepository.GetByUserIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(account);
 
-        var result = await sut.GetCurrentProfileAsync(account.Id, CancellationToken.None);
+        var result = await sut.GetCurrentProfileAsync(user.Id, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(user.Id, result.Value.PersonId);
         Assert.Equal(account.Id, result.Value.UserAccountId);
         Assert.Equal(SystemRoles.SuperAdminName, result.Value.Role);
         await accountRepository.Received(1)
-            .GetByIdAsync(account.Id, Arg.Any<CancellationToken>());
+            .GetByUserIdAsync(user.Id, Arg.Any<CancellationToken>());
     }
 
     private (UserEntity User, UserAccountEntity Account) ConfigurePersistedSuperAdmin()

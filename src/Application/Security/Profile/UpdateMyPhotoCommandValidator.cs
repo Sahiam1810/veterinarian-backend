@@ -8,7 +8,7 @@ public sealed class UpdateMyPhotoCommandValidator
 {
     public UpdateMyPhotoCommandValidator()
     {
-        RuleFor(command => command.UserAccountId)
+        RuleFor(command => command.UserId)
             .NotEmpty();
 
         RuleFor(command => command.PhotoUrl)

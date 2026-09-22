@@ -13,8 +13,8 @@ public sealed class CreateAppointmentMedicalRecordCommandValidator
         RuleFor(x => x.DiagnosticId)
             .NotEmpty().WithMessage("El diagnóstico es requerido.");
 
-        RuleFor(x => x.ActorUserAccountId)
-            .NotEmpty().WithMessage("La cuenta de usuario es requerida.");
+        RuleFor(x => x.ActorUserId)
+            .NotEmpty().WithMessage("El usuario es requerido.");
 
         RuleFor(x => x.Symptoms)
             .MaximumLength(1000).WithMessage("Los síntomas no pueden exceder 1000 caracteres.");

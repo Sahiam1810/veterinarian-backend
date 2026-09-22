@@ -33,7 +33,8 @@ public sealed class JwtTokenIssuerTests
 
         Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
         Assert.Equal(options.KeyId, token.Header.Kid);
-        Assert.Equal("11111111-1111-1111-1111-111111111111", token.Subject);
+        // U4: sub es el PersonId (USERS.USER_ID), no el UserAccountId.
+        Assert.Equal("22222222-2222-2222-2222-222222222222", token.Subject);
         Assert.Equal("Veterinario", Claim(token, "role"));
         Assert.Equal("22222222-2222-2222-2222-222222222222", Claim(token, "person_id"));
         Assert.Equal("33333333-3333-3333-3333-333333333333", Claim(token, "role_id"));
@@ -70,7 +71,7 @@ public sealed class JwtTokenIssuerTests
             out _);
 
         Assert.Equal(
-            "11111111-1111-1111-1111-111111111111",
+            "22222222-2222-2222-2222-222222222222",
             principal.FindFirstValue(JwtRegisteredClaimNames.Sub));
     }
 
@@ -164,7 +165,7 @@ public sealed class JwtTokenIssuerTests
         var token = new JwtSecurityTokenHandler().ReadJwtToken(issued.Token);
 
         Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
-        Assert.Equal(identity.UserAccountId.ToString(), token.Subject);
+        Assert.Equal(identity.PersonId.ToString(), token.Subject);
         Assert.Equal(SystemRoles.SuperAdminId.ToString(), Claim(token, "role_id"));
         Assert.Equal(SystemRoles.SuperAdminName, Claim(token, "role"));
         Assert.Equal("superadmin@huellitas.test", Claim(token, JwtRegisteredClaimNames.Email));

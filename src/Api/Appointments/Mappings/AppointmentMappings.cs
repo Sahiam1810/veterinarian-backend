@@ -66,7 +66,7 @@ public static class AppointmentMappings
     public static CreateAppointmentMedicalRecordCommand ToCommand(
         this CreateAppointmentMedicalRecordRequest request,
         Guid appointmentId,
-        Guid actorUserAccountId,
+        Guid actorUserId,
         bool enforceVeterinarianOwnership)
     {
         IReadOnlyCollection<CreateAppointmentMedicalRecordVaccinationItem>? vaccinations = null;
@@ -89,7 +89,7 @@ public static class AppointmentMappings
             request.WeightAtVisit,
             request.Temperature,
             vaccinations,
-            actorUserAccountId,
+            actorUserId,
             enforceVeterinarianOwnership);
     }
 
@@ -105,7 +105,7 @@ public static class AppointmentMappings
     public static UpdateAppointmentCommand ToCommand(
         this UpdateAppointmentRequest request,
         Guid id,
-        Guid actorUserAccountId,
+        Guid actorUserId,
         bool enforceVeterinarianOwnership)
     {
         return new UpdateAppointmentCommand(
@@ -118,7 +118,7 @@ public static class AppointmentMappings
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes,
-            actorUserAccountId,
+            actorUserId,
             enforceVeterinarianOwnership,
             request.ConsultingRoom);
     }
@@ -126,14 +126,14 @@ public static class AppointmentMappings
     public static UpdateAppointmentStatusCommand ToCommand(
         this UpdateAppointmentStatusRequest request,
         Guid appointmentId,
-        Guid actorUserAccountId,
+        Guid actorUserId,
         bool enforceVeterinarianOwnership)
     {
         return new UpdateAppointmentStatusCommand(
             appointmentId,
             request.StatusId,
             request.Comment,
-            actorUserAccountId,
+            actorUserId,
             enforceVeterinarianOwnership);
     }
 

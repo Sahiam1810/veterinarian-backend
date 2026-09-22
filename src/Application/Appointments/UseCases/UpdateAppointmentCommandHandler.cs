@@ -27,7 +27,7 @@ public sealed class UpdateAppointmentCommandHandler(
         await AppointmentVeterinarianOwnership.EnsureAsync(
             unitOfWork,
             appointment,
-            request.ActorUserAccountId,
+            request.ActorUserId,
             request.EnforceVeterinarianOwnership,
             cancellationToken);
 
