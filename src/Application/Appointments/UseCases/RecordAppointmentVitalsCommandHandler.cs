@@ -12,26 +12,8 @@ public sealed class RecordAppointmentVitalsCommandHandler(IUnitOfWork unitOfWork
         RecordAppointmentVitalsCommand request,
         CancellationToken cancellationToken)
     {
-        if (request.Weight is <= 0)
-        {
-            throw new BadRequestException("El peso debe ser mayor a 0.");
-        }
-
-        if (request.Temperature is <= 0)
-        {
-            throw new BadRequestException("La temperatura debe ser mayor a 0.");
-        }
-
-        if (request.HeartRate is <= 0)
-        {
-            throw new BadRequestException("La frecuencia cardíaca debe ser mayor a 0.");
-        }
-
-        if (request.RespiratoryRate is <= 0)
-        {
-            throw new BadRequestException("La frecuencia respiratoria debe ser mayor a 0.");
-        }
-
+        // Validación de "> 0" vive solo en RecordAppointmentVitalsCommandValidator
+        // (ValidationBehavior ya corta antes de llegar acá) — no la repitas aquí.
         var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(
             request.AppointmentId,
             cancellationToken)

@@ -52,9 +52,15 @@ public sealed class AppointmentVitalsApiTests
         yield return [12.5m, 38.4m, 90, -1];
     }
 
+    // Este controller no valida nada por sí mismo -- solo reenvía el comando
+    // tal cual al sender (mockeado acá, siempre "exitoso"). El rechazo real de
+    // valores <= 0 pasa por ValidationBehavior + FluentValidation *antes* de
+    // llegar al handler, y está probado en RecordAppointmentVitalsCommandValidatorTests.
+    // Este test solo prueba que el controller no descarta ni altera los campos
+    // al mapear el request al command, sea cual sea su valor.
     [Theory]
     [MemberData(nameof(InvalidValues))]
-    public async Task VITALS_API_T02_invalid_values_are_forwarded_to_sender(
+    public async Task VITALS_API_T02_forwards_values_to_sender_unchanged_without_validating_itself(
         decimal? weight,
         decimal? temperature,
         int? heartRate,

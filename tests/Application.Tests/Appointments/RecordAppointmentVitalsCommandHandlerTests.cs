@@ -48,41 +48,9 @@ public sealed class RecordAppointmentVitalsCommandHandlerTests
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
-    public static IEnumerable<object[]> InvalidValues()
-    {
-        yield return [0m, 38.4m, 90, 26];
-        yield return [-1m, 38.4m, 90, 26];
-        yield return [12.5m, 0m, 90, 26];
-        yield return [12.5m, -1m, 90, 26];
-        yield return [12.5m, 38.4m, 0, 26];
-        yield return [12.5m, 38.4m, -1, 26];
-        yield return [12.5m, 38.4m, 90, 0];
-        yield return [12.5m, 38.4m, 90, -1];
-    }
-
-    [Theory]
-    [MemberData(nameof(InvalidValues))]
-    public async Task RV_T02_Handle_rejects_non_positive_values(
-        decimal? weight,
-        decimal? temperature,
-        int? heartRate,
-        int? respiratoryRate)
-    {
-        var appointment = CreateAppointment();
-        appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
-            .Returns(appointment);
-
-        var command = new RecordAppointmentVitalsCommand(
-            AppointmentId,
-            weight,
-            temperature,
-            heartRate,
-            respiratoryRate);
-
-        await Assert.ThrowsAsync<BadRequestException>(() => sut.Handle(command, CancellationToken.None));
-        await appointmentsRepository.DidNotReceive().UpdateAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
-        await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-    }
+    // La validación de "> 0" se prueba en RecordAppointmentVitalsCommandValidatorTests
+    // (a nivel de FluentValidation, el punto real donde se rechaza antes de que
+    // ValidationBehavior deje llegar el comando hasta este handler).
 
     [Fact]
     public async Task RV_T03_Handle_throws_when_appointment_not_found()

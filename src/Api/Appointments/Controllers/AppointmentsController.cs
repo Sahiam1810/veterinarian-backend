@@ -198,9 +198,9 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{appointmentId:guid}/vitals")]
-    [RequirePermission("Citas", PermissionAction.Edit)]
+    [RequirePermission("Signos Vitales", PermissionAction.Edit)]
     [EndpointSummary("Registra signos vitales de una cita")]
-    [EndpointDescription("Actualiza únicamente peso, temperatura, frecuencia cardíaca y respiratoria de la cita sin tocar el estado ni la historia clínica.")]
+    [EndpointDescription("Actualiza únicamente peso, temperatura, frecuencia cardíaca y respiratoria de la cita sin tocar el estado ni la historia clínica. Permiso propio (\"Signos Vitales\"), separado de \"Citas\" para no habilitar reprogramar ni cambiar estado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
