@@ -75,15 +75,16 @@ public sealed class JwtTokenIssuer(
 
         var claims = new List<Claim>
         {
-            // U4: sub pasa a ser el id del usuario (USERS.USER_ID), no el de la cuenta
-            // de login. person_id queda igual por compatibilidad hasta U6.
+            // U4: sub es el id del usuario (USERS.USER_ID). person_id se sigue
+            // emitiendo con el mismo valor por compatibilidad hasta U6, cuando
+            // se retira. U5: ya no hay username de cuenta separado del correo.
             new(
                 JwtRegisteredClaimNames.Sub,
-                identity.PersonId.ToString()),
+                identity.UserId.ToString()),
 
             new(
                 "person_id",
-                identity.PersonId.ToString()),
+                identity.UserId.ToString()),
 
             new(
                 "role_id",
@@ -95,7 +96,7 @@ public sealed class JwtTokenIssuer(
 
             new(
                 "preferred_username",
-                identity.UserName),
+                identity.Email),
 
             new(
                 JwtRegisteredClaimNames.Email,

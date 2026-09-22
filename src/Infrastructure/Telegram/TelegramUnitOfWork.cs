@@ -1,6 +1,5 @@
 using Application.Clients.Abstraction;
 using Application.Telegram.Abstractions;
-using Application.UserAccounts.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Persistence;
 
@@ -10,7 +9,6 @@ public sealed class TelegramUnitOfWork(
     VeterinaryDbContext context,
     IClientRepository clientsRepository,
     IUsersRepository usersRepository,
-    IUserAccountsRepository userAccountsRepository,
     ITelegramUserLinkRepository userLinksRepository,
     ITelegramConversationLinkRepository conversationLinksRepository,
     ITelegramInboundUpdateRepository inboundUpdatesRepository)
@@ -18,7 +16,6 @@ public sealed class TelegramUnitOfWork(
 {
     public IClientRepository ClientsRepository { get; } = clientsRepository;
     public IUsersRepository UsersRepository { get; } = usersRepository;
-    public IUserAccountsRepository UserAccountsRepository { get; } = userAccountsRepository;
     public ITelegramUserLinkRepository UserLinksRepository { get; } = userLinksRepository;
     public ITelegramConversationLinkRepository ConversationLinksRepository { get; } = conversationLinksRepository;
     public ITelegramInboundUpdateRepository InboundUpdatesRepository { get; } = inboundUpdatesRepository;

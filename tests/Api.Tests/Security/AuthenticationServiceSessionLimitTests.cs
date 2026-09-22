@@ -3,8 +3,6 @@ using Application.Common.Abstractions;
 using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Infrastructure.Security.Authentication;
@@ -15,13 +13,13 @@ using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 using RoleEntity = Domain.Roles.Entities.Roles;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Api.Tests.Security;
 
+// U5: USERS ya trae la contraseña directamente -- no hay cuenta ni
+// credenciales separadas que resolver.
 public sealed class AuthenticationServiceSessionLimitTests : IDisposable
 {
     private static readonly DateTimeOffset T0 = new(2026, 9, 4, 12, 0, 0, TimeSpan.Zero);
@@ -31,8 +29,6 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
     private const string PasswordHash = "stored-hash";
     private const string RawRefreshToken = "raw-refresh-token";
 
-    private readonly IUserAccountsRepository userAccountRepository = Substitute.For<IUserAccountsRepository>();
-    private readonly IUserCredentialsRepository userCredentialRepository = Substitute.For<IUserCredentialsRepository>();
     private readonly IUserTokensRepository userTokenRepository = Substitute.For<IUserTokensRepository>();
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IRolesRepository rolesRepository = Substitute.For<IRolesRepository>();
@@ -74,10 +70,8 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
             .Returns(["perm:Mascotas:View"]);
 
         sut = new AuthenticationService(
-            userAccountRepository,
-            userCredentialRepository,
-            userTokenRepository,
             usersRepository,
+            userTokenRepository,
             unitOfWork,
             sender,
             jwtTokenIssuer,
@@ -92,7 +86,7 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
     [Fact]
     public async Task B1_Login_sets_SessionStartedAt_to_fake_T0()
     {
-        var fixture = ArrangeStaffAccount();
+        var fixture = ArrangeStaffUser();
         passwordHasher.Verify(Password, PasswordHash).Returns(true);
         UserTokenEntity? persisted = null;
         userTokenRepository
@@ -111,9 +105,9 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
     [Fact]
     public async Task B2_Refresh_before_24h_preserves_SessionStartedAt_T0()
     {
-        var fixture = ArrangeStaffAccount();
+        var fixture = ArrangeStaffUser();
         ArrangeRefreshToken(
-            fixture.AccountId,
+            fixture.UserId,
             sessionStartedAt: T0.UtcDateTime,
             expiresAt: T0.AddDays(7).UtcDateTime);
 
@@ -139,9 +133,9 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
     [Fact]
     public async Task B3_Refresh_exactly_at_T0_plus_24h_returns_InvalidRefreshToken_without_rotation()
     {
-        var fixture = ArrangeStaffAccount();
+        var fixture = ArrangeStaffUser();
         ArrangeRefreshToken(
-            fixture.AccountId,
+            fixture.UserId,
             sessionStartedAt: T0.UtcDateTime,
             expiresAt: T0.AddDays(7).UtcDateTime);
 
@@ -160,9 +154,9 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
     [Fact]
     public async Task B4_Refresh_after_24h_returns_InvalidRefreshToken_even_if_ExpiresAt_is_future()
     {
-        var fixture = ArrangeStaffAccount();
+        var fixture = ArrangeStaffUser();
         ArrangeRefreshToken(
-            fixture.AccountId,
+            fixture.UserId,
             sessionStartedAt: T0.UtcDateTime,
             expiresAt: T0.AddDays(7).UtcDateTime);
 
@@ -196,9 +190,9 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
     [Fact]
     public async Task B6_Refresh_expired_individual_token_keeps_InvalidRefreshToken()
     {
-        var fixture = ArrangeStaffAccount();
+        var fixture = ArrangeStaffUser();
         ArrangeRefreshToken(
-            fixture.AccountId,
+            fixture.UserId,
             sessionStartedAt: T0.UtcDateTime,
             expiresAt: T0.AddMinutes(30).UtcDateTime);
 
@@ -213,13 +207,13 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
     }
 
     private void ArrangeRefreshToken(
-        Guid accountId,
+        Guid userId,
         DateTime sessionStartedAt,
         DateTime expiresAt)
     {
         var hash = protector.Hash(RawRefreshToken);
         var token = new UserTokenEntity(
-            accountId,
+            userId,
             hash,
             "refresh",
             expiresAt,
@@ -230,24 +224,20 @@ public sealed class AuthenticationServiceSessionLimitTests : IDisposable
             .Returns(token);
     }
 
-    private AccountFixture ArrangeStaffAccount()
+    private UserFixture ArrangeStaffUser()
     {
         var email = "staff@huellitas.test";
         var user = new UserEntity("Staff User", email, PasswordHash, StaffRoleId);
-        var account = new UserAccountEntity(user.Id, "staff", email, "Activo");
-        var credentials = new UserCredentialsEntity(account.Id, PasswordHash);
         var role = new RoleEntity("Administrador", "Staff panel");
 
-        userAccountRepository.GetByMailAsync(email, Arg.Any<CancellationToken>()).Returns(account);
-        userAccountRepository.GetByIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(account);
-        userCredentialRepository.GetByAccountIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(credentials);
+        usersRepository.GetByEmailAsync(email, Arg.Any<CancellationToken>()).Returns(user);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         rolesRepository.GetByIdAsync(StaffRoleId, Arg.Any<CancellationToken>()).Returns(role);
 
-        return new AccountFixture(email, account.Id);
+        return new UserFixture(email, user.Id);
     }
 
-    private sealed record AccountFixture(string Email, Guid AccountId);
+    private sealed record UserFixture(string Email, Guid UserId);
 
     private sealed class MutableTimeProvider(DateTimeOffset now) : TimeProvider
     {

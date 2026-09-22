@@ -41,8 +41,6 @@ using Application.EscalationStatuses.Abstraction;
 
 
 using Application.Notifications.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
 using Infrastructure.Agent.Configuration;
@@ -112,8 +110,6 @@ using Infrastructure.EscalationStatuses.Repositories;
 
 
 
-using Infrastructure.UserAccounts.Repository;
-using Infrastructure.UserCredentials.Repositories;
 using Infrastructure.Users.Repository;
 using Infrastructure.UserTokens.Repositories;
 using Infrastructure.Telegram;
@@ -190,10 +186,6 @@ public static class DependencyInjection
         services.AddScoped<IMessageTypeRepository, MessageTypeRepository>();
 
         services.AddScoped<IEscalationStatusRepository, EscalationStatusRepository>();
-
-
-        services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
-        services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
 
         services.AddScoped<IClientRepository, ClientRepository>();
 

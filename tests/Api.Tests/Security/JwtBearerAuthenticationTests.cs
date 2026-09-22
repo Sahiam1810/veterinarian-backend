@@ -153,7 +153,7 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
     private const string Issuer = "Veterinaria.Api.Jwt.Tests";
     private const string Audience = "Veterinaria.Client.Jwt.Tests";
     private const string KeyId = "jwt-http-test-key";
-    private static readonly Guid AccountId =
+    private static readonly Guid TokenUserId =
         Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly RsaTestKeys Keys = RsaTestKeys.Create();
 
@@ -282,7 +282,7 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
         var token = new JwtSecurityToken(
             issuer,
             audience,
-            [new Claim(JwtRegisteredClaimNames.Sub, AccountId.ToString())],
+            [new Claim(JwtRegisteredClaimNames.Sub, TokenUserId.ToString())],
             notBefore,
             expires,
             signingCredentials);
@@ -293,17 +293,14 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
     private sealed class ProfileAuthenticationService : IAuthenticationService
     {
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) =>
             Task.FromResult(Result<CurrentProfile>.Success(new CurrentProfile(
-                Guid.Parse("22222222-2222-2222-2222-222222222222"),
-                userAccountId,
+                userId,
                 "Cliente Prueba",
                 "CP",
-                "cliente.prueba",
                 "cliente@huellitas.test",
-                "Cliente",
-                "Activo")));
+                "Cliente")));
 
         public Task<Result<AuthenticationTokens>> LoginAsync(
             string email,

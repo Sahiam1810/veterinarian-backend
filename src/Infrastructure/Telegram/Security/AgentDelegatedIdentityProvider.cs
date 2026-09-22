@@ -27,24 +27,20 @@ public sealed class AgentDelegatedIdentityProvider(
             throw new ArgumentOutOfRangeException(nameof(telegramUserId));
         }
 
-        var accountId = DeterministicId("account", telegramUserId);
-        var personId = DeterministicId("person", telegramUserId);
+        var guestId = DeterministicId("person", telegramUserId);
         var roleId = DeterministicId("role", 1);
         var identity = new AuthenticatedIdentity(
-            accountId,
-            personId,
+            guestId,
             roleId,
             GuestRole,
             "Telegram Guest",
-            "telegram_guest",
-            "guest@telegram.invalid",
-            "Invitado");
+            "guest@telegram.invalid");
         var token = tokenIssuer.Issue(
             identity,
             settings.DelegatedTokenLifetime,
             permissions: [],
             extraClaims: [new Claim(DelegatedTokenClaims.TelegramUserId, telegramUserId.ToString())]);
-        return new AgentDelegatedIdentity(personId, GuestRole, token.Token);
+        return new AgentDelegatedIdentity(guestId, GuestRole, token.Token);
     }
 
     public async Task<AgentDelegatedIdentity> GetAsync(
@@ -60,17 +56,13 @@ public sealed class AgentDelegatedIdentityProvider(
         var roleId = SystemRoles.ClientRoleId;
         var roleName = WebPlatformAccess.ClientRoleName;
         var email = client.Email.Value;
-        var username = client.Email.Value;
 
         var identity = new AuthenticatedIdentity(
-            client.Id,
             client.Id,
             roleId,
             roleName,
             client.FullName.Value,
-            username,
-            email,
-            "Activo");
+            email);
 
         var token = tokenIssuer.IssueDelegated(
             identity,

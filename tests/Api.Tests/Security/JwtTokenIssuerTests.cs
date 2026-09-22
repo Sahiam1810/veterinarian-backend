@@ -33,12 +33,13 @@ public sealed class JwtTokenIssuerTests
 
         Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
         Assert.Equal(options.KeyId, token.Header.Kid);
-        // U4: sub es el PersonId (USERS.USER_ID), no el UserAccountId.
+        // U5: sub es el UserId (USERS.USER_ID); ya no hay username de cuenta
+        // separado del correo.
         Assert.Equal("22222222-2222-2222-2222-222222222222", token.Subject);
         Assert.Equal("Veterinario", Claim(token, "role"));
         Assert.Equal("22222222-2222-2222-2222-222222222222", Claim(token, "person_id"));
         Assert.Equal("33333333-3333-3333-3333-333333333333", Claim(token, "role_id"));
-        Assert.Equal("ana.vet", Claim(token, "preferred_username"));
+        Assert.Equal("ana@huellitas.test", Claim(token, "preferred_username"));
         Assert.Equal("ana@huellitas.test", Claim(token, JwtRegisteredClaimNames.Email));
         Assert.Equal(Now.AddMinutes(15), issued.ExpiresAt);
     }
@@ -153,19 +154,16 @@ public sealed class JwtTokenIssuerTests
             new FixedTimeProvider(Now));
 
         var identity = new AuthenticatedIdentity(
-            Guid.Parse("11111111-1111-1111-1111-111111111111"),
             Guid.Parse("22222222-2222-2222-2222-222222222222"),
             SystemRoles.SuperAdminId,
             SystemRoles.SuperAdminName,
             "Super Administrador",
-            "superadmin",
-            "superadmin@huellitas.test",
-            "Activo");
+            "superadmin@huellitas.test");
         var issued = issuer.Issue(identity, ["perm:Usuarios:Delete"]);
         var token = new JwtSecurityTokenHandler().ReadJwtToken(issued.Token);
 
         Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
-        Assert.Equal(identity.PersonId.ToString(), token.Subject);
+        Assert.Equal(identity.UserId.ToString(), token.Subject);
         Assert.Equal(SystemRoles.SuperAdminId.ToString(), Claim(token, "role_id"));
         Assert.Equal(SystemRoles.SuperAdminName, Claim(token, "role"));
         Assert.Equal("superadmin@huellitas.test", Claim(token, JwtRegisteredClaimNames.Email));
@@ -190,14 +188,11 @@ public sealed class JwtTokenIssuerTests
     };
 
     private static AuthenticatedIdentity CreateIdentity() => new(
-        Guid.Parse("11111111-1111-1111-1111-111111111111"),
         Guid.Parse("22222222-2222-2222-2222-222222222222"),
         Guid.Parse("33333333-3333-3333-3333-333333333333"),
         "Veterinario",
         "Ana Veterinaria",
-        "ana.vet",
-        "ana@huellitas.test",
-        "Activo");
+        "ana@huellitas.test");
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

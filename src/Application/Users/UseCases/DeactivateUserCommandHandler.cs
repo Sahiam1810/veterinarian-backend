@@ -1,6 +1,5 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Domain.UserAccounts.ValueObjects;
 using Domain.Roles;
 using MediatR;
 
@@ -37,25 +36,12 @@ public sealed class DeactivateUserCommandHandler
         {
             await _uow.UsersRepository.UpdateAsync(user, transactionToken);
 
-            var account = await _uow.UserAccountsRepository.GetByUserIdAsync(
+            var tokens = await _uow.UserTokensRepository.GetAllByUserIdAsync(
                 user.Id, transactionToken);
 
-            if (account is not null)
+            foreach (var token in tokens)
             {
-                account.Update(
-                    account.Username.Value,
-                    account.Mail.Value,
-                    AccountStatus.Inactive);
-
-                await _uow.UserAccountsRepository.UpdateAsync(account, transactionToken);
-
-                var tokens = await _uow.UserTokensRepository.GetAllByAccountIdAsync(
-                    account.Id, transactionToken);
-
-                foreach (var token in tokens)
-                {
-                    await _uow.UserTokensRepository.DeleteAsync(token, transactionToken);
-                }
+                await _uow.UserTokensRepository.DeleteAsync(token, transactionToken);
             }
 
             await _uow.SaveChangesAsync(transactionToken);

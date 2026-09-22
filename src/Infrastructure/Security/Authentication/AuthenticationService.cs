@@ -4,8 +4,6 @@ using Application.Permissions.UseCases;
 using Application.Security.Abstractions;
 using Application.Security.Errors;
 using Application.Security.Models;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Users.Abstraction;
 using Infrastructure.Security.Options;
@@ -13,16 +11,14 @@ using Infrastructure.Security.Tokens;
 using Domain.Roles;
 using MediatR;
 using Microsoft.Extensions.Options;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using UserEntity = Domain.Users.Entities.Users;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Infrastructure.Security.Authentication;
 
 public sealed class AuthenticationService(
-    IUserAccountsRepository userAccountRepository,
-    IUserCredentialsRepository userCredentialRepository,
-    IUserTokensRepository userTokenRepository,
     IUsersRepository usersRepository,
+    IUserTokensRepository userTokenRepository,
     IUnitOfWork unitOfWork,
     ISender sender,
     JwtTokenIssuer jwtTokenIssuer,
@@ -31,10 +27,10 @@ public sealed class AuthenticationService(
     IOptions<JwtOptions> options,
     TimeProvider timeProvider) : IAuthenticationService
 {
-    private const string ActiveStatus = "Activo";
     private const string RefreshTokenType = "refresh";
 
     private readonly JwtOptions jwtOptions = options.Value;
+
     public async Task<Result<AuthenticationTokens>> LoginAsync(
         string email,
         string password,
@@ -42,42 +38,26 @@ public sealed class AuthenticationService(
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
-        var account = await userAccountRepository.GetByMailAsync(
+        var user = await usersRepository.GetByEmailAsync(
             normalizedEmail, cancellationToken);
 
-        if (account is null)
+        if (user is null ||
+            !passwordHasher.Verify(password, user.PasswordHash))
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidCredentials);
         }
 
-        var credential = await userCredentialRepository.GetByAccountIdAsync(
-            account.Id, cancellationToken);
-
-        if (credential is null ||
-            !passwordHasher.Verify(password, credential.PasswordHash))
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.InvalidCredentials);
-        }
-
-        // Solo tras password válida: no filtrar inactiva como InvalidCredentials.
+        // Solo tras password válida: no filtrar inactivo como InvalidCredentials.
         // Código propio (distinto de PlatformAccessDenied) para que el front
         // muestre "cuenta inactiva" en vez del genérico de rol no admitido.
-        if (!IsActiveAccount(account))
+        if (!user.IsActive)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.UserInactive);
         }
 
-        var identity = await BuildIdentityAsync(account, cancellationToken);
-
-        if (identity is null)
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.InvalidCredentials);
-        }
-
+        var identity = await BuildIdentityAsync(user, cancellationToken);
         var sessionStartedAt = ToUnspecifiedUtc(timeProvider.GetUtcNow());
 
         Result<AuthenticationTokens>? result = null;
@@ -112,29 +92,23 @@ public sealed class AuthenticationService(
                 AuthenticationErrors.InvalidRefreshToken);
         }
 
-        var account = await userAccountRepository.GetByIdAsync(
-            currentToken.AccountId, cancellationToken);
+        var user = await usersRepository.GetByIdAsync(
+            currentToken.UserId, cancellationToken);
 
-        if (account is null)
+        if (user is null)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.InvalidRefreshToken);
         }
 
-        // Antes de rotar/borrar: cuenta inactiva no renueva sesión.
-        if (!IsActiveAccount(account))
+        // Antes de rotar/borrar: usuario inactivo no renueva sesión.
+        if (!user.IsActive)
         {
             return Result<AuthenticationTokens>.Failure(
                 AuthenticationErrors.UserInactive);
         }
 
-        var identity = await BuildIdentityAsync(account, cancellationToken);
-
-        if (identity is null)
-        {
-            return Result<AuthenticationTokens>.Failure(
-                AuthenticationErrors.InvalidRefreshToken);
-        }
+        var identity = await BuildIdentityAsync(user, cancellationToken);
 
         // Propagate the original login instant; never restart the session clock.
         var sessionStartedAt = currentToken.SessionStartedAt;
@@ -156,20 +130,8 @@ public sealed class AuthenticationService(
     {
         var tokenHash = refreshTokenProtector.Hash(refreshToken);
 
-        // U4: el sub ya es el id del usuario; hay que resolver la cuenta antes de
-        // llegar a los tokens (U5 fusionará estas tablas en una).
-        var account = await userAccountRepository.GetByUserIdAsync(
+        var tokens = await userTokenRepository.GetAllByUserIdAsync(
             userId,
-            cancellationToken);
-
-        if (account is null)
-        {
-            return Result.Failure(
-                AuthenticationErrors.InvalidRefreshToken);
-        }
-
-        var tokens = await userTokenRepository.GetAllByAccountIdAsync(
-            account.Id,
             cancellationToken);
 
         var token = tokens.FirstOrDefault(candidate =>
@@ -194,21 +156,18 @@ public sealed class AuthenticationService(
         Guid userId,
         CancellationToken cancellationToken)
     {
-        // U4: el sub ya es el id del usuario; hay que resolver la cuenta primero.
-        var account = await userAccountRepository.GetByUserIdAsync(
+        var user = await usersRepository.GetByIdAsync(
             userId, cancellationToken);
 
-        if (!IsActiveAccount(account))
+        if (user is null || !user.IsActive)
         {
             return Result<CurrentProfile>.Failure(
                 AuthenticationErrors.InvalidCredentials);
         }
 
-        var identity = await BuildIdentityAsync(account!, cancellationToken);
+        var identity = await BuildIdentityAsync(user, cancellationToken);
 
-        return identity is null
-            ? Result<CurrentProfile>.Failure(AuthenticationErrors.InvalidCredentials)
-            : Result<CurrentProfile>.Success(CurrentProfile.From(identity));
+        return Result<CurrentProfile>.Success(CurrentProfile.From(identity));
     }
 
     private async Task<Result<AuthenticationTokens>> IssueTokensAsync(
@@ -227,7 +186,7 @@ public sealed class AuthenticationService(
             now.AddDays(jwtOptions.RefreshTokenDays);
 
         var userToken = new UserTokenEntity(
-            identity.UserAccountId,
+            identity.UserId,
             refreshTokenHash,
             RefreshTokenType,
             DateTime.SpecifyKind(
@@ -255,36 +214,23 @@ public sealed class AuthenticationService(
                 refreshTokenExpiresAt));
     }
 
-    private async Task<AuthenticatedIdentity?> BuildIdentityAsync(
-        UserAccountEntity account,
+    // U5: USERS ya trae contraseña y correo directamente -- ya no hace falta
+    // resolver una cuenta ni credenciales separadas.
+    private async Task<AuthenticatedIdentity> BuildIdentityAsync(
+        UserEntity user,
         CancellationToken cancellationToken)
     {
-        var user = await usersRepository.GetByIdAsync(
-            account.UserId, cancellationToken);
-
-        if (user is null)
-        {
-            return null;
-        }
-
         var role = await unitOfWork.RolesRepository.GetByIdAsync(
             user.RoleId, cancellationToken);
 
         return new AuthenticatedIdentity(
-            account.Id,
             user.Id,
             user.RoleId,
             role?.Name.Value ?? string.Empty,
             user.FullName,
-            account.Username.Value,
-            account.Mail.Value,
-            account.Status,
+            user.Email.Value,
             user.PhotoUrl.Value);
     }
-
-    private static bool IsActiveAccount(UserAccountEntity? account) =>
-        account is not null &&
-        string.Equals(account.Status, ActiveStatus, StringComparison.Ordinal);
 
     private static DateTime ToUnspecifiedUtc(DateTimeOffset instant) =>
         DateTime.SpecifyKind(instant.UtcDateTime, DateTimeKind.Unspecified);

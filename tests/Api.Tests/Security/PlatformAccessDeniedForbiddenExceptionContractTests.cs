@@ -8,8 +8,9 @@ using Xunit;
 namespace Api.Tests.Security;
 
 /// <summary>
-/// Contrato HTTP de bloqueo Cliente en create/update account/credential:
-/// ForbiddenException(Error) → 403 application/problem+json con code estable.
+/// Contrato HTTP de bloqueo por rol no admitido (ej. login con un rol sin
+/// acceso a la plataforma): ForbiddenException(Error) → 403
+/// application/problem+json con code estable.
 /// </summary>
 public sealed class PlatformAccessDeniedForbiddenExceptionContractTests
 {
@@ -18,7 +19,7 @@ public sealed class PlatformAccessDeniedForbiddenExceptionContractTests
     {
         var handler = new GlobalExceptionHandler();
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Path = "/api/UserAccounts";
+        httpContext.Request.Path = "/api/auth/login";
         httpContext.Response.Body = new MemoryStream();
 
         var handled = await handler.TryHandleAsync(

@@ -2,7 +2,7 @@ namespace Api.UserTokens.Dtos;
 
 public sealed record UserTokenResponse(
     Guid Id,
-    Guid AccountId,
+    Guid UserId,
     string TokenType,
     DateTime ExpiresAt,
     bool IsExpired,

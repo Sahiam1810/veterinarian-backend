@@ -39,11 +39,16 @@ public sealed class UsersConfiguration
             .HasMaxLength(UserEmail.MaxLength)
             .IsRequired();
 
-        // Nullable: los usuarios con rol Cliente nunca se loguean (solo
-        // interactúan vía chatbot) y por lo tanto no tienen contraseña.
+        // U5: USERS es solo personal (Frente 1 separó Clientes); todo usuario
+        // se loguea y requiere contraseña.
         builder.Property(user => user.PasswordHash)
             .HasColumnName("PASSWORD_HASH")
             .HasColumnType("VARCHAR2(255)")
+            .IsRequired();
+
+        builder.Property(user => user.PasswordChangedAt)
+            .HasColumnName("PASSWORD_CHANGED_AT")
+            .HasColumnType("TIMESTAMP")
             .IsRequired(false);
 
         builder.Property(user => user.RoleId)

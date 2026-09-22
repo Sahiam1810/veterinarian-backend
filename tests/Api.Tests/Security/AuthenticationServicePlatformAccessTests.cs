@@ -4,8 +4,6 @@ using Application.Permissions.Claims;
 using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Infrastructure.Security.Authentication;
@@ -16,12 +14,12 @@ using Microsoft.Extensions.Options;
 using MediatR;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialsEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
 
 namespace Api.Tests.Security;
 
+// U5: USERS ya trae la contraseña directamente -- no hay cuenta ni
+// credenciales separadas que resolver.
 public sealed class AuthenticationServicePlatformAccessTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 4, 12, 0, 0, TimeSpan.Zero);
@@ -31,8 +29,6 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     private const string Password = "CorrectPassword1!";
     private const string PasswordHash = "stored-hash";
 
-    private readonly IUserAccountsRepository userAccountRepository = Substitute.For<IUserAccountsRepository>();
-    private readonly IUserCredentialsRepository userCredentialRepository = Substitute.For<IUserCredentialsRepository>();
     private readonly IUserTokensRepository userTokenRepository = Substitute.For<IUserTokensRepository>();
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IRolesRepository rolesRepository = Substitute.For<IRolesRepository>();
@@ -72,10 +68,8 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
             .Returns(["perm:Mascotas:View"]);
 
         sut = new AuthenticationService(
-            userAccountRepository,
-            userCredentialRepository,
-            userTokenRepository,
             usersRepository,
+            userTokenRepository,
             unitOfWork,
             sender,
             jwtTokenIssuer,
@@ -90,17 +84,15 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task LoginAsync_unknown_email_returns_InvalidCredentials_without_tokens()
     {
-        userAccountRepository
-            .GetByMailAsync("ghost@huellitas.test", Arg.Any<CancellationToken>())
-            .Returns((UserAccountEntity?)null);
+        usersRepository
+            .GetByEmailAsync("ghost@huellitas.test", Arg.Any<CancellationToken>())
+            .Returns((UserEntity?)null);
 
         var result = await sut.LoginAsync(
             "ghost@huellitas.test", Password, CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(AuthenticationErrors.InvalidCredentials, result.Error);
-        await userCredentialRepository.DidNotReceive()
-            .GetByAccountIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await userTokenRepository.DidNotReceive()
             .AddAsync(Arg.Any<Domain.UserTokens.Entities.UserTokens>(), Arg.Any<CancellationToken>());
     }
@@ -108,7 +100,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task LoginAsync_staff_wrong_password_returns_InvalidCredentials_same_as_unknown_email()
     {
-        var fixture = ArrangeStaffAccount(active: true);
+        var fixture = ArrangeStaffUser(active: true);
         passwordHasher.Verify(Password, PasswordHash).Returns(false);
 
         var result = await sut.LoginAsync(fixture.Email, Password, CancellationToken.None);
@@ -125,7 +117,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task LoginAsync_role_named_Cliente_with_valid_password_issues_tokens()
     {
-        var fixture = ArrangeClientAccount(active: true);
+        var fixture = ArrangeClientUser(active: true);
         passwordHasher.Verify(Password, PasswordHash).Returns(true);
 
         var result = await sut.LoginAsync(fixture.Email, Password, CancellationToken.None);
@@ -140,7 +132,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task LoginAsync_inactive_staff_with_valid_password_returns_UserInactive_without_tokens()
     {
-        var fixture = ArrangeStaffAccount(active: false);
+        var fixture = ArrangeStaffUser(active: false);
         passwordHasher.Verify(Password, PasswordHash).Returns(true);
 
         var result = await sut.LoginAsync(fixture.Email, Password, CancellationToken.None);
@@ -154,7 +146,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task LoginAsync_active_staff_with_valid_password_issues_tokens()
     {
-        var fixture = ArrangeStaffAccount(active: true);
+        var fixture = ArrangeStaffUser(active: true);
         passwordHasher.Verify(Password, PasswordHash).Returns(true);
 
         var result = await sut.LoginAsync(fixture.Email, Password, CancellationToken.None);
@@ -175,7 +167,7 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task LoginAsync_inactive_staff_with_wrong_password_returns_InvalidCredentials_not_PlatformAccessDenied()
     {
-        var fixture = ArrangeStaffAccount(active: false);
+        var fixture = ArrangeStaffUser(active: false);
         passwordHasher.Verify(Password, PasswordHash).Returns(false);
 
         var result = await sut.LoginAsync(fixture.Email, Password, CancellationToken.None);
@@ -187,8 +179,8 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task RefreshAsync_role_named_Cliente_with_valid_token_issues_tokens()
     {
-        var fixture = ArrangeClientAccount(active: true);
-        ArrangeValidRefreshToken(fixture.AccountId);
+        var fixture = ArrangeClientUser(active: true);
+        ArrangeValidRefreshToken(fixture.UserId);
 
         var result = await sut.RefreshAsync("raw-refresh-token", CancellationToken.None);
 
@@ -202,8 +194,8 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task RefreshAsync_inactive_staff_with_valid_token_returns_UserInactive_without_tokens()
     {
-        var fixture = ArrangeStaffAccount(active: false);
-        ArrangeValidRefreshToken(fixture.AccountId);
+        var fixture = ArrangeStaffUser(active: false);
+        ArrangeValidRefreshToken(fixture.UserId);
 
         var result = await sut.RefreshAsync("raw-refresh-token", CancellationToken.None);
 
@@ -216,8 +208,8 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
     [Fact]
     public async Task RefreshAsync_active_staff_with_valid_token_issues_tokens()
     {
-        var fixture = ArrangeStaffAccount(active: true);
-        ArrangeValidRefreshToken(fixture.AccountId);
+        var fixture = ArrangeStaffUser(active: true);
+        ArrangeValidRefreshToken(fixture.UserId);
 
         var result = await sut.RefreshAsync("raw-refresh-token", CancellationToken.None);
 
@@ -245,16 +237,16 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
 
         Assert.True(result.IsFailure);
         Assert.Equal(AuthenticationErrors.InvalidRefreshToken, result.Error);
-        await userAccountRepository.DidNotReceive()
+        await usersRepository.DidNotReceive()
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
-    private void ArrangeValidRefreshToken(Guid accountId)
+    private void ArrangeValidRefreshToken(Guid userId)
     {
         var protector = new RefreshTokenProtector();
         var hash = protector.Hash("raw-refresh-token");
         var token = new Domain.UserTokens.Entities.UserTokens(
-            accountId,
+            userId,
             hash,
             "refresh",
             Now.AddDays(7).UtcDateTime,
@@ -265,49 +257,43 @@ public sealed class AuthenticationServicePlatformAccessTests : IDisposable
             .Returns(token);
     }
 
-    private AccountFixture ArrangeStaffAccount(bool active)
+    private UserFixture ArrangeStaffUser(bool active)
     {
         var email = "staff@huellitas.test";
         var user = new UserEntity("Staff User", email, PasswordHash, StaffRoleId);
-        var account = new UserAccountEntity(
-            user.Id,
-            "staff",
-            email,
-            active ? "Activo" : "Inactivo");
-        var credentials = new UserCredentialsEntity(account.Id, PasswordHash);
+        if (!active)
+        {
+            user.Deactivate();
+        }
+
         var role = new RoleEntity("Administrador", "Staff panel");
 
-        userAccountRepository.GetByMailAsync(email, Arg.Any<CancellationToken>()).Returns(account);
-        userAccountRepository.GetByIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(account);
-        userCredentialRepository.GetByAccountIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(credentials);
+        usersRepository.GetByEmailAsync(email, Arg.Any<CancellationToken>()).Returns(user);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         rolesRepository.GetByIdAsync(StaffRoleId, Arg.Any<CancellationToken>()).Returns(role);
 
-        return new AccountFixture(email, account.Id);
+        return new UserFixture(email, user.Id);
     }
 
-    private AccountFixture ArrangeClientAccount(bool active)
+    private UserFixture ArrangeClientUser(bool active)
     {
         var email = "cliente@huellitas.test";
         var user = new UserEntity("Cliente User", email, PasswordHash, ClientRoleId);
-        var account = new UserAccountEntity(
-            user.Id,
-            "cliente",
-            email,
-            active ? "Activo" : "Inactivo");
-        var credentials = new UserCredentialsEntity(account.Id, PasswordHash);
+        if (!active)
+        {
+            user.Deactivate();
+        }
+
         var role = new RoleEntity("Cliente", "Sin panel");
 
-        userAccountRepository.GetByMailAsync(email, Arg.Any<CancellationToken>()).Returns(account);
-        userAccountRepository.GetByIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(account);
-        userCredentialRepository.GetByAccountIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(credentials);
+        usersRepository.GetByEmailAsync(email, Arg.Any<CancellationToken>()).Returns(user);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         rolesRepository.GetByIdAsync(ClientRoleId, Arg.Any<CancellationToken>()).Returns(role);
 
-        return new AccountFixture(email, account.Id);
+        return new UserFixture(email, user.Id);
     }
 
-    private sealed record AccountFixture(string Email, Guid AccountId);
+    private sealed record UserFixture(string Email, Guid UserId);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

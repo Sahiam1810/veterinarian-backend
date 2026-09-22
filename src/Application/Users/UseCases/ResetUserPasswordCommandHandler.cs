@@ -1,28 +1,28 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.Roles;
 using MediatR;
 
-namespace Application.Security.ChangePassword;
+namespace Application.Users.UseCase;
 
-public sealed class ChangeMyPasswordCommandHandler(
+public sealed class ResetUserPasswordCommandHandler(
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher)
-    : IRequestHandler<ChangeMyPasswordCommand>
+    : IRequestHandler<ResetUserPasswordCommand>
 {
     public async Task Handle(
-        ChangeMyPasswordCommand request,
+        ResetUserPasswordCommand request,
         CancellationToken cancellationToken)
     {
-        // U5: la contraseña vive directamente en USERS.
         var user = await unitOfWork.UsersRepository.GetByIdAsync(
-            request.UserId,
+            request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Usuario no encontrado.");
 
-        if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+        if (SystemRoles.IsSuperAdmin(user.RoleId))
         {
-            throw new UnauthorizedException(
-                "La contraseña actual no es correcta.");
+            throw new ForbiddenException(
+                "La contraseña de SuperAdmin no se puede restablecer desde la administración de usuarios.");
         }
 
         var newPasswordHash = passwordHasher.Hash(request.NewPassword);

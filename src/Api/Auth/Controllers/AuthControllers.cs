@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Api.Auth.Dtos;
-using Api.UserCredentials.Dtos;
 using Microsoft.AspNetCore.Http;
 using Application.Security.Models;
 using Application.Security.Login;
@@ -195,7 +194,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [Authorize]
     [HttpPatch("me/password")]
     [EndpointSummary("Cambia la contraseña propia del usuario autenticado")]
-    [EndpointDescription("Autoservicio de cambio de contraseña: valida la contraseña actual del usuario autenticado y, si es correcta, la reemplaza por la nueva. Cualquier rol puede usarlo para su propia cuenta; para restablecer la contraseña de otra persona, ver el endpoint exclusivo de SuperAdmin en UserCredentials.")]
+    [EndpointDescription("Autoservicio de cambio de contraseña: valida la contraseña actual del usuario autenticado y, si es correcta, la reemplaza por la nueva. Cualquier rol puede usarlo para su propia cuenta.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -274,7 +273,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
         if (result.IsFailure)
         {
             // RevokeAsync busca el token solo entre los del usuario autenticado
-            // (GetAllByAccountIdAsync(userId)): "no existe" y "es de otro
+            // (GetAllByUserIdAsync(userId)): "no existe" y "es de otro
             // usuario" son indistinguibles y ambos caen en InvalidRefreshToken
             // a propósito, para no filtrar si el token pertenece a alguien más.
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
