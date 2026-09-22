@@ -155,6 +155,10 @@ public static class AppointmentMappings
             AsUtc(entity.ScheduledEnd),
             entity.Notes,
             entity.RequesterPhoneNumber?.Value,
+            entity.Weight,
+            entity.Temperature,
+            entity.HeartRate,
+            entity.RespiratoryRate,
             entity.CreatedAt,
             entity.ClientPet?.PetId,
             entity.ConsultingRoom);
