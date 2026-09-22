@@ -86,14 +86,20 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
             .HasColumnType("NUMBER(5,2)")
             .IsRequired(false);
 
+        // NUMBER(3) sin conversión explícita hace que el proveedor de Oracle
+        // infiera un conversor int->byte (rango 0-255) para esta columna, aunque
+        // NUMBER(3) admite hasta 999 -- un valor real de FC (ej. 300 en un
+        // cachorro/gato) se trunca silenciosamente a 44. NUMBER(5) evita el
+        // conversor angosto: la misma heurística del proveedor lo mapea a
+        // short (hasta 32767), con margen de sobra.
         builder.Property(x => x.HeartRate)
             .HasColumnName("HEART_RATE")
-            .HasColumnType("NUMBER(3)")
+            .HasColumnType("NUMBER(5)")
             .IsRequired(false);
 
         builder.Property(x => x.RespiratoryRate)
             .HasColumnName("RESPIRATORY_RATE")
-            .HasColumnType("NUMBER(3)")
+            .HasColumnType("NUMBER(5)")
             .IsRequired(false);
 
         builder.Property(x => x.RequesterPhoneNumber)
