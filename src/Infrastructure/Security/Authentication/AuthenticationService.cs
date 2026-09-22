@@ -229,7 +229,7 @@ public sealed class AuthenticationService(
         var permissions = SystemRoles.IsSuperAdmin(identity.RoleId)
             ? Array.Empty<string>()
             : await sender.Send(
-                new GetUserPermissionClaimsQuery(identity.RoleId, identity.PersonId),
+                new GetUserPermissionClaimsQuery(identity.RoleId),
                 cancellationToken);
 
         var accessToken = jwtTokenIssuer.Issue(identity, permissions);

@@ -9,7 +9,6 @@ namespace Application.Tests.Permissions;
 public sealed class GetUserPermissionClaimsQueryHandlerTests
 {
     private static readonly Guid RoleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid UserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     private readonly ISender sender = Substitute.For<ISender>();
 
@@ -17,8 +16,7 @@ public sealed class GetUserPermissionClaimsQueryHandlerTests
     public async Task Handle_emits_only_granted_actions_in_deterministic_order()
     {
         sender.Send(
-                Arg.Is<GetUserEffectivePermissionsQuery>(query =>
-                    query.RoleId == RoleId && query.UserId == UserId),
+                Arg.Is<GetUserEffectivePermissionsQuery>(query => query.RoleId == RoleId),
                 Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, EffectivePermission>
             {
@@ -29,7 +27,7 @@ public sealed class GetUserPermissionClaimsQueryHandlerTests
         var sut = new GetUserPermissionClaimsQueryHandler(sender);
 
         var result = await sut.Handle(
-            new GetUserPermissionClaimsQuery(RoleId, UserId),
+            new GetUserPermissionClaimsQuery(RoleId),
             CancellationToken.None);
 
         Assert.Equal(
