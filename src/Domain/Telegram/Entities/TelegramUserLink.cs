@@ -14,11 +14,30 @@ public sealed class TelegramUserLink : BaseEntity<Guid>
 
     public long TelegramChatId { get; private set; }
 
+    public Guid? ChatConversationId { get; private set; }
+
     public DateTime LinkedAt { get; private set; }
 
     public DateTime? UnlinkedAt { get; private set; }
 
     public bool IsActive => UnlinkedAt is null;
+
+    public void BindConversation(Guid conversationId)
+    {
+        if (conversationId == Guid.Empty)
+        {
+            throw new ArgumentException("El identificador de la conversación no puede ser vacío.", nameof(conversationId));
+        }
+
+        ChatConversationId = conversationId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UnbindConversation()
+    {
+        ChatConversationId = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
 
     public static TelegramUserLink Create(
         Guid clientId,

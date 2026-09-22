@@ -1,5 +1,3 @@
-using Domain.ConversationStatuses.Entities;
-using Domain.Priorities.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ChatConversationEntity = Domain.ChatConversations.Entities.ChatConversation;
@@ -25,40 +23,6 @@ public sealed class ChatConversationConfiguration : IEntityTypeConfiguration<Cha
                 value => Guid.Parse(value))
             .IsRequired()
             .ValueGeneratedNever();
-
-        builder.Property(conversation => conversation.ConversationStatusId)
-            .HasColumnName("CONVERSATION_STATUS_ID")
-            .HasColumnType("VARCHAR2(36)")
-            .HasConversion(
-                guid => guid.ToString(),
-                value => Guid.Parse(value))
-            .IsRequired();
-
-        builder.HasIndex(conversation => conversation.ConversationStatusId)
-            .HasDatabaseName("IX_CHAT_CONVERSATIONS_CONVERSATION_STATUS_ID");
-
-        builder.HasOne<ConversationStatusEntity>()
-            .WithMany()
-            .HasForeignKey(conversation => conversation.ConversationStatusId)
-            .HasConstraintName("FK_CHAT_CONVERSATIONS_CONVERSATIONS_STATUSES_CONVERSATION_STATUS_ID")
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Property(conversation => conversation.PriorityId)
-            .HasColumnName("PRIORITY_ID")
-            .HasColumnType("VARCHAR2(36)")
-            .HasConversion(
-                guid => guid.HasValue ? guid.Value.ToString() : null,
-                value => value == null ? null : Guid.Parse(value))
-            .IsRequired(false);
-
-        builder.HasIndex(conversation => conversation.PriorityId)
-            .HasDatabaseName("IX_CHAT_CONVERSATIONS_PRIORITY_ID");
-
-        builder.HasOne<PriorityEntity>()
-            .WithMany()
-            .HasForeignKey(conversation => conversation.PriorityId)
-            .HasConstraintName("FK_CHAT_CONVERSATIONS_PRIORITY_PRIORITY_ID")
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(conversation => conversation.AiEnabled)
             .HasColumnName("AI_ENABLED")

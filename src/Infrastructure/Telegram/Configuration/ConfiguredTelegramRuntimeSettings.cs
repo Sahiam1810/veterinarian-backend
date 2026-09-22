@@ -11,7 +11,6 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     int MaxProcessingAttempts,
     TimeSpan DelegatedTokenLifetime,
     Guid PendingEscalationStatusId,
-    Guid TextMessageTypeId,
     Guid HumanAgentSenderTypeId,
     TimeSpan PrivateAccessAbsoluteLifetime,
     TimeSpan PrivateAccessIdleLifetime) : ITelegramRuntimeSettings;

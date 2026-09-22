@@ -31,7 +31,7 @@ public sealed class CreateChatEscalationCommandHandlerTests
         var fixture = CreateFixture();
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
-            .Returns(ChatConversation.Create(Guid.NewGuid()));
+            .Returns(ChatConversation.Create());
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));
@@ -64,7 +64,7 @@ public sealed class CreateChatEscalationCommandHandlerTests
         var fixture = CreateFixture();
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
-            .Returns(ChatConversation.Create(Guid.NewGuid(), channel: "Telegram"));
+            .Returns(ChatConversation.Create(channel: "Telegram"));
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));
@@ -91,7 +91,7 @@ public sealed class CreateChatEscalationCommandHandlerTests
 
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
-            .Returns(ChatConversation.Create(Guid.NewGuid()));
+            .Returns(ChatConversation.Create());
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));
@@ -121,7 +121,7 @@ public sealed class CreateChatEscalationCommandHandlerTests
         var fixture = CreateFixture();
         fixture.Uow.ChatConversationsRepository
             .GetByIdAsync(ConversationId, default)
-            .Returns(ChatConversation.Create(Guid.NewGuid()));
+            .Returns(ChatConversation.Create());
         fixture.Uow.EscalationStatusesRepository
             .GetByIdAsync(EscalationStatusId, default)
             .Returns(new EscalationStatusEntity("Pendiente"));

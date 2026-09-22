@@ -1,33 +1,24 @@
 using System.Reflection;
 using Api.AgentHumans.Controllers;
 using Api.ChatConversations.Controllers;
-using Api.ChatEscalationResolutions.Controllers;
 using Api.ChatEscalations.Controllers;
 using Api.ChatMessages.Controllers;
 using Api.ChatParticipants.Controllers;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
-using Api.ConversationStatuses.Controllers;
 using Api.EscalationStatuses.Controllers;
-using Api.MessageTypes.Controllers;
 using Api.SenderTypes.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Xunit;
 
 namespace Api.Tests.Security;
 
-// Ticket B1: los controladores de chat dejaron de ser AdminOnly en bloque —
-// ahora cada acción declara su propio permiso granular (o se queda en
-// AdminOnly explícito por método, mismo patrón que PrioritiesController).
-// Ningún controlador de esta lista conserva un [Authorize] a nivel de clase.
 public sealed class ChatPermissionsAuthorizationTests
 {
     [Theory]
     // ChatConversationController — módulo "Chat"
     [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.GetAll), "Chat", PermissionAction.View)]
     [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.GetById), "Chat", PermissionAction.View)]
-    [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.UpdateStatus), "Chat", PermissionAction.Edit)]
-    [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.UpdatePriority), "Chat", PermissionAction.Edit)]
     [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.UpdateAiEnabled), "Chat", PermissionAction.Edit)]
     [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.Close), "Chat", PermissionAction.Edit)]
     [InlineData(typeof(ChatConversationController), nameof(ChatConversationController.Reopen), "Chat", PermissionAction.Edit)]
@@ -51,21 +42,12 @@ public sealed class ChatPermissionsAuthorizationTests
     [InlineData(typeof(ChatEscalationController), nameof(ChatEscalationController.GetById), "Escalamientos", PermissionAction.View)]
     [InlineData(typeof(ChatEscalationController), nameof(ChatEscalationController.GetByConversationId), "Escalamientos", PermissionAction.View)]
     [InlineData(typeof(ChatEscalationController), nameof(ChatEscalationController.Update), "Escalamientos", PermissionAction.Edit)]
-    // ChatEscalationResolutionController — módulo "Escalamientos"
-    [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.Create), "Escalamientos", PermissionAction.Create)]
-    [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.GetAll), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.GetById), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.GetByChatEscalationId), "Escalamientos", PermissionAction.View)]
-    [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.Update), "Escalamientos", PermissionAction.Edit)]
+    [InlineData(typeof(ChatEscalationController), nameof(ChatEscalationController.Resolve), "Escalamientos", PermissionAction.Edit)]
     // Catálogos del Chat — solo lectura, mismo patrón que PrioritiesController
-    [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.GetAll), "Catálogos del Chat", PermissionAction.View)]
-    [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.GetById), "Catálogos del Chat", PermissionAction.View)]
     [InlineData(typeof(SenderTypesController), nameof(SenderTypesController.GetAll), "Catálogos del Chat", PermissionAction.View)]
     [InlineData(typeof(SenderTypesController), nameof(SenderTypesController.GetById), "Catálogos del Chat", PermissionAction.View)]
     [InlineData(typeof(EscalationStatusesController), nameof(EscalationStatusesController.GetAll), "Catálogos del Chat", PermissionAction.View)]
     [InlineData(typeof(EscalationStatusesController), nameof(EscalationStatusesController.GetById), "Catálogos del Chat", PermissionAction.View)]
-    [InlineData(typeof(MessageTypesController), nameof(MessageTypesController.GetAll), "Catálogos del Chat", PermissionAction.View)]
-    [InlineData(typeof(MessageTypesController), nameof(MessageTypesController.GetById), "Catálogos del Chat", PermissionAction.View)]
     public void Action_requires_the_expected_granular_permission(
         Type controllerType,
         string methodName,
@@ -80,8 +62,6 @@ public sealed class ChatPermissionsAuthorizationTests
         Assert.Equal(
             $"{RequirePermissionAttribute.PolicyPrefix}{expectedModule}:{expectedAction}",
             requirePermission!.Policy);
-        // RequirePermissionAttribute ya hereda de AuthorizeAttribute — confirma que no
-        // hay un segundo [Authorize]/[RequirePermission] adicional pisando la policy.
         Assert.Single(method.GetCustomAttributes<AuthorizeAttribute>(inherit: false));
     }
 
@@ -93,22 +73,15 @@ public sealed class ChatPermissionsAuthorizationTests
     [InlineData(typeof(AgentHumanController), nameof(AgentHumanController.Update))]
     [InlineData(typeof(AgentHumanController), nameof(AgentHumanController.Activate))]
     [InlineData(typeof(AgentHumanController), nameof(AgentHumanController.Deactivate))]
-    // ChatEscalationController / ChatEscalationResolutionController: borrar sigue siendo administrativo.
+    // ChatEscalationController: borrar sigue siendo administrativo.
     [InlineData(typeof(ChatEscalationController), nameof(ChatEscalationController.Delete))]
-    [InlineData(typeof(ChatEscalationResolutionController), nameof(ChatEscalationResolutionController.Delete))]
     // Catálogos del Chat: administrar el catálogo en sí (no solo leerlo) sigue siendo administrativo.
-    [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.Create))]
-    [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.Update))]
-    [InlineData(typeof(ConversationStatusesController), nameof(ConversationStatusesController.Delete))]
     [InlineData(typeof(SenderTypesController), nameof(SenderTypesController.Create))]
     [InlineData(typeof(SenderTypesController), nameof(SenderTypesController.Update))]
     [InlineData(typeof(SenderTypesController), nameof(SenderTypesController.Delete))]
     [InlineData(typeof(EscalationStatusesController), nameof(EscalationStatusesController.Create))]
     [InlineData(typeof(EscalationStatusesController), nameof(EscalationStatusesController.Update))]
     [InlineData(typeof(EscalationStatusesController), nameof(EscalationStatusesController.Delete))]
-    [InlineData(typeof(MessageTypesController), nameof(MessageTypesController.Create))]
-    [InlineData(typeof(MessageTypesController), nameof(MessageTypesController.Update))]
-    [InlineData(typeof(MessageTypesController), nameof(MessageTypesController.Delete))]
     public void Action_stays_AdminOnly_explicitly_at_the_method_level(Type controllerType, string methodName)
     {
         var method = controllerType.GetMethod(methodName);
@@ -126,16 +99,10 @@ public sealed class ChatPermissionsAuthorizationTests
     [InlineData(typeof(ChatParticipantController))]
     [InlineData(typeof(AgentHumanController))]
     [InlineData(typeof(ChatEscalationController))]
-    [InlineData(typeof(ChatEscalationResolutionController))]
-    [InlineData(typeof(ConversationStatusesController))]
     [InlineData(typeof(SenderTypesController))]
-    [InlineData(typeof(MessageTypesController))]
     [InlineData(typeof(EscalationStatusesController))]
     public void Controller_no_longer_declares_a_blanket_class_level_AdminOnly_policy(Type controllerType)
     {
-        // Cada acción declara su propia autorización ahora (RequirePermission o
-        // AdminOnly explícito) — una policy a nivel de clase volvería a bloquear
-        // en bloque a Recepcionista, deshaciendo este ticket en silencio.
         Assert.Empty(controllerType.GetCustomAttributes<AuthorizeAttribute>(inherit: false));
     }
 }

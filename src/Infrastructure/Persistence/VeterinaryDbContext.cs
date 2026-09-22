@@ -17,13 +17,8 @@ using Domain.Specialties.Entities;
 using Domain.ClientsPets.Entities;
 
 using Domain.Veterinarians.Entities;
-using Domain.Priorities.Entities;
 
 using Domain.SenderTypes.Entities;
-
-using Domain.ConversationStatuses.Entities;
-
-using Domain.MessageTypes.Entities;
 
 using Domain.EscalationStatuses.Entities;
 using Domain.Availabilities.Entities;
@@ -72,12 +67,7 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
 
     public DbSet<Veterinarian> Veterinarians => Set<Veterinarian>();
 
-    public DbSet<PriorityEntity> Priorities => Set<PriorityEntity>();
-
     public DbSet<SenderTypeEntity> SenderTypes => Set<SenderTypeEntity>();
-
-    public DbSet<ConversationStatusEntity> ConversationStatuses => Set<ConversationStatusEntity>();
-    public DbSet<MessageTypeEntity> MessageTypes => Set<MessageTypeEntity>();
 
     public DbSet<EscalationStatusEntity> EscalationStatuses => Set<EscalationStatusEntity>();
 

@@ -1,15 +1,13 @@
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Agent.Errors;
-using Application.Clients.Abstraction;
 using Application.ChatConversations.Abstraction;
 using Application.ChatParticipants.Abstraction;
+using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
-using Application.ConversationStatuses.Abstraction;
 using Application.SenderTypes.Abstraction;
 using Domain.ChatConversations.Entities;
 using Domain.ChatParticipants.Entities;
-using Domain.ConversationStatuses.Entities;
 using Domain.SenderTypes.Entities;
 using NSubstitute;
 using Xunit;
@@ -19,7 +17,6 @@ namespace Application.Tests.Agent.Conversations;
 public sealed class PersistentConversationContextProviderTests
 {
     private static readonly Guid PersonId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid InitialStatusId = Guid.Parse("81000000-0000-0000-0000-000000000001");
     private static readonly Guid ClientTypeId = Guid.Parse("82000000-0000-0000-0000-000000000001");
 
     [Fact]
@@ -41,7 +38,6 @@ public sealed class PersistentConversationContextProviderTests
         await fixture.Conversations.Received(1).AddAsync(
             Arg.Is<ChatConversation>(conversation =>
                 conversation.Id == result.ConversationId &&
-                conversation.ConversationStatusId == InitialStatusId &&
                 conversation.AiEnabled),
             fixture.Token);
         await fixture.Participants.Received(1).AddAsync(
@@ -57,9 +53,6 @@ public sealed class PersistentConversationContextProviderTests
     [Fact]
     public async Task Resolve_without_conversation_persists_the_requested_channel()
     {
-        // Ticket B6: la conversación creada guarda el canal que pidió quien
-        // resuelve el contexto (Telegram, en este caso) — antes no existía
-        // ningún campo persistido para esto.
         var fixture = CreateFixture();
         var provider = fixture.CreateProvider();
 
@@ -78,8 +71,6 @@ public sealed class PersistentConversationContextProviderTests
     [Fact]
     public async Task Resolve_without_conversation_never_touches_users_to_identify_the_client()
     {
-        // T9: el participante se identifica solo con CLIENTS; no hace falta
-        // ninguna fila en USERS ni en un perfil de chat.
         var fixture = CreateFixture();
         var provider = fixture.CreateProvider();
 
@@ -100,31 +91,10 @@ public sealed class PersistentConversationContextProviderTests
     }
 
     [Fact]
-    public async Task Resolve_without_conversation_rejects_a_missing_initial_status()
-    {
-        var fixture = CreateFixture();
-        fixture.UnitOfWork.ConversationStatusesRepository
-            .GetByIdAsync(InitialStatusId, fixture.Token)
-            .Returns(Task.FromResult<ConversationStatusEntity?>(null));
-        var provider = fixture.CreateProvider();
-
-        await Assert.ThrowsAsync<AgentConversationConfigurationException>(async () =>
-            await provider.ResolveAsync(
-                PersonId,
-                null,
-                "message-config",
-                "Web",
-                fixture.Token));
-
-        await fixture.UnitOfWork.DidNotReceive().SaveChangesAsync(
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task Resolve_existing_conversation_allows_the_client_participant()
     {
         var fixture = CreateFixture();
-        var conversation = ChatConversation.Create(InitialStatusId);
+        var conversation = ChatConversation.Create();
         var participant = ChatParticipant.Create(
             conversation.Id,
             ClientTypeId,
@@ -167,7 +137,7 @@ public sealed class PersistentConversationContextProviderTests
     public async Task Resolve_existing_conversation_rejects_a_non_participant()
     {
         var fixture = CreateFixture();
-        var conversation = ChatConversation.Create(InitialStatusId);
+        var conversation = ChatConversation.Create();
         fixture.ConfigureExistingConversation(conversation, []);
         var provider = fixture.CreateProvider();
 
@@ -184,7 +154,7 @@ public sealed class PersistentConversationContextProviderTests
     public async Task Resolve_existing_conversation_rejects_a_deleted_client()
     {
         var fixture = CreateFixture();
-        var conversation = ChatConversation.Create(InitialStatusId);
+        var conversation = ChatConversation.Create();
         var participant = ChatParticipant.Create(
             conversation.Id,
             ClientTypeId,
@@ -207,7 +177,7 @@ public sealed class PersistentConversationContextProviderTests
     public async Task Resolve_existing_conversation_marks_an_unresolved_escalation()
     {
         var fixture = CreateFixture();
-        var conversation = ChatConversation.Create(InitialStatusId);
+        var conversation = ChatConversation.Create();
         var participant = ChatParticipant.Create(
             conversation.Id,
             ClientTypeId,
@@ -231,7 +201,7 @@ public sealed class PersistentConversationContextProviderTests
     public async Task Resolve_existing_conversation_ignores_a_resolved_escalation()
     {
         var fixture = CreateFixture();
-        var conversation = ChatConversation.Create(InitialStatusId);
+        var conversation = ChatConversation.Create();
         var participant = ChatParticipant.Create(
             conversation.Id,
             ClientTypeId,
@@ -256,7 +226,6 @@ public sealed class PersistentConversationContextProviderTests
         var unitOfWork = Substitute.For<IUnitOfWork>();
         var conversations = Substitute.For<IChatConversationRepository>();
         var participants = Substitute.For<IChatParticipantRepository>();
-        var statuses = Substitute.For<IConversationStatusRepository>();
         var senderTypes = Substitute.For<ISenderTypeRepository>();
         var escalationReader = Substitute.For<IActiveConversationEscalationReader>();
         var token = new CancellationTokenSource().Token;
@@ -265,7 +234,6 @@ public sealed class PersistentConversationContextProviderTests
         unitOfWork.ClientsRepository.Returns(clients);
         unitOfWork.ChatConversationsRepository.Returns(conversations);
         unitOfWork.ChatParticipantsRepository.Returns(participants);
-        unitOfWork.ConversationStatusesRepository.Returns(statuses);
         unitOfWork.SenderTypesRepository.Returns(senderTypes);
         clients.GetByIdAsync(PersonId, token)
             .Returns(Task.FromResult<Domain.Clients.Entities.ClientEntity?>(
@@ -275,8 +243,6 @@ public sealed class PersistentConversationContextProviderTests
                     "1234567890",
                     "3001234567",
                     "Calle 123")));
-        statuses.GetByIdAsync(InitialStatusId, token)
-            .Returns(Task.FromResult<ConversationStatusEntity?>(new ConversationStatusEntity("Abierta")));
         senderTypes.GetByIdAsync(ClientTypeId, token)
             .Returns(Task.FromResult<SenderTypeEntity?>(new SenderTypeEntity("Cliente")));
         unitOfWork.SaveChangesAsync(token).Returns(Task.FromResult(3));
@@ -291,7 +257,6 @@ public sealed class PersistentConversationContextProviderTests
 
     private sealed record Defaults : IAgentConversationDefaults
     {
-        public Guid InitialConversationStatusId => InitialStatusId;
         public Guid ClientParticipantTypeId => ClientTypeId;
     }
 

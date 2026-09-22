@@ -21,8 +21,6 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
         Guid.Parse("82000000-0000-0000-0000-000000000001");
     private static readonly Guid AiAgentSenderTypeId =
         Guid.Parse("82000000-0000-0000-0000-000000000002");
-    private static readonly Guid TextMessageTypeId =
-        Guid.Parse("83000000-0000-0000-0000-000000000001");
 
     [Fact]
     public async Task Human_agent_message_is_forwarded_to_the_linked_telegram_chat()
@@ -30,9 +28,8 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
         var fixture = CreateFixture();
         var message = HumanAgentMessage("Ya puedes traer a tu mascota mañana a las 9am.");
         var userLink = TelegramUserLink.Create(Guid.NewGuid(), 1001, 1001, DateTime.UtcNow);
-        var conversationLink = TelegramConversationLink.Create(userLink.Id, ConversationId, DateTime.UtcNow);
-        fixture.ConversationLinks.GetByConversationIdAsync(ConversationId, default).Returns(conversationLink);
-        fixture.UserLinks.GetByIdAsync(userLink.Id, default).Returns(userLink);
+        userLink.BindConversation(ConversationId);
+        fixture.UserLinks.GetByConversationIdAsync(ConversationId, default).Returns(userLink);
 
         await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
 
@@ -48,13 +45,13 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
     {
         var fixture = CreateFixture();
         var message = ChatMessageEntity.Create(
-            ConversationId, senderTypeId, TextMessageTypeId, ParticipantId, "hola");
+            ConversationId, senderTypeId, ParticipantId, "hola");
 
         await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
 
         await fixture.Bot.DidNotReceive().SendTextAsync(
             Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        await fixture.ConversationLinks.DidNotReceive().GetByConversationIdAsync(
+        await fixture.UserLinks.DidNotReceive().GetByConversationIdAsync(
             Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -62,12 +59,12 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
         new() { ClientSenderTypeId, AiAgentSenderTypeId };
 
     [Fact]
-    public async Task Missing_conversation_link_logs_an_error_without_throwing()
+    public async Task Missing_user_link_logs_an_error_without_throwing()
     {
         var fixture = CreateFixture();
         var message = HumanAgentMessage("Respuesta del asesor");
-        fixture.ConversationLinks.GetByConversationIdAsync(ConversationId, default)
-            .Returns((TelegramConversationLink?)null);
+        fixture.UserLinks.GetByConversationIdAsync(ConversationId, default)
+            .Returns((TelegramUserLink?)null);
 
         await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
 
@@ -78,31 +75,13 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
     }
 
     [Fact]
-    public async Task Missing_user_link_logs_an_error_without_throwing()
-    {
-        var fixture = CreateFixture();
-        var message = HumanAgentMessage("Respuesta del asesor");
-        var userLink = TelegramUserLink.Create(Guid.NewGuid(), 1001, 1001, DateTime.UtcNow);
-        var conversationLink = TelegramConversationLink.Create(userLink.Id, ConversationId, DateTime.UtcNow);
-        fixture.ConversationLinks.GetByConversationIdAsync(ConversationId, default).Returns(conversationLink);
-        fixture.UserLinks.GetByIdAsync(userLink.Id, default).Returns((TelegramUserLink?)null);
-
-        await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
-
-        await fixture.Bot.DidNotReceive().SendTextAsync(
-            Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        Assert.Equal(LogLevel.Error, fixture.Logger.Level);
-    }
-
-    [Fact]
     public async Task Delivery_failure_is_logged_without_propagating_the_exception()
     {
         var fixture = CreateFixture();
         var message = HumanAgentMessage("Respuesta del asesor");
         var userLink = TelegramUserLink.Create(Guid.NewGuid(), 1001, 1001, DateTime.UtcNow);
-        var conversationLink = TelegramConversationLink.Create(userLink.Id, ConversationId, DateTime.UtcNow);
-        fixture.ConversationLinks.GetByConversationIdAsync(ConversationId, default).Returns(conversationLink);
-        fixture.UserLinks.GetByIdAsync(userLink.Id, default).Returns(userLink);
+        userLink.BindConversation(ConversationId);
+        fixture.UserLinks.GetByConversationIdAsync(ConversationId, default).Returns(userLink);
         fixture.Bot.SendTextAsync(1001, Arg.Any<string>(), default)
             .Returns<Task<long>>(_ => throw new InvalidOperationException("Telegram API unavailable"));
 
@@ -116,11 +95,10 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
 
     private static ChatMessageEntity HumanAgentMessage(string content) =>
         ChatMessageEntity.Create(
-            ConversationId, HumanAgentSenderTypeId, TextMessageTypeId, ParticipantId, content);
+            ConversationId, HumanAgentSenderTypeId, ParticipantId, content);
 
     private static Fixture CreateFixture()
     {
-        var conversationLinks = Substitute.For<ITelegramConversationLinkRepository>();
         var userLinks = Substitute.For<ITelegramUserLinkRepository>();
         var bot = Substitute.For<ITelegramBotClient>();
         var settings = Substitute.For<ITelegramRuntimeSettings>();
@@ -129,8 +107,7 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
 
         return new Fixture(
             new ForwardHumanChatMessageToTelegramHandler(
-                conversationLinks, userLinks, bot, settings, logger),
-            conversationLinks,
+                userLinks, bot, settings, logger),
             userLinks,
             bot,
             logger);
@@ -138,7 +115,6 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
 
     private sealed record Fixture(
         ForwardHumanChatMessageToTelegramHandler Handler,
-        ITelegramConversationLinkRepository ConversationLinks,
         ITelegramUserLinkRepository UserLinks,
         ITelegramBotClient Bot,
         RecordingLogger<ForwardHumanChatMessageToTelegramHandler> Logger);

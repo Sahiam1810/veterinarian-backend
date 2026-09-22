@@ -39,10 +39,6 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
             "Telegram:PendingEscalationStatusId must be a non-empty GUID.",
             failures);
         ValidateRequiredGuid(
-            options.TextMessageTypeId,
-            "Telegram:TextMessageTypeId must be a non-empty GUID.",
-            failures);
-        ValidateRequiredGuid(
             options.HumanAgentSenderTypeId,
             "Telegram:HumanAgentSenderTypeId must be a non-empty GUID.",
             failures);

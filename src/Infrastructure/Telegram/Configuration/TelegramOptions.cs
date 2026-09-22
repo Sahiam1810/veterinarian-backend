@@ -16,7 +16,6 @@ public sealed class TelegramOptions
     public int MaxProcessingAttempts { get; init; } = 3;
     public int DelegatedTokenMinutes { get; init; } = 5;
     public string PendingEscalationStatusId { get; init; } = string.Empty;
-    public string TextMessageTypeId { get; init; } = string.Empty;
     public string HumanAgentSenderTypeId { get; init; } = string.Empty;
     // Pepper de respaldo para IOtpProtector (ContactVerification / citas).
     public string OtpPepperBase64 { get; init; } = string.Empty;

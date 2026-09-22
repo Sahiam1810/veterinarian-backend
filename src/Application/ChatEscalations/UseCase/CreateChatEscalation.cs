@@ -81,20 +81,8 @@ public sealed class CreateChatEscalationCommandHandler(
         string statusName,
         CancellationToken cancellationToken)
     {
-        // Ticket B6: el canal ya queda persistido en ChatConversation.Channel
-        // al crear la conversación — ya no hace falta inferirlo consultando
-        // TelegramConversationLink.
         string? priority = null;
-        if (conversation.PriorityId is { } priorityId)
-        {
-            var priorityEntity = await uow.PrioritiesRepository.GetByIdAsync(
-                priorityId, cancellationToken);
-            priority = priorityEntity?.Name.Value;
-        }
 
-        // Ticket B7: lógica de resolución de cliente extraída a
-        // IChatConversationClientResolver, compartida ahora con los
-        // listados REST de conversaciones y escalamientos.
         var clientInfo = await clientResolver.ResolveAsync(
             escalation.ChatConversationId, cancellationToken);
 

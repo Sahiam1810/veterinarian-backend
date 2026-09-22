@@ -59,11 +59,9 @@ public sealed class TelegramApplicationHandlersTests
     {
         var unitOfWork = Substitute.For<ITelegramUnitOfWork>();
         var userLinks = Substitute.For<ITelegramUserLinkRepository>();
-        var conversationLinks = Substitute.For<ITelegramConversationLinkRepository>();
         var inboundUpdates = Substitute.For<ITelegramInboundUpdateRepository>();
         var signal = Substitute.For<ITelegramUpdateSignal>();
         unitOfWork.UserLinksRepository.Returns(userLinks);
-        unitOfWork.ConversationLinksRepository.Returns(conversationLinks);
         unitOfWork.InboundUpdatesRepository.Returns(inboundUpdates);
 
         return new Fixture(

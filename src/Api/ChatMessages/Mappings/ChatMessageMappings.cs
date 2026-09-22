@@ -11,7 +11,6 @@ public static class ChatMessageMappings
             dto.ChatConversationId,
             dto.ChatParticipantId,
             dto.SenderTypesId,
-            dto.MessageTypeId,
             dto.Content,
             dto.Metadata);
 
@@ -20,7 +19,6 @@ public static class ChatMessageMappings
             message.Id,
             message.ChatConversationId,
             message.SenderTypesId,
-            message.MessageTypeId,
             message.ChatParticipantId,
             message.Content,
             message.Metadata,
