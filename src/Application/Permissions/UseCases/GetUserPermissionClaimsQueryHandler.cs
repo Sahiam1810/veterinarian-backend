@@ -11,7 +11,7 @@ public sealed class GetUserPermissionClaimsQueryHandler(ISender sender)
         CancellationToken cancellationToken)
     {
         var permissions = await sender.Send(
-            new GetUserEffectivePermissionsQuery(request.RoleId, request.UserId),
+            new GetUserEffectivePermissionsQuery(request.RoleId),
             cancellationToken);
         var claims = new List<string>();
 
