@@ -160,7 +160,7 @@ public sealed class PlatformAccessDeniedAuthContractApiFactory : WebApplicationF
     private sealed class PlatformAccessDeniedAuthenticationService : IAuthenticationService
     {
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) =>
             throw new InvalidOperationException("Unexpected call.");
 

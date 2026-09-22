@@ -137,7 +137,7 @@ public sealed class RateLimitedApiFactory : WebApplicationFactory<AuthController
     private sealed class AlwaysInvalidAuthenticationService : IAuthenticationService
     {
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) => throw new InvalidOperationException("Unexpected call.");
 
         public Task<Result<AuthenticationTokens>> LoginAsync(

@@ -77,6 +77,36 @@ Doc: [`docs/smoke/etapa-6-objetivo-exit-gate.md`](smoke/etapa-6-objetivo-exit-ga
 ### Etapa 6.5 — CONTEXT final del programa
 Este documento (§ índice humo + §0 etapas 6.x): candado staff web vs dueño Telegram; sin portal Cliente JWT; OTP cita anónimo distinto de Gmail; rate limit / logs / codes. No cambia `Program.cs` rate limit.
 
+### Frente 2 (U1–U7): fusión de usuarios/cuentas — completado 2026-09-22
+
+> ⚠️ **Esto reemplaza, para todo lo relacionado con `Users`/autenticación/permisos, lo que digan
+> §1–§4 más abajo.** Esas secciones documentan la auditoría del 2026-09-01/09-03, **antes** de
+> este refactor — se dejan tal cual como registro histórico (no se reescriben), pero varias de
+> sus afirmaciones sobre `UserAccounts`/`UserCredentials`/`UserPermissions`/`person_id` ya no
+> son ciertas.
+
+`USER_ACCOUNTS` y `USER_CREDENTIALS` **ya no existen**: `USERS` trae `PasswordHash`/
+`PasswordChangedAt` directamente (migración `MergeUsersAndAccounts`). Un usuario creado con
+`POST /api/users` queda listo para loguearse de inmediato — **ya no** hace falta
+`POST /api/useraccounts` ni `POST /api/usercredentials` (esos controllers fueron eliminados).
+Reset de contraseña ajena (exclusivo SuperAdmin) es ahora `PATCH /api/users/{id}/password`, no
+`PATCH /api/usercredentials/{id}/change-password`.
+
+`USER_PERMISSIONS` (permiso puntual por usuario, aditivo sobre `RolePermission`) **fue
+eliminada por completo**, junto con `UserPermissionsController` y `UserPermissionsRepository`.
+Ya no existe ningún mecanismo para dar u ocultar un permiso a un usuario individual —
+los permisos efectivos de un usuario dependen únicamente de su rol. `GetEffectivePermissionQueryHandler`
+ya no combina `RolePermission OR UserPermission`; solo lee `RolePermission`.
+
+El claim JWT `person_id` **fue retirado** (era redundante con `sub` desde que `AuthenticatedIdentity`/
+`CurrentProfile` colapsaron a un solo id de usuario). Cualquier mención de `person_id` en el resto
+de este documento se refiere al modelo previo — leer `sub` en su lugar.
+
+`AccountStatementsController` y los catálogos/ejecuciones de IA mencionados en §2/§6 **ya no
+existen tampoco**, pero eso es anterior a este frente (retiro D1–D4, ver README). La limpieza de
+seeds de este frente (rondas de U5) quitó sus referencias residuales en
+`database/seeds/*.sql` — ver `database/seeds/README.md` para el inventario vigente.
+
 ## 1. Arquitectura y patrones establecidos
 
 No propongas nada distinto a esto sin discutirlo antes — son decisiones ya tomadas y aplicadas en la mayoría del código.
@@ -92,12 +122,12 @@ La forma correcta de proteger un endpoint hoy es:
 ```
 
 - `RequirePermission` (`Api/Common/Security/Permissions/RequirePermissionAttribute.cs`) arma una policy dinámica `"perm:{módulo}:{acción}"`, resuelta al vuelo por `PermissionPolicyProvider` (no hay que registrar una policy por combinación).
-- `PermissionAuthorizationHandler` (`Api/Common/Security/Permissions/PermissionAuthorizationHandler.cs`) reconoce al SuperAdmin únicamente cuando el claim `role_id` coincide con el identificador canónico persistido de `SystemRoles.SuperAdminId`. Ese rol se salta la matriz de permisos. Los claims heredados `super_admin=true` ya no conceden acceso. Para los demás roles, lee `role_id` y `person_id` y llama `GetEffectivePermissionQuery`.
-- `GetEffectivePermissionQueryHandler` (`Application/Permissions/UseCases/`) combina **`RolePermission`** (permiso del rol) **OR `UserPermission`** (permiso puntual del usuario) por cada acción — es **aditivo**: `UserPermission` solo puede sumar, nunca quitar lo que ya da el rol. Si `USER_PERMISSIONS` está vacía, el sistema se comporta exactamente como si solo existiera `RolePermission` (verificado con tests unitarios en `GetEffectivePermissionQueryHandlerTests`).
+- `PermissionAuthorizationHandler` (`Api/Common/Security/Permissions/PermissionAuthorizationHandler.cs`) reconoce al SuperAdmin únicamente cuando el claim `role_id` coincide con el identificador canónico persistido de `SystemRoles.SuperAdminId`. Ese rol se salta la matriz de permisos. Los claims heredados `super_admin=true` ya no conceden acceso. Para los demás roles, lee `role_id` y llama `GetEffectivePermissionQuery`. **Frente 2 (U6, 2026-09-22):** ya no lee `person_id` — ese claim fue retirado por redundante con `sub`.
+- `GetEffectivePermissionQueryHandler` (`Application/Permissions/UseCases/`) resuelve el permiso efectivo por **`RolePermission`** (permiso del rol) únicamente. **Frente 2 (U7, 2026-09-22):** `UserPermission` (permiso puntual por usuario, antes aditivo sobre el rol) **fue eliminado por completo** — ya no existe ninguna excepción de permiso por usuario individual; todo usuario del mismo rol tiene exactamente los mismos permisos efectivos.
 - El nombre del módulo en el atributo debe **coincidir exactamente** (case-sensitive, con tildes) con una fila en la tabla `MODULES`. Si no existe esa fila, el endpoint queda inaccesible para todo el mundo excepto SuperAdmin — así se rompió `RolesController` hasta hoy (ver §3, ya corregido).
 - El propio usuario autenticado puede ver sus permisos efectivos vía `GET /api/auth/permissions` (agregado hoy, ver sección 3).
 - **Catálogo canónico de módulos** (20 filas mínimas en `MODULES`): Clientes, Mascotas, Especies y Razas, Especialidades, Veterinarios, Citas, Historiales Clínicos, Servicios, Estados de Cita, Cuentas y Pagos, Notificaciones, Usuarios, Roles, Disponibilidades, Relación Clientes-Mascotas, Permisos, Chat, Escalamientos, IA y Agente y Catálogos del Chat.
-- Los 3 controllers de gestión de permisos (`ModulesController` escritura, `RolePermissionsController` completo, `UserPermissionsController` completo) están protegidos con `[Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]`. La policy valida el `role_id` canónico persistido; **no** pasan por `RequirePermission`, de forma intencional, porque la gestión de roles y permisos no se puede delegar mediante `UserPermission`.
+- Los controllers de gestión de permisos (`ModulesController` escritura, `RolePermissionsController` completo) están protegidos con `[Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]`. La policy valida el `role_id` canónico persistido; **no** pasan por `RequirePermission`, de forma intencional — es circular: el propio permiso decidiría quién puede tocar los permisos. **Frente 2 (U7, 2026-09-22):** `UserPermissionsController` fue retirado junto con `USER_PERMISSIONS`; ya no hay un tercer controller de gestión de permisos por usuario.
 - `GET /api/auth/permissions` usa el mismo criterio: el SuperAdmin persistido recibe los cuatro flags en `true` para todos los módulos; los demás usuarios se resuelven mediante la matriz efectiva.
 
 ### Rate limiting
@@ -176,11 +206,11 @@ El portal de dueño con JWT (`ClientOnly` + `/clients/me`, `/pets/mine`, `/appoi
 | `SpeciesController` | Los 5 endpoints→`Especies y Razas:<acción>` | |
 | `StatusAppointmentsController` | Los 5 endpoints→`Estados de Cita:<acción>` | |
 | `TypeServicesController` | Los 5 endpoints→`Servicios:<acción>` | |
-| `UserAccountsController` | Los 5 endpoints→`Usuarios:<acción>` | 🟢 **Auditado y cerrado 2026-09-01** — `Mail` ahora valida duplicado (409, mismo patrón que `Username`) e índice único real en BD (migración `AddUserAccountsMailUniqueIndex`); `Status` restringido a `Activo`/`Inactivo` (`Domain.UserAccounts.ValueObjects.AccountStatus`), ya no texto libre. Ver §3 |
-| `UserCredentialsController` | POST→`Usuarios:Create`, GET/{id}/by-account→`...View`, PATCH change-password→`SuperAdminOnly` | SEC-02 implementado 2026-09-01: reset de contraseña ajena exclusivo de SuperAdmin (ya no `Usuarios:Edit`); autoservicio movido a `PATCH /api/auth/me/password` |
-| `UserPermissionsController` | Los 6 endpoints→`SuperAdminOnly` | |
-| `UserTokensController` | Los 4 endpoints→`SuperAdminOnly` | 🟢 **Auditado y cerrado 2026-09-01** — antes `RequirePermission("Usuarios", ...)`, lo que junto con la creación manual sin restricciones permitía forjar un refresh token válido para cualquier cuenta (ver SEC-03 en §3). Ahora exclusivo de SuperAdmin + el validator de creación rechaza `TokenType: "refresh"`/`"access"` |
-| `UsersController` | POST→`Create`, GET/GET{id}→`View`, PUT/deactivate/activate→`Edit` | 🟢 **Auditado y cerrado 2026-09-01** — `deactivate`/`activate` ahora sí revocan/restauran acceso real (ver SEC-03 en §3); `POST` documenta en Swagger que hace falta además `POST /api/useraccounts` + `POST /api/usercredentials` para que el usuario pueda loguearse |
+| ~~`UserAccountsController`~~ | — | 🔴 **RETIRADO (Frente 2, U5, 2026-09-22)** — `USER_ACCOUNTS` se fusionó en `USERS`. Fila conservada solo como registro histórico de la auditoría 2026-09-01. Ver banner al inicio de §1. |
+| ~~`UserCredentialsController`~~ | — | 🔴 **RETIRADO (Frente 2, U5, 2026-09-22)** — `USER_CREDENTIALS` se fusionó en `USERS`. El reset de contraseña ajena (antes `PATCH .../change-password`, `SuperAdminOnly`) ahora es `PATCH /api/users/{id}/password`, misma política. |
+| ~~`UserPermissionsController`~~ | — | 🔴 **RETIRADO (Frente 2, U7, 2026-09-22)** — `USER_PERMISSIONS` eliminada; ya no existe permiso puntual por usuario, solo por rol. |
+| `UserTokensController` | Los 4 endpoints→`SuperAdminOnly` | 🟢 **Auditado y cerrado 2026-09-01** — antes `RequirePermission("Usuarios", ...)`, lo que junto con la creación manual sin restricciones permitía forjar un refresh token válido para cualquier cuenta (ver SEC-03 en §3). Ahora exclusivo de SuperAdmin + el validator de creación rechaza `TokenType: "refresh"`/`"access"`. **Frente 2 (U5):** `by-account/{accountId}` renombrado a `by-user/{userId}`. |
+| `UsersController` | POST→`Create`, GET/GET{id}→`View`, PUT/deactivate/activate/`PATCH .../password`(SuperAdminOnly)→`Edit` | 🟢 **Auditado y cerrado 2026-09-01**; actualizado Frente 2 (U5/U7, 2026-09-22) — `POST` deja al usuario listo para loguearse de inmediato (ya no hace falta `POST /api/useraccounts` + `POST /api/usercredentials`, ambos retirados); reset de contraseña ajena vive en este mismo controller (`PATCH {id}/password`) |
 | `VaccinationsController` | POST→`Historiales Clínicos:Create`, GET/GET{id}→`...View` (filtrado por dueño en el handler), PUT→`...Edit` | Sin DELETE |
 | `VeterinariansController` | Los 5 endpoints→`Veterinarios:<acción>` | Sin `GET /me` — ver VET-02/03 pendiente |
 | `AuthController` | register (anónimo, ahora exige `IdentificationNumber` y crea el `Client`)/login/refresh (anónimo), `GET me` (self), `GET permissions` (self, incluye SuperAdmin), **`PATCH me/password`** (self, nuevo — SEC-02), revoke | No es un módulo CRUD, es infraestructura de auth. 🟢 **Auditado completo 2026-09-01 (Domain/Application/Infrastructure/Api) — cerrado, ver §3.** |
@@ -221,7 +251,7 @@ Lista original ajustada: varios ítems que se daban por pendientes **ya están r
 Re-verificado 2026-09-03 contra el código actual: `GetMyAppointmentsQueryHandler` ya vuelve a `Array.Empty<Appointment>()` cuando `client is null`, y además ahora filtra explícitamente por `ClientPetIds` del cliente (`GetByClientPetIdsAsync`) en vez de `GetAllAsync()`. Resuelto en algún commit posterior a PR #85/#86/#87 (no identificado con exactitud cuál). Quitar de cualquier lista de pendientes.
 
 ### ✅ Ya no está pendiente: SEC-02
-`PATCH /api/usercredentials/{id}/change-password` ya valida por diseño: quedó exclusivo de `SuperAdminOnly` (ya no `RequirePermission("Usuarios", Edit)`, el Administrador normal perdió el acceso). Nuevo `PATCH /api/auth/me/password` como autoservicio para cualquier rol autenticado, resolviendo las credenciales por el `sub` del propio JWT. Implementado hoy, ver §3. Quitar de cualquier lista de pendientes.
+Reset de contraseña ajena quedó exclusivo de `SuperAdminOnly` (ya no `RequirePermission("Usuarios", Edit)`, el Administrador normal no tiene acceso). **Frente 2 (U5, 2026-09-22):** el endpoint es ahora `PATCH /api/users/{id}/password` — `UserCredentialsController` (donde vivía originalmente como `PATCH .../change-password`) fue retirado. `PATCH /api/auth/me/password` sigue siendo el autoservicio para cualquier rol autenticado, resolviendo las credenciales por el `sub` del propio JWT.
 
 ### ✅ Ya no está pendiente: `GetEffectivePermissionQuery` sin exponer
 Se agregó `GET /api/auth/permissions` hoy (`a0a4afa`). Quitar de cualquier lista de pendientes.
