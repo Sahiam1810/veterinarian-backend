@@ -49,7 +49,8 @@ USING (
     SELECT 'a1000000-0000-0000-0000-000000000020' AS ID, 'Catálogos del Chat' AS NAME FROM DUAL UNION ALL
     SELECT 'a1000000-0000-0000-0000-000000000021' AS ID, 'Reportes' AS NAME FROM DUAL UNION ALL
     SELECT 'a1000000-0000-0000-0000-000000000022' AS ID, 'Plataforma' AS NAME FROM DUAL UNION ALL
-    SELECT 'a1000000-0000-0000-0000-000000000023' AS ID, 'Reprogramación de Citas' AS NAME FROM DUAL
+    SELECT 'a1000000-0000-0000-0000-000000000023' AS ID, 'Reprogramación de Citas' AS NAME FROM DUAL UNION ALL
+    SELECT 'a1000000-0000-0000-0000-000000000024' AS ID, 'Signos Vitales' AS NAME FROM DUAL
 ) source ON (UPPER(target.NAME) = UPPER(source.NAME))
 WHEN MATCHED THEN UPDATE SET target.MODULE_ID = source.ID
 WHEN NOT MATCHED THEN INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT) VALUES (source.ID, source.NAME, 'Descripción automática', SYSTIMESTAMP);
@@ -208,6 +209,7 @@ BEGIN
     sync_permission('d1e3a202-1e6c-4a86-94c3-289de0ca7c21', '11111111-1111-1111-1111-111111111111', 'Reportes', 1, 0, 0, 0);
     sync_permission('e2f4c313-2f7d-5b97-a5d4-3a0ef1db3d32', '11111111-1111-1111-1111-111111111111', 'Plataforma', 1, 0, 0, 0);
     sync_permission('e3b5d122-1f4a-4b99-a83d-11e223344556', '11111111-1111-1111-1111-111111111111', 'Reprogramación de Citas', 1, 1, 1, 1);
+    sync_permission('917a5acc-2f5a-42ef-b8fc-5954fc9a30f6', '11111111-1111-1111-1111-111111111111', 'Signos Vitales', 1, 0, 1, 0);
 
     -- Veterinario
     sync_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
@@ -251,6 +253,7 @@ BEGIN
     sync_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
     sync_permission('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-6666-666666666666', 'Estados de Cita', 1, 0, 0, 0);
     sync_permission('b5c7f646-5c0a-8eca-d8a7-6d3cf4ae6a65', '66666666-6666-6666-6666-666666666666', 'Plataforma', 1, 0, 0, 0);
+    sync_permission('62f1ce41-35e0-448f-9a1d-6b0970ad85f3', '66666666-6666-6666-6666-666666666666', 'Signos Vitales', 1, 0, 1, 0);
 
 END;
 /

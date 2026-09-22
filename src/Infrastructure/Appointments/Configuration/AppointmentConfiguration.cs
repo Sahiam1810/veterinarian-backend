@@ -76,6 +76,26 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
             .HasColumnType("VARCHAR2(500)")
             .HasMaxLength(500);
 
+        builder.Property(x => x.Weight)
+            .HasColumnName("WEIGHT")
+            .HasColumnType("NUMBER(8,2)")
+            .IsRequired(false);
+
+        builder.Property(x => x.Temperature)
+            .HasColumnName("TEMPERATURE")
+            .HasColumnType("NUMBER(5,2)")
+            .IsRequired(false);
+
+        builder.Property(x => x.HeartRate)
+            .HasColumnName("HEART_RATE")
+            .HasColumnType("NUMBER(3)")
+            .IsRequired(false);
+
+        builder.Property(x => x.RespiratoryRate)
+            .HasColumnName("RESPIRATORY_RATE")
+            .HasColumnType("NUMBER(3)")
+            .IsRequired(false);
+
         builder.Property(x => x.RequesterPhoneNumber)
             .HasColumnName("REQUESTER_PHONE_NUMBER")
             .HasColumnType("VARCHAR2(20)")

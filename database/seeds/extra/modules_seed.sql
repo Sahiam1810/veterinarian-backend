@@ -204,4 +204,14 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Reprogramación de Citas', 'Gestión y reprogramación estructural de citas médicas', SYSTIMESTAMP);
 
+-- 24. Signos Vitales
+-- Captura temprana de peso/temperatura/frecuencias directamente en la Cita
+-- (distinto de Historiales Clínicos, que es la historia clínica formal).
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000024' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Signos Vitales'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Signos Vitales', 'Registro de peso, temperatura y frecuencias al llegar la mascota', SYSTIMESTAMP);
+
 COMMIT;

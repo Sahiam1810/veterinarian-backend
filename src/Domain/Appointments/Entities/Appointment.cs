@@ -65,6 +65,10 @@ public sealed class Appointment : BaseEntity<Guid>
     public DateTime ScheduledStart { get; private set; }
     public DateTime ScheduledEnd { get; private set; }
     public string? Notes { get; private set; }
+    public decimal? Weight { get; private set; }
+    public decimal? Temperature { get; private set; }
+    public int? HeartRate { get; private set; }
+    public int? RespiratoryRate { get; private set; }
 
     public RequesterPhoneNumber? RequesterPhoneNumber { get; private set; }
 
@@ -124,6 +128,19 @@ public sealed class Appointment : BaseEntity<Guid>
     public void ApplyRequesterPhone(string requesterPhoneNumber)
     {
         RequesterPhoneNumber = RequesterPhoneNumber.Create(requesterPhoneNumber);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void RecordVitals(
+        decimal? weight,
+        decimal? temperature,
+        int? heartRate,
+        int? respiratoryRate)
+    {
+        Weight = weight;
+        Temperature = temperature;
+        HeartRate = heartRate;
+        RespiratoryRate = respiratoryRate;
         UpdatedAt = DateTime.UtcNow;
     }
 }

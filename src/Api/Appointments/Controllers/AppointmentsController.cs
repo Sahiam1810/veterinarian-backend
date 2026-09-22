@@ -197,9 +197,29 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{appointmentId:guid}/vitals")]
+    [RequirePermission("Signos Vitales", PermissionAction.Edit)]
+    [EndpointSummary("Registra signos vitales de una cita")]
+    [EndpointDescription("Actualiza únicamente peso, temperatura, frecuencia cardíaca y respiratoria de la cita sin tocar el estado ni la historia clínica. Permiso propio (\"Signos Vitales\"), separado de \"Citas\" para no habilitar reprogramar ni cambiar estado.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RecordVitals(
+        Guid appointmentId,
+        [FromBody] RecordAppointmentVitalsRequest request,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(
+            request.ToCommand(appointmentId),
+            cancellationToken);
+
+        return NoContent();
+    }
+
     [HttpPatch("{appointmentId:guid}/cancel")]
     [RequirePermission("Citas", PermissionAction.Delete)]
-    [EndpointSummary("Cancela una cita mÃ©dica")]
+    [EndpointSummary("Cancela una cita médica")]
     [EndpointDescription("Marca una cita como cancelada. Operativamente se controla con Citas.Delete.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
