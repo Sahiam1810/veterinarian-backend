@@ -24,14 +24,8 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
-using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
-
-
-using Application.ConversationStatuses.Abstraction;
-
-using Application.MessageTypes.Abstraction;
 
 using Application.EscalationStatuses.Abstraction;
 
@@ -39,7 +33,6 @@ using Application.Notifications.Abstraction;
 
 using Application.AgentHumans.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
@@ -74,14 +67,7 @@ public interface IUnitOfWork
 
     IVeterinarianRepository VeterinariansRepository { get; }
 
-    IPriorityRepository PrioritiesRepository { get; }
-
     ISenderTypeRepository SenderTypesRepository { get; }
-
-
-    IConversationStatusRepository ConversationStatusesRepository { get; }
-
-    IMessageTypeRepository MessageTypesRepository { get; }
 
     IEscalationStatusRepository EscalationStatusesRepository { get; }
 
@@ -106,9 +92,6 @@ public interface IUnitOfWork
     IChatMessageRepository ChatMessagesRepository { get; }
 
     IChatEscalationRepository ChatEscalationsRepository { get; }
-
-    IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
-
 
     IClientRepository ClientsRepository { get; }
 

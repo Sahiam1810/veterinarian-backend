@@ -6,41 +6,16 @@ namespace Application.ChatEscalations.UseCase;
 
 // Ticket B7: escalamiento + prioridad de su conversación — ChatEscalation no
 // tiene un campo de prioridad propio, vive en ChatConversation.PriorityId.
-public sealed record ChatEscalationWithPriority(
-    ChatEscalationEntity Escalation,
-    Guid? PriorityId,
-    string? Priority);
-
 public sealed record GetAllChatEscalationsQuery
-    : IRequest<IReadOnlyCollection<ChatEscalationWithPriority>>;
+    : IRequest<IReadOnlyCollection<ChatEscalationEntity>>;
 
 public sealed class GetAllChatEscalationsQueryHandler(IUnitOfWork uow)
-    : IRequestHandler<GetAllChatEscalationsQuery, IReadOnlyCollection<ChatEscalationWithPriority>>
+    : IRequestHandler<GetAllChatEscalationsQuery, IReadOnlyCollection<ChatEscalationEntity>>
 {
-    public async Task<IReadOnlyCollection<ChatEscalationWithPriority>> Handle(
+    public async Task<IReadOnlyCollection<ChatEscalationEntity>> Handle(
         GetAllChatEscalationsQuery request,
         CancellationToken cancellationToken)
     {
-        var escalations = await uow.ChatEscalationsRepository.GetAllAsync(cancellationToken);
-
-        var results = new List<ChatEscalationWithPriority>(escalations.Count);
-        foreach (var escalation in escalations)
-        {
-            Guid? priorityId = null;
-            string? priorityName = null;
-
-            var conversation = await uow.ChatConversationsRepository.GetByIdAsync(
-                escalation.ChatConversationId, cancellationToken);
-            if (conversation?.PriorityId is { } id)
-            {
-                priorityId = id;
-                var priority = await uow.PrioritiesRepository.GetByIdAsync(id, cancellationToken);
-                priorityName = priority?.Name.Value;
-            }
-
-            results.Add(new ChatEscalationWithPriority(escalation, priorityId, priorityName));
-        }
-
-        return results;
+        return await uow.ChatEscalationsRepository.GetAllAsync(cancellationToken);
     }
 }

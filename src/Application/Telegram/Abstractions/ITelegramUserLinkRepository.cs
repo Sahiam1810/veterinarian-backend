@@ -21,6 +21,10 @@ public interface ITelegramUserLinkRepository
         long telegramChatId,
         CancellationToken cancellationToken);
 
+    Task<TelegramUserLink?> GetByConversationIdAsync(
+        Guid conversationId,
+        CancellationToken cancellationToken);
+
     Task AddAsync(TelegramUserLink link, CancellationToken cancellationToken);
 
     Task UpdateAsync(TelegramUserLink link, CancellationToken cancellationToken);

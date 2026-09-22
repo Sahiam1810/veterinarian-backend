@@ -69,50 +69,6 @@ public sealed class ChatConversationController(ISender sender) : ControllerBase
             : Ok(conversation.ToResponse());
     }
 
-    [HttpPatch("{id:guid}/status")]
-    [RequirePermission("Chat", PermissionAction.Edit)]
-    [EndpointSummary("Cambiar el estado de una conversación")]
-    [EndpointDescription("Actualiza el estado de la conversación validando que el catálogo exista.")]
-    [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ChatConversationResponseDto>> UpdateStatus(
-        Guid id,
-        [FromBody] UpdateChatConversationStatusDto dto,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var conversation = await sender.Send(dto.ToCommand(id), cancellationToken);
-            return Ok(conversation.ToResponse());
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { Message = ex.Message });
-        }
-    }
-
-    [HttpPatch("{id:guid}/priority")]
-    [RequirePermission("Chat", PermissionAction.Edit)]
-    [EndpointSummary("Cambiar la prioridad de una conversación")]
-    [EndpointDescription("Establece o retira la prioridad de la conversación.")]
-    [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ChatConversationResponseDto>> UpdatePriority(
-        Guid id,
-        [FromBody] UpdateChatConversationPriorityDto dto,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var conversation = await sender.Send(dto.ToCommand(id), cancellationToken);
-            return Ok(conversation.ToResponse());
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { Message = ex.Message });
-        }
-    }
-
     [HttpPatch("{id:guid}/ai-enabled")]
     [RequirePermission("Chat", PermissionAction.Edit)]
     [EndpointSummary("Activar o desactivar IA en una conversación")]

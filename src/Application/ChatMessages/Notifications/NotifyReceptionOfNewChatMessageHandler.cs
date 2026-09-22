@@ -36,8 +36,6 @@ public sealed class NotifyReceptionOfNewChatMessageHandler(
 
             var senderType = await uow.SenderTypesRepository.GetByIdAsync(
                 message.SenderTypesId, cancellationToken);
-            var messageType = await uow.MessageTypesRepository.GetByIdAsync(
-                message.MessageTypeId, cancellationToken);
 
             var payload = new ChatMessageReceivedPayload(
                 message.Id,
@@ -46,7 +44,7 @@ public sealed class NotifyReceptionOfNewChatMessageHandler(
                 SenderName: null,
                 message.Content,
                 message.CreatedAt,
-                messageType?.Name.Value);
+                MessageType: null);
 
             await chatRealtimeNotifier.NotifyMessageReceivedAsync(payload, cancellationToken);
         }

@@ -11,8 +11,6 @@ public interface ITelegramUnitOfWork
 
     ITelegramUserLinkRepository UserLinksRepository { get; }
 
-    ITelegramConversationLinkRepository ConversationLinksRepository { get; }
-
     ITelegramInboundUpdateRepository InboundUpdatesRepository { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

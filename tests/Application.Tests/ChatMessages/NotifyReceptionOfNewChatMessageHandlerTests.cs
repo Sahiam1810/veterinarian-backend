@@ -3,7 +3,6 @@ using Application.ChatMessages.Events;
 using Application.ChatMessages.Notifications;
 using Application.Common.Abstractions;
 using Application.Notifications.Abstraction;
-using Domain.MessageTypes.Entities;
 using Domain.SenderTypes.Entities;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -17,7 +16,6 @@ public sealed class NotifyReceptionOfNewChatMessageHandlerTests
     private static readonly Guid ConversationId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid ParticipantId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid SenderTypeId = Guid.Parse("82000000-0000-0000-0000-000000000001");
-    private static readonly Guid MessageTypeId = Guid.Parse("83000000-0000-0000-0000-000000000001");
 
     [Fact]
     public async Task Message_in_a_conversation_without_active_escalation_is_not_broadcast()
@@ -25,7 +23,7 @@ public sealed class NotifyReceptionOfNewChatMessageHandlerTests
         var fixture = CreateFixture();
         fixture.EscalationReader.HasActiveAsync(ConversationId, default).Returns(false);
         var message = ChatMessageEntity.Create(
-            ConversationId, SenderTypeId, MessageTypeId, ParticipantId, "hola");
+            ConversationId, SenderTypeId, ParticipantId, "hola");
 
         await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
 
@@ -40,10 +38,8 @@ public sealed class NotifyReceptionOfNewChatMessageHandlerTests
         fixture.EscalationReader.HasActiveAsync(ConversationId, default).Returns(true);
         fixture.Uow.SenderTypesRepository.GetByIdAsync(SenderTypeId, default)
             .Returns(new SenderTypeEntity("Cliente"));
-        fixture.Uow.MessageTypesRepository.GetByIdAsync(MessageTypeId, default)
-            .Returns(new MessageTypeEntity("Texto"));
         var message = ChatMessageEntity.Create(
-            ConversationId, SenderTypeId, MessageTypeId, ParticipantId, "hola");
+            ConversationId, SenderTypeId, ParticipantId, "hola");
 
         await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
 
@@ -52,7 +48,6 @@ public sealed class NotifyReceptionOfNewChatMessageHandlerTests
                 payload.MessageId == message.Id &&
                 payload.ConversationId == ConversationId &&
                 payload.SenderType == "Cliente" &&
-                payload.MessageType == "Texto" &&
                 payload.Content == "hola"),
             default);
     }
@@ -64,13 +59,11 @@ public sealed class NotifyReceptionOfNewChatMessageHandlerTests
         fixture.EscalationReader.HasActiveAsync(ConversationId, default).Returns(true);
         fixture.Uow.SenderTypesRepository.GetByIdAsync(SenderTypeId, default)
             .Returns(new SenderTypeEntity("Cliente"));
-        fixture.Uow.MessageTypesRepository.GetByIdAsync(MessageTypeId, default)
-            .Returns(new MessageTypeEntity("Texto"));
         fixture.ChatRealtimeNotifier
             .NotifyMessageReceivedAsync(Arg.Any<ChatMessageReceivedPayload>(), Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new InvalidOperationException("hub unavailable"));
         var message = ChatMessageEntity.Create(
-            ConversationId, SenderTypeId, MessageTypeId, ParticipantId, "hola");
+            ConversationId, SenderTypeId, ParticipantId, "hola");
 
         var exception = await Record.ExceptionAsync(() =>
             fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default));

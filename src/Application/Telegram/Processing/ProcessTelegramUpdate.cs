@@ -373,7 +373,6 @@ public sealed class ProcessTelegramUpdateHandler(
                 conversationId,
                 clientParticipant.Id,
                 conversationDefaults.ClientParticipantTypeId,
-                settings.TextMessageTypeId,
                 messageText,
                 Metadata: null),
             cancellationToken);
@@ -389,32 +388,33 @@ public sealed class ProcessTelegramUpdateHandler(
         string idempotencyKey,
         CancellationToken cancellationToken)
     {
-        var binding = await unitOfWork.ConversationLinksRepository.GetBindingAsync(
-            userLink.Id,
-            cancellationToken);
-        if (binding is { Closed: false })
+        if (userLink.ChatConversationId is { } conversationId)
         {
-
-            var lastActivity = binding.LastMessageAt ?? binding.CreatedAt;
-            var idleFor = timeProvider.GetUtcNow().UtcDateTime - lastActivity;
-            if (idleFor <= settings.PrivateAccessIdleLifetime)
-            {
-                return await conversationContextProvider.ResolveAsync(
-                    userLink.ClientId,
-                    binding.ConversationId,
-                    idempotencyKey,
-                    "Telegram",
-                    cancellationToken);
-            }
-
-            await sender.Send(
-                new CloseChatConversationCommand(binding.ConversationId),
-
+            var conversation = await sender.Send(
+                new GetChatConversationByIdQuery(conversationId),
                 cancellationToken);
-            logger.LogInformation(
-                "Closed idle Telegram conversation {ConversationId} after {IdleMinutes} minutes.",
-                binding.ConversationId,
-                idleFor.TotalMinutes);
+            if (conversation is { Closed: false })
+            {
+                var lastActivity = conversation.LastMessageAt ?? conversation.CreatedAt;
+                var idleFor = timeProvider.GetUtcNow().UtcDateTime - lastActivity;
+                if (idleFor <= settings.PrivateAccessIdleLifetime)
+                {
+                    return await conversationContextProvider.ResolveAsync(
+                        userLink.ClientId,
+                        conversation.Id,
+                        idempotencyKey,
+                        "Telegram",
+                        cancellationToken);
+                }
+
+                await sender.Send(
+                    new CloseChatConversationCommand(conversation.Id),
+                    cancellationToken);
+                logger.LogInformation(
+                    "Closed idle Telegram conversation {ConversationId} after {IdleMinutes} minutes.",
+                    conversation.Id,
+                    idleFor.TotalMinutes);
+            }
         }
 
         AgentConversationContext? created = null;
@@ -426,21 +426,13 @@ public sealed class ProcessTelegramUpdateHandler(
                 idempotencyKey,
                 "Telegram",
                 transactionToken);
-            var link = await unitOfWork.ConversationLinksRepository.GetByUserLinkIdAsync(
+            var link = await unitOfWork.UserLinksRepository.GetByIdAsync(
                 userLink.Id,
                 transactionToken);
-            if (link is null)
+            if (link is not null)
             {
-                link = TelegramConversationLink.Create(
-                    userLink.Id,
-                    created.ConversationId,
-                    timeProvider.GetUtcNow().UtcDateTime);
-                await unitOfWork.ConversationLinksRepository.AddAsync(link, transactionToken);
-            }
-            else
-            {
-                link.BindConversation(created.ConversationId, timeProvider.GetUtcNow().UtcDateTime);
-                await unitOfWork.ConversationLinksRepository.UpdateAsync(link, transactionToken);
+                link.BindConversation(created.ConversationId);
+                await unitOfWork.UserLinksRepository.UpdateAsync(link, transactionToken);
             }
         }, cancellationToken);
         return created!;

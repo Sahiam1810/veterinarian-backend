@@ -47,19 +47,18 @@ public sealed class TelegramEntitiesTests
     }
 
     [Fact]
-    public void Conversation_link_can_move_to_a_new_internal_conversation()
+    public void User_link_can_bind_and_unbind_conversation()
     {
-        var link = TelegramConversationLink.Create(
-            UserLinkId,
-            ConversationId,
-            Now);
-        var nextConversationId =
-            Guid.Parse("44444444-4444-4444-4444-444444444444");
+        var link = TelegramUserLink.Create(PersonId, 1001, 1001, Now);
 
-        link.BindConversation(nextConversationId, Now.AddMinutes(1));
+        link.BindConversation(ConversationId);
 
-        Assert.Equal(nextConversationId, link.ConversationId);
-        Assert.Equal(Now.AddMinutes(1), link.UpdatedAt);
+        Assert.Equal(ConversationId, link.ChatConversationId);
+        Assert.NotNull(link.UpdatedAt);
+
+        link.UnbindConversation();
+
+        Assert.Null(link.ChatConversationId);
     }
 
     [Fact]

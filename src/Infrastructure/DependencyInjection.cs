@@ -27,13 +27,8 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
-using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
-
-using Application.ConversationStatuses.Abstraction;
-
-using Application.MessageTypes.Abstraction;
 
 using Application.EscalationStatuses.Abstraction;
 
@@ -59,7 +54,6 @@ using Infrastructure.Clients.Repositories;
 
 using Application.AgentHumans.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
@@ -67,7 +61,6 @@ using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
 using Infrastructure.AgentHumans.Repository;
 using Infrastructure.ChatConversations.Repository;
-using Infrastructure.ChatEscalationResolutions.Repository;
 using Infrastructure.ChatEscalations.Repository;
 using Infrastructure.ChatMessages.Repository;
 using Infrastructure.ChatParticipants.Repository;
@@ -97,13 +90,8 @@ using Infrastructure.Specialties.Repositories;
 using Infrastructure.ClientsPets.Repositories;
 
 using Infrastructure.Veterinarians.Repositories;
-using Infrastructure.Priorities.Repositories;
 
 using Infrastructure.SenderTypes.Repositories;
-
-using Infrastructure.ConversationStatuses.Repositories;
-
-using Infrastructure.MessageTypes.Repositories;
 
 using Infrastructure.EscalationStatuses.Repositories;
 
@@ -177,13 +165,7 @@ public static class DependencyInjection
 
         services.AddScoped<IVeterinarianRepository, VeterinarianRepository>();
 
-        services.AddScoped<IPriorityRepository, PriorityRepository>();
-
         services.AddScoped<ISenderTypeRepository, SenderTypeRepository>();
-
-        services.AddScoped<IConversationStatusRepository, ConversationStatusRepository>();
-
-        services.AddScoped<IMessageTypeRepository, MessageTypeRepository>();
 
         services.AddScoped<IEscalationStatusRepository, EscalationStatusRepository>();
 
@@ -203,10 +185,8 @@ public static class DependencyInjection
         services.AddScoped<IChatParticipantRepository, ChatParticipantRepository>();
         services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
         services.AddScoped<IChatEscalationRepository, ChatEscalationRepository>();
-        services.AddScoped<IChatEscalationResolutionRepository, ChatEscalationResolutionRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
         services.AddScoped<ITelegramUserLinkRepository, TelegramUserLinkRepository>();
-        services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
@@ -291,7 +271,6 @@ public static class DependencyInjection
                 options.MaxProcessingAttempts,
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes),
                 Guid.Parse(options.PendingEscalationStatusId),
-                Guid.Parse(options.TextMessageTypeId),
                 Guid.Parse(options.HumanAgentSenderTypeId),
                 TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours),
                 TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes));
@@ -322,7 +301,6 @@ public static class DependencyInjection
             {
                 var options = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
                 return new ConfiguredAgentConversationDefaults(
-                    Guid.Parse(options.InitialConversationStatusId),
                     Guid.Parse(options.ClientParticipantTypeId));
             });
             services.AddScoped<

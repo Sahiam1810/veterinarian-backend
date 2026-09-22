@@ -18,6 +18,8 @@ public sealed class TelegramUserLinkConfiguration
             .HasConversion(value => value.ToString(), value => Guid.Parse(value)).IsRequired();
         builder.Property(link => link.TelegramUserId).HasColumnName("TELEGRAM_USER_ID").HasColumnType("NUMBER(19)").IsRequired();
         builder.Property(link => link.TelegramChatId).HasColumnName("TELEGRAM_CHAT_ID").HasColumnType("NUMBER(19)").IsRequired();
+        builder.Property(link => link.ChatConversationId).HasColumnName("CHAT_CONVERSATION_ID").HasColumnType("VARCHAR2(36)")
+            .HasConversion(guid => guid.HasValue ? guid.Value.ToString() : null, value => !string.IsNullOrEmpty(value) ? Guid.Parse(value) : null);
         builder.Property(link => link.LinkedAt).HasColumnName("LINKED_AT").HasColumnType("TIMESTAMP").IsRequired();
         builder.Property(link => link.UnlinkedAt).HasColumnName("UNLINKED_AT").HasColumnType("TIMESTAMP");
         builder.Property(link => link.CreatedAt).HasColumnName("CREATED_AT").HasColumnType("TIMESTAMP").IsRequired();

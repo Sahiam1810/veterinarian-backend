@@ -21,20 +21,14 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
-using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
-
-using Application.ConversationStatuses.Abstraction;
-
-using Application.MessageTypes.Abstraction;
 
 using Application.EscalationStatuses.Abstraction;
 
 using Application.Notifications.Abstraction;
 using Application.AgentHumans.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
@@ -67,9 +61,6 @@ public sealed class UnitOfWork : IUnitOfWork
         IClientPetRepository clientPetsRepository,
         ISenderTypeRepository senderTypesRepository,
         IVeterinarianRepository veterinariansRepository,
-        IConversationStatusRepository conversationStatusesRepository,
-        IMessageTypeRepository messageTypesRepository,
-        IPriorityRepository prioritiesRepository,
         IEscalationStatusRepository escalationStatusesRepository,
         IAvailabilityRepository availabilitiesRepository,
         IAppointmentRepository appointmentsRepository,
@@ -82,8 +73,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IChatConversationRepository chatConversationsRepository,
         IChatParticipantRepository chatParticipantsRepository,
         IChatMessageRepository chatMessagesRepository,
-        IChatEscalationRepository chatEscalationsRepository,
-        IChatEscalationResolutionRepository chatEscalationResolutionsRepository)
+        IChatEscalationRepository chatEscalationsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
@@ -101,10 +91,7 @@ public sealed class UnitOfWork : IUnitOfWork
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
         VeterinariansRepository = veterinariansRepository;
-        PrioritiesRepository = prioritiesRepository;
         SenderTypesRepository = senderTypesRepository;
-        ConversationStatusesRepository = conversationStatusesRepository;
-        MessageTypesRepository = messageTypesRepository;
         EscalationStatusesRepository = escalationStatusesRepository;
         AvailabilitiesRepository = availabilitiesRepository;
         AppointmentsRepository = appointmentsRepository;
@@ -118,7 +105,6 @@ public sealed class UnitOfWork : IUnitOfWork
         ChatParticipantsRepository = chatParticipantsRepository;
         ChatMessagesRepository = chatMessagesRepository;
         ChatEscalationsRepository = chatEscalationsRepository;
-        ChatEscalationResolutionsRepository = chatEscalationResolutionsRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
@@ -136,10 +122,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public ISpecialtyRepository SpecialtiesRepository { get; }
     public IClientPetRepository ClientPetsRepository { get; }
     public IVeterinarianRepository VeterinariansRepository { get; }
-    public IPriorityRepository PrioritiesRepository { get; }
     public ISenderTypeRepository SenderTypesRepository { get; }
-    public IConversationStatusRepository ConversationStatusesRepository { get; }
-    public IMessageTypeRepository MessageTypesRepository { get; }
     public IEscalationStatusRepository EscalationStatusesRepository { get; }
     public IAvailabilityRepository AvailabilitiesRepository { get; }
     public IAppointmentRepository AppointmentsRepository { get; }
@@ -153,7 +136,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IChatParticipantRepository ChatParticipantsRepository { get; }
     public IChatMessageRepository ChatMessagesRepository { get; }
     public IChatEscalationRepository ChatEscalationsRepository { get; }
-    public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

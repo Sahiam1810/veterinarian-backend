@@ -16,7 +16,6 @@ namespace Application.Telegram.Notifications;
 // es un estado inconsistente real — se registra como error, no como un caso
 // esperado a manejar con gracia.
 public sealed class ForwardHumanChatMessageToTelegramHandler(
-    ITelegramConversationLinkRepository conversationLinks,
     ITelegramUserLinkRepository userLinks,
     ITelegramBotClient botClient,
     ITelegramRuntimeSettings settings,
@@ -36,28 +35,14 @@ public sealed class ForwardHumanChatMessageToTelegramHandler(
 
         try
         {
-            var conversationLink = await conversationLinks.GetByConversationIdAsync(
+            var userLink = await userLinks.GetByConversationIdAsync(
                 message.ChatConversationId,
-                cancellationToken);
-            if (conversationLink is null)
-            {
-                logger.LogError(
-                    "No TelegramConversationLink found for conversation {ConversationId}; " +
-                    "cannot forward human agent message {MessageId}.",
-                    message.ChatConversationId,
-                    message.Id);
-                return;
-            }
-
-            var userLink = await userLinks.GetByIdAsync(
-                conversationLink.TelegramUserLinkId,
                 cancellationToken);
             if (userLink is null)
             {
                 logger.LogError(
-                    "No TelegramUserLink '{TelegramUserLinkId}' found for conversation " +
-                    "{ConversationId}; cannot forward human agent message {MessageId}.",
-                    conversationLink.TelegramUserLinkId,
+                    "No TelegramUserLink found for conversation {ConversationId}; " +
+                    "cannot forward human agent message {MessageId}.",
                     message.ChatConversationId,
                     message.Id);
                 return;

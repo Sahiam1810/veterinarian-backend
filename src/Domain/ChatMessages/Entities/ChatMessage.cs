@@ -15,8 +15,6 @@ public sealed class ChatMessage : BaseEntity<Guid>
 
     public Guid SenderTypesId { get; private set; }
 
-    public Guid MessageTypeId { get; private set; }
-
     public Guid ChatParticipantId { get; private set; }
 
     public string Content { get; private set; } = null!;
@@ -29,14 +27,12 @@ public sealed class ChatMessage : BaseEntity<Guid>
     public static ChatMessage Create(
         Guid chatConversationId,
         Guid senderTypesId,
-        Guid messageTypeId,
         Guid chatParticipantId,
         string content,
         string? metadata = null)
     {
         EnsureChatConversationId(chatConversationId);
         EnsureSenderTypesId(senderTypesId);
-        EnsureMessageTypeId(messageTypeId);
         EnsureChatParticipantId(chatParticipantId);
         EnsureContent(content);
 
@@ -45,12 +41,20 @@ public sealed class ChatMessage : BaseEntity<Guid>
             Id = Guid.NewGuid(),
             ChatConversationId = chatConversationId,
             SenderTypesId = senderTypesId,
-            MessageTypeId = messageTypeId,
             ChatParticipantId = chatParticipantId,
             Content = content,
             Metadata = metadata
         };
     }
+
+    public static ChatMessage Create(
+        Guid chatConversationId,
+        Guid senderTypesId,
+        Guid messageTypeId,
+        Guid chatParticipantId,
+        string content,
+        string? metadata)
+        => Create(chatConversationId, senderTypesId, chatParticipantId, content, metadata);
 
     private static void EnsureChatConversationId(Guid chatConversationId)
     {
@@ -69,16 +73,6 @@ public sealed class ChatMessage : BaseEntity<Guid>
             throw new ArgumentException(
                 "El identificador del tipo de remitente es obligatorio.",
                 nameof(senderTypesId));
-        }
-    }
-
-    private static void EnsureMessageTypeId(Guid messageTypeId)
-    {
-        if (messageTypeId == Guid.Empty)
-        {
-            throw new ArgumentException(
-                "El identificador del tipo de mensaje es obligatorio.",
-                nameof(messageTypeId));
         }
     }
 
