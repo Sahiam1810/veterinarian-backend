@@ -289,7 +289,7 @@ Swagger. A alto nivel:
 | --- | --- |
 | Sesión interna | `POST /api/auth/login`, `POST /api/auth/refresh`, `GET /api/auth/me`, `GET /api/auth/permissions`, `PATCH /api/auth/me/password`, `POST /api/auth/revoke` |
 | Operación de staff | `/api/clients`, `/api/pets`, `/api/veterinarians`, `/api/availabilities`, `/api/veterinarian-absences`, `/api/appointments`, `/api/medicalrecords`, `/api/vaccinations`, `/api/reports` |
-| Catálogos y seguridad | `/api/species`, `/api/races`, `/api/services`, `/api/roles`, `/api/role-permissions`, `/api/user-permissions`, `/api/users`, `/api/useraccounts`, `/api/usercredentials` |
+| Catálogos y seguridad | `/api/species`, `/api/races`, `/api/services`, `/api/roles`, `/api/role-permissions`, `/api/users`, `PATCH /api/users/{id}/password` |
 | Dueños/bot | `POST /api/owners/bot` → `{ clientId }`, lookups anónimos de clientes, Claim OTP (`request-claim-by-identification` + `bot-link/claim`), rutas `/api/bot/*` |
 | Integraciones | `POST /api/integrations/telegram/webhook`, `POST /api/integrations/telegram/bot-link`, `POST /api/agent/messages`, `/hubs/notifications` |
 | Administración conversacional | `/api/chat/*` (participantes con `clientId`; sin `/api/chat/user-profiles`) |

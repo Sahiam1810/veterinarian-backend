@@ -9,6 +9,7 @@ using Application.UserTokens.Abstraction;
 using Infrastructure.Security;
 using Infrastructure.Security.Authentication;
 using Infrastructure.Security.Tokens;
+using Domain.Roles;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -32,6 +33,8 @@ internal static class AuthSecurityTestUsers
     public const string ClienteNoHashEmail = "cliente.nohash@huellitas.test";
     public const string ClientePlausiblePassword = "ClientePlausible123!";
     public const string ClienteRandomPassword = "xK9#mQ2!random";
+    public const string SuperAdminEmail = "superadmin@huellitas.test";
+    public const string SuperAdminPassword = "SuperAdminPassword123!";
 }
 
 public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthController>
@@ -71,6 +74,22 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
     private readonly List<UserTokenEntity> refreshTokens = [];
     private readonly IPasswordHasher passwordHasher = new PasswordHasher();
 
+    // U7: expuestos para los tests de aceptación (alta de usuario con el
+    // mismo rol "Administrador" que staffA/staffB, y desactivación directa
+    // de un usuario ya logueado sin pasar por el endpoint HTTP).
+    private readonly Dictionary<Guid, UserEntity> usersById = [];
+    private readonly Dictionary<string, UserEntity> usersByEmail = new(StringComparer.OrdinalIgnoreCase);
+
+    public Guid StaffRoleId { get; private set; }
+
+    public void DeactivateUser(string email)
+    {
+        if (usersByEmail.TryGetValue(email.Trim().ToLowerInvariant(), out var user))
+        {
+            user.Deactivate();
+        }
+    }
+
     public AuthSecurityHttpApiFactory()
     {
         foreach (var setting in TestEnvironment)
@@ -92,8 +111,17 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
         builder.UseEnvironment("Testing");
         builder.ConfigureTestServices(services =>
         {
+            usersById.Clear();
+            usersByEmail.Clear();
+
             var staffRole = new RoleEntity("Administrador", "Staff panel");
+            StaffRoleId = staffRole.Id;
             var clientRole = new RoleEntity("Cliente", "Cliente sin panel");
+            // El Id real de SuperAdmin lo fija SystemRoles.SuperAdminId, no el
+            // Id que genera el constructor de RoleEntity -- se registra en el
+            // diccionario bajo esa clave explícita, igual que en
+            // AuthenticationServiceSuperAdminTests.
+            var superAdminRole = new RoleEntity(SystemRoles.SuperAdminName, "Rol de sistema");
 
             // U5: USERS ya trae la contraseña directamente -- no hay cuenta
             // ni credenciales separadas que fusionar.
@@ -114,25 +142,25 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                 AuthSecurityTestUsers.ClienteNoHashEmail,
                 string.Empty,
                 clientRole.Id);
+            // U7: para los tests de aceptación (alta de usuario + login, sin
+            // excepciones de permiso por usuario).
+            var superAdminUser = new UserEntity(
+                "Super Admin",
+                AuthSecurityTestUsers.SuperAdminEmail,
+                passwordHasher.Hash(AuthSecurityTestUsers.SuperAdminPassword),
+                SystemRoles.SuperAdminId);
 
-            var usersById = new Dictionary<Guid, UserEntity>
+            foreach (var user in new[] { staffAUser, staffBUser, clientUser, superAdminUser })
             {
-                [staffAUser.Id] = staffAUser,
-                [staffBUser.Id] = staffBUser,
-                [clientUser.Id] = clientUser
-            };
-
-            var usersByEmail = new Dictionary<string, UserEntity>(StringComparer.OrdinalIgnoreCase)
-            {
-                [staffAUser.Email.Value] = staffAUser,
-                [staffBUser.Email.Value] = staffBUser,
-                [clientUser.Email.Value] = clientUser
-            };
+                usersById[user.Id] = user;
+                usersByEmail[user.Email.Value] = user;
+            }
 
             var rolesById = new Dictionary<Guid, RoleEntity>
             {
                 [staffRole.Id] = staffRole,
-                [clientRole.Id] = clientRole
+                [clientRole.Id] = clientRole,
+                [SystemRoles.SuperAdminId] = superAdminRole
             };
 
             var usersRepository = Substitute.For<IUsersRepository>();
@@ -149,6 +177,23 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                     usersById.TryGetValue(call.Arg<Guid>(), out var user);
                     return Task.FromResult<UserEntity?>(user);
                 });
+            usersRepository.ExistsByEmailAsync(
+                    Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+                .Returns(call =>
+                {
+                    var email = call.Arg<string>().Trim().ToLowerInvariant();
+                    return Task.FromResult(usersByEmail.ContainsKey(email));
+                });
+            usersRepository.AddAsync(Arg.Any<UserEntity>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    var user = call.Arg<UserEntity>();
+                    usersById[user.Id] = user;
+                    usersByEmail[user.Email.Value] = user;
+                    return Task.CompletedTask;
+                });
+            usersRepository.UpdateAsync(Arg.Any<UserEntity>(), Arg.Any<CancellationToken>())
+                .Returns(Task.CompletedTask);
 
             var rolesRepository = Substitute.For<IRolesRepository>();
             rolesRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -188,6 +233,7 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                 });
 
             var unitOfWork = Substitute.For<IUnitOfWork>();
+            unitOfWork.UsersRepository.Returns(usersRepository);
             unitOfWork.RolesRepository.Returns(rolesRepository);
             unitOfWork.ExecuteInTransactionAsync(
                     Arg.Any<Func<CancellationToken, Task>>(),

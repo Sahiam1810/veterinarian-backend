@@ -120,7 +120,7 @@ public sealed class AuthErrorContractApiFactory : WebApplicationFactory<AuthCont
     private sealed class AlwaysInvalidAuthenticationService : IAuthenticationService
     {
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) =>
             throw new InvalidOperationException("Unexpected call.");
 

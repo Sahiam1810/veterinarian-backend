@@ -59,6 +59,7 @@ Algunos endpoints legacy aún usan `ApiErrorResponse` sin `code`. No inventar `c
 | `Authentication.Unauthorized` | 401 | JWT ausente/inválido (challenge) |
 | `Authentication.Forbidden` | 403 | Autenticado sin permiso de recurso |
 | `Authentication.PlatformAccessDenied` | 403 | Rol no admitido en esa plataforma/front |
+| `Authentication.UserInactive` | 403 | Usuario desactivado por un administrador (login o refresh); distinto de `PlatformAccessDenied` para que el front muestre "usuario inactivo" en vez del genérico de rol no admitido |
 | `Authentication.InvalidRegistrationData` | 400 | Datos de registro de personal inválidos |
 
 **Retirados como códigos de alta de cliente** (usar `Clients.*`):

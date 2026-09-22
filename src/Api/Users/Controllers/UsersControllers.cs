@@ -146,7 +146,7 @@ public sealed class UsersController(ISender sender) : ControllerBase
     [HttpDelete("{id:guid}")]
     [RequirePermission("Usuarios", PermissionAction.Delete)]
     [EndpointSummary("Elimina un usuario inactivo")]
-    [EndpointDescription("Borra de forma permanente un usuario previamente desactivado, incluyendo su cuenta de acceso y el perfil de veterinario si no tiene citas.")]
+    [EndpointDescription("Borra de forma permanente un usuario previamente desactivado, incluyendo su perfil de veterinario si no tiene citas.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

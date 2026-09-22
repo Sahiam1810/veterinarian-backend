@@ -28,7 +28,7 @@ public sealed class UpdateUserCommandHandler
             SystemRoles.IsSuperAdmin(request.RoleId))
         {
             throw new ForbiddenException(
-                "La cuenta SuperAdmin solo se administra mediante el proceso seguro de aprovisionamiento.");
+                "El usuario SuperAdmin solo se administra mediante el proceso seguro de aprovisionamiento.");
         }
 
         var role = await _uow.RolesRepository.GetByIdAsync(

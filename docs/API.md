@@ -1,17 +1,20 @@
 # Catálogo de endpoints
 
 Este documento inventaría las rutas según el modelo del refactor de clientes y
-usuarios. Fuente de verdad del cambio: [`docs/contracts/clientes-usuarios-api-v2.md`](contracts/clientes-usuarios-api-v2.md).
+usuarios. Fuente de verdad: [`docs/contracts/clientes-usuarios-api-v2.md`](contracts/clientes-usuarios-api-v2.md)
+(Frente 1, separación clientes/usuarios) y [`docs/contracts/fusion-usuarios-api-v3.md`](contracts/fusion-usuarios-api-v3.md)
+(Frente 2, fusión `USER_ACCOUNTS`/`USER_CREDENTIALS` en `USERS` y retiro de permisos por usuario — completado 2026-09-22).
 Los cuerpos, parámetros, respuestas y códigos HTTP precisos se publican en
 Swagger al ejecutar la API en `Development` (`/swagger`).
 
-Las rutas retiradas por la limpieza del frente (catálogos y ejecuciones de IA,
-adjuntos y asignaciones del chat, estados de cuenta, código de vinculación y
-registro web de Telegram, OTP de citas) **ya no existen** y no aparecen aquí.
+Las rutas retiradas por la limpieza de ambos frentes (catálogos y ejecuciones
+de IA, adjuntos y asignaciones del chat, estados de cuenta, código de
+vinculación y registro web de Telegram, OTP de citas, cuentas/credenciales de
+usuario separadas, permisos por usuario) **ya no existen** y no aparecen aquí.
 
 ## Convenciones de acceso
 
-- **Staff/permisos**: JWT de una cuenta interna y el permiso o política que
+- **Staff/permisos**: JWT de un usuario interno y el permiso o política que
   declara el controlador. `SuperAdmin` puede realizar las operaciones que le
   correspondan por política.
 - **Admin**: política `AdminOnly`; **SuperAdmin**: política `SuperAdminOnly`.
@@ -36,8 +39,8 @@ GUID se muestran tal como están definidos en los atributos de enrutamiento.
 | --- | --- | --- | --- |
 | POST | `/api/auth/login` | Anónimo, rate limit | Inicia sesión de personal. |
 | POST | `/api/auth/refresh` | Anónimo, rate limit | Rota un refresh token de personal. |
-| GET | `/api/auth/me` | Autenticado | Perfil de la cuenta interna actual. |
-| GET | `/api/auth/permissions` | Autenticado | Permisos efectivos de la cuenta actual. |
+| GET | `/api/auth/me` | Autenticado | Perfil del usuario interno actual. |
+| GET | `/api/auth/permissions` | Autenticado | Permisos efectivos del usuario actual. |
 | PATCH | `/api/auth/me/password` | Autenticado | Cambia la contraseña propia. |
 | PATCH | `/api/auth/me/photo` | Autenticado | Actualiza la URL de foto de perfil propia. |
 | POST | `/api/auth/revoke` | Autenticado | Revoca un refresh token propio. |
@@ -203,8 +206,8 @@ El alta con nombre y correo, y la edición del perfil del dueño, están consoli
 
 \* No declara `[RequirePermission]` ni `[AllowAnonymous]`, así que cae en la
 política de respaldo (cualquier JWT válido). La propiedad de la notificación
-se valida dentro del handler contra el claim `person_id`, no por un permiso
-de módulo.
+se valida dentro del handler contra el claim `sub` (id de usuario), no por un
+permiso de módulo.
 
 ## Administración de plataforma
 
@@ -214,20 +217,12 @@ de módulo.
 | GET | `/api/users/{id:guid}` | `Usuarios.View` |
 | POST | `/api/users` | `Usuarios.Create` |
 | PUT | `/api/users/{id:guid}` | `Usuarios.Edit` |
+| PATCH | `/api/users/{id:guid}/password` | SuperAdmin |
 | PATCH | `/api/users/{id:guid}/deactivate` | `Usuarios.Edit` |
 | PATCH | `/api/users/{id:guid}/activate` | `Usuarios.Edit` |
 | DELETE | `/api/users/{id:guid}` | `Usuarios.Delete` |
-| GET | `/api/useraccounts` | `Usuarios.View` |
-| GET | `/api/useraccounts/{id:guid}` | `Usuarios.View` |
-| POST | `/api/useraccounts` | `Usuarios.Create` |
-| PUT | `/api/useraccounts/{id:guid}` | `Usuarios.Edit` |
-| DELETE | `/api/useraccounts/{id:guid}` | `Usuarios.Delete` |
-| GET | `/api/usercredentials/{id:guid}` | `Usuarios.View` |
-| GET | `/api/usercredentials/by-account/{accountId:guid}` | `Usuarios.View` |
-| POST | `/api/usercredentials` | `Usuarios.Create` |
-| PATCH | `/api/usercredentials/{id:guid}/change-password` | SuperAdmin |
 | GET | `/api/usertokens/{id:guid}` | SuperAdmin |
-| GET | `/api/usertokens/by-account/{accountId:guid}` | SuperAdmin |
+| GET | `/api/usertokens/by-user/{userId:guid}` | SuperAdmin |
 | POST | `/api/usertokens` | SuperAdmin |
 | DELETE | `/api/usertokens/{id:guid}` | SuperAdmin |
 | GET | `/api/roles` | `Roles.View` |
@@ -246,12 +241,14 @@ de módulo.
 | POST | `/api/role-permissions` | SuperAdmin |
 | PUT | `/api/role-permissions/{id:guid}` | SuperAdmin |
 | DELETE | `/api/role-permissions/{id:guid}` | SuperAdmin |
-| GET | `/api/user-permissions` | SuperAdmin |
-| GET | `/api/user-permissions/{id:guid}` | SuperAdmin |
-| GET | `/api/user-permissions/by-user/{userId:guid}` | SuperAdmin |
-| POST | `/api/user-permissions` | SuperAdmin |
-| PUT | `/api/user-permissions/{id:guid}` | SuperAdmin |
-| DELETE | `/api/user-permissions/{id:guid}` | SuperAdmin |
+
+`POST /api/users` crea al usuario listo para loguearse de inmediato con
+`POST /api/auth/login` (contraseña incluida en el mismo body). `USER_ACCOUNTS`,
+`USER_CREDENTIALS` y `USER_PERMISSIONS` **ya no existen** (fusión de
+usuarios/cuentas): no hay alta separada de cuenta/credenciales, y ya no existe
+ningún permiso puntual por usuario — los permisos efectivos de un usuario
+dependen únicamente de su rol. Reset de contraseña ajena (exclusivo
+SuperAdmin, sin pedir la contraseña actual) es `PATCH /api/users/{id}/password`.
 
 ## Agente, Telegram y operaciones de dueño
 

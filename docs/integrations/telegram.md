@@ -137,8 +137,9 @@ Auth: token de invitado (`TelegramGuestLinkOnly`, claim `telegram_user_id`).
 Respuesta: `{ "linkId": "<guid>" }`.
 
 Ese `bot-link` directo aplica al **registro recién hecho** (ventana
-`Telegram__RegistrationLinkWindowMinutes`, 10 por defecto). No crea cuenta
-fantasma en `USER_ACCOUNTS`.
+`Telegram__RegistrationLinkWindowMinutes`, 10 por defecto). No crea usuario
+fantasma en `USERS`: el cliente (dueño) nunca tiene fila en `USERS` ni
+contraseña.
 
 ## 4. Reclamación por OTP (cliente existente, otro Telegram)
 

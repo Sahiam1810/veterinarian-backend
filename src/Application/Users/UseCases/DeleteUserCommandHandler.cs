@@ -23,7 +23,7 @@ public sealed class DeleteUserCommandHandler(IUnitOfWork uow)
             if (SystemRoles.IsSuperAdmin(user.RoleId))
             {
                 throw new ForbiddenException(
-                    "La cuenta SuperAdmin no se puede eliminar.");
+                    "El usuario SuperAdmin no se puede eliminar.");
             }
 
             if (user.IsActive)

@@ -132,7 +132,7 @@ public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
             throw UnexpectedCall();
 
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) =>
             throw UnexpectedCall();
     }

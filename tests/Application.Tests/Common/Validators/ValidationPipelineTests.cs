@@ -79,7 +79,7 @@ public sealed class ValidationPipelineTests
             throw new NotSupportedException();
 
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) =>
             throw new NotSupportedException();
     }
