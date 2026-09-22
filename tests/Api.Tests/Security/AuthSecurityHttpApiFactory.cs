@@ -4,8 +4,6 @@ using Application.Common.Abstractions;
 using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Abstractions;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Infrastructure.Security;
@@ -20,8 +18,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using NSubstitute;
 using Xunit;
 using RoleEntity = Domain.Roles.Entities.Roles;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
@@ -99,65 +95,25 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
             var staffRole = new RoleEntity("Administrador", "Staff panel");
             var clientRole = new RoleEntity("Cliente", "Cliente sin panel");
 
+            // U5: USERS ya trae la contraseña directamente -- no hay cuenta
+            // ni credenciales separadas que fusionar.
             var staffAUser = new UserEntity(
                 "Staff A",
                 AuthSecurityTestUsers.StaffAEmail,
-                null,
+                passwordHasher.Hash(AuthSecurityTestUsers.StaffAPassword),
                 staffRole.Id);
             var staffBUser = new UserEntity(
                 "Staff B",
                 AuthSecurityTestUsers.StaffBEmail,
-                null,
+                passwordHasher.Hash(AuthSecurityTestUsers.StaffBPassword),
                 staffRole.Id);
+            // Hash vacío: simula un usuario sin contraseña utilizable (nunca
+            // debe poder loguearse, sea cual sea la contraseña enviada).
             var clientUser = new UserEntity(
                 "Cliente Sin Hash",
                 AuthSecurityTestUsers.ClienteNoHashEmail,
-                null,
+                string.Empty,
                 clientRole.Id);
-
-            var staffAAccount = new UserAccountEntity(
-                staffAUser.Id,
-                "staffa",
-                AuthSecurityTestUsers.StaffAEmail,
-                "Activo");
-            var staffBAccount = new UserAccountEntity(
-                staffBUser.Id,
-                "staffb",
-                AuthSecurityTestUsers.StaffBEmail,
-                "Activo");
-            var clientAccount = new UserAccountEntity(
-                clientUser.Id,
-                "clientenohash",
-                AuthSecurityTestUsers.ClienteNoHashEmail,
-                "Activo");
-
-            var staffACredentials = new UserCredentialEntity(
-                staffAAccount.Id,
-                passwordHasher.Hash(AuthSecurityTestUsers.StaffAPassword));
-            var staffBCredentials = new UserCredentialEntity(
-                staffBAccount.Id,
-                passwordHasher.Hash(AuthSecurityTestUsers.StaffBPassword));
-
-            var accountsById = new Dictionary<Guid, UserAccountEntity>
-            {
-                [staffAAccount.Id] = staffAAccount,
-                [staffBAccount.Id] = staffBAccount,
-                [clientAccount.Id] = clientAccount
-            };
-
-            var accountsByEmail = new Dictionary<string, UserAccountEntity>(StringComparer.OrdinalIgnoreCase)
-            {
-                [staffAAccount.Mail.Value] = staffAAccount,
-                [staffBAccount.Mail.Value] = staffBAccount,
-                [clientAccount.Mail.Value] = clientAccount
-            };
-
-            var accountsByUserId = new Dictionary<Guid, UserAccountEntity>
-            {
-                [staffAAccount.UserId] = staffAAccount,
-                [staffBAccount.UserId] = staffBAccount,
-                [clientAccount.UserId] = clientAccount
-            };
 
             var usersById = new Dictionary<Guid, UserEntity>
             {
@@ -166,10 +122,11 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                 [clientUser.Id] = clientUser
             };
 
-            var credentialsByAccountId = new Dictionary<Guid, UserCredentialEntity>
+            var usersByEmail = new Dictionary<string, UserEntity>(StringComparer.OrdinalIgnoreCase)
             {
-                [staffAAccount.Id] = staffACredentials,
-                [staffBAccount.Id] = staffBCredentials
+                [staffAUser.Email.Value] = staffAUser,
+                [staffBUser.Email.Value] = staffBUser,
+                [clientUser.Email.Value] = clientUser
             };
 
             var rolesById = new Dictionary<Guid, RoleEntity>
@@ -178,37 +135,14 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                 [clientRole.Id] = clientRole
             };
 
-            var userAccountsRepository = Substitute.For<IUserAccountsRepository>();
-            userAccountsRepository.GetByMailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            var usersRepository = Substitute.For<IUsersRepository>();
+            usersRepository.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(call =>
                 {
                     var email = call.Arg<string>().Trim().ToLowerInvariant();
-                    accountsByEmail.TryGetValue(email, out var account);
-                    return Task.FromResult<UserAccountEntity?>(account);
+                    usersByEmail.TryGetValue(email, out var user);
+                    return Task.FromResult<UserEntity?>(user);
                 });
-            userAccountsRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-                .Returns(call =>
-                {
-                    accountsById.TryGetValue(call.Arg<Guid>(), out var account);
-                    return Task.FromResult<UserAccountEntity?>(account);
-                });
-            // U4: sub ya es el UserId; Revoke/GetCurrentProfile resuelven la cuenta por él.
-            userAccountsRepository.GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-                .Returns(call =>
-                {
-                    accountsByUserId.TryGetValue(call.Arg<Guid>(), out var account);
-                    return Task.FromResult<UserAccountEntity?>(account);
-                });
-
-            var userCredentialsRepository = Substitute.For<IUserCredentialsRepository>();
-            userCredentialsRepository.GetByAccountIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-                .Returns(call =>
-                {
-                    credentialsByAccountId.TryGetValue(call.Arg<Guid>(), out var credentials);
-                    return Task.FromResult<UserCredentialEntity?>(credentials);
-                });
-
-            var usersRepository = Substitute.For<IUsersRepository>();
             usersRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                 .Returns(call =>
                 {
@@ -238,11 +172,11 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
                         token => token.TokenValue == call.Arg<string>());
                     return Task.FromResult<UserTokenEntity?>(match);
                 });
-            userTokensRepository.GetAllByAccountIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            userTokensRepository.GetAllByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                 .Returns(call =>
                 {
                     IReadOnlyCollection<UserTokenEntity> tokens = refreshTokens
-                        .Where(token => token.AccountId == call.Arg<Guid>())
+                        .Where(token => token.UserId == call.Arg<Guid>())
                         .ToArray();
                     return Task.FromResult(tokens);
                 });
@@ -266,25 +200,19 @@ public sealed class AuthSecurityHttpApiFactory : WebApplicationFactory<AuthContr
             permissionSender.Send(Arg.Any<GetUserPermissionClaimsQuery>(), Arg.Any<CancellationToken>())
                 .Returns(Array.Empty<string>());
 
-            services.RemoveAll<IUserAccountsRepository>();
-            services.RemoveAll<IUserCredentialsRepository>();
             services.RemoveAll<IUserTokensRepository>();
             services.RemoveAll<IUsersRepository>();
             services.RemoveAll<IRolesRepository>();
             services.RemoveAll<IUnitOfWork>();
             services.RemoveAll<IAuthenticationService>();
 
-            services.AddSingleton(userAccountsRepository);
-            services.AddSingleton(userCredentialsRepository);
             services.AddSingleton(userTokensRepository);
             services.AddSingleton(usersRepository);
             services.AddSingleton(rolesRepository);
             services.AddSingleton(unitOfWork);
             services.AddSingleton<IAuthenticationService>(sp => new AuthenticationService(
-                userAccountsRepository,
-                userCredentialsRepository,
-                userTokensRepository,
                 usersRepository,
+                userTokensRepository,
                 unitOfWork,
                 permissionSender,
                 sp.GetRequiredService<JwtTokenIssuer>(),

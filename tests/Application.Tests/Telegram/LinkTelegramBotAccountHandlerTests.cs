@@ -2,10 +2,8 @@ using Application.Clients.Abstraction;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Errors;
 using Application.Telegram.Linking;
-using Application.UserAccounts.Abstraction;
 using Domain.Clients.Entities;
 using Domain.Telegram.Entities;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 using NSubstitute;
 using Xunit;
 
@@ -41,8 +39,6 @@ public sealed class LinkTelegramBotAccountHandlerTests
                 link.TelegramUserId == TelegramUserId &&
                 link.TelegramChatId == TelegramUserId),
             fixture.Token);
-        await fixture.Accounts.DidNotReceive().AddAsync(
-            Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
         await fixture.UnitOfWork.Received(1).SaveChangesAsync(fixture.Token);
         Assert.NotEqual(Guid.Empty, linkId);
     }
@@ -110,16 +106,13 @@ public sealed class LinkTelegramBotAccountHandlerTests
         var unitOfWork = Substitute.For<ITelegramUnitOfWork>();
         var clients = Substitute.For<IClientRepository>();
         var userLinks = Substitute.For<ITelegramUserLinkRepository>();
-        var accounts = Substitute.For<IUserAccountsRepository>();
         unitOfWork.ClientsRepository.Returns(clients);
         unitOfWork.UserLinksRepository.Returns(userLinks);
-        unitOfWork.UserAccountsRepository.Returns(accounts);
 
         return new Fixture(
             unitOfWork,
             clients,
             userLinks,
-            accounts,
             new FixedTimeProvider(Now),
             CancellationToken.None);
     }
@@ -128,7 +121,6 @@ public sealed class LinkTelegramBotAccountHandlerTests
         ITelegramUnitOfWork UnitOfWork,
         IClientRepository Clients,
         ITelegramUserLinkRepository UserLinks,
-        IUserAccountsRepository Accounts,
         TimeProvider TimeProvider,
         CancellationToken Token);
 

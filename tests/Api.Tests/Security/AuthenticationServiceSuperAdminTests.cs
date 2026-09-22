@@ -3,8 +3,6 @@ using Api.Tests.Support;
 using Application.Common.Abstractions;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Domain.Roles;
@@ -16,13 +14,13 @@ using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 using RoleEntity = Domain.Roles.Entities.Roles;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Api.Tests.Security;
 
+// U5: USERS ya trae la contraseña directamente -- no hay cuenta ni
+// credenciales separadas que resolver.
 public sealed class AuthenticationServiceSuperAdminTests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(
@@ -31,8 +29,6 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
     private const string SuperAdminEmail = "superadmin@huellitas.test";
     private const string SuperAdminPasswordHash = "stored-hash";
 
-    private readonly IUserAccountsRepository accountRepository = Substitute.For<IUserAccountsRepository>();
-    private readonly IUserCredentialsRepository credentialRepository = Substitute.For<IUserCredentialsRepository>();
     private readonly IUserTokensRepository tokenRepository = Substitute.For<IUserTokensRepository>();
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IRolesRepository rolesRepository = Substitute.For<IRolesRepository>();
@@ -66,10 +62,8 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(CancellationToken.None));
 
         sut = new AuthenticationService(
-            accountRepository,
-            credentialRepository,
-            tokenRepository,
             usersRepository,
+            tokenRepository,
             unitOfWork,
             Substitute.For<ISender>(),
             jwtTokenIssuer,
@@ -84,7 +78,7 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
     [Fact]
     public async Task LoginAsync_with_persisted_SuperAdmin_issues_normal_access_and_refresh_tokens()
     {
-        var (user, account) = ConfigurePersistedSuperAdmin();
+        var user = ConfigurePersistedSuperAdmin();
         passwordHasher.Verify("correct-password", SuperAdminPasswordHash).Returns(true);
 
         var result = await sut.LoginAsync(
@@ -95,7 +89,6 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.NotEmpty(result.Value.RefreshToken);
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
-        // U4: sub es el id del usuario, no el de la cuenta de login.
         Assert.Equal(user.Id.ToString(), jwt.Subject);
         Assert.Equal(user.Id.ToString(), jwt.Claims.Single(c => c.Type == "person_id").Value);
         Assert.Equal(SystemRoles.SuperAdminId.ToString(), jwt.Claims.Single(c => c.Type == "role_id").Value);
@@ -107,7 +100,7 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
     }
 
     [Fact]
-    public async Task LoginAsync_with_wrong_password_uses_the_persisted_account_and_fails()
+    public async Task LoginAsync_with_wrong_password_uses_the_persisted_user_and_fails()
     {
         ConfigurePersistedSuperAdmin();
         passwordHasher.Verify("wrong-password", SuperAdminPasswordHash).Returns(false);
@@ -119,8 +112,8 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
 
         Assert.True(result.IsFailure);
         Assert.Equal(AuthenticationErrors.InvalidCredentials, result.Error);
-        await accountRepository.Received(1)
-            .GetByMailAsync(SuperAdminEmail, Arg.Any<CancellationToken>());
+        await usersRepository.Received(1)
+            .GetByEmailAsync(SuperAdminEmail, Arg.Any<CancellationToken>());
         await tokenRepository.DidNotReceive().AddAsync(
             Arg.Any<UserTokenEntity>(),
             Arg.Any<CancellationToken>());
@@ -129,40 +122,31 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
     [Fact]
     public async Task GetCurrentProfileAsync_returns_the_persisted_SuperAdmin_profile()
     {
-        var (user, account) = ConfigurePersistedSuperAdmin();
-        accountRepository.GetByUserIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(account);
+        var user = ConfigurePersistedSuperAdmin();
 
         var result = await sut.GetCurrentProfileAsync(user.Id, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(user.Id, result.Value.PersonId);
-        Assert.Equal(account.Id, result.Value.UserAccountId);
+        Assert.Equal(user.Id, result.Value.Id);
         Assert.Equal(SystemRoles.SuperAdminName, result.Value.Role);
-        await accountRepository.Received(1)
-            .GetByUserIdAsync(user.Id, Arg.Any<CancellationToken>());
+        await usersRepository.Received(1)
+            .GetByIdAsync(user.Id, Arg.Any<CancellationToken>());
     }
 
-    private (UserEntity User, UserAccountEntity Account) ConfigurePersistedSuperAdmin()
+    private UserEntity ConfigurePersistedSuperAdmin()
     {
         var user = new UserEntity(
             "Super Administrador",
             SuperAdminEmail,
             SuperAdminPasswordHash,
             SystemRoles.SuperAdminId);
-        var account = new UserAccountEntity(
-            user.Id,
-            "superadmin",
-            SuperAdminEmail,
-            "Activo");
-        var credential = new UserCredentialEntity(account.Id, SuperAdminPasswordHash);
         var role = new RoleEntity(SystemRoles.SuperAdminName, "Rol de sistema");
 
-        accountRepository.GetByMailAsync(SuperAdminEmail, Arg.Any<CancellationToken>()).Returns(account);
-        credentialRepository.GetByAccountIdAsync(account.Id, Arg.Any<CancellationToken>()).Returns(credential);
+        usersRepository.GetByEmailAsync(SuperAdminEmail, Arg.Any<CancellationToken>()).Returns(user);
         usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         rolesRepository.GetByIdAsync(SystemRoles.SuperAdminId, Arg.Any<CancellationToken>()).Returns(role);
 
-        return (user, account);
+        return user;
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider

@@ -9,21 +9,21 @@ public sealed class UserTokens : BaseEntity<Guid>
     }
 
     public UserTokens(
-        Guid accountId,
+        Guid userId,
         string tokenValue,
         string tokenType,
         DateTime expiresAt,
         DateTime sessionStartedAt)
     {
         Id = Guid.NewGuid();
-        AccountId = accountId;
+        UserId = userId;
         TokenValue = tokenValue;
         TokenType = tokenType;
         ExpiresAt = expiresAt;
         SessionStartedAt = sessionStartedAt;
     }
 
-    public Guid AccountId { get; private set; }
+    public Guid UserId { get; private set; }
 
     public string TokenValue { get; private set; } = null!;
 

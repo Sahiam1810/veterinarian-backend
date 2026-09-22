@@ -46,7 +46,7 @@ public sealed class CreateUserTokenCommandValidatorTests
     }
 
     private static CreateUserTokenCommand Valid() => new(
-        AccountId: Guid.NewGuid(),
+        UserId: Guid.NewGuid(),
         TokenValue: "some-hash-value",
         TokenType: "reset_password",
         ExpiresAt: DateTime.UtcNow.AddHours(1));

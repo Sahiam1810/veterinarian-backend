@@ -27,8 +27,6 @@ using Application.Specialties.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
 using Application.TypeServices.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Vaccinations.Abstraction;
@@ -596,8 +594,6 @@ public sealed class ChatConversationTests
         public IAgentHumanRepository AgentHumansRepository => null!;
         public IChatEscalationRepository ChatEscalationsRepository => null!;
         public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
-        public IUserAccountsRepository UserAccountsRepository => null!;
-        public IUserCredentialsRepository UserCredentialsRepository => null!;
         public IClientRepository ClientsRepository => null!;
         public IUserTokensRepository UserTokensRepository => null!;
         public IAvailabilityRepository AvailabilitiesRepository => null!;

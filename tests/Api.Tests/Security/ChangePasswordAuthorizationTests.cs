@@ -2,21 +2,24 @@ using System.Reflection;
 using Api.Auth.Controllers;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
-using Api.UserCredentials.Controllers;
+using Api.Users.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Xunit;
 
 namespace Api.Tests.Security;
 
-// SEC-02: el reset de contraseña ajena queda exclusivo de SuperAdmin; el
-// autoservicio (propia cuenta) vive en AuthController sin restricción de rol.
+// U5 retiró UserCredentialsController (el reset de contraseña ajena exclusivo
+// de SuperAdmin, antes SEC-02) junto con USER_ACCOUNTS/USER_CREDENTIALS. La
+// misma capacidad quedó en UsersController.ResetPassword, operando directo
+// sobre Users.PasswordHash. El autoservicio (propia cuenta) sigue en
+// AuthController sin restricción de rol.
 public sealed class ChangePasswordAuthorizationTests
 {
     [Fact]
-    public void UserCredentialsController_ChangePassword_requires_SuperAdminOnly_policy()
+    public void UsersController_ResetPassword_requires_SuperAdminOnly_policy()
     {
-        var method = typeof(UserCredentialsController).GetMethod(
-            nameof(UserCredentialsController.ChangePassword));
+        var method = typeof(UsersController).GetMethod(
+            nameof(UsersController.ResetPassword));
         Assert.NotNull(method);
 
         var authorizeAttr = method.GetCustomAttribute<AuthorizeAttribute>();
@@ -25,10 +28,10 @@ public sealed class ChangePasswordAuthorizationTests
     }
 
     [Fact]
-    public void UserCredentialsController_ChangePassword_no_longer_uses_RequirePermission()
+    public void UsersController_ResetPassword_no_longer_uses_RequirePermission()
     {
-        var method = typeof(UserCredentialsController).GetMethod(
-            nameof(UserCredentialsController.ChangePassword));
+        var method = typeof(UsersController).GetMethod(
+            nameof(UsersController.ResetPassword));
         Assert.NotNull(method);
 
         Assert.Null(method.GetCustomAttribute<RequirePermissionAttribute>());

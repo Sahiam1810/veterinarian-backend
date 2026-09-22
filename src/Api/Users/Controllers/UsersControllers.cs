@@ -17,12 +17,8 @@ public sealed class UsersController(ISender sender) : ControllerBase
     [HttpPost]
     [RequirePermission("Usuarios", PermissionAction.Create)]
     [EndpointSummary("Crea un nuevo usuario")]
-    [EndpointDescription("Registra un nuevo usuario del sistema, asignándole un rol existente. " +
-        "IMPORTANTE: esto por sí solo NO deja al usuario en condiciones de iniciar sesión — la contraseña " +
-        "que se envía aquí no se usa para autenticar. Para tener un usuario funcional hay que completar, " +
-        "en este orden: (1) POST /api/users (este endpoint), (2) POST /api/useraccounts con el UserId " +
-        "devuelto, y (3) POST /api/usercredentials con el AccountId devuelto — recién ahí el usuario puede " +
-        "loguearse en POST /api/auth/login.")]
+    [EndpointDescription("Registra un nuevo usuario del sistema, asignándole un rol y una contraseña. " +
+        "El usuario queda listo para iniciar sesión de inmediato con POST /api/auth/login.")]
     [ProducesResponseType(typeof(CreateUserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -83,6 +79,27 @@ public sealed class UsersController(ISender sender) : ControllerBase
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(
+            request.ToCommand(id),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPatch("{id:guid}/password")]
+    [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
+    [EndpointSummary("Restablece la contraseña de un usuario")]
+    [EndpointDescription("Exclusivo de SuperAdmin: reemplaza la contraseña de cualquier usuario sin requerir la contraseña actual (recuperación de acceso). Para cambiar la contraseña propia, cualquier rol debe usar PATCH /api/auth/me/password.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResetPassword(
+        Guid id,
+        [FromBody] ResetUserPasswordRequest request,
         CancellationToken cancellationToken)
     {
         await sender.Send(

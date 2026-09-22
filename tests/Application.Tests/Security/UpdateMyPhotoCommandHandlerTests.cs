@@ -39,7 +39,7 @@ public sealed class UpdateMyPhotoCommandHandlerTests
     [Fact]
     public async Task Handle_persists_http_photo_url_on_the_authenticated_user()
     {
-        var user = WithId(new UserEntity("Veterinario Prueba", "vet.prueba@veterinaria.com", null, RoleId), UserId);
+        var user = WithId(new UserEntity("Veterinario Prueba", "vet.prueba@veterinaria.com", "hash", RoleId), UserId);
         usersRepository
             .GetByIdAsync(UserId, Arg.Any<CancellationToken>())
             .Returns(user);
@@ -57,7 +57,7 @@ public sealed class UpdateMyPhotoCommandHandlerTests
     [Fact]
     public async Task Handle_clears_photo_when_url_is_empty()
     {
-        var user = WithId(new UserEntity("Veterinario Prueba", "vet.prueba@veterinaria.com", null, RoleId), UserId);
+        var user = WithId(new UserEntity("Veterinario Prueba", "vet.prueba@veterinaria.com", "hash", RoleId), UserId);
         user.SetPhotoUrl("https://ejemplo.com/foto.jpg");
         usersRepository
             .GetByIdAsync(UserId, Arg.Any<CancellationToken>())

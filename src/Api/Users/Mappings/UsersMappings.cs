@@ -29,6 +29,13 @@ public static class UsersMappings
             request.RoleId);
     }
 
+    public static ResetUserPasswordCommand ToCommand(
+        this ResetUserPasswordRequest request,
+        Guid id)
+    {
+        return new ResetUserPasswordCommand(id, request.NewPassword);
+    }
+
     public static UserResponse ToResponse(this UserEntity user)
     {
         return new UserResponse(

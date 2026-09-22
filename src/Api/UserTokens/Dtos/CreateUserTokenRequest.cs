@@ -1,7 +1,7 @@
 namespace Api.UserTokens.Dtos;
 
 public sealed record CreateUserTokenRequest(
-    Guid AccountId,
+    Guid UserId,
     string TokenValue,
     string TokenType,
     DateTime ExpiresAt);

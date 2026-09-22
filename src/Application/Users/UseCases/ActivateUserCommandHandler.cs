@@ -1,6 +1,5 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
-using Domain.UserAccounts.ValueObjects;
 using MediatR;
 
 namespace Application.Users.UseCase;
@@ -26,24 +25,8 @@ public sealed class ActivateUserCommandHandler
 
         user.Activate();
 
-        await _uow.ExecuteInTransactionAsync(async transactionToken =>
-        {
-            await _uow.UsersRepository.UpdateAsync(user, transactionToken);
+        await _uow.UsersRepository.UpdateAsync(user, cancellationToken);
 
-            var account = await _uow.UserAccountsRepository.GetByUserIdAsync(
-                user.Id, transactionToken);
-
-            if (account is not null)
-            {
-                account.Update(
-                    account.Username.Value,
-                    account.Mail.Value,
-                    AccountStatus.Active);
-
-                await _uow.UserAccountsRepository.UpdateAsync(account, transactionToken);
-            }
-
-            await _uow.SaveChangesAsync(transactionToken);
-        }, cancellationToken);
+        await _uow.SaveChangesAsync(cancellationToken);
     }
 }

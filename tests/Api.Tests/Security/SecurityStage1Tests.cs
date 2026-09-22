@@ -1,13 +1,14 @@
-// Suite Etapa 1 (seguridad de acceso a plataforma) — tarea 1.5, adaptada T10.
+// Suite Etapa 1 (seguridad de acceso a plataforma) — tarea 1.5, adaptada T10/U5.
 // USERS es solo personal: un rol llamado "Cliente" no tiene trato especial.
+// U5: fusionó USER_ACCOUNTS/USER_CREDENTIALS en USERS, así que los casos E/F
+// (alta de cuenta/credenciales para un rol llamado Cliente) dejaron de existir
+// como pasos separados -- ya no hay handlers de creación de cuenta/credenciales.
 //
 // Matriz:
 // A SuperAdmin OK
 // B Staff Admin OK
 // C Rol llamado Cliente con creds válidas → emite tokens (sin bloqueo)
 // D Email inexistente → Authentication.InvalidCredentials
-// E CreateUserAccount con rol Cliente → crea cuenta (sin PlatformAccessDenied)
-// F CreateUserCredentials con rol Cliente → crea credenciales (sin PlatformAccessDenied)
 //
 // Run: dotnet test --filter FullyQualifiedName~SecurityStage1
 
@@ -17,10 +18,6 @@ using Application.Common.Abstractions;
 using Application.Permissions.UseCases;
 using Application.Roles.Abstraction;
 using Application.Security.Errors;
-using Application.UserAccounts.Abstraction;
-using Application.UserAccounts.UseCase;
-using Application.UserCredentials.Abstraction;
-using Application.UserCredentials.UseCase;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Domain.Roles;
@@ -33,8 +30,6 @@ using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 using RoleEntity = Domain.Roles.Entities.Roles;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserCredentialEntity = Domain.UserCredentials.Entities.UserCredentials;
 using UserEntity = Domain.Users.Entities.Users;
 
 namespace Api.Tests.Security;
@@ -42,12 +37,7 @@ namespace Api.Tests.Security;
 public sealed class SecurityStage1Tests : IDisposable
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 4, 12, 0, 0, TimeSpan.Zero);
-    private static readonly Guid SuperAdminId = Guid.Parse("99999999-9999-9999-9999-999999999999");
-    private const string SuperAdminEmail = "superadmin@huellitas.test";
-    private const string SuperAdminPassword = "SuperAdminPassword123!";
 
-    private readonly IUserAccountsRepository _userAccountRepository = Substitute.For<IUserAccountsRepository>();
-    private readonly IUserCredentialsRepository _userCredentialRepository = Substitute.For<IUserCredentialsRepository>();
     private readonly IUserTokensRepository _userTokenRepository = Substitute.For<IUserTokensRepository>();
     private readonly IUsersRepository _usersRepository = Substitute.For<IUsersRepository>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
@@ -78,8 +68,6 @@ public sealed class SecurityStage1Tests : IDisposable
 
         _unitOfWork.RolesRepository.Returns(_rolesRepository);
         _unitOfWork.UsersRepository.Returns(_usersRepository);
-        _unitOfWork.UserAccountsRepository.Returns(_userAccountRepository);
-        _unitOfWork.UserCredentialsRepository.Returns(_userCredentialRepository);
         _unitOfWork.UserTokensRepository.Returns(_userTokenRepository);
 
         _unitOfWork.ExecuteInTransactionAsync(
@@ -92,10 +80,8 @@ public sealed class SecurityStage1Tests : IDisposable
             .Returns(Array.Empty<string>());
 
         _authService = new AuthenticationService(
-            _userAccountRepository,
-            _userCredentialRepository,
-            _userTokenRepository,
             _usersRepository,
+            _userTokenRepository,
             _unitOfWork,
             _sender,
             jwtTokenIssuer,
@@ -115,16 +101,9 @@ public sealed class SecurityStage1Tests : IDisposable
         var user = new UserEntity(
             "Super Administrador",
             SuperAdminEmail,
-            null,
+            _passwordHasher.Hash(SuperAdminPassword),
             SystemRoles.SuperAdminId);
-        var account = new UserAccountEntity(user.Id, "superadmin", SuperAdminEmail, "Activo");
-        var credentials = new UserCredentialEntity(
-            account.Id,
-            _passwordHasher.Hash(SuperAdminPassword));
-        _userAccountRepository.GetByMailAsync(SuperAdminEmail, Arg.Any<CancellationToken>())
-            .Returns(account);
-        _userCredentialRepository.GetByAccountIdAsync(account.Id, Arg.Any<CancellationToken>())
-            .Returns(credentials);
+        _usersRepository.GetByEmailAsync(SuperAdminEmail, Arg.Any<CancellationToken>()).Returns(user);
         _usersRepository.GetByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         _rolesRepository.GetByIdAsync(SystemRoles.SuperAdminId, Arg.Any<CancellationToken>()).Returns(role);
 
@@ -146,15 +125,12 @@ public sealed class SecurityStage1Tests : IDisposable
     public async Task Login_StaffAdminUser_WithValidAccountAndCredentials_ReturnsSuccessAndIssuesTokens()
     {
         var adminRole = new RoleEntity("Administrador", "Administrador del sistema");
-        var adminUser = new UserEntity("Admin Staff", "admin.staff@huellitas.test", null, adminRole.Id);
-        var adminAccount = new UserAccountEntity(adminUser.Id, "adminstaff", "admin.staff@huellitas.test", "Activo");
         var rawPassword = "StaffPassword123!";
-        var adminCredentials = new UserCredentialEntity(adminAccount.Id, _passwordHasher.Hash(rawPassword));
+        var adminUser = new UserEntity(
+            "Admin Staff", "admin.staff@huellitas.test", _passwordHasher.Hash(rawPassword), adminRole.Id);
 
-        _userAccountRepository.GetByMailAsync(adminAccount.Mail.Value, Arg.Any<CancellationToken>())
-            .Returns(adminAccount);
-        _userCredentialRepository.GetByAccountIdAsync(adminAccount.Id, Arg.Any<CancellationToken>())
-            .Returns(adminCredentials);
+        _usersRepository.GetByEmailAsync(adminUser.Email.Value, Arg.Any<CancellationToken>())
+            .Returns(adminUser);
         _usersRepository.GetByIdAsync(adminUser.Id, Arg.Any<CancellationToken>())
             .Returns(adminUser);
         _rolesRepository.GetByIdAsync(adminRole.Id, Arg.Any<CancellationToken>())
@@ -175,15 +151,12 @@ public sealed class SecurityStage1Tests : IDisposable
     public async Task Login_RoleNamedCliente_WithValidPassword_IssuesTokens()
     {
         var clientRole = new RoleEntity("Cliente", "Nombre de rol sin trato especial");
-        var clientUser = new UserEntity("Cliente Test", "cliente.login@huellitas.test", "hash", clientRole.Id);
-        var clientAccount = new UserAccountEntity(clientUser.Id, "clientelogin", "cliente.login@huellitas.test", "Activo");
         var rawPassword = "ClientPassword123!";
-        var clientCredentials = new UserCredentialEntity(clientAccount.Id, _passwordHasher.Hash(rawPassword));
+        var clientUser = new UserEntity(
+            "Cliente Test", "cliente.login@huellitas.test", _passwordHasher.Hash(rawPassword), clientRole.Id);
 
-        _userAccountRepository.GetByMailAsync(clientAccount.Mail.Value, Arg.Any<CancellationToken>())
-            .Returns(clientAccount);
-        _userCredentialRepository.GetByAccountIdAsync(clientAccount.Id, Arg.Any<CancellationToken>())
-            .Returns(clientCredentials);
+        _usersRepository.GetByEmailAsync(clientUser.Email.Value, Arg.Any<CancellationToken>())
+            .Returns(clientUser);
         _usersRepository.GetByIdAsync(clientUser.Id, Arg.Any<CancellationToken>())
             .Returns(clientUser);
         _rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>())
@@ -202,8 +175,8 @@ public sealed class SecurityStage1Tests : IDisposable
     public async Task Login_NonExistentEmail_ReturnsInvalidCredentials()
     {
         var nonExistentEmail = "noexiste@huellitas.test";
-        _userAccountRepository.GetByMailAsync(nonExistentEmail, Arg.Any<CancellationToken>())
-            .Returns((UserAccountEntity?)null);
+        _usersRepository.GetByEmailAsync(nonExistentEmail, Arg.Any<CancellationToken>())
+            .Returns((UserEntity?)null);
 
         var result = await _authService.LoginAsync(
             nonExistentEmail, "AnyPassword123!", CancellationToken.None);
@@ -212,60 +185,8 @@ public sealed class SecurityStage1Tests : IDisposable
         Assert.Equal(AuthenticationErrors.InvalidCredentials.Code, result.Error.Code);
     }
 
-    // Caso E
-    [Fact]
-    public async Task CreateUserAccount_ForRoleNamedCliente_CreatesAccount()
-    {
-        var clientRole = new RoleEntity("Cliente", "Nombre de rol sin trato especial");
-        var clientUser = new UserEntity("Cliente Dummy", "cliente.account@huellitas.test", "hash", clientRole.Id);
-
-        _usersRepository.GetByIdAsync(clientUser.Id, Arg.Any<CancellationToken>()).Returns(clientUser);
-        _rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>()).Returns(clientRole);
-        _userAccountRepository.ExistsByUserIdAsync(clientUser.Id, Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
-            .Returns(false);
-        _userAccountRepository.ExistsByUsernameAsync("clienteuser", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
-            .Returns(false);
-        _userAccountRepository.ExistsByMailAsync("cliente.account@huellitas.test", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
-            .Returns(false);
-
-        var handler = new CreateUserAccountCommandHandler(_unitOfWork);
-        var command = new CreateUserAccountCommand(
-            clientUser.Id, "clienteuser", "cliente.account@huellitas.test", "Activo");
-
-        var accountId = await handler.Handle(command, CancellationToken.None);
-
-        Assert.NotEqual(Guid.Empty, accountId);
-        await _userAccountRepository.Received(1).AddAsync(
-            Arg.Any<UserAccountEntity>(), Arg.Any<CancellationToken>());
-    }
-
-    // Caso F
-    [Fact]
-    public async Task CreateUserCredentials_ForRoleNamedCliente_CreatesCredentials()
-    {
-        var clientRole = new RoleEntity("Cliente", "Nombre de rol sin trato especial");
-        var clientUser = new UserEntity("Cliente Dummy", "cliente.creds@huellitas.test", "hash", clientRole.Id);
-        var clientAccount = new UserAccountEntity(
-            clientUser.Id, "clientecreds", "cliente.creds@huellitas.test", "Activo");
-
-        _userAccountRepository.GetByIdAsync(clientAccount.Id, Arg.Any<CancellationToken>())
-            .Returns(clientAccount);
-        _usersRepository.GetByIdAsync(clientUser.Id, Arg.Any<CancellationToken>())
-            .Returns(clientUser);
-        _rolesRepository.GetByIdAsync(clientRole.Id, Arg.Any<CancellationToken>())
-            .Returns(clientRole);
-        _userCredentialRepository.ExistsByAccountIdAsync(clientAccount.Id, Arg.Any<CancellationToken>())
-            .Returns(false);
-
-        var handler = new CreateUserCredentialsCommandHandler(_unitOfWork, _passwordHasher);
-        var command = new CreateUserCredentialsCommand(clientAccount.Id, "Password123!");
-
-        var credentialId = await handler.Handle(command, CancellationToken.None);
-
-        Assert.NotEqual(Guid.Empty, credentialId);
-        await _userCredentialRepository.Received(1).AddAsync(
-            Arg.Any<UserCredentialEntity>(), Arg.Any<CancellationToken>());
-    }
+    private const string SuperAdminEmail = "superadmin@huellitas.test";
+    private const string SuperAdminPassword = "SuperAdminPassword123!";
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

@@ -23,6 +23,18 @@ public sealed class UsersRepository : IUsersRepository
                 user => user.Id == id,
                 cancellationToken);
 
+    public Task<UserEntity?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        var userEmail = UserEmail.Create(email);
+
+        return _context.Set<UserEntity>()
+            .FirstOrDefaultAsync(
+                user => user.Email == userEmail,
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<UserEntity>> GetAllAsync(
         CancellationToken cancellationToken = default)
         => await _context.Set<UserEntity>()

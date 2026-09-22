@@ -1,18 +1,14 @@
 using FluentValidation;
 
-namespace Application.UserCredentials.UseCase;
+namespace Application.Users.UseCase;
 
-public sealed class ChangePasswordCommandValidator
-    : AbstractValidator<ChangePasswordCommand>
+public sealed class ResetUserPasswordCommandValidator
+    : AbstractValidator<ResetUserPasswordCommand>
 {
-    public ChangePasswordCommandValidator()
+    public ResetUserPasswordCommandValidator()
     {
         RuleFor(command => command.Id)
             .NotEmpty();
-
-        RuleFor(command => command.CurrentPassword)
-            .NotEmpty()
-            .WithMessage("Debe indicar la contraseña actual.");
 
         RuleFor(command => command.NewPassword)
             .NotEmpty()

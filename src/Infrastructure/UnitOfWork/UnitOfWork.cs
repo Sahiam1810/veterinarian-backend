@@ -38,8 +38,6 @@ using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Infrastructure.Persistence;
@@ -63,8 +61,6 @@ public sealed class UnitOfWork : IUnitOfWork
         ITypeServiceRepository typeServicesRepository,
         IServiceRepository servicesRepository,
         IPetRepository petsRepository,
-        IUserAccountsRepository userAccountsRepository,
-        IUserCredentialsRepository userCredentialsRepository,
         IClientRepository clientsRepository,
         IUserTokensRepository userTokensRepository,
         ISpecialtyRepository specialtiesRepository,
@@ -100,8 +96,6 @@ public sealed class UnitOfWork : IUnitOfWork
         StatusAppointmentsRepository = statusAppointmentsRepository;
         TypeServicesRepository = typeServicesRepository;
         ServicesRepository = servicesRepository;
-        UserAccountsRepository = userAccountsRepository;
-        UserCredentialsRepository = userCredentialsRepository;
         ClientsRepository = clientsRepository;
         UserTokensRepository = userTokensRepository;
         SpecialtiesRepository = specialtiesRepository;
@@ -134,8 +128,6 @@ public sealed class UnitOfWork : IUnitOfWork
     public IRaceRepository RacesRepository { get; }
     public IPetRepository PetsRepository { get; }
     public IUsersRepository UsersRepository { get; }
-    public IUserAccountsRepository UserAccountsRepository { get; }
-    public IUserCredentialsRepository UserCredentialsRepository { get; }
     public IClientRepository ClientsRepository { get; }
     public IUserTokensRepository UserTokensRepository { get; }
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }

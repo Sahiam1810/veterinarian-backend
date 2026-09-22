@@ -11,8 +11,6 @@ using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.RolePermissions.Abstraction;
 using Application.Species.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
 using Application.UserTokens.Abstraction;
@@ -111,10 +109,6 @@ public interface IUnitOfWork
 
     IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
 
-
-    IUserAccountsRepository UserAccountsRepository { get; }
-
-    IUserCredentialsRepository UserCredentialsRepository { get; }
 
     IClientRepository ClientsRepository { get; }
 

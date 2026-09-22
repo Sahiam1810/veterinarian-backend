@@ -1,13 +1,11 @@
 namespace Application.Security.Models;
+
 public sealed record CurrentProfile(
-    Guid PersonId,
-    Guid UserAccountId,
+    Guid Id,
     string FullName,
     string Initials,
-    string UserName,
     string Email,
     string Role,
-    string AccountStatus,
     string? PhotoUrl = null)
 {
     public static CurrentProfile From(AuthenticatedIdentity identity)
@@ -25,14 +23,11 @@ public sealed record CurrentProfile(
         };
 
         return new CurrentProfile(
-            identity.PersonId,
-            identity.UserAccountId,
+            identity.UserId,
             fullName,
             initials,
-            identity.UserName,
             identity.Email,
             identity.Role,
-            identity.AccountStatus,
             identity.PhotoUrl);
     }
 }

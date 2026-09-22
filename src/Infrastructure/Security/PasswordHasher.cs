@@ -24,8 +24,8 @@ public sealed class PasswordHasher : IPasswordHasher
 
     public bool Verify(string password, string passwordHash)
     {
-        // Users.PasswordHash es nullable (los Cliente no tienen contraseña);
-        // un hash nulo/vacío nunca debe verificar como válido.
+        // Defensa extra: un hash vacío o malformado nunca debe verificar como
+        // válido, sin importar el origen del valor.
         if (string.IsNullOrEmpty(passwordHash))
         {
             return false;

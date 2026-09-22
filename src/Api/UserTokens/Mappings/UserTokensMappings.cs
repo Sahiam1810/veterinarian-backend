@@ -10,7 +10,7 @@ public static class UserTokensMappings
         this CreateUserTokenRequest request)
     {
         return new CreateUserTokenCommand(
-            request.AccountId,
+            request.UserId,
             request.TokenValue,
             request.TokenType,
             request.ExpiresAt);
@@ -20,7 +20,7 @@ public static class UserTokensMappings
     {
         return new UserTokenResponse(
             token.Id,
-            token.AccountId,
+            token.UserId,
             token.TokenType,
             token.ExpiresAt,
             token.IsExpired,

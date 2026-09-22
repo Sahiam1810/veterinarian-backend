@@ -9,15 +9,15 @@ public sealed class Users : BaseEntity<Guid>
     {
     }
 
-    // PasswordHash es opcional: los usuarios con rol Cliente nunca se loguean
-    // (su única interfaz es el chatbot, identificado por teléfono/cédula, no
-    // por credenciales) y por lo tanto no tienen contraseña.
-    public Users(string fullName, string email, string? passwordHash, Guid roleId)
+    // USERS es solo personal (Frente 1 separó Clientes en su propia tabla),
+    // así que todo usuario aquí se loguea y requiere contraseña.
+    public Users(string fullName, string email, string passwordHash, Guid roleId)
     {
         Id = Guid.NewGuid();
         FullName = fullName;
         Email = UserEmail.Create(email);
         PasswordHash = passwordHash;
+        PasswordChangedAt = DateTime.UtcNow;
         RoleId = roleId;
         IsActive = true;
     }
@@ -26,7 +26,9 @@ public sealed class Users : BaseEntity<Guid>
 
     public UserEmail Email { get; private set; } = null!;
 
-    public string? PasswordHash { get; private set; }
+    public string PasswordHash { get; private set; } = null!;
+
+    public DateTime? PasswordChangedAt { get; private set; }
 
     public Guid RoleId { get; private set; }
 
@@ -58,6 +60,7 @@ public sealed class Users : BaseEntity<Guid>
     public void ChangePassword(string passwordHash)
     {
         PasswordHash = passwordHash;
+        PasswordChangedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 

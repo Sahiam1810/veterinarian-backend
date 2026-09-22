@@ -14,9 +14,9 @@ public sealed class CreateUserTokenCommandValidator
 
     public CreateUserTokenCommandValidator()
     {
-        RuleFor(command => command.AccountId)
+        RuleFor(command => command.UserId)
             .NotEmpty()
-            .WithMessage("Debe asociar el token a una cuenta.");
+            .WithMessage("Debe asociar el token a un usuario.");
 
         RuleFor(command => command.TokenValue)
             .NotEmpty()

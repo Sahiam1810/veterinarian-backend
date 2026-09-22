@@ -11,6 +11,10 @@ public interface IUsersRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<UserEntity?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByEmailAsync(
         string email,
         CancellationToken cancellationToken,
