@@ -17,7 +17,7 @@ namespace Api.Tests.Veterinarians;
 // fuera del alcance de una invocación directa del controller; ver informe.
 public sealed class VeterinariansMeApiTests
 {
-    private static readonly Guid UserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid UserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
     private readonly ISender sender = Substitute.For<ISender>();
 
@@ -28,7 +28,7 @@ public sealed class VeterinariansMeApiTests
         sender.Send(Arg.Any<GetMyVeterinarianQuery>(), Arg.Any<CancellationToken>())
             .Returns(veterinarian);
 
-        var controller = CreateController([new Claim("sub", UserAccountId.ToString())]);
+        var controller = CreateController([new Claim("sub", UserId.ToString())]);
 
         var result = await controller.GetMe(CancellationToken.None);
 
@@ -38,7 +38,7 @@ public sealed class VeterinariansMeApiTests
         Assert.Equal(veterinarian.LicenseNumber, response.LicenseNumber);
 
         await sender.Received(1).Send(
-            Arg.Is<GetMyVeterinarianQuery>(q => q.UserAccountId == UserAccountId),
+            Arg.Is<GetMyVeterinarianQuery>(q => q.UserId == UserId),
             Arg.Any<CancellationToken>());
     }
 

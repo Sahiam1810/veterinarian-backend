@@ -121,7 +121,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(subject, out var userAccountId))
+        if (!Guid.TryParse(subject, out var userId))
         {
             return AuthProblem(
                 StatusCodes.Status401Unauthorized,
@@ -130,7 +130,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
         }
 
         var result = await sender.Send(
-            new GetCurrentProfileQuery(userAccountId), cancellationToken);
+            new GetCurrentProfileQuery(userId), cancellationToken);
 
         return result.IsSuccess
             ? Ok(result.Value)
@@ -207,14 +207,14 @@ public sealed class AuthController(ISender sender) : ControllerBase
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(subject, out var userAccountId))
+        if (!Guid.TryParse(subject, out var userId))
         {
             return Unauthorized();
         }
 
         await sender.Send(
             new ChangeMyPasswordCommand(
-                userAccountId,
+                userId,
                 request.CurrentPassword,
                 request.NewPassword),
             cancellationToken);
@@ -237,13 +237,13 @@ public sealed class AuthController(ISender sender) : ControllerBase
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(subject, out var userAccountId))
+        if (!Guid.TryParse(subject, out var userId))
         {
             return Unauthorized();
         }
 
         await sender.Send(
-            new UpdateMyPhotoCommand(userAccountId, request.PhotoUrl),
+            new UpdateMyPhotoCommand(userId, request.PhotoUrl),
             cancellationToken);
 
         return NoContent();

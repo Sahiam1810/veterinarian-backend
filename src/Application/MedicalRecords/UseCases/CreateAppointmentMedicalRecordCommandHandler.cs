@@ -23,7 +23,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandler(IUnitOfWork uni
         await AppointmentVeterinarianOwnership.EnsureAsync(
             unitOfWork,
             appointment,
-            request.ActorUserAccountId,
+            request.ActorUserId,
             request.EnforceVeterinarianOwnership,
             cancellationToken);
 

@@ -11,13 +11,9 @@ public sealed class UpdateMyPhotoCommandHandler(IUnitOfWork unitOfWork)
         UpdateMyPhotoCommand request,
         CancellationToken cancellationToken)
     {
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
-            request.UserAccountId,
-            cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-
+        // U4: el sub ya es el id del usuario; ya no hace falta pasar por UserAccounts.
         var user = await unitOfWork.UsersRepository.GetByIdAsync(
-            account.UserId,
+            request.UserId,
             cancellationToken)
             ?? throw new NotFoundException("Usuario no encontrado.");
 

@@ -95,13 +95,13 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
+        if (!Guid.TryParse(subject, out var userId))
         {
             return Unauthorized();
         }
 
         var result = await sender.Send(
-            new GetMyAppointmentsAsVeterinarianQuery(userAccountId, from, to, page, pageSize),
+            new GetMyAppointmentsAsVeterinarianQuery(userId, from, to, page, pageSize),
             cancellationToken);
 
         return Ok(result.ToResponse());
@@ -153,7 +153,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        if (!TryGetActorUserId(out var actorUserId))
         {
             return Unauthorized();
         }
@@ -161,7 +161,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         var appointment = await sender.Send(
             new GetAppointmentByIdQuery(
                 id,
-                actorUserAccountId,
+                actorUserId,
                 ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
@@ -182,7 +182,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         [FromBody] UpdateAppointmentStatusRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        if (!TryGetActorUserId(out var actorUserId))
         {
             return Unauthorized();
         }
@@ -190,7 +190,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         await sender.Send(
             request.ToCommand(
                 appointmentId,
-                actorUserAccountId,
+                actorUserId,
                 ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
@@ -211,7 +211,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         [FromBody] UpdateAppointmentStatusRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        if (!TryGetActorUserId(out var actorUserId))
         {
             return Unauthorized();
         }
@@ -219,7 +219,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         await sender.Send(
             request.ToCommand(
                 appointmentId,
-                actorUserAccountId,
+                actorUserId,
                 ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
@@ -241,7 +241,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         [FromBody] CreateAppointmentMedicalRecordRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        if (!TryGetActorUserId(out var actorUserId))
         {
             return Unauthorized();
         }
@@ -249,7 +249,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         var result = await sender.Send(
             request.ToCommand(
                 appointmentId,
-                actorUserAccountId,
+                actorUserId,
                 ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
@@ -271,7 +271,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         [FromBody] UpdateAppointmentRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorUserAccountId(out var actorUserAccountId))
+        if (!TryGetActorUserId(out var actorUserId))
         {
             return Unauthorized();
         }
@@ -279,7 +279,7 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         await sender.Send(
             request.ToCommand(
                 id,
-                actorUserAccountId,
+                actorUserId,
                 ShouldEnforceVeterinarianOwnership()),
             cancellationToken);
 
@@ -305,10 +305,10 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
 
     // Con MapInboundClaims=false el subject queda como "sub" (y RoleClaimType="role").
     // ClaimTypes.NameIdentifier se mantiene por compatibilidad si algún middleware lo remapea.
-    private bool TryGetActorUserAccountId(out Guid actorUserAccountId)
+    private bool TryGetActorUserId(out Guid actorUserId)
     {
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        return Guid.TryParse(subject, out actorUserAccountId);
+        return Guid.TryParse(subject, out actorUserId);
     }
 
     // Solo "Veterinario" aplica ownership. SuperAdmin y

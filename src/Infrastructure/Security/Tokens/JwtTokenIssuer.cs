@@ -75,9 +75,11 @@ public sealed class JwtTokenIssuer(
 
         var claims = new List<Claim>
         {
+            // U4: sub pasa a ser el id del usuario (USERS.USER_ID), no el de la cuenta
+            // de login. person_id queda igual por compatibilidad hasta U6.
             new(
                 JwtRegisteredClaimNames.Sub,
-                identity.UserAccountId.ToString()),
+                identity.PersonId.ToString()),
 
             new(
                 "person_id",

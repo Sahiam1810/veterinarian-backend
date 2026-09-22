@@ -156,8 +156,20 @@ public sealed class AuthenticationService(
     {
         var tokenHash = refreshTokenProtector.Hash(refreshToken);
 
-        var tokens = await userTokenRepository.GetAllByAccountIdAsync(
+        // U4: el sub ya es el id del usuario; hay que resolver la cuenta antes de
+        // llegar a los tokens (U5 fusionará estas tablas en una).
+        var account = await userAccountRepository.GetByUserIdAsync(
             userId,
+            cancellationToken);
+
+        if (account is null)
+        {
+            return Result.Failure(
+                AuthenticationErrors.InvalidRefreshToken);
+        }
+
+        var tokens = await userTokenRepository.GetAllByAccountIdAsync(
+            account.Id,
             cancellationToken);
 
         var token = tokens.FirstOrDefault(candidate =>
@@ -179,11 +191,12 @@ public sealed class AuthenticationService(
     }
 
     public async Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-        Guid userAccountId,
+        Guid userId,
         CancellationToken cancellationToken)
     {
-        var account = await userAccountRepository.GetByIdAsync(
-            userAccountId, cancellationToken);
+        // U4: el sub ya es el id del usuario; hay que resolver la cuenta primero.
+        var account = await userAccountRepository.GetByUserIdAsync(
+            userId, cancellationToken);
 
         if (!IsActiveAccount(account))
         {
