@@ -13,6 +13,14 @@ using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
+using Application.Medications.Abstraction;
+using Application.Procedures.Abstraction;
+using Application.MedicationOrders.Abstraction;
+using Application.ProcedureOrders.Abstraction;
+using Infrastructure.Medications.Repositories;
+using Infrastructure.Procedures.Repositories;
+using Infrastructure.MedicationOrders.Repositories;
+using Infrastructure.ProcedureOrders.Repositories;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Modules.Abstraction;
@@ -160,6 +168,10 @@ public static class DependencyInjection
                 oracle.UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion21)));
 
         services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
+        services.AddScoped<IMedicationRepository, MedicationRepository>();
+        services.AddScoped<IProcedureRepository, ProcedureRepository>();
+        services.AddScoped<IMedicationOrderRepository, MedicationOrderRepository>();
+        services.AddScoped<IProcedureOrderRepository, ProcedureOrderRepository>();
         services.AddScoped<IPetRepository, PetRepository>();
         services.AddScoped<IRaceRepository, RaceRepository>();
         services.AddScoped<ISpeciesRepository, SpeciesRepository>();

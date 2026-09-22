@@ -513,6 +513,10 @@ public sealed class ChatMessageTests
         public IVaccinationRepository VaccinationsRepository => null!;
         public INotificationRepository NotificationsRepository => null!;
         public IDiagnosticRepository DiagnosticsRepository => null!;
+        public Application.Medications.Abstraction.IMedicationRepository MedicationsRepository => null!;
+        public Application.Procedures.Abstraction.IProcedureRepository ProceduresRepository => null!;
+        public Application.MedicationOrders.Abstraction.IMedicationOrderRepository MedicationOrdersRepository => null!;
+        public Application.ProcedureOrders.Abstraction.IProcedureOrderRepository ProcedureOrdersRepository => null!;
         public IAgentHumanRepository AgentHumansRepository => null!;
         public IClientRepository ClientsRepository => null!;
         public IUserTokensRepository UserTokensRepository => null!;

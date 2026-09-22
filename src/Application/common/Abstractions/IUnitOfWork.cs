@@ -44,6 +44,11 @@ using Application.ChatEscalations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
 
+using Application.Medications.Abstraction;
+using Application.Procedures.Abstraction;
+using Application.MedicationOrders.Abstraction;
+using Application.ProcedureOrders.Abstraction;
+
 namespace Application.Common.Abstractions;
 
 public interface IUnitOfWork
@@ -96,6 +101,14 @@ public interface IUnitOfWork
     INotificationRepository NotificationsRepository { get; }
 
     IDiagnosticRepository DiagnosticsRepository { get; }
+
+    IMedicationRepository MedicationsRepository { get; }
+
+    IProcedureRepository ProceduresRepository { get; }
+
+    IMedicationOrderRepository MedicationOrdersRepository { get; }
+
+    IProcedureOrderRepository ProcedureOrdersRepository { get; }
 
     IAgentHumanRepository AgentHumansRepository { get; }
 

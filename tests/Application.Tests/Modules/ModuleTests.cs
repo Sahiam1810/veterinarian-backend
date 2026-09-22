@@ -266,6 +266,10 @@ public sealed class ModuleTests
         public Application.Vaccinations.Abstraction.IVaccinationRepository VaccinationsRepository => null!;
         public Application.Notifications.Abstraction.INotificationRepository NotificationsRepository => null!;
         public Application.Diagnostics.Abstraction.IDiagnosticRepository DiagnosticsRepository => null!;
+        public Application.Medications.Abstraction.IMedicationRepository MedicationsRepository => null!;
+        public Application.Procedures.Abstraction.IProcedureRepository ProceduresRepository => null!;
+        public Application.MedicationOrders.Abstraction.IMedicationOrderRepository MedicationOrdersRepository => null!;
+        public Application.ProcedureOrders.Abstraction.IProcedureOrderRepository ProcedureOrdersRepository => null!;
         public Application.AgentHumans.Abstraction.IAgentHumanRepository AgentHumansRepository => null!;
         public Application.ChatConversations.Abstraction.IChatConversationRepository ChatConversationsRepository => null!;
         public Application.ChatParticipants.Abstraction.IChatParticipantRepository ChatParticipantsRepository => null!;

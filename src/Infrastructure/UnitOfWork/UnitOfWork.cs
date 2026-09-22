@@ -2,6 +2,10 @@ using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Diagnostics.Abstraction;
+using Application.Medications.Abstraction;
+using Application.Procedures.Abstraction;
+using Application.MedicationOrders.Abstraction;
+using Application.ProcedureOrders.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
@@ -77,6 +81,10 @@ public sealed class UnitOfWork : IUnitOfWork
         IMedicalRecordRepository medicalRecordsRepository,
         INotificationRepository notificationsRepository,
         IDiagnosticRepository diagnosticsRepository,
+        IMedicationRepository medicationsRepository,
+        IProcedureRepository proceduresRepository,
+        IMedicationOrderRepository medicationOrdersRepository,
+        IProcedureOrderRepository procedureOrdersRepository,
         IVaccinationRepository vaccinationsRepository,
         IAgentHumanRepository agentHumansRepository,
         IChatConversationRepository chatConversationsRepository,
@@ -112,6 +120,10 @@ public sealed class UnitOfWork : IUnitOfWork
         MedicalRecordsRepository = medicalRecordsRepository;
         NotificationsRepository = notificationsRepository;
         DiagnosticsRepository = diagnosticsRepository;
+        MedicationsRepository = medicationsRepository;
+        ProceduresRepository = proceduresRepository;
+        MedicationOrdersRepository = medicationOrdersRepository;
+        ProcedureOrdersRepository = procedureOrdersRepository;
         VaccinationsRepository = vaccinationsRepository;
         AgentHumansRepository = agentHumansRepository;
         ChatConversationsRepository = chatConversationsRepository;
@@ -148,6 +160,10 @@ public sealed class UnitOfWork : IUnitOfWork
     public IVaccinationRepository VaccinationsRepository { get; }
     public INotificationRepository NotificationsRepository { get; }
     public IDiagnosticRepository DiagnosticsRepository { get; }
+    public IMedicationRepository MedicationsRepository { get; }
+    public IProcedureRepository ProceduresRepository { get; }
+    public IMedicationOrderRepository MedicationOrdersRepository { get; }
+    public IProcedureOrderRepository ProcedureOrdersRepository { get; }
     public IAgentHumanRepository AgentHumansRepository { get; }
     public IChatConversationRepository ChatConversationsRepository { get; }
     public IChatParticipantRepository ChatParticipantsRepository { get; }
