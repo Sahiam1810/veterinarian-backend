@@ -31,9 +31,9 @@ public sealed class AgentMessagesController(ISender sender) : ControllerBase
         [FromHeader(Name = "X-Correlation-ID")] Guid? correlationId,
         CancellationToken cancellationToken)
     {
-        var personClaim = User.FindFirstValue("person_id");
+        var subjectClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         var role = User.FindFirstValue("role");
-        if (!Guid.TryParse(personClaim, out var personId) || personId == Guid.Empty ||
+        if (!Guid.TryParse(subjectClaim, out var userId) || userId == Guid.Empty ||
             string.IsNullOrWhiteSpace(role))
         {
             throw new UnauthorizedException("Authenticated identity is invalid.");
@@ -50,7 +50,7 @@ public sealed class AgentMessagesController(ISender sender) : ControllerBase
                 request.ConversationId,
                 request.PetId,
                 request.Language,
-                personId,
+                userId,
                 role,
                 resolvedIdempotencyKey,
                 resolvedCorrelationId),

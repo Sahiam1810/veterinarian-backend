@@ -45,7 +45,8 @@ public sealed class AgentGuestIdentityProviderTests
         Assert.Equal(first.PersonId, repeated.PersonId);
         Assert.NotEqual(first.PersonId, different.PersonId);
         Assert.Equal("TelegramGuest", first.Role);
-        Assert.Equal(first.PersonId.ToString(), token.Claims.Single(x => x.Type == "person_id").Value);
+        Assert.Equal(first.PersonId.ToString(), token.Subject);
+        Assert.DoesNotContain(token.Claims, x => x.Type == "person_id");
         Assert.True(Guid.TryParse(token.Claims.Single(x => x.Type == "role_id").Value, out _));
         Assert.Equal("TelegramGuest", token.Claims.Single(x => x.Type == "role").Value);
         Assert.Equal("1001", token.Claims.Single(x => x.Type == "telegram_user_id").Value);
@@ -92,7 +93,7 @@ public sealed class AgentGuestIdentityProviderTests
         Assert.Equal("cliente@telegram.test", token.Claims.Single(claim => claim.Type == "email" || claim.Type == JwtRegisteredClaimNames.Email).Value);
         Assert.Equal("cliente@telegram.test", token.Claims.Single(claim => claim.Type == "preferred_username").Value);
 
-        Assert.Equal(client.Id.ToString(), token.Claims.Single(claim => claim.Type == "person_id").Value);
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "person_id");
         Assert.Equal(SystemRoles.ClientRoleId.ToString(), token.Claims.Single(claim => claim.Type == "role_id").Value);
         Assert.Equal("Cliente", token.Claims.Single(claim => claim.Type == "role").Value);
         Assert.Equal(

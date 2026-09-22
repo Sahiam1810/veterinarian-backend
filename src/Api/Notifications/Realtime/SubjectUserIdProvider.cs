@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Api.Notifications.Realtime;
 
-public sealed class PersonIdUserIdProvider : IUserIdProvider
+public sealed class SubjectUserIdProvider : IUserIdProvider
 {
     public string? GetUserId(HubConnectionContext connection) =>
-        connection.User?.FindFirst("person_id")?.Value;
+        connection.User?.FindFirst("sub")?.Value;
 }

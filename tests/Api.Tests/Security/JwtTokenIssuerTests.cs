@@ -34,10 +34,10 @@ public sealed class JwtTokenIssuerTests
         Assert.Equal(SecurityAlgorithms.RsaSha256, token.Header.Alg);
         Assert.Equal(options.KeyId, token.Header.Kid);
         // U5: sub es el UserId (USERS.USER_ID); ya no hay username de cuenta
-        // separado del correo.
+        // separado del correo. U6: person_id retirado (era el mismo valor).
         Assert.Equal("22222222-2222-2222-2222-222222222222", token.Subject);
         Assert.Equal("Veterinario", Claim(token, "role"));
-        Assert.Equal("22222222-2222-2222-2222-222222222222", Claim(token, "person_id"));
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "person_id");
         Assert.Equal("33333333-3333-3333-3333-333333333333", Claim(token, "role_id"));
         Assert.Equal("ana@huellitas.test", Claim(token, "preferred_username"));
         Assert.Equal("ana@huellitas.test", Claim(token, JwtRegisteredClaimNames.Email));

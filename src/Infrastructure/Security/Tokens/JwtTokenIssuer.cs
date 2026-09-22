@@ -75,15 +75,10 @@ public sealed class JwtTokenIssuer(
 
         var claims = new List<Claim>
         {
-            // U4: sub es el id del usuario (USERS.USER_ID). person_id se sigue
-            // emitiendo con el mismo valor por compatibilidad hasta U6, cuando
-            // se retira. U5: ya no hay username de cuenta separado del correo.
+            // U4: sub es el id del usuario (USERS.USER_ID). U6: person_id
+            // retirado -- era el mismo valor que sub, ya redundante.
             new(
                 JwtRegisteredClaimNames.Sub,
-                identity.UserId.ToString()),
-
-            new(
-                "person_id",
                 identity.UserId.ToString()),
 
             new(

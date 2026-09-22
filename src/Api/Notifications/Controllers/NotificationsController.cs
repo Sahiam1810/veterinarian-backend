@@ -82,12 +82,12 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         Guid userId,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorPersonId(out var actorPersonId))
+        if (!TryGetActorUserId(out var actorUserId))
         {
             return Unauthorized();
         }
 
-        var isOwnInbox = userId == actorPersonId;
+        var isOwnInbox = userId == actorUserId;
         var canViewOthers =
             User.IsSuperAdmin() ||
             User.HasClaim(
@@ -156,13 +156,13 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!TryGetActorPersonId(out var actorPersonId))
+        if (!TryGetActorUserId(out var actorUserId))
         {
             return Unauthorized();
         }
 
         await sender.Send(
-            new MarkNotificationAsReadCommand(id, actorPersonId),
+            new MarkNotificationAsReadCommand(id, actorUserId),
             cancellationToken);
 
         return NoContent();
@@ -185,9 +185,9 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
-    private bool TryGetActorPersonId(out Guid actorPersonId)
+    private bool TryGetActorUserId(out Guid actorUserId)
     {
-        var personId = User.FindFirstValue("person_id");
-        return Guid.TryParse(personId, out actorPersonId);
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return Guid.TryParse(subject, out actorUserId);
     }
 }

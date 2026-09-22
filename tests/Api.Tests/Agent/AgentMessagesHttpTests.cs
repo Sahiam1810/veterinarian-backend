@@ -46,7 +46,7 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
         using var response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(AgentApiFactory.PersonId, factory.AgentClient.Envelope!.UserId);
+        Assert.Equal(AgentApiFactory.UserId, factory.AgentClient.Envelope!.UserId);
         Assert.Equal(["Cliente"], factory.AgentClient.Envelope.Roles);
         Assert.Equal(factory.AccessToken, factory.AgentClient.AccessToken);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -81,9 +81,9 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
     }
 
     [Fact]
-    public async Task Post_without_person_id_returns_unauthorized()
+    public async Task Post_without_subject_returns_unauthorized()
     {
-        using var client = factory.CreateAuthenticatedClient(includePersonId: false);
+        using var client = factory.CreateAuthenticatedClient(includeSubject: false);
         using var request = CreateRequest();
 
         using var response = await client.SendAsync(request);
@@ -307,7 +307,7 @@ public sealed class AgentMessagesHttpTests : IClassFixture<AgentApiFactory>
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(expectedCode, document.RootElement.GetProperty("error").GetString());
         var body = await response.Content.ReadAsStringAsync();
-        Assert.DoesNotContain(AgentApiFactory.PersonId.ToString(), body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(AgentApiFactory.UserId.ToString(), body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(ConversationId.ToString(), body, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -379,8 +379,7 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
     private const string Issuer = "Veterinaria.Api.Agent.Tests";
     private const string Audience = "Veterinaria.Client.Agent.Tests";
     private const string KeyId = "agent-http-test-key";
-    private static readonly Guid AccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    public static readonly Guid PersonId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    public static readonly Guid UserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid ConversationId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly RsaTestKeys Keys = RsaTestKeys.Create();
     private static readonly IReadOnlyDictionary<string, string> TestEnvironment =
@@ -418,10 +417,10 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
     public string AccessToken { get; private set; } = string.Empty;
 
     public HttpClient CreateAuthenticatedClient(
-        bool includePersonId = true,
+        bool includeSubject = true,
         bool includeRole = true)
     {
-        AccessToken = CreateToken(includePersonId, includeRole);
+        AccessToken = CreateToken(includeSubject, includeRole);
         var client = CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false,
@@ -459,7 +458,7 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
         }
     }
 
-    private static string CreateToken(bool includePersonId, bool includeRole)
+    private static string CreateToken(bool includeSubject, bool includeRole)
     {
         using var rsa = RSA.Create();
         rsa.ImportFromPem(Encoding.UTF8.GetString(Convert.FromBase64String(Keys.PrivateKeyPemBase64)));
@@ -468,13 +467,10 @@ public sealed class AgentApiFactory : WebApplicationFactory<AuthController>
             KeyId = KeyId,
             CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
         };
-        var claims = new List<Claim>
+        var claims = new List<Claim>();
+        if (includeSubject)
         {
-            new(JwtRegisteredClaimNames.Sub, AccountId.ToString())
-        };
-        if (includePersonId)
-        {
-            claims.Add(new Claim("person_id", PersonId.ToString()));
+            claims.Add(new Claim(JwtRegisteredClaimNames.Sub, UserId.ToString()));
         }
 
         if (includeRole)

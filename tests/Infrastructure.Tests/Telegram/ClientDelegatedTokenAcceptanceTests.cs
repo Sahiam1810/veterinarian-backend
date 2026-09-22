@@ -14,10 +14,11 @@ using Xunit;
 namespace Infrastructure.Tests.Telegram;
 
 // Frente 1 (contrato v2, sección 8): el token delegado del bot identifica al cliente con su id.
+// U6: person_id se retiró del JWT (era el mismo valor que sub).
 public sealed class ClientDelegatedTokenAcceptanceTests
 {
     [Fact]
-    public async Task Acceptance_Delegated_token_has_sub_equal_to_person_id_equal_to_the_client_id()
+    public async Task Acceptance_Delegated_token_has_sub_equal_to_the_client_id()
     {
         using var rsa = RSA.Create(2048);
         var options = Options.Create(new JwtOptions
@@ -41,9 +42,8 @@ public sealed class ClientDelegatedTokenAcceptanceTests
         var token = new JwtSecurityTokenHandler().ReadJwtToken(identity.AccessToken);
 
         var sub = token.Claims.Single(claim => claim.Type == "sub").Value;
-        var personId = token.Claims.Single(claim => claim.Type == "person_id").Value;
         Assert.Equal(client.Id.ToString(), sub);
-        Assert.Equal(sub, personId);
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "person_id");
         Assert.Equal(client.Id, identity.PersonId);
     }
 
