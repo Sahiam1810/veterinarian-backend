@@ -6,6 +6,10 @@
 -- estricto de integridad referencial (de tablas hijas a tablas padre).
 --
 -- NOTA: NO elimina tablas (no usa DROP TABLE), solo vacía las filas (DELETE FROM).
+-- U5: quitadas USER_ACCOUNTS/USER_CREDENTIALS (fusionadas en USERS) y las
+-- tablas huérfanas de D1-D6/U1 (ACCOUNT_STATEMENTS, USER_PERMISSIONS, el
+-- subsistema de IA y las sesiones legacy de Telegram) que la migración
+-- MergeUsersAndAccounts ya eliminó de la base.
 -- =============================================================================
 
 SET DEFINE OFF;
@@ -13,41 +17,25 @@ SET DEFINE OFF;
 -- =============================================================================
 -- Nivel 1: Tablas hoja (nadie tiene llaves foráneas apuntando hacia ellas)
 -- =============================================================================
-DELETE FROM APPOINTMENT_ACTION_VERIFICATION_SESSIONS;
 DELETE FROM CONTACT_VERIFICATION_SESSIONS;
 DELETE FROM VETERINARIAN_ABSENCES;
 DELETE FROM VACCINATIONS;
 DELETE FROM APPOINTMENT_STATUS_HISTORIES;
 DELETE FROM ROLE_PERMISSIONS;
-DELETE FROM USER_PERMISSIONS;
 DELETE FROM NOTIFICATIONS;
-DELETE FROM ACCOUNT_STATEMENTS;
-DELETE FROM USER_CREDENTIALS;
 DELETE FROM USER_TOKENS;
 
 -- Hojas del subsistema de Telegram
-DELETE FROM TELEGRAM_LINK_CODES;
-DELETE FROM TELEGRAM_LINKING_SESSIONS;
-DELETE FROM TELEGRAM_REGISTRATION_SESSIONS;
 DELETE FROM TELEGRAM_CONVERSATION_LINKS;
 
--- Hojas del subsistema de Chat e IA
-DELETE FROM CHAT_ATTACHMENTS;
-DELETE FROM CHAT_AI_RUN_ERRORS;
-DELETE FROM CHAT_AI_RUN_METRICS;
-DELETE FROM CHAT_CONVERSATION_AI_SETTINGS;
-DELETE FROM CHAT_CONVERSATION_ASSIGNMENTS;
-DELETE FROM CHAT_ESCALATION_ASSIGNMENTS;
+-- Hojas del subsistema de Chat
 DELETE FROM CHAT_ESCALATION_RESOLUTION;
-DELETE FROM CHAT_ESCALATION_STATUS_HISTORY;
 
 -- =============================================================================
 -- Nivel 2: Tablas dependientes de Citas, Usuarios y Conversaciones
 -- =============================================================================
 DELETE FROM MEDICAL_RECORDS;
-DELETE FROM USER_ACCOUNTS;
 DELETE FROM TELEGRAM_USER_LINKS;
-DELETE FROM CHAT_AI_RUNS;
 DELETE FROM CHAT_ESCALATIONS;
 
 -- =============================================================================
@@ -92,7 +80,6 @@ DELETE FROM SENDER_TYPES;
 DELETE FROM MESSAGE_TYPES;
 DELETE FROM PRIORITY;
 DELETE FROM ESCALATIONS_STATUSES;
-DELETE FROM AI_RUNS_STATUSES;
 DELETE FROM MODULES;
 DELETE FROM ROLES;
 

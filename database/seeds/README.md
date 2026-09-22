@@ -35,17 +35,17 @@ Orden de ejecución: `roles_seed.sql`, `modules_seed.sql`, `role_permissions_see
 
 ## Cuentas y Credenciales de Prueba
 
-Todos los usuarios de Staff tienen cuenta creada en `USER_ACCOUNTS` (`STATUS = 'Activo'`) y credenciales listas para iniciar sesión en la web.
+Todos los usuarios de Staff quedan activos (`USERS.IS_ACTIVE = 1`) y con contraseña lista para iniciar sesión en la web (login por correo, sin usuario/username separado).
 
 * **Contraseña general (Staff):** `Password123!`
 
-| Rol | Correo / Login | Usuario | Acceso Web |
-|---|---|---|:---:|
-| **SuperAdmin** | `superadmin@veterinaria.com` | `superadmin` | ✅ Sí |
-| **Administrador** | `admin@veterinaria.com` | `admin` | ✅ Sí |
-| **Veterinario** | `veterinario@veterinaria.com` | `veterinario` | ✅ Sí |
-| **Recepcionista** | `recepcionista@veterinaria.com` | `recepcionista` | ✅ Sí |
-| **Auxiliar** | `auxiliar@veterinaria.com` | `auxiliar` | ✅ Sí |
+| Rol | Correo / Login | Acceso Web |
+|---|---|:---:|
+| **SuperAdmin** | `superadmin@veterinaria.com` | ✅ Sí |
+| **Administrador** | `admin@veterinaria.com` | ✅ Sí |
+| **Veterinario** | `veterinario@veterinaria.com` | ✅ Sí |
+| **Recepcionista** | `recepcionista@veterinaria.com` | ✅ Sí |
+| **Auxiliar** | `auxiliar@veterinaria.com` | ✅ Sí |
 
 > **Nota:** Los dueños de mascota (clientes) no se modelan como usuarios de plataforma: viven en `CLIENTS` y se identifican vía chatbot/Telegram.
 
