@@ -11,7 +11,7 @@ public static class DependencyInjection
         this IServiceCollection services)
     {
         services.AddSignalR();
-        services.AddSingleton<IUserIdProvider, PersonIdUserIdProvider>();
+        services.AddSingleton<IUserIdProvider, SubjectUserIdProvider>();
         services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
         services.AddScoped<IChatRealtimeNotifier, SignalRChatRealtimeNotifier>();
 

@@ -90,7 +90,7 @@ public sealed class AuthenticationServiceSuperAdminTests : IDisposable
         Assert.NotEmpty(result.Value.RefreshToken);
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
         Assert.Equal(user.Id.ToString(), jwt.Subject);
-        Assert.Equal(user.Id.ToString(), jwt.Claims.Single(c => c.Type == "person_id").Value);
+        Assert.DoesNotContain(jwt.Claims, claim => claim.Type == "person_id");
         Assert.Equal(SystemRoles.SuperAdminId.ToString(), jwt.Claims.Single(c => c.Type == "role_id").Value);
         Assert.Equal(SystemRoles.SuperAdminName, jwt.Claims.Single(c => c.Type == "role").Value);
         Assert.DoesNotContain(jwt.Claims, claim => claim.Type == "super_admin");
