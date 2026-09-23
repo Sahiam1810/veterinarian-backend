@@ -76,4 +76,35 @@ public sealed class UsersRepository : IUsersRepository
         _context.Set<UserEntity>().Remove(user);
         return Task.CompletedTask;
     }
+
+    public async Task<IReadOnlyCollection<UserEntity>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idList = ids.Distinct().ToList();
+        if (idList.Count == 0)
+        {
+            return Array.Empty<UserEntity>();
+        }
+
+        return await _context.Set<UserEntity>()
+            .AsNoTracking()
+            .Where(u => idList.Contains(u.Id))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<(UserEntity User, string RoleName)>> GetStaffUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var allowedRoles = new[] { "Veterinario", "Auxiliar", "Administrador" };
+
+        var query = from u in _context.Set<UserEntity>().AsNoTracking()
+                    join r in _context.Set<Domain.Roles.Entities.Roles>().AsNoTracking() on u.RoleId equals r.Id
+                    where u.IsActive && allowedRoles.Contains(r.Name.Value)
+                    orderby u.FullName
+                    select new { User = u, RoleName = r.Name.Value };
+
+        var results = await query.ToListAsync(cancellationToken);
+        return results.Select(x => (x.User, x.RoleName)).ToList();
+    }
 }

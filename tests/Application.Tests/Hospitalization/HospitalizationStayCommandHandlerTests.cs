@@ -212,7 +212,13 @@ public sealed class HospitalizationStayCommandHandlerTests
         var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
         var note1 = new HospitalizationNote(stay.Id, AuthorUserId, "Primera", null);
         var note2 = new HospitalizationNote(stay.Id, AuthorUserId, "Segunda", null);
+        typeof(HospitalizationNote).GetProperty(nameof(HospitalizationNote.FechaHora))!
+            .SetValue(note1, DateTime.UtcNow.AddMinutes(-10));
+        typeof(HospitalizationNote).GetProperty(nameof(HospitalizationNote.FechaHora))!
+            .SetValue(note2, DateTime.UtcNow);
 
+        staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
         notesRepository.GetByStayIdAsync(stay.Id, Arg.Any<CancellationToken>())
             .Returns(new[] { note2, note1 });
 

@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Api.Common.Security.Permissions;
+using Api.HospitalizationStays.Dtos;
 using Application.HospitalizationStays.UseCases;
-using Domain.HospitalizationStays.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,8 +32,8 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
 
     [HttpGet("{id:guid}")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
-    [ProducesResponseType(typeof(HospitalizationStay), StatusCodes.Status200OK)]
-    public async Task<ActionResult<HospitalizationStay>> GetById(Guid id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiHospitalizationStayDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiHospitalizationStayDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var stay = await sender.Send(new GetHospitalizationStayByIdQuery(id), cancellationToken);
         return Ok(stay);
@@ -41,8 +41,8 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
 
     [HttpGet("active")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
-    [ProducesResponseType(typeof(IReadOnlyCollection<HospitalizationStay>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<HospitalizationStay>>> GetActive(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(IReadOnlyCollection<ApiHospitalizationStayDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<ApiHospitalizationStayDto>>> GetActive(CancellationToken cancellationToken)
     {
         var stays = await sender.Send(new GetAllActiveHospitalizationStaysQuery(), cancellationToken);
         return Ok(stays);
@@ -50,11 +50,20 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
 
     [HttpGet("pet/{clientPetId:guid}")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
-    [ProducesResponseType(typeof(IReadOnlyCollection<HospitalizationStay>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<HospitalizationStay>>> GetByPet(Guid clientPetId, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(IReadOnlyCollection<ApiHospitalizationStayDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<ApiHospitalizationStayDto>>> GetByPet(Guid clientPetId, CancellationToken cancellationToken)
     {
         var stays = await sender.Send(new GetHospitalizationStaysByPetQuery(clientPetId), cancellationToken);
         return Ok(stays);
+    }
+
+    [HttpGet("staff")]
+    [RequirePermission("Hospitalización", PermissionAction.View)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<HospitalizationStaffUserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<HospitalizationStaffUserDto>>> GetStaff(CancellationToken cancellationToken)
+    {
+        var staff = await sender.Send(new GetHospitalizationStaffQuery(), cancellationToken);
+        return Ok(staff);
     }
 
     [HttpPost("{id:guid}/notes")]
@@ -69,8 +78,8 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
 
     [HttpGet("{id:guid}/notes")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
-    [ProducesResponseType(typeof(IReadOnlyCollection<HospitalizationNote>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<HospitalizationNote>>> GetNotes(Guid id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(IReadOnlyCollection<ApiHospitalizationNoteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<ApiHospitalizationNoteDto>>> GetNotes(Guid id, CancellationToken cancellationToken)
     {
         var notes = await sender.Send(new GetHospitalizationNotesByStayQuery(id), cancellationToken);
         return Ok(notes);

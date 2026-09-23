@@ -32,4 +32,11 @@ public interface IUsersRepository
     Task DeleteAsync(
         UserEntity user,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyCollection<UserEntity>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<(UserEntity User, string RoleName)>> GetStaffUsersAsync(
+        CancellationToken cancellationToken = default);
 }
