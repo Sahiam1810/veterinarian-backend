@@ -34,6 +34,8 @@ using Domain.Vaccinations.Entities;
 using Domain.Notifications.Entities;
 using Domain.HospitalizationStays.Entities;
 using Domain.Modules.Entities;
+using Domain.Supplies.Entities;
+using Domain.SupplyConsumptions.Entities;
 using RolePermissionEntity = Domain.RolePermissions.Entities.RolePermission;
 
 
@@ -100,6 +102,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<MedicationOrderItem> MedicationOrderItems => Set<MedicationOrderItem>();
     public DbSet<ProcedureOrder> ProcedureOrders => Set<ProcedureOrder>();
     public DbSet<ProcedureOrderItem> ProcedureOrderItems => Set<ProcedureOrderItem>();
+    public DbSet<Supply> Supplies => Set<Supply>();
+    public DbSet<SupplyConsumption> SupplyConsumptions => Set<SupplyConsumption>();
 
     public DbSet<ModuleEntity> Modules => Set<ModuleEntity>();
 
