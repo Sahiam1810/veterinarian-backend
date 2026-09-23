@@ -31,6 +31,7 @@ using Application.Veterinarians.Abstraction;
 using Application.SenderTypes.Abstraction;
 
 using Application.EscalationStatuses.Abstraction;
+using Application.HospitalizationStays.Abstraction;
 
 
 
@@ -67,6 +68,7 @@ using Infrastructure.ChatParticipants.Repository;
 
 using Application.Security.Abstractions;
 using Infrastructure.Diagnostics.Repositories;
+using Infrastructure.HospitalizationStays.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
 using Infrastructure.Races.Repositories;
@@ -175,6 +177,8 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
         services.AddScoped<IVeterinarianAbsenceRepository, VeterinarianAbsenceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<IHospitalizationStayRepository, HospitalizationStayRepository>();
+        services.AddScoped<IHospitalizationNoteRepository, HospitalizationNoteRepository>();
         services.AddScoped<IReportsReadRepository, ReportsReadRepository>();
         services.AddScoped<IAppointmentBookingSettings, ConfiguredAppointmentBookingSettings>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
