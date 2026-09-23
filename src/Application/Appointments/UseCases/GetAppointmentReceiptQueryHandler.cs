@@ -13,7 +13,9 @@ public sealed class GetAppointmentReceiptQueryHandler(IUnitOfWork unitOfWork)
         var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(request.AppointmentId, cancellationToken)
             ?? throw new NotFoundException("Cita médica no encontrada.");
 
-        var client = await unitOfWork.ClientsRepository.GetByIdAsync(appointment.ClientPet!.ClientId, cancellationToken);
+        var client = appointment.ClientPet is not null
+            ? await unitOfWork.ClientsRepository.GetByIdAsync(appointment.ClientPet.ClientId, cancellationToken)
+            : null;
 
         var petName = appointment.ClientPet?.Pet?.Name?.Value ?? "Paciente Desconocido";
         var ownerName = client?.FullName?.Value ?? "Dueño Desconocido";

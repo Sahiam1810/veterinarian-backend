@@ -136,6 +136,7 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.Property(x => x.IsPaid)
             .HasColumnName("IS_PAID")
             .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(x => x.PaidAt)
