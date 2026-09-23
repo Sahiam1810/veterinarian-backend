@@ -1,5 +1,9 @@
 using Domain.Clients.Entities;
 using Domain.Diagnostics.Entities;
+using Domain.Medications.Entities;
+using Domain.Procedures.Entities;
+using Domain.MedicationOrders.Entities;
+using Domain.ProcedureOrders.Entities;
 using Domain.StatusAppointments.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
@@ -89,6 +93,13 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<HospitalizationNote> HospitalizationNotes => Set<HospitalizationNote>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<Medication> Medications => Set<Medication>();
+    public DbSet<Procedure> Procedures => Set<Procedure>();
+    public DbSet<MedicationOrder> MedicationOrders => Set<MedicationOrder>();
+    public DbSet<MedicationOrderItem> MedicationOrderItems => Set<MedicationOrderItem>();
+    public DbSet<ProcedureOrder> ProcedureOrders => Set<ProcedureOrder>();
+    public DbSet<ProcedureOrderItem> ProcedureOrderItems => Set<ProcedureOrderItem>();
 
     public DbSet<ModuleEntity> Modules => Set<ModuleEntity>();
 
