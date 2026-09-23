@@ -13,6 +13,11 @@ public sealed record UpdateChatEscalationDto(
     string? Reason,
     string? UpdateAt);
 
+public sealed record ResolveChatEscalationDto(
+    Guid EscalationStatusId,
+    Guid ResolvedBy,
+    string? ResolutionNote);
+
 public sealed record ChatEscalationResponseDto(
     Guid Id,
     Guid ChatConversationId,
@@ -21,7 +26,6 @@ public sealed record ChatEscalationResponseDto(
     string? Reason,
     DateTime CreatedAt,
     string? UpdateAt,
-    // Ticket B7: la prioridad vive en ChatConversation, no en ChatEscalation —
-    // solo poblados por el listado (GetAll); Create/Update/GetById quedan en null.
-    Guid? PriorityId = null,
-    string? Priority = null);
+    DateTime? ResolvedAt = null,
+    Guid? ResolvedBy = null,
+    string? ResolutionNote = null);

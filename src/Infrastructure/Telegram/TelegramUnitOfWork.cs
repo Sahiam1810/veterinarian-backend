@@ -10,14 +10,12 @@ public sealed class TelegramUnitOfWork(
     IClientRepository clientsRepository,
     IUsersRepository usersRepository,
     ITelegramUserLinkRepository userLinksRepository,
-    ITelegramConversationLinkRepository conversationLinksRepository,
     ITelegramInboundUpdateRepository inboundUpdatesRepository)
     : ITelegramUnitOfWork
 {
     public IClientRepository ClientsRepository { get; } = clientsRepository;
     public IUsersRepository UsersRepository { get; } = usersRepository;
     public ITelegramUserLinkRepository UserLinksRepository { get; } = userLinksRepository;
-    public ITelegramConversationLinkRepository ConversationLinksRepository { get; } = conversationLinksRepository;
     public ITelegramInboundUpdateRepository InboundUpdatesRepository { get; } = inboundUpdatesRepository;
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>

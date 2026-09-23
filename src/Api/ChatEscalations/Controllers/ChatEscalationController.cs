@@ -111,6 +111,33 @@ public sealed class ChatEscalationController(ISender sender) : ControllerBase
         }
     }
 
+    [HttpPatch("{id:guid}/resolve")]
+    [RequirePermission("Escalamientos", PermissionAction.Edit)]
+    [EndpointSummary("Resolver un escalamiento de chat")]
+    [EndpointDescription("Resuelve el escalamiento registrando el usuario que resuelve, la nota de resolución y el nuevo estado.")]
+    [ProducesResponseType(typeof(ChatEscalationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ChatEscalationResponseDto>> Resolve(
+        Guid id,
+        [FromBody] ResolveChatEscalationDto dto,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var escalation = await sender.Send(dto.ToCommand(id), cancellationToken);
+            return Ok(escalation.ToResponse());
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { Message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Eliminar un escalamiento de chat")]

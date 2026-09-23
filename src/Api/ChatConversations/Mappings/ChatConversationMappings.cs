@@ -7,17 +7,7 @@ namespace Api.ChatConversations.Mappings;
 public static class ChatConversationMappings
 {
     public static CreateChatConversationCommand ToCommand(this CreateChatConversationDto dto)
-        => new(dto.ConversationStatusId, dto.PriorityId, dto.AiEnabled, dto.Channel);
-
-    public static UpdateChatConversationStatusCommand ToCommand(
-        this UpdateChatConversationStatusDto dto,
-        Guid id)
-        => new(id, dto.ConversationStatusId);
-
-    public static UpdateChatConversationPriorityCommand ToCommand(
-        this UpdateChatConversationPriorityDto dto,
-        Guid id)
-        => new(id, dto.PriorityId);
+        => new(dto.AiEnabled, dto.Channel);
 
     public static UpdateChatConversationAiEnabledCommand ToCommand(
         this UpdateChatConversationAiEnabledDto dto,
@@ -32,8 +22,6 @@ public static class ChatConversationMappings
     public static ChatConversationResponseDto ToResponse(this ChatConversationEntity conversation)
         => new(
             conversation.Id,
-            conversation.ConversationStatusId,
-            conversation.PriorityId,
             conversation.AiEnabled,
             conversation.LastMessageAt,
             conversation.Closed,

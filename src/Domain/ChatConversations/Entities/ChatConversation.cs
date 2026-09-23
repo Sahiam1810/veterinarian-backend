@@ -11,10 +11,6 @@ public sealed class ChatConversation : BaseEntity<Guid>
     {
     }
 
-    public Guid ConversationStatusId { get; private set; }
-
-    public Guid? PriorityId { get; private set; }
-
     public bool AiEnabled { get; private set; }
 
     public DateTime? LastMessageAt { get; private set; }
@@ -25,56 +21,26 @@ public sealed class ChatConversation : BaseEntity<Guid>
 
     public Guid? ClosedBy { get; private set; }
 
-    // Ticket B6: canal de origen ("Telegram" o "Web"), fijado una sola vez al
-    // crear la conversación — hoy solo se conocía transitoriamente vía
-    // AgentConversationContext.Channel (nunca persistido) y se infería en la
-    // Recepcionista consultando TelegramConversationLink. No confundir con
-    // AgentConversationContext.Channel, que sigue siendo un campo aparte
-    // usado para el envelope que se le envía al agente de IA.
     public string Channel { get; private set; } = "Web";
 
     /// <summary>
     /// Crea una conversación abierta. La IA queda habilitada por defecto salvo indicación contraria.
     /// </summary>
     public static ChatConversation Create(
-        Guid conversationStatusId,
-        Guid? priorityId = null,
         bool aiEnabled = true,
         string channel = "Web")
     {
-        EnsureConversationStatusId(conversationStatusId);
         EnsureChannel(channel);
 
         return new ChatConversation
         {
             Id = Guid.NewGuid(),
-            ConversationStatusId = conversationStatusId,
-            PriorityId = priorityId,
             AiEnabled = aiEnabled,
             Closed = false,
             ClosedAt = null,
             ClosedBy = null,
             Channel = channel
         };
-    }
-
-    /// <summary>
-    /// Cambia el estado de la conversación.
-    /// </summary>
-    public void ChangeStatus(Guid conversationStatusId)
-    {
-        EnsureConversationStatusId(conversationStatusId);
-        ConversationStatusId = conversationStatusId;
-        Touch();
-    }
-
-    /// <summary>
-    /// Establece o retira la prioridad de la conversación.
-    /// </summary>
-    public void SetPriority(Guid? priorityId)
-    {
-        PriorityId = priorityId;
-        Touch();
     }
 
     /// <summary>
@@ -127,16 +93,6 @@ public sealed class ChatConversation : BaseEntity<Guid>
     private void Touch()
     {
         UpdatedAt = DateTime.UtcNow;
-    }
-
-    private static void EnsureConversationStatusId(Guid conversationStatusId)
-    {
-        if (conversationStatusId == Guid.Empty)
-        {
-            throw new ArgumentException(
-                "El identificador del estado de conversación es obligatorio.",
-                nameof(conversationStatusId));
-        }
     }
 
     private static void EnsureClosedBy(Guid? closedBy)

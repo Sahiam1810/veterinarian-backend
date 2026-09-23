@@ -1,4 +1,3 @@
-using Domain.ChatEscalationResolutions.Entities;
 using Domain.ChatEscalations.Entities;
 using Infrastructure.Agent.Conversations;
 using Infrastructure.Persistence;
@@ -31,8 +30,8 @@ public sealed class ActiveConversationEscalationReaderTests
     {
         await using var context = CreateContext();
         var escalation = ChatEscalation.Create(ConversationId, EscalationStatusId, true);
-        var resolution = ChatEscalationResolution.Create(escalation.Id);
-        context.AddRange(escalation, resolution);
+        escalation.Resolve(Guid.NewGuid(), "Resuelto");
+        context.Add(escalation);
         await context.SaveChangesAsync();
         var reader = new ActiveConversationEscalationReader(context);
 

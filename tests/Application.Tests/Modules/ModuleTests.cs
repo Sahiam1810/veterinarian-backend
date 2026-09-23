@@ -255,10 +255,7 @@ public sealed class ModuleTests
         public Application.Specialties.Abstraction.ISpecialtyRepository SpecialtiesRepository => null!;
         public Application.ClientsPets.Abstraction.IClientPetRepository ClientPetsRepository => null!;
         public Application.Veterinarians.Abstraction.IVeterinarianRepository VeterinariansRepository => null!;
-        public Application.Priorities.Abstraction.IPriorityRepository PrioritiesRepository => null!;
         public Application.SenderTypes.Abstraction.ISenderTypeRepository SenderTypesRepository => null!;
-        public Application.ConversationStatuses.Abstraction.IConversationStatusRepository ConversationStatusesRepository => null!;
-        public Application.MessageTypes.Abstraction.IMessageTypeRepository MessageTypesRepository => null!;
         public Application.EscalationStatuses.Abstraction.IEscalationStatusRepository EscalationStatusesRepository => null!;
         public Application.Appointments.Abstraction.IAppointmentRepository AppointmentsRepository => null!;
         public Application.AppointmentStatusHistories.Abstraction.IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository => null!;
@@ -275,7 +272,6 @@ public sealed class ModuleTests
         public Application.ChatParticipants.Abstraction.IChatParticipantRepository ChatParticipantsRepository => null!;
         public Application.ChatMessages.Abstraction.IChatMessageRepository ChatMessagesRepository => null!;
         public Application.ChatEscalations.Abstraction.IChatEscalationRepository ChatEscalationsRepository => null!;
-        public Application.ChatEscalationResolutions.Abstraction.IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
         public Application.Clients.Abstraction.IClientRepository ClientsRepository => null!;
         public Application.UserTokens.Abstraction.IUserTokensRepository UserTokensRepository => null!;
         public Application.Availabilities.Abstraction.IAvailabilityRepository AvailabilitiesRepository => null!;

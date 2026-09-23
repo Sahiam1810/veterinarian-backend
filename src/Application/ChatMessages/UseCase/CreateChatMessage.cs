@@ -10,7 +10,6 @@ public sealed record CreateChatMessageCommand(
     Guid ChatConversationId,
     Guid ChatParticipantId,
     Guid SenderTypesId,
-    Guid MessageTypeId,
     string Content,
     string? Metadata) : IRequest<ChatMessageEntity>;
 
@@ -57,15 +56,6 @@ public sealed class CreateChatMessageCommandHandler
                 $"No se encontró el tipo de remitente '{request.SenderTypesId}'.");
         }
 
-        var messageType = await _uow.MessageTypesRepository.GetByIdAsync(
-            request.MessageTypeId,
-            cancellationToken);
-        if (messageType is null)
-        {
-            throw new NotFoundException(
-                $"No se encontró el tipo de mensaje '{request.MessageTypeId}'.");
-        }
-
         if (participant.ChatConversationId != request.ChatConversationId)
         {
             throw new ArgumentException(
@@ -81,7 +71,6 @@ public sealed class CreateChatMessageCommandHandler
         var message = ChatMessageEntity.Create(
             request.ChatConversationId,
             request.SenderTypesId,
-            request.MessageTypeId,
             request.ChatParticipantId,
             request.Content,
             request.Metadata);
@@ -92,9 +81,6 @@ public sealed class CreateChatMessageCommandHandler
         await _uow.ChatConversationsRepository.UpdateAsync(conversation, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        // Ticket B4: el mensaje ya está guardado en este punto — cualquier
-        // suscriptor (hoy, el reenvío a Telegram) nunca debe poder hacer que
-        // esta respuesta falle; ver ForwardHumanChatMessageToTelegramHandler.
         await _publisher.Publish(new ChatMessageCreatedNotification(message), cancellationToken);
 
         return message;

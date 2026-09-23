@@ -22,12 +22,6 @@ public interface ITelegramRuntimeSettings
     // hardcodeado, mismo criterio que Agent__InitialConversationStatusId.
     Guid PendingEscalationStatusId { get; }
 
-    // Tipo "Texto" de MESSAGE_TYPES, usado al persistir el mensaje del cliente
-    // en CHAT_MESSAGES (Ticket B3). El tipo de participante "Cliente" no se
-    // repite aquí: se reutiliza IAgentConversationDefaults.ClientParticipantTypeId,
-    // la misma fuente que ya usa PersistentConversationContextProvider.
-    Guid TextMessageTypeId { get; }
-
     // SENDER_TYPES "Agente humano" — decide si un ChatMessage se reenvía a
     // Telegram (Ticket B4). Ningún otro remitente (Cliente, Agente IA) dispara
     // el reenvío.

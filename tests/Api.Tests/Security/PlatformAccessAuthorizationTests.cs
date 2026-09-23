@@ -1,17 +1,13 @@
-using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using Api.Common.Security.Permissions;
 using Api.Modules.Controllers;
-using Api.Priorities.Controllers;
 using Application.Permissions.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Xunit;
 
 namespace Api.Tests.Security;
 
-// Controllers que siguen bajo Plataforma.View (catálogos de plataforma / pagos).
-// Pets, Citas, Availabilities, etc. migraron a su módulo de dominio (ver ModuleViewAuthorizationTests).
 public sealed class PlatformAccessAuthorizationTests
 {
     private readonly PermissionAuthorizationHandler handler = new();
@@ -19,7 +15,6 @@ public sealed class PlatformAccessAuthorizationTests
     public static IEnumerable<object[]> PlatformViewControllerActions()
     {
         yield return [typeof(ModulesController), nameof(ModulesController.GetAll)];
-        yield return [typeof(PrioritiesController), nameof(PrioritiesController.GetAll)];
     }
 
     [Theory]

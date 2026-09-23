@@ -3,7 +3,6 @@ using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Availabilities.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
@@ -13,14 +12,11 @@ using Application.ClientsPets.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Tests.Common;
-using Application.ConversationStatuses.Abstraction;
 using Application.Diagnostics.Abstraction;
 using Application.EscalationStatuses.Abstraction;
 using Application.MedicalRecords.Abstraction;
-using Application.MessageTypes.Abstraction;
 using Application.Notifications.Abstraction;
 using Application.Pets.Abstraction;
-using Application.Priorities.Abstraction;
 using Application.Races.Abstraction;
 using Application.Roles.Abstraction;
 using Application.SenderTypes.Abstraction;
@@ -200,7 +196,7 @@ public sealed class ChatParticipantTests
     public async Task Create_with_existing_client_persists_participant()
     {
         var context = new ChatParticipantTestContext();
-        var conversation = ChatConversation.Create(context.Status.Id);
+        var conversation = ChatConversation.Create();
         var senderType = new SenderTypeEntity("Cliente");
         var client = TestClients.Create();
         context.Conversations[conversation.Id] = conversation;
@@ -221,7 +217,7 @@ public sealed class ChatParticipantTests
     public async Task Create_with_missing_client_throws_not_found()
     {
         var context = new ChatParticipantTestContext();
-        var conversation = ChatConversation.Create(context.Status.Id);
+        var conversation = ChatConversation.Create();
         var senderType = new SenderTypeEntity("Cliente");
         context.Conversations[conversation.Id] = conversation;
         context.SenderTypes[senderType.Id] = senderType;
@@ -256,7 +252,7 @@ public sealed class ChatParticipantTests
     public async Task Create_with_missing_participant_type_throws_not_found()
     {
         var context = new ChatParticipantTestContext();
-        var conversation = ChatConversation.Create(context.Status.Id);
+        var conversation = ChatConversation.Create();
         context.Conversations[conversation.Id] = conversation;
         var missingTypeId = Guid.Parse("88888888-8888-8888-8888-888888888888");
 
@@ -272,7 +268,7 @@ public sealed class ChatParticipantTests
     public async Task Create_with_existing_agent_persists_participant()
     {
         var context = new ChatParticipantTestContext();
-        var conversation = ChatConversation.Create(context.Status.Id);
+        var conversation = ChatConversation.Create();
         var senderType = new SenderTypeEntity("Agente");
         var agent = AgentHuman.Create(ValidUserId);
         context.Conversations[conversation.Id] = conversation;
@@ -292,7 +288,7 @@ public sealed class ChatParticipantTests
     public async Task Create_with_missing_agent_throws_not_found()
     {
         var context = new ChatParticipantTestContext();
-        var conversation = ChatConversation.Create(context.Status.Id);
+        var conversation = ChatConversation.Create();
         var senderType = new SenderTypeEntity("Agente");
         context.Conversations[conversation.Id] = conversation;
         context.SenderTypes[senderType.Id] = senderType;
@@ -399,8 +395,8 @@ public sealed class ChatParticipantTests
     public async Task Get_by_conversation_id_returns_repository_participants()
     {
         var context = new ChatParticipantTestContext();
-        var conversation = ChatConversation.Create(context.Status.Id);
-        var otherConversation = ChatConversation.Create(context.Status.Id);
+        var conversation = ChatConversation.Create();
+        var otherConversation = ChatConversation.Create();
         var senderType = new SenderTypeEntity("Usuario");
         var first = ChatParticipant.Create(
             conversation.Id,
@@ -431,9 +427,6 @@ public sealed class ChatParticipantTests
 
     private sealed class ChatParticipantTestContext
     {
-        public Domain.ConversationStatuses.Entities.ConversationStatusEntity Status { get; } =
-            new("Abierta");
-
         public Dictionary<Guid, ChatConversation> Conversations { get; } = new();
         public Dictionary<Guid, SenderTypeEntity> SenderTypes { get; } = new();
         public Dictionary<Guid, ClientEntity> Clients { get; } = new();
@@ -490,9 +483,6 @@ public sealed class ChatParticipantTests
         public ISpecialtyRepository SpecialtiesRepository => null!;
         public IClientPetRepository ClientPetsRepository => null!;
         public IVeterinarianRepository VeterinariansRepository => null!;
-        public IPriorityRepository PrioritiesRepository => null!;
-        public IConversationStatusRepository ConversationStatusesRepository => null!;
-        public IMessageTypeRepository MessageTypesRepository => null!;
         public IEscalationStatusRepository EscalationStatusesRepository => null!;
         public IAppointmentRepository AppointmentsRepository => null!;
         public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository => null!;
@@ -506,7 +496,6 @@ public sealed class ChatParticipantTests
         public Application.ProcedureOrders.Abstraction.IProcedureOrderRepository ProcedureOrdersRepository => null!;
         public IChatMessageRepository ChatMessagesRepository => null!;
         public IChatEscalationRepository ChatEscalationsRepository => null!;
-        public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository => null!;
         public IUserTokensRepository UserTokensRepository => null!;
         public IAvailabilityRepository AvailabilitiesRepository => null!;
 

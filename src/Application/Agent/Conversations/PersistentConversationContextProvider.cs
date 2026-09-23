@@ -32,7 +32,7 @@ public sealed class PersistentConversationContextProvider(
 
         await EnsureCatalogsExistAsync(cancellationToken);
 
-        var conversation = ChatConversation.Create(defaults.InitialConversationStatusId, channel: channel);
+        var conversation = ChatConversation.Create(channel: channel);
         var participant = ChatParticipant.Create(
             conversation.Id,
             defaults.ClientParticipantTypeId,
@@ -74,13 +74,10 @@ public sealed class PersistentConversationContextProvider(
 
     private async Task EnsureCatalogsExistAsync(CancellationToken cancellationToken)
     {
-        var status = await unitOfWork.ConversationStatusesRepository.GetByIdAsync(
-            defaults.InitialConversationStatusId,
-            cancellationToken);
         var participantType = await unitOfWork.SenderTypesRepository.GetByIdAsync(
             defaults.ClientParticipantTypeId,
             cancellationToken);
-        if (status is null || participantType is null)
+        if (participantType is null)
         {
             throw new AgentConversationConfigurationException();
         }

@@ -73,22 +73,6 @@ public sealed class AgentOptionsValidatorTests
     [InlineData("")]
     [InlineData("not-a-guid")]
     [InlineData("00000000-0000-0000-0000-000000000000")]
-    public void Enabled_options_require_valid_initial_conversation_status_id(string value)
-    {
-        var result = validator.Validate(null, Valid(initialConversationStatusId: value));
-
-        Assert.True(result.Failed);
-        Assert.Contains(
-            result.Failures,
-            failure => failure.Contains(
-                "Agent:InitialConversationStatusId",
-                StringComparison.Ordinal));
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("not-a-guid")]
-    [InlineData("00000000-0000-0000-0000-000000000000")]
     public void Enabled_options_require_valid_client_participant_type_id(string value)
     {
         var result = validator.Validate(null, Valid(clientParticipantTypeId: value));
@@ -114,7 +98,6 @@ public sealed class AgentOptionsValidatorTests
         string messagesPath = "/api/v1/messages",
         int requestTimeoutSeconds = 30,
         int maxResponseBytes = 1_048_576,
-        string initialConversationStatusId = "81000000-0000-0000-0000-000000000001",
         string clientParticipantTypeId = "82000000-0000-0000-0000-000000000001") => new()
     {
         Enabled = true,
@@ -122,7 +105,6 @@ public sealed class AgentOptionsValidatorTests
         MessagesPath = messagesPath,
         RequestTimeoutSeconds = requestTimeoutSeconds,
         MaxResponseBytes = maxResponseBytes,
-        InitialConversationStatusId = initialConversationStatusId,
         ClientParticipantTypeId = clientParticipantTypeId
     };
 }
