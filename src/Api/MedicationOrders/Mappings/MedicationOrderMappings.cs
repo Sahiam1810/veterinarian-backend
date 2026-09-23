@@ -42,7 +42,6 @@ public static class MedicationOrderMappings
         var items = dto.Items?.Select(i => new MedicationOrderItemInput(i.MedicationId, i.Notes)).ToList();
         return new CreateMedicationOrderCommand(
             dto.ClientPetId,
-            dto.VeterinarianId,
             dto.AppointmentId,
             dto.IsInHouse,
             dto.ReferredTo,

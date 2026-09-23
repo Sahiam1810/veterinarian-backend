@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.ProcedureOrders.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/procedure-orders")]
 public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
 {
     [HttpGet("{id:guid}")]

@@ -1,6 +1,7 @@
 using Domain.Appointments.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Common;
+using Domain.MedicalOrders;
 using Domain.Veterinarians.Entities;
 
 namespace Domain.ProcedureOrders.Entities;
@@ -39,11 +40,7 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
 
         var itemList = items?.ToList() ?? new List<(Guid ProcedureId, string? Notes)>();
 
-        MedicationOrders.Entities.MedicationOrder.ValidateInHouseAndReferralRules(
-            isInHouse,
-            referredTo,
-            referralReason,
-            itemList.Count);
+        MedicalOrderInHouseRules.Validate(isInHouse, referredTo, referralReason, itemList.Count);
 
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;

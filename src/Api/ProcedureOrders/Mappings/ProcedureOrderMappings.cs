@@ -43,7 +43,6 @@ public static class ProcedureOrderMappings
         var items = dto.Items?.Select(i => new ProcedureOrderItemInput(i.ProcedureId, i.Notes)).ToList();
         return new CreateProcedureOrderCommand(
             dto.ClientPetId,
-            dto.VeterinarianId,
             dto.AppointmentId,
             dto.IsInHouse,
             dto.ReferredTo,

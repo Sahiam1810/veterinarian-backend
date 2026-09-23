@@ -26,7 +26,6 @@ public record CreateMedicationOrderItemDto(
 
 public record CreateMedicationOrderDto(
     Guid ClientPetId,
-    Guid VeterinarianId,
     Guid AppointmentId,
     bool IsInHouse,
     string? ReferredTo,

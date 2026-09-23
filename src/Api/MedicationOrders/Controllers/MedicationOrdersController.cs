@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.MedicationOrders.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/medication-orders")]
 public sealed class MedicationOrdersController(ISender sender) : ControllerBase
 {
     [HttpGet("{id:guid}")]

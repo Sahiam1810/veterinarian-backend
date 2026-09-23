@@ -1,6 +1,7 @@
 using Domain.Appointments.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Common;
+using Domain.MedicalOrders;
 using Domain.Veterinarians.Entities;
 
 namespace Domain.MedicationOrders.Entities;
@@ -39,7 +40,7 @@ public sealed class MedicationOrder : BaseEntity<Guid>
 
         var itemList = items?.ToList() ?? new List<(Guid MedicationId, string? Notes)>();
 
-        ValidateInHouseAndReferralRules(isInHouse, referredTo, referralReason, itemList.Count);
+        MedicalOrderInHouseRules.Validate(isInHouse, referredTo, referralReason, itemList.Count);
 
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;
@@ -88,40 +89,4 @@ public sealed class MedicationOrder : BaseEntity<Guid>
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public static void ValidateInHouseAndReferralRules(
-        bool isInHouse,
-        string? referredTo,
-        string? referralReason,
-        int itemMultiplier)
-    {
-        if (isInHouse)
-        {
-            if (itemMultiplier < 1)
-            {
-                throw new ArgumentException("Una orden médica interna debe tener al menos 1 ítem.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(referredTo) || !string.IsNullOrWhiteSpace(referralReason))
-            {
-                throw new ArgumentException("Una orden médica interna no puede contener datos de remisión.");
-            }
-        }
-        else
-        {
-            if (string.IsNullOrWhiteSpace(referredTo))
-            {
-                throw new ArgumentException("El lugar de remisión (ReferredTo) es obligatorio cuando la orden es externa.");
-            }
-
-            if (string.IsNullOrWhiteSpace(referralReason))
-            {
-                throw new ArgumentException("El motivo de remisión (ReferralReason) es obligatorio cuando la orden es externa.");
-            }
-
-            if (itemMultiplier > 0)
-            {
-                throw new ArgumentException("Una orden médica remitida no debe contener ítems del catálogo interno.");
-            }
-        }
-    }
 }

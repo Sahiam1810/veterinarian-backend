@@ -27,7 +27,6 @@ public record CreateProcedureOrderItemDto(
 
 public record CreateProcedureOrderDto(
     Guid ClientPetId,
-    Guid VeterinarianId,
     Guid AppointmentId,
     bool IsInHouse,
     string? ReferredTo,

@@ -10,7 +10,6 @@ public sealed record MedicationOrderItemInput(Guid MedicationId, string? Notes);
 
 public sealed record CreateMedicationOrderCommand(
     Guid ClientPetId,
-    Guid VeterinarianId,
     Guid AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
@@ -31,11 +30,17 @@ public sealed class CreateMedicationOrderCommandHandler(IUnitOfWork unitOfWork)
         CreateMedicationOrderCommand request,
         CancellationToken cancellationToken)
     {
+        var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(request.AppointmentId, cancellationToken);
+        if (appointment is null)
+        {
+            throw new NotFoundException($"No se encontró la cita con ID '{request.AppointmentId}'.");
+        }
+
         var itemsTuple = request.Items?.Select(i => (i.MedicationId, i.Notes));
 
         var medicationOrder = new MedicationOrder(
             request.ClientPetId,
-            request.VeterinarianId,
+            appointment.VeterinarianId,
             request.AppointmentId,
             request.IsInHouse,
             request.ReferredTo,
@@ -103,9 +108,6 @@ public sealed class CreateMedicationOrderCommandValidator : AbstractValidator<Cr
     {
         RuleFor(x => x.ClientPetId)
             .NotEmpty().WithMessage("El paciente es obligatorio.");
-
-        RuleFor(x => x.VeterinarianId)
-            .NotEmpty().WithMessage("El veterinario es obligatorio.");
 
         RuleFor(x => x.AppointmentId)
             .NotEmpty().WithMessage("La consulta de origen es obligatoria.");
