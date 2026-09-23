@@ -22,7 +22,7 @@ public sealed class ContactVerificationController(
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.ContactEmailRequest)]
     [EndpointSummary("Solicita OTP de contacto por correo")]
-    [EndpointDescription("Canal v1 solo Email. Purpose Register o Claim. Devuelve sessionId/expiresAt/channel sin OTP.")]
+    [EndpointDescription("Canal v1 solo Email. Purpose Register. Devuelve sessionId/expiresAt/channel sin OTP.")]
     [ProducesResponseType(typeof(RequestContactEmailVerificationResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -37,7 +37,7 @@ public sealed class ContactVerificationController(
         }
 
         var result = await requestEmail.RequestAsync(
-            new RequestContactEmailVerification(request.Email, purpose, request.SubjectUserId),
+            new RequestContactEmailVerification(request.Email, purpose),
             cancellationToken);
 
         return Accepted(new RequestContactEmailVerificationResponse(
@@ -69,10 +69,7 @@ public sealed class ContactVerificationController(
             result.SessionId,
             result.ExpiresAt,
             result.Channel.ToString(),
-            result.MaskedEmail,
-            result.PersonId,
-            result.ClientId,
-            result.FullName));
+            result.MaskedEmail));
     }
 
     [HttpPost("email/confirm")]
@@ -100,6 +97,6 @@ public sealed class ContactVerificationController(
     {
         parsed = default;
         return Enum.TryParse(purpose, ignoreCase: true, out parsed)
-            && parsed is ContactVerificationPurpose.Register or ContactVerificationPurpose.Claim;
+            && parsed == ContactVerificationPurpose.Register;
     }
 }

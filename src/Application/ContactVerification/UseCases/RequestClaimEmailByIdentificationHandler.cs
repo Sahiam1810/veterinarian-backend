@@ -30,22 +30,16 @@ public sealed class RequestClaimEmailByIdentificationHandler(
         }
 
         var email = client.Email.Value;
-        var otp = await requestEmail.RequestAsync(
-            new RequestContactEmailVerification(
-                email,
-                ContactVerificationPurpose.Claim,
-                client.Id),
+        var otp = await requestEmail.RequestClaimForClientAsync(
+            client.Id,
+            email,
             cancellationToken);
 
         return new RequestClaimEmailByIdentificationResult(
             otp.SessionId,
             otp.ExpiresAt,
             otp.Channel,
-            MaskEmail(email),
-            client.Id,
-            client.Id,
-            client.FullName.Value,
-            email);
+            MaskEmail(email));
     }
 
     public static string MaskEmail(string email)

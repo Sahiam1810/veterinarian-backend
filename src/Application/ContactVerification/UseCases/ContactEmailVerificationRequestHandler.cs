@@ -24,19 +24,32 @@ public sealed class ContactEmailVerificationRequestHandler(
         RequestContactEmailVerification request,
         CancellationToken cancellationToken)
     {
-        if (!MailAddress.TryCreate(request.Email, out var mailAddress))
+        return await RequestCommonAsync(
+            request.Email,
+            request.Purpose,
+            request.SubjectUserId,
+            cancellationToken);
+    }
+
+    public Task<RequestContactEmailVerificationResult> RequestClaimForClientAsync(
+        Guid clientId,
+        string registeredEmail,
+        CancellationToken cancellationToken) =>
+        RequestCommonAsync(
+            registeredEmail,
+            ContactVerificationPurpose.Claim,
+            clientId,
+            cancellationToken);
+
+    private async Task<RequestContactEmailVerificationResult> RequestCommonAsync(
+        string email,
+        ContactVerificationPurpose purpose,
+        Guid? subjectUserId,
+        CancellationToken cancellationToken)
+    {
+        if (!MailAddress.TryCreate(email, out var mailAddress))
         {
             throw new ContactVerificationException(ContactVerificationErrors.EmailInvalid);
-        }
-
-        if (request.Purpose == ContactVerificationPurpose.Claim && request.SubjectUserId is null)
-        {
-            throw new ContactVerificationException(ContactVerificationErrors.PurposeInvalid);
-        }
-
-        if (request.Purpose == ContactVerificationPurpose.Register && request.SubjectUserId is not null)
-        {
-            throw new ContactVerificationException(ContactVerificationErrors.PurposeInvalid);
         }
 
         var normalizedEmail = mailAddress.Address.Trim().ToLowerInvariant();
@@ -44,7 +57,7 @@ public sealed class ContactEmailVerificationRequestHandler(
         var now = timeProvider.GetUtcNow();
 
         var active = await sessions.GetActiveByPurposeAndDestinationAsync(
-            request.Purpose,
+            purpose,
             destinationHash,
             cancellationToken);
 
@@ -64,6 +77,18 @@ public sealed class ContactEmailVerificationRequestHandler(
         var otp = otpProtector.Create();
         var expiresAt = now.Add(settings.OtpLifetime);
 
+        var session = ContactVerificationSession.Start(
+            purpose,
+            ContactVerificationChannel.Email,
+            destinationHash,
+            otp.Hash,
+            expiresAt.UtcDateTime,
+            now.UtcDateTime,
+            subjectUserId);
+
+        await sessions.AddAsync(session, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
         try
         {
             await codeDispatcher.SendAsync(
@@ -78,21 +103,12 @@ public sealed class ContactEmailVerificationRequestHandler(
             logger.LogWarning(
                 exception,
                 "Fallo al enviar OTP de contacto. Purpose={Purpose}",
-                request.Purpose);
+                purpose);
+            session.Cancel(now.UtcDateTime);
+            await sessions.UpdateAsync(session, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             throw new ContactVerificationException(ContactVerificationErrors.DeliveryFailed);
         }
-
-        var session = ContactVerificationSession.Start(
-            request.Purpose,
-            ContactVerificationChannel.Email,
-            destinationHash,
-            otp.Hash,
-            expiresAt.UtcDateTime,
-            now.UtcDateTime,
-            request.SubjectUserId);
-
-        await sessions.AddAsync(session, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Metadatos seguros: sessionId + purpose; nunca el OTP ni el correo en claro.
         logger.LogInformation(

@@ -4,8 +4,10 @@ using System.Text.Json;
 using Api.Auth.Controllers;
 using Api.Tests.Support;
 using Application.ContactVerification.Abstractions;
+using Application.Verification.Abstractions;
 using Domain.ContactVerification.Entities;
 using Domain.ContactVerification.Enums;
+using Domain.Verification.Enums;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -71,6 +73,56 @@ public sealed class ContactVerificationHttpTests : IClassFixture<ContactVerifica
             new { Email = "owner@huellitas.test", Purpose = "WhatsApp" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestEmail_WithClaimPurpose_Returns400_WithoutCallingRequestHandler()
+    {
+        using var client = factory.CreateAnonymousClient();
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/contact-verification/email/request",
+            new { Email = "owner@huellitas.test", Purpose = "Claim" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            "ContactVerification.PurposeInvalid",
+            document.RootElement.GetProperty("code").GetString());
+        await factory.RequestEmail.DidNotReceive().RequestAsync(
+            Arg.Is<RequestContactEmailVerification>(request =>
+                request.Purpose == ContactVerificationPurpose.Claim),
+            Arg.Any<CancellationToken>());
+        await factory.Dispatcher.DidNotReceive().SendAsync(
+            Arg.Any<VerificationDeliveryChannel>(),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<DateTimeOffset>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequestEmail_SubjectUserIdInBody_IsIgnored()
+    {
+        using var client = factory.CreateAnonymousClient();
+        var subjectUserId = Guid.NewGuid();
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/contact-verification/email/request",
+            new
+            {
+                Email = "owner@huellitas.test",
+                Purpose = "Register",
+                SubjectUserId = subjectUserId
+            });
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        await factory.RequestEmail.Received(1).RequestAsync(
+            Arg.Is<RequestContactEmailVerification>(request =>
+                request.Email == "owner@huellitas.test"
+                && request.Purpose == ContactVerificationPurpose.Register
+                && request.SubjectUserId == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -145,7 +197,9 @@ public sealed class ContactVerificationHttpTests : IClassFixture<ContactVerifica
         using var document = JsonDocument.Parse(body);
         Assert.True(document.RootElement.TryGetProperty("sessionId", out _));
         Assert.Equal("a***@huellitas.test", document.RootElement.GetProperty("maskedEmail").GetString());
-        Assert.Equal("Ana Pérez", document.RootElement.GetProperty("fullName").GetString());
+        Assert.False(document.RootElement.TryGetProperty("clientId", out _));
+        Assert.False(document.RootElement.TryGetProperty("personId", out _));
+        Assert.False(document.RootElement.TryGetProperty("fullName", out _));
         Assert.False(document.RootElement.TryGetProperty("email", out _));
         Assert.DoesNotContain("ana@huellitas.test", body, StringComparison.OrdinalIgnoreCase);
     }
@@ -167,6 +221,8 @@ public class ContactVerificationApiFactory : WebApplicationFactory<AuthControlle
 {
     private static readonly RsaTestKeys Keys = RsaTestKeys.Create();
     private readonly Dictionary<string, string?> originalEnvironment = [];
+    public IRequestContactEmailVerification RequestEmail { get; private set; } = null!;
+    public IVerificationCodeDispatcher Dispatcher { get; private set; } = null!;
 
     public ContactVerificationApiFactory()
         : this(CreateDefaultEnvironment())
@@ -204,7 +260,8 @@ public class ContactVerificationApiFactory : WebApplicationFactory<AuthControlle
             ["ContactVerification__OtpTtlMinutes"] = "10",
             ["ContactVerification__OtpMaximumAttempts"] = "5",
             ["ContactVerification__OtpResendSeconds"] = "60",
-            ["ContactVerification__ProofTtlMinutes"] = "15"
+            ["ContactVerification__ProofTtlMinutes"] = "15",
+            ["RateLimiting__ContactEmailRequestPermitLimit"] = "100"
         };
 
     public HttpClient CreateAnonymousClient() =>
@@ -221,6 +278,7 @@ public class ContactVerificationApiFactory : WebApplicationFactory<AuthControlle
         {
             // Request real (3.1) mockeado: sin SMTP/Oracle; Confirm sigue usando repo nulo → 404.
             var request = Substitute.For<IRequestContactEmailVerification>();
+            RequestEmail = request;
             request.RequestAsync(Arg.Any<RequestContactEmailVerification>(), Arg.Any<CancellationToken>())
                 .Returns(call =>
                 {
@@ -243,6 +301,12 @@ public class ContactVerificationApiFactory : WebApplicationFactory<AuthControlle
 
             services.RemoveAll<IRequestContactEmailVerification>();
             services.AddSingleton(request);
+
+            var dispatcher = Substitute.For<IVerificationCodeDispatcher>();
+            Dispatcher = dispatcher;
+            services.RemoveAll<IVerificationCodeDispatcher>();
+            services.AddSingleton(dispatcher);
+
             services.RemoveAll<IContactVerificationSessionRepository>();
             services.AddSingleton(sessions);
 
@@ -260,11 +324,7 @@ public class ContactVerificationApiFactory : WebApplicationFactory<AuthControlle
                         Guid.NewGuid(),
                         DateTime.UtcNow.AddMinutes(10),
                         ContactVerificationChannel.Email,
-                        "a***@huellitas.test",
-                        Guid.NewGuid(),
-                        Guid.NewGuid(),
-                        "Ana Pérez",
-                        "ana@huellitas.test");
+                        "a***@huellitas.test");
                 });
             services.RemoveAll<IRequestClaimEmailByIdentification>();
             services.AddSingleton(claimById);

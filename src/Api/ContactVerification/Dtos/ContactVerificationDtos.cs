@@ -1,10 +1,9 @@
 namespace Api.ContactVerification.Dtos;
 
-// v1: solo email. Purpose = Register | Claim.
+// v1: solo email. Purpose = Register.
 public sealed record RequestContactEmailVerificationRequest(
     string Email,
-    string Purpose,
-    Guid? SubjectUserId = null);
+    string Purpose);
 
 // Metadatos seguros de sesión; nunca incluye el OTP.
 public sealed record RequestContactEmailVerificationResponse(
@@ -26,8 +25,5 @@ public sealed record RequestClaimEmailByIdentificationResponse(
     Guid SessionId,
     DateTime ExpiresAt,
     string Channel,
-    string MaskedEmail,
-    Guid PersonId,
-    Guid ClientId,
-    string FullName);
+    string MaskedEmail);
 

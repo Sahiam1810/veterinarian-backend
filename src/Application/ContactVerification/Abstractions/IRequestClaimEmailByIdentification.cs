@@ -8,11 +8,7 @@ public sealed record RequestClaimEmailByIdentificationResult(
     Guid SessionId,
     DateTime ExpiresAt,
     ContactVerificationChannel Channel,
-    string MaskedEmail,
-    Guid PersonId,
-    Guid ClientId,
-    string FullName,
-    string Email);
+    string MaskedEmail);
 
 public interface IRequestClaimEmailByIdentification
 {
