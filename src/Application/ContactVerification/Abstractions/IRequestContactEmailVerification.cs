@@ -18,4 +18,9 @@ public interface IRequestContactEmailVerification
     Task<RequestContactEmailVerificationResult> RequestAsync(
         RequestContactEmailVerification request,
         CancellationToken cancellationToken);
+
+    Task<RequestContactEmailVerificationResult> RequestClaimForClientAsync(
+        Guid clientId,
+        string registeredEmail,
+        CancellationToken cancellationToken);
 }

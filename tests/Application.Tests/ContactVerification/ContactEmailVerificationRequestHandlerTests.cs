@@ -195,25 +195,36 @@ public sealed class ContactEmailVerificationRequestHandlerTests
             .ThrowsAsync(new InvalidOperationException("proveedor caído"));
 
         var request = new RequestContactEmailVerification(Email, ContactVerificationPurpose.Register);
+        ContactVerificationSession? createdSession = null;
+        sessions.AddAsync(
+                Arg.Do<ContactVerificationSession>(session => createdSession = session),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
 
         var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
             sut.RequestAsync(request, CancellationToken.None));
 
         Assert.Equal(ContactVerificationErrors.DeliveryFailed.Code, error.Code);
-        await sessions.DidNotReceive().AddAsync(Arg.Any<ContactVerificationSession>(), Arg.Any<CancellationToken>());
-        await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        Assert.NotNull(createdSession);
+        Assert.Equal(ContactVerificationSessionStatus.Cancelled, createdSession!.Status);
+        await sessions.Received(1).UpdateAsync(
+            Arg.Is<ContactVerificationSession>(session =>
+                session.Status == ContactVerificationSessionStatus.Cancelled),
+            Arg.Any<CancellationToken>());
+        await unitOfWork.Received(2).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task RequestAsync_throws_PurposeInvalid_when_claim_purpose_is_missing_the_subject_user()
+    public async Task RequestAsync_leaves_claim_subject_validation_to_the_domain()
     {
         var request = new RequestContactEmailVerification(Email, ContactVerificationPurpose.Claim);
 
-        var error = await Assert.ThrowsAsync<ContactVerificationException>(() =>
+        var error = await Assert.ThrowsAsync<ArgumentException>(() =>
             sut.RequestAsync(request, CancellationToken.None));
 
-        Assert.Equal(ContactVerificationErrors.PurposeInvalid.Code, error.Code);
-        await sessions.DidNotReceive().AddAsync(Arg.Any<ContactVerificationSession>(), Arg.Any<CancellationToken>());
+        Assert.Equal("subjectUserId", error.ParamName);
+        await sessions.DidNotReceive().AddAsync(
+            Arg.Any<ContactVerificationSession>(), Arg.Any<CancellationToken>());
         await codeDispatcher.DidNotReceive().SendAsync(
             Arg.Any<VerificationDeliveryChannel>(), Arg.Any<string>(), Arg.Any<string>(),
             Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());

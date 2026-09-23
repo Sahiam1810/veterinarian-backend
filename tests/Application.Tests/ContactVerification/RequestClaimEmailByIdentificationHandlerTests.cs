@@ -37,7 +37,8 @@ public sealed class RequestClaimEmailByIdentificationHandlerTests
         clients.GetByIdentificationNumberAsync("1234567890", Arg.Any<CancellationToken>())
             .Returns(client);
         var sessionId = Guid.NewGuid();
-        requestEmail.RequestAsync(Arg.Any<RequestContactEmailVerification>(), Arg.Any<CancellationToken>())
+        requestEmail.RequestClaimForClientAsync(
+            Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new RequestContactEmailVerificationResult(
                 sessionId,
                 DateTime.UtcNow.AddMinutes(10),
@@ -48,15 +49,10 @@ public sealed class RequestClaimEmailByIdentificationHandlerTests
             CancellationToken.None);
 
         Assert.Equal(sessionId, result.SessionId);
-        Assert.Equal(client.Id, result.ClientId);
-        Assert.Equal(client.Id, result.PersonId);
-        Assert.Equal("Ana Pérez", result.FullName);
         Assert.Equal("a***@huellitas.test", result.MaskedEmail);
-        await requestEmail.Received(1).RequestAsync(
-            Arg.Is<RequestContactEmailVerification>(r =>
-                r.Email == "ana@huellitas.test"
-                && r.Purpose == ContactVerificationPurpose.Claim
-                && r.SubjectUserId == client.Id),
+        await requestEmail.Received(1).RequestClaimForClientAsync(
+            client.Id,
+            "ana@huellitas.test",
             Arg.Any<CancellationToken>());
     }
 

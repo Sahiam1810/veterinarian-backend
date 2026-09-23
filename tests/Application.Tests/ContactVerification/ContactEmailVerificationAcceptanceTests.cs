@@ -184,7 +184,6 @@ public sealed class ContactEmailVerificationAcceptanceTests
             }
 
             var otp = otpProtector.Create();
-            mailbox.Sent.Add(new SentContactEmail(email, otp.Code));
 
             var session = ContactVerificationSession.Start(
                 request.Purpose,
@@ -197,11 +196,23 @@ public sealed class ContactEmailVerificationAcceptanceTests
 
             await sessions.AddAsync(session, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
+            mailbox.Sent.Add(new SentContactEmail(email, otp.Code));
             return new RequestContactEmailVerificationResult(
                 session.Id,
                 now.Add(settings.OtpLifetime),
                 ContactVerificationChannel.Email);
         }
+
+        public Task<RequestContactEmailVerificationResult> RequestClaimForClientAsync(
+            Guid clientId,
+            string registeredEmail,
+            CancellationToken cancellationToken) =>
+            RequestAsync(
+                new RequestContactEmailVerification(
+                    registeredEmail,
+                    ContactVerificationPurpose.Claim,
+                    clientId),
+                cancellationToken);
     }
 
     // OTP determinista para tests (hash SHA-256 hex de 64 chars).
