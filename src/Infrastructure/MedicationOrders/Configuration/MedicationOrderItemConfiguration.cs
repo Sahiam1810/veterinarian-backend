@@ -39,7 +39,16 @@ public class MedicationOrderItemConfiguration : IEntityTypeConfiguration<Medicat
 
         builder.Property(x => x.Notes)
             .HasColumnName("NOTES")
+            .HasColumnType("VARCHAR2(500)")
             .HasMaxLength(500)
+            .IsRequired(false);
+
+        builder.Property(x => x.CreatedAt)
+            .HasColumnName("CREATED_AT")
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .HasColumnName("UPDATED_AT")
             .IsRequired(false);
 
         builder.HasOne(x => x.Medication)

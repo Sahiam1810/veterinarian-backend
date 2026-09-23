@@ -72,6 +72,10 @@ public class SupplyConsumptionConfiguration : IEntityTypeConfiguration<SupplyCon
             .HasColumnName("CREATED_AT")
             .IsRequired();
 
+        builder.Property(x => x.UpdatedAt)
+            .HasColumnName("UPDATED_AT")
+            .IsRequired(false);
+
         builder.HasOne<Supply>()
             .WithMany()
             .HasForeignKey(x => x.SupplyId)

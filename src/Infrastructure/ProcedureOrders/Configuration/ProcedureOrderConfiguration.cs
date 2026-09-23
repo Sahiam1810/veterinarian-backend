@@ -52,21 +52,25 @@ public class ProcedureOrderConfiguration : IEntityTypeConfiguration<ProcedureOrd
 
         builder.Property(x => x.ReferredTo)
             .HasColumnName("REFERRED_TO")
+            .HasColumnType("VARCHAR2(200)")
             .HasMaxLength(200)
             .IsRequired(false);
 
         builder.Property(x => x.ReferralReason)
             .HasColumnName("REFERRAL_REASON")
+            .HasColumnType("VARCHAR2(500)")
             .HasMaxLength(500)
             .IsRequired(false);
 
         builder.Property(x => x.Status)
             .HasColumnName("STATUS")
+            .HasColumnType("VARCHAR2(30)")
             .HasMaxLength(30)
             .IsRequired();
 
         builder.Property(x => x.ResultFileUrl)
             .HasColumnName("RESULT_FILE_URL")
+            .HasColumnType("VARCHAR2(1000)")
             .HasMaxLength(1000)
             .IsRequired(false);
 

@@ -52,16 +52,19 @@ public class MedicationOrderConfiguration : IEntityTypeConfiguration<MedicationO
 
         builder.Property(x => x.ReferredTo)
             .HasColumnName("REFERRED_TO")
+            .HasColumnType("VARCHAR2(200)")
             .HasMaxLength(200)
             .IsRequired(false);
 
         builder.Property(x => x.ReferralReason)
             .HasColumnName("REFERRAL_REASON")
+            .HasColumnType("VARCHAR2(500)")
             .HasMaxLength(500)
             .IsRequired(false);
 
         builder.Property(x => x.Status)
             .HasColumnName("STATUS")
+            .HasColumnType("VARCHAR2(30)")
             .HasMaxLength(30)
             .IsRequired();
 
