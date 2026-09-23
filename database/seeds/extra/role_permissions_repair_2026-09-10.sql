@@ -109,6 +109,7 @@ BEGIN
     sync_permission('352fc580-3c6f-4ab4-b491-8a535e21b0d6', '55555555-5555-5555-5555-555555555555', 'Cuentas y Pagos', 1, 1, 0, 0);
     sync_permission('a4b6e535-4b9f-7db9-c7f6-5c2be3fd5f54', '55555555-5555-5555-5555-555555555555', 'Plataforma', 1, 0, 0, 0);
     sync_permission('f4c6e233-2a5b-4c00-b94e-22f334455667', '55555555-5555-5555-5555-555555555555', 'Reprogramación de Citas', 1, 1, 1, 1);
+    sync_permission('b8c1d4e7-5a2f-4e91-9c3b-7d6e8f0a1b2c', '55555555-5555-5555-5555-555555555555', 'Reportes', 1, 0, 0, 0);
     -- Bandeja Asesor: conversaciones escaladas (alineado con role_permissions_seed.sql)
     sync_permission('a5490daf-1d22-4f3a-baf6-019beea5056f', '55555555-5555-5555-5555-555555555555', 'Chat', 1, 1, 1, 0);
     sync_permission('fd167cd6-9779-4a74-be95-83afb8d53956', '55555555-5555-5555-5555-555555555555', 'Escalamientos', 1, 1, 1, 0);
