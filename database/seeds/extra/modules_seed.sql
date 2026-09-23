@@ -230,4 +230,14 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Hospitalización', 'Admisión, notas de turno y alta de estancias hospitalarias', SYSTIMESTAMP);
 
+-- 27. Insumos
+-- NAME debe ser exactamente 'Insumos': SuppliesController y
+-- SupplyConsumptionsController usan [RequirePermission("Insumos", ...)].
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000027' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Insumos'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Insumos', 'Catálogo de insumos y registro de su consumo en hospitalización', SYSTIMESTAMP);
+
 COMMIT;
