@@ -31,3 +31,13 @@ public record CreateMedicationOrderDto(
     string? ReferredTo,
     string? ReferralReason,
     List<CreateMedicationOrderItemDto>? Items);
+
+public record PendingMedicationOrderDto(
+    Guid Id,
+    string PetName,
+    string OwnerName,
+    Guid AppointmentId,
+    bool IsInHouse,
+    string Status,
+    DateTime CreatedAt,
+    List<MedicationOrderItemDto> Items);

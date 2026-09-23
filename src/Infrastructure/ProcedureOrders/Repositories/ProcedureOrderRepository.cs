@@ -29,6 +29,19 @@ public sealed class ProcedureOrderRepository(VeterinaryDbContext context) : IPro
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<ProcedureOrder>> GetPendingAsync(CancellationToken cancellationToken = default)
+    {
+        return await context.ProcedureOrders
+            .Include(o => o.Items)
+            .Include(o => o.ClientPet!)
+                .ThenInclude(cp => cp.Pet)
+            .Include(o => o.ClientPet!)
+                .ThenInclude(cp => cp.Client)
+            .Where(o => o.Status == "Pendiente")
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(ProcedureOrder procedureOrder, CancellationToken cancellationToken = default)
     {
         await context.ProcedureOrders.AddAsync(procedureOrder, cancellationToken);

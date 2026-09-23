@@ -38,6 +38,11 @@ public static class ProcedureOrderMappings
         return orders.Select(o => o.ToResponse());
     }
 
+    public static ProcedureOrderItemDto ToDto(this ProcedureOrderItem item)
+    {
+        return item.ToResponse();
+    }
+
     public static CreateProcedureOrderCommand ToCommand(this CreateProcedureOrderDto dto)
     {
         var items = dto.Items?.Select(i => new ProcedureOrderItemInput(i.ProcedureId, i.Notes)).ToList();
@@ -48,5 +53,19 @@ public static class ProcedureOrderMappings
             dto.ReferredTo,
             dto.ReferralReason,
             items);
+    }
+
+    public static PendingProcedureOrderDto ToPendingDto(this ProcedureOrder order)
+    {
+        return new PendingProcedureOrderDto(
+            order.Id,
+            order.ClientPet?.Pet?.Name?.Value ?? "Desconocida",
+            order.ClientPet?.Client?.FullName?.Value ?? "Desconocido",
+            order.AppointmentId,
+            order.IsInHouse,
+            order.Status,
+            order.ResultFileUrl,
+            order.CreatedAt,
+            order.Items.Select(i => i.ToDto()).ToList());
     }
 }
