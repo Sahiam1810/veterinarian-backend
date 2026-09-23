@@ -67,5 +67,11 @@ public sealed class HospitalizationNoteConfiguration : IEntityTypeConfiguration<
 
         builder.HasIndex(x => x.StayId)
             .HasDatabaseName("IX_HOSP_NOTE_STAY_ID");
+
+        builder.HasOne<HospitalizationStay>()
+            .WithMany()
+            .HasForeignKey(x => x.StayId)
+            .HasConstraintName("FK_HOSPITALIZATION_NOTES_STAY")
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

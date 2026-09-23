@@ -74,7 +74,15 @@ public sealed class HospitalizationStayConfiguration : IEntityTypeConfiguration<
             .HasColumnType("TIMESTAMP")
             .IsRequired(false);
 
+        // No es único: la regla de "una sola estancia activa por mascota" la
+        // hace cumplir el handler (GetActiveByPetIdAsync antes de insertar),
+        // no la base. Este índice es solo para acelerar esa consulta.
+        // Si se quiere el guard también a nivel de Oracle, se puede agregar a
+        // mano en la migración un índice único funcional (Oracle excluye NULL
+        // de la unicidad):
+        //   CREATE UNIQUE INDEX UX_HOSP_STAY_ACTIVE_PER_PET
+        //     ON HOSPITALIZATION_STAYS (CASE WHEN ESTADO = 0 THEN CLIENT_PET_ID END)
         builder.HasIndex(x => new { x.ClientPetId, x.Estado })
-            .HasDatabaseName("UX_HOSP_STAY_ACTIVE_PER_PET");
+            .HasDatabaseName("IX_HOSP_STAY_ACTIVE_PER_PET");
     }
 }
