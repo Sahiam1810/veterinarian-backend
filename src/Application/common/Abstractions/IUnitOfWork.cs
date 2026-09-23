@@ -2,6 +2,7 @@ using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Diagnostics.Abstraction;
+using Application.HospitalizationStays.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
@@ -79,6 +80,10 @@ public interface IUnitOfWork
     IAppointmentRepository AppointmentsRepository { get; }
 
     IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
+
+    IHospitalizationStayRepository HospitalizationStaysRepository => throw new NotImplementedException();
+
+    IHospitalizationNoteRepository HospitalizationNotesRepository => throw new NotImplementedException();
 
     IMedicalRecordRepository MedicalRecordsRepository { get; }
 

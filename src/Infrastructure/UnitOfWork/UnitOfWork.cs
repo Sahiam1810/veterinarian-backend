@@ -6,6 +6,7 @@ using Application.Medications.Abstraction;
 using Application.Procedures.Abstraction;
 using Application.MedicationOrders.Abstraction;
 using Application.ProcedureOrders.Abstraction;
+using Application.HospitalizationStays.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
@@ -69,6 +70,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IAvailabilityRepository availabilitiesRepository,
         IAppointmentRepository appointmentsRepository,
         IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository,
+        IHospitalizationStayRepository hospitalizationStaysRepository,
+        IHospitalizationNoteRepository hospitalizationNotesRepository,
         IMedicalRecordRepository medicalRecordsRepository,
         INotificationRepository notificationsRepository,
         IDiagnosticRepository diagnosticsRepository,
@@ -104,6 +107,8 @@ public sealed class UnitOfWork : IUnitOfWork
         AvailabilitiesRepository = availabilitiesRepository;
         AppointmentsRepository = appointmentsRepository;
         AppointmentStatusHistoriesRepository = appointmentStatusHistoriesRepository;
+        HospitalizationStaysRepository = hospitalizationStaysRepository;
+        HospitalizationNotesRepository = hospitalizationNotesRepository;
         MedicalRecordsRepository = medicalRecordsRepository;
         NotificationsRepository = notificationsRepository;
         DiagnosticsRepository = diagnosticsRepository;
@@ -139,6 +144,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAvailabilityRepository AvailabilitiesRepository { get; }
     public IAppointmentRepository AppointmentsRepository { get; }
     public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
+    public IHospitalizationStayRepository HospitalizationStaysRepository { get; }
+    public IHospitalizationNoteRepository HospitalizationNotesRepository { get; }
     public IMedicalRecordRepository MedicalRecordsRepository { get; }
     public IVaccinationRepository VaccinationsRepository { get; }
     public INotificationRepository NotificationsRepository { get; }
