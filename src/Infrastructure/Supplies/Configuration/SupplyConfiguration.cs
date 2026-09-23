@@ -23,11 +23,13 @@ public class SupplyConfiguration : IEntityTypeConfiguration<Supply>
 
         builder.Property(x => x.Name)
             .HasColumnName("NAME")
+            .HasColumnType("VARCHAR2(150)")
             .HasMaxLength(150)
             .IsRequired();
 
         builder.Property(x => x.Unit)
             .HasColumnName("UNIT")
+            .HasColumnType("VARCHAR2(50)")
             .HasMaxLength(50)
             .IsRequired();
 
