@@ -30,4 +30,6 @@ public interface ITelegramRuntimeSettings
     TimeSpan PrivateAccessAbsoluteLifetime { get; }
 
     TimeSpan PrivateAccessIdleLifetime { get; }
+
+    TimeSpan RegistrationLinkWindow { get; }
 }

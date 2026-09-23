@@ -7,6 +7,10 @@ public sealed record LinkTelegramBotAccountRequest(Guid ClientId);
 
 public sealed record LinkTelegramBotAccountResponse(Guid LinkId);
 
+public sealed record LinkTelegramBotAccountWithProofRequest(Guid SessionId, string Proof);
+
+public sealed record LinkTelegramBotAccountWithProofResponse(Guid LinkId, string FullName);
+
 public sealed record TelegramUpdateRequest(
     [property: JsonPropertyName("update_id")] long UpdateId,
     [property: JsonPropertyName("message")] TelegramMessageRequest? Message);

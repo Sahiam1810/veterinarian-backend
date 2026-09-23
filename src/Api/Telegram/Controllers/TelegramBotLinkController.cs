@@ -42,4 +42,32 @@ public sealed class TelegramBotLinkController(ISender sender) : ControllerBase
             cancellationToken);
         return Ok(new LinkTelegramBotAccountResponse(linkId));
     }
+
+    [HttpPost("claim")]
+    [EndpointSummary("Vincula el cliente del proof Claim con el Telegram invitado actual")]
+    [ProducesResponseType(typeof(LinkTelegramBotAccountWithProofResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<LinkTelegramBotAccountWithProofResponse>> Claim(
+        [FromBody] LinkTelegramBotAccountWithProofRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!long.TryParse(
+                User.FindFirstValue(DelegatedTokenClaims.TelegramUserId),
+                out var telegramUserId) ||
+            telegramUserId <= 0)
+        {
+            throw new UnauthorizedException("Authenticated identity is invalid.");
+        }
+
+        var result = await sender.Send(
+            new LinkTelegramBotAccountWithProofCommand(
+                request.SessionId,
+                request.Proof,
+                telegramUserId),
+            cancellationToken);
+        return Ok(new LinkTelegramBotAccountWithProofResponse(result.LinkId, result.FullName));
+    }
 }

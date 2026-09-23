@@ -13,4 +13,5 @@ public sealed record ConfiguredTelegramRuntimeSettings(
     Guid PendingEscalationStatusId,
     Guid HumanAgentSenderTypeId,
     TimeSpan PrivateAccessAbsoluteLifetime,
-    TimeSpan PrivateAccessIdleLifetime) : ITelegramRuntimeSettings;
+    TimeSpan PrivateAccessIdleLifetime,
+    TimeSpan RegistrationLinkWindow) : ITelegramRuntimeSettings;

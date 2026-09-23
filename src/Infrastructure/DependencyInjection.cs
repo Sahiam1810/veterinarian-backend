@@ -277,7 +277,8 @@ public static class DependencyInjection
                 Guid.Parse(options.PendingEscalationStatusId),
                 Guid.Parse(options.HumanAgentSenderTypeId),
                 TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours),
-                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes));
+                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes),
+                TimeSpan.FromMinutes(options.RegistrationLinkWindowMinutes));
         });
 
         var telegramOptions = configuration

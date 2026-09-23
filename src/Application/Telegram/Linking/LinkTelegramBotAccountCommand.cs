@@ -1,6 +1,3 @@
-using Application.Telegram.Abstractions;
-using Application.Telegram.Errors;
-using Domain.Telegram.Entities;
 using MediatR;
 
 namespace Application.Telegram.Linking;
@@ -11,50 +8,57 @@ public sealed record LinkTelegramBotAccountCommand(
     long TelegramUserId) : IRequest<Guid>;
 
 public sealed class LinkTelegramBotAccountHandler(
-    ITelegramUnitOfWork unitOfWork,
-    TimeProvider timeProvider)
+    TelegramBotAccountLinker linker,
+    Application.Telegram.Abstractions.ITelegramRuntimeSettings settings)
     : IRequestHandler<LinkTelegramBotAccountCommand, Guid>
 {
     public async Task<Guid> Handle(
         LinkTelegramBotAccountCommand request,
         CancellationToken cancellationToken)
     {
-        var now = timeProvider.GetUtcNow().UtcDateTime;
-
-        var client = await unitOfWork.ClientsRepository.GetByIdAsync(
+        var result = await linker.LinkAsync(
             request.ClientId,
+            request.TelegramUserId,
+            requireRecentRegistration: true,
+            settings.RegistrationLinkWindow,
             cancellationToken);
-        if (client is null || !client.IsActive)
+        return result.LinkId;
+    }
+}
+
+public sealed record LinkTelegramBotAccountWithProofCommand(
+    Guid SessionId,
+    string Proof,
+    long TelegramUserId) : IRequest<TelegramBotAccountLinkResult>;
+
+public sealed class LinkTelegramBotAccountWithProofHandler(
+    Application.ContactVerification.Abstractions.IConsumeContactVerificationProof proofConsumer,
+    TelegramBotAccountLinker linker)
+    : IRequestHandler<LinkTelegramBotAccountWithProofCommand, TelegramBotAccountLinkResult>
+{
+    public async Task<TelegramBotAccountLinkResult> Handle(
+        LinkTelegramBotAccountWithProofCommand request,
+        CancellationToken cancellationToken)
+    {
+        var consumed = await proofConsumer.ConsumeAsync(
+            new Application.ContactVerification.Abstractions.ConsumeContactVerificationProof(
+                request.SessionId,
+                request.Proof),
+            cancellationToken);
+
+        if (consumed.Purpose != Domain.ContactVerification.Enums.ContactVerificationPurpose.Claim ||
+            consumed.SubjectUserId is null ||
+            consumed.SubjectUserId == Guid.Empty)
         {
-            throw new TelegramAccountUnavailableException();
+            throw new Application.ContactVerification.Errors.ContactVerificationException(
+                Application.ContactVerification.Errors.ContactVerificationErrors.PurposeInvalid);
         }
 
-        var existingLink = await unitOfWork.UserLinksRepository
-            .GetByTelegramUserIdAsync(request.TelegramUserId, cancellationToken);
-        if (existingLink is not null && existingLink.ClientId != request.ClientId)
-        {
-            throw new TelegramIdentityConflictException();
-        }
-
-        var link = existingLink ?? await unitOfWork.UserLinksRepository
-            .GetByClientIdAsync(request.ClientId, cancellationToken);
-        if (link is null)
-        {
-            link = TelegramUserLink.Create(
-                request.ClientId,
-                request.TelegramUserId,
-                request.TelegramUserId,
-                now);
-            await unitOfWork.UserLinksRepository.AddAsync(link, cancellationToken);
-        }
-        else if (link.TelegramUserId != request.TelegramUserId ||
-                  link.TelegramChatId != request.TelegramUserId)
-        {
-            link.Relink(request.TelegramUserId, request.TelegramUserId, now);
-            await unitOfWork.UserLinksRepository.UpdateAsync(link, cancellationToken);
-        }
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-        return link.Id;
+        return await linker.LinkAsync(
+            consumed.SubjectUserId.Value,
+            request.TelegramUserId,
+            requireRecentRegistration: false,
+            TimeSpan.Zero,
+            cancellationToken);
     }
 }

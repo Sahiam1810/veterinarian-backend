@@ -46,6 +46,8 @@ public sealed partial class TelegramOptionsValidator : IValidateOptions<Telegram
             failures.Add("Telegram:PrivateAccessAbsoluteTtlHours must be between 1 and 168.");
         if (options.PrivateAccessIdleTtlMinutes is < 1 or > 1440)
             failures.Add("Telegram:PrivateAccessIdleTtlMinutes must be between 1 and 1440.");
+        if (options.RegistrationLinkWindowMinutes <= 0)
+            failures.Add("Telegram:RegistrationLinkWindowMinutes must be positive.");
         if (TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes) >
             TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours))
         {
