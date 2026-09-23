@@ -77,6 +77,21 @@ public sealed class Appointment : BaseEntity<Guid>
     // Sala fisica opcional copiada de la disponibilidad o del request.
     public string? ConsultingRoom { get; private set; }
 
+    public bool IsPaid { get; private set; } = false;
+    public DateTime? PaidAt { get; private set; }
+
+    public void RegisterPayment()
+    {
+        if (IsPaid)
+        {
+            throw new InvalidOperationException("La cita ya está pagada.");
+        }
+
+        IsPaid = true;
+        PaidAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Update(
         Guid clientPetId,
         Guid veterinarianId,

@@ -133,6 +133,17 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
             .HasColumnType("VARCHAR2(50)")
             .HasMaxLength(50);
 
+        builder.Property(x => x.IsPaid)
+            .HasColumnName("IS_PAID")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
+            .IsRequired();
+
+        builder.Property(x => x.PaidAt)
+            .HasColumnName("PAID_AT")
+            .HasColumnType("TIMESTAMP")
+            .IsRequired(false);
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

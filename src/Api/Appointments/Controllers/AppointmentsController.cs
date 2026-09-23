@@ -323,6 +323,43 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{id:guid}/register-payment")]
+    [RequirePermission("Citas", PermissionAction.Edit)]
+    [EndpointSummary("Registra el pago de una cita")]
+    [EndpointDescription("Marca una cita como pagada.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterPayment(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new RegisterAppointmentPaymentCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("{id:guid}/receipt")]
+    [RequirePermission("Citas", PermissionAction.View)]
+    [EndpointSummary("Obtiene el recibo de una cita")]
+    [EndpointDescription("Retorna los datos consolidados para el recibo de pago de una cita.")]
+    [ProducesResponseType(typeof(AppointmentReceiptResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AppointmentReceiptResponse>> GetReceipt(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetAppointmentReceiptQuery(id), cancellationToken);
+        var response = new AppointmentReceiptResponse(
+            result.PetName,
+            result.OwnerName,
+            result.OwnerPhone,
+            result.ServiceName,
+            result.ServicePrice,
+            result.ScheduledStart,
+            result.IsPaid);
+        return Ok(response);
+    }
+
     // Con MapInboundClaims=false el subject queda como "sub" (y RoleClaimType="role").
     // ClaimTypes.NameIdentifier se mantiene por compatibilidad si algún middleware lo remapea.
     private bool TryGetActorUserId(out Guid actorUserId)
