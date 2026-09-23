@@ -94,6 +94,29 @@ public sealed class LinkTelegramBotAccountWithProofHandlerTests
             fixture.Token));
     }
 
+    [Fact]
+    public async Task Retry_with_same_telegram_user_is_idempotent()
+    {
+        var fixture = CreateFixture();
+        var client = new ClientEntity("Ana Dueña", "ana@huellitas.test", "1234567890", "3001234567", "Calle 1");
+        var existingLink = TelegramUserLink.Create(client.Id, TelegramUserId, TelegramUserId, Now.UtcDateTime);
+        fixture.Clients.GetByIdAsync(client.Id, fixture.Token).Returns(client);
+        fixture.UserLinks.GetByTelegramUserIdAsync(TelegramUserId, fixture.Token)
+            .Returns(existingLink);
+        fixture.ProofConsumer.ConsumeAsync(Arg.Any<ConsumeContactVerificationProof>(), fixture.Token)
+            .Returns(Consumed(client.Id));
+
+        var result = await CreateHandler(fixture).Handle(
+            new LinkTelegramBotAccountWithProofCommand(Guid.NewGuid(), "proof", TelegramUserId),
+            fixture.Token);
+
+        Assert.Equal(existingLink.Id, result.LinkId);
+        await fixture.UserLinks.DidNotReceive().AddAsync(
+            Arg.Any<TelegramUserLink>(), Arg.Any<CancellationToken>());
+        await fixture.UserLinks.DidNotReceive().UpdateAsync(
+            Arg.Any<TelegramUserLink>(), Arg.Any<CancellationToken>());
+    }
+
     private static LinkTelegramBotAccountWithProofHandler CreateHandler(Fixture fixture) =>
         new(
             fixture.ProofConsumer,
