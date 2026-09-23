@@ -66,10 +66,23 @@ public sealed class TelegramOptionsValidatorTests
         Assert.True(result.Failed);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Registration_link_window_must_be_positive(int windowMinutes)
+    {
+        var options = ValidOptions(registrationLinkWindowMinutes: windowMinutes);
+
+        var result = new TelegramOptionsValidator().Validate(null, options);
+
+        Assert.True(result.Failed);
+    }
+
     private static TelegramOptions ValidOptions(
         int absoluteHours = 24,
         int idleMinutes = 30,
         int workerConcurrency = 1,
+        int registrationLinkWindowMinutes = 10,
         string pendingEscalationStatusId = "85000000-0000-0000-0000-000000000001",
         string humanAgentSenderTypeId = "82000000-0000-0000-0000-000000000003") => new()
     {
@@ -83,6 +96,7 @@ public sealed class TelegramOptionsValidatorTests
         OtpPepperBase64 = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
         PrivateAccessAbsoluteTtlHours = absoluteHours,
         PrivateAccessIdleTtlMinutes = idleMinutes,
+        RegistrationLinkWindowMinutes = registrationLinkWindowMinutes,
         PendingEscalationStatusId = pendingEscalationStatusId,
         HumanAgentSenderTypeId = humanAgentSenderTypeId
     };

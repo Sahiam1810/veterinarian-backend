@@ -27,7 +27,7 @@ public sealed class LinkTelegramBotAccountHandlerTests
             .Returns((TelegramUserLink?)null);
         fixture.UserLinks.GetByClientIdAsync(client.Id, fixture.Token)
             .Returns((TelegramUserLink?)null);
-        var handler = new LinkTelegramBotAccountHandler(fixture.UnitOfWork, fixture.TimeProvider);
+        var handler = CreateHandler(fixture);
 
         var linkId = await handler.Handle(
             new LinkTelegramBotAccountCommand(client.Id, TelegramUserId),
@@ -53,7 +53,7 @@ public sealed class LinkTelegramBotAccountHandlerTests
         fixture.Clients.GetByIdAsync(client.Id, fixture.Token).Returns(client);
         fixture.UserLinks.GetByTelegramUserIdAsync(TelegramUserId, fixture.Token)
             .Returns(existingLink);
-        var handler = new LinkTelegramBotAccountHandler(fixture.UnitOfWork, fixture.TimeProvider);
+        var handler = CreateHandler(fixture);
 
         var linkId = await handler.Handle(
             new LinkTelegramBotAccountCommand(client.Id, TelegramUserId),
@@ -67,7 +67,7 @@ public sealed class LinkTelegramBotAccountHandlerTests
     }
 
     [Fact]
-    public async Task Telegram_user_already_linked_to_a_different_client_is_a_conflict()
+    public async Task Telegram_user_already_linked_to_a_different_client_requires_proof()
     {
         var fixture = CreateFixture();
         var client = CreateClient("Ana Dueña", "ana@huellitas.test");
@@ -77,9 +77,9 @@ public sealed class LinkTelegramBotAccountHandlerTests
         fixture.Clients.GetByIdAsync(client.Id, fixture.Token).Returns(client);
         fixture.UserLinks.GetByTelegramUserIdAsync(TelegramUserId, fixture.Token)
             .Returns(conflictingLink);
-        var handler = new LinkTelegramBotAccountHandler(fixture.UnitOfWork, fixture.TimeProvider);
+        var handler = CreateHandler(fixture);
 
-        await Assert.ThrowsAsync<TelegramIdentityConflictException>(() => handler.Handle(
+        await Assert.ThrowsAsync<TelegramClientLinkRequiresProofException>(() => handler.Handle(
             new LinkTelegramBotAccountCommand(client.Id, TelegramUserId),
             fixture.Token));
     }
@@ -89,11 +89,65 @@ public sealed class LinkTelegramBotAccountHandlerTests
     {
         var fixture = CreateFixture();
         fixture.Clients.GetByIdAsync(ClientId, fixture.Token).Returns((ClientEntity?)null);
-        var handler = new LinkTelegramBotAccountHandler(fixture.UnitOfWork, fixture.TimeProvider);
+        var handler = CreateHandler(fixture);
 
         await Assert.ThrowsAsync<TelegramAccountUnavailableException>(() => handler.Handle(
             new LinkTelegramBotAccountCommand(ClientId, TelegramUserId),
             fixture.Token));
+    }
+
+    [Fact]
+    public async Task Client_created_one_minute_ago_links_without_proof()
+    {
+        var fixture = CreateFixture();
+        var client = CreateClient("Ana Dueña", "ana@huellitas.test");
+        SetCreatedAt(client, Now.UtcDateTime.AddMinutes(-1));
+        fixture.Clients.GetByIdAsync(client.Id, fixture.Token).Returns(client);
+        fixture.UserLinks.GetByTelegramUserIdAsync(TelegramUserId, fixture.Token)
+            .Returns((TelegramUserLink?)null);
+        fixture.UserLinks.GetByClientIdAsync(client.Id, fixture.Token)
+            .Returns((TelegramUserLink?)null);
+        var handler = CreateHandler(fixture);
+
+        var linkId = await handler.Handle(
+            new LinkTelegramBotAccountCommand(client.Id, TelegramUserId),
+            fixture.Token);
+
+        Assert.NotEqual(Guid.Empty, linkId);
+        await fixture.UserLinks.Received(1).AddAsync(
+            Arg.Any<TelegramUserLink>(), fixture.Token);
+    }
+
+    [Fact]
+    public async Task Client_created_two_hours_ago_requires_proof_and_creates_no_link()
+    {
+        var fixture = CreateFixture();
+        var client = CreateClient("Ana Dueña", "ana@huellitas.test");
+        SetCreatedAt(client, Now.UtcDateTime.AddHours(-2));
+        fixture.Clients.GetByIdAsync(client.Id, fixture.Token).Returns(client);
+        fixture.UserLinks.GetByTelegramUserIdAsync(TelegramUserId, fixture.Token)
+            .Returns((TelegramUserLink?)null);
+        fixture.UserLinks.GetByClientIdAsync(client.Id, fixture.Token)
+            .Returns((TelegramUserLink?)null);
+        var handler = CreateHandler(fixture);
+
+        // Regresión de seguridad: un cliente antiguo no se vincula con bot-link directo.
+        await Assert.ThrowsAsync<TelegramClientLinkRequiresProofException>(() => handler.Handle(
+            new LinkTelegramBotAccountCommand(client.Id, TelegramUserId),
+            fixture.Token));
+
+        await fixture.UserLinks.DidNotReceive().AddAsync(
+            Arg.Any<TelegramUserLink>(), Arg.Any<CancellationToken>());
+        await fixture.UnitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    // CreatedAt tiene setter `protected` (BaseEntity.cs) -- sin esto no hay forma
+    // de simular un cliente "antiguo" contra el FixedTimeProvider de estas pruebas.
+    private static void SetCreatedAt(ClientEntity client, DateTime createdAt)
+    {
+        typeof(ClientEntity).BaseType!
+            .GetProperty(nameof(ClientEntity.CreatedAt))!
+            .SetValue(client, createdAt);
     }
 
     private static ClientEntity CreateClient(string name, string email)
@@ -114,7 +168,16 @@ public sealed class LinkTelegramBotAccountHandlerTests
             clients,
             userLinks,
             new FixedTimeProvider(Now),
+            Substitute.For<ITelegramRuntimeSettings>(),
             CancellationToken.None);
+    }
+
+    private static LinkTelegramBotAccountHandler CreateHandler(Fixture fixture)
+    {
+        fixture.Settings.RegistrationLinkWindow.Returns(TimeSpan.FromMinutes(10));
+        return new LinkTelegramBotAccountHandler(
+            new TelegramBotAccountLinker(fixture.UnitOfWork, fixture.TimeProvider),
+            fixture.Settings);
     }
 
     private sealed record Fixture(
@@ -122,6 +185,7 @@ public sealed class LinkTelegramBotAccountHandlerTests
         IClientRepository Clients,
         ITelegramUserLinkRepository UserLinks,
         TimeProvider TimeProvider,
+        ITelegramRuntimeSettings Settings,
         CancellationToken Token);
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider

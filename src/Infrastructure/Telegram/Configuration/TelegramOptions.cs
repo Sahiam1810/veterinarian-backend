@@ -21,4 +21,5 @@ public sealed class TelegramOptions
     public string OtpPepperBase64 { get; init; } = string.Empty;
     public int PrivateAccessAbsoluteTtlHours { get; init; } = 24;
     public int PrivateAccessIdleTtlMinutes { get; init; } = 30;
+    public int RegistrationLinkWindowMinutes { get; init; } = 10;
 }
