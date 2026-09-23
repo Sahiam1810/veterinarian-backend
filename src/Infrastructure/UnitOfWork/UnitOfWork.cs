@@ -6,6 +6,8 @@ using Application.Medications.Abstraction;
 using Application.Procedures.Abstraction;
 using Application.MedicationOrders.Abstraction;
 using Application.ProcedureOrders.Abstraction;
+using Application.Supplies.Abstraction;
+using Application.SupplyConsumptions.Abstraction;
 using Application.HospitalizationStays.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
@@ -79,6 +81,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IProcedureRepository proceduresRepository,
         IMedicationOrderRepository medicationOrdersRepository,
         IProcedureOrderRepository procedureOrdersRepository,
+        ISupplyRepository suppliesRepository,
+        ISupplyConsumptionRepository supplyConsumptionsRepository,
         IVaccinationRepository vaccinationsRepository,
         IAgentHumanRepository agentHumansRepository,
         IChatConversationRepository chatConversationsRepository,
@@ -116,6 +120,8 @@ public sealed class UnitOfWork : IUnitOfWork
         ProceduresRepository = proceduresRepository;
         MedicationOrdersRepository = medicationOrdersRepository;
         ProcedureOrdersRepository = procedureOrdersRepository;
+        SuppliesRepository = suppliesRepository;
+        SupplyConsumptionsRepository = supplyConsumptionsRepository;
         VaccinationsRepository = vaccinationsRepository;
         AgentHumansRepository = agentHumansRepository;
         ChatConversationsRepository = chatConversationsRepository;
@@ -154,6 +160,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IProcedureRepository ProceduresRepository { get; }
     public IMedicationOrderRepository MedicationOrdersRepository { get; }
     public IProcedureOrderRepository ProcedureOrdersRepository { get; }
+    public ISupplyRepository SuppliesRepository { get; }
+    public ISupplyConsumptionRepository SupplyConsumptionsRepository { get; }
     public IAgentHumanRepository AgentHumansRepository { get; }
     public IChatConversationRepository ChatConversationsRepository { get; }
     public IChatParticipantRepository ChatParticipantsRepository { get; }

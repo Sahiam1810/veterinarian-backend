@@ -42,6 +42,8 @@ using Application.Medications.Abstraction;
 using Application.Procedures.Abstraction;
 using Application.MedicationOrders.Abstraction;
 using Application.ProcedureOrders.Abstraction;
+using Application.Supplies.Abstraction;
+using Application.SupplyConsumptions.Abstraction;
 
 namespace Application.Common.Abstractions;
 
@@ -100,6 +102,10 @@ public interface IUnitOfWork
     IMedicationOrderRepository MedicationOrdersRepository { get; }
 
     IProcedureOrderRepository ProcedureOrdersRepository { get; }
+
+    ISupplyRepository SuppliesRepository => throw new NotImplementedException();
+
+    ISupplyConsumptionRepository SupplyConsumptionsRepository => throw new NotImplementedException();
 
     IAgentHumanRepository AgentHumansRepository { get; }
 
