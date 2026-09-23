@@ -30,6 +30,8 @@ public sealed class ProcessTelegramUpdateHandlerTests
         Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid PendingEscalationStatusId =
         Guid.Parse("85000000-0000-0000-0000-000000000001");
+    private static readonly Guid AiAgentSenderTypeId =
+        Guid.Parse("82000000-0000-0000-0000-000000000002");
     private static readonly Guid ClientParticipantTypeId =
         Guid.Parse("82000000-0000-0000-0000-000000000001");
     private static readonly Guid TextMessageTypeId =
@@ -314,19 +316,99 @@ public sealed class ProcessTelegramUpdateHandlerTests
         await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(80), default);
 
         await fixture.Sender.Received(1).Send(
-            Arg.Is<GetChatParticipantsByConversationIdQuery>(query =>
-                query.ChatConversationId == ConversationId),
-            default);
-        await fixture.Sender.Received(1).Send(
             Arg.Is<CreateChatMessageCommand>(command =>
                 command.ChatConversationId == ConversationId &&
                 command.SenderTypesId == ClientParticipantTypeId &&
                 command.Content == "¿Qué vacunas necesita?" &&
                 command.Metadata == null),
             default);
-        // Ticket B3, Decisión 2: la respuesta de la IA no se persiste en esta ronda.
+        // La respuesta del asistente también queda en el hilo, con su propio
+        // participante "Agente IA", para que la bandeja muestre la conversación completa.
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<CreateChatParticipantCommand>(command =>
+                command.ChatConversationId == ConversationId &&
+                command.ParticipantTypeId == AiAgentSenderTypeId &&
+                command.ClientId == PersonId &&
+                command.AgentHumanId == null),
+            Arg.Any<CancellationToken>());
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<CreateChatMessageCommand>(command =>
+                command.ChatConversationId == ConversationId &&
+                command.SenderTypesId == AiAgentSenderTypeId &&
+                command.Content == "Respuesta veterinaria"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Assistant_reply_reuses_the_existing_ai_participant()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(82, "¿Y el precio?");
+        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
+        fixture.Updates.GetByIdAsync(82, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
+        userLink.BindConversation(ConversationId);
+        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-82-verified", "Telegram", default)
+            .Returns(new AgentConversationContext(ConversationId, "web", false));
+        fixture.Identity.GetAsync(PersonId, default)
+            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "delegated-token",
+                default)
+            .Returns(Result("Cuesta 50 mil"));
+        var assistant = ChatParticipantEntity.Create(ConversationId, AiAgentSenderTypeId, clientId: PersonId);
+        fixture.Sender.Send(
+                Arg.Is<GetChatParticipantsByConversationIdQuery>(query =>
+                    query.ChatConversationId == ConversationId),
+                default)
+            .Returns((IReadOnlyCollection<ChatParticipantEntity>)
+            [
+                ChatParticipantEntity.Create(ConversationId, ClientParticipantTypeId, clientId: PersonId),
+                assistant
+            ]);
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(82), default);
+
         await fixture.Sender.DidNotReceive().Send(
-            Arg.Is<CreateChatMessageCommand>(command => command.Content == "Respuesta veterinaria"),
+            Arg.Any<CreateChatParticipantCommand>(),
+            Arg.Any<CancellationToken>());
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<CreateChatMessageCommand>(command =>
+                command.ChatParticipantId == assistant.Id &&
+                command.SenderTypesId == AiAgentSenderTypeId &&
+                command.Content == "Cuesta 50 mil"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Failing_to_persist_the_assistant_reply_does_not_break_the_turn()
+    {
+        var fixture = CreateFixture();
+        var update = ProcessingUpdate(83, "hola");
+        var userLink = TelegramUserLink.Create(PersonId, 1001, 1001, Now.UtcDateTime);
+        fixture.Updates.GetByIdAsync(83, default).Returns(update);
+        fixture.UserLinks.GetByTelegramUserIdAsync(1001, default).Returns(userLink);
+        userLink.BindConversation(ConversationId);
+        fixture.Context.ResolveAsync(PersonId, ConversationId, "telegram-update-83-verified", "Telegram", default)
+            .Returns(new AgentConversationContext(ConversationId, "web", false));
+        fixture.Identity.GetAsync(PersonId, default)
+            .Returns(new AgentDelegatedIdentity(PersonId, "Cliente", "delegated-token"));
+        fixture.Dispatcher.DispatchAsync(
+                Arg.Any<AgentMessageDispatchRequest>(),
+                Arg.Any<AgentConversationContext>(),
+                "delegated-token",
+                default)
+            .Returns(Result("Hola, ¿en qué te ayudo?"));
+        fixture.Sender.Send(Arg.Any<CreateChatParticipantCommand>(), Arg.Any<CancellationToken>())
+            .Returns<ChatParticipantEntity>(_ => throw new InvalidOperationException("catálogo sin Agente IA"));
+
+        await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(83), default);
+
+        await fixture.Bot.Received(1).SendTextAsync(1001, "Hola, ¿en qué te ayudo?", default);
+        await fixture.Sender.DidNotReceive().Send(
+            Arg.Is<CreateChatMessageCommand>(command => command.SenderTypesId == AiAgentSenderTypeId),
             Arg.Any<CancellationToken>());
     }
 
@@ -359,7 +441,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
         await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(81), default);
 
         await fixture.Sender.DidNotReceive().Send(
-            Arg.Any<CreateChatMessageCommand>(),
+            Arg.Is<CreateChatMessageCommand>(command => command.SenderTypesId == ClientParticipantTypeId),
             Arg.Any<CancellationToken>());
         // El turno sigue su curso normal aunque no se pudo persistir el mensaje.
         await fixture.Bot.Received(1).SendTextAsync(1001, "Hola de nuevo", default);
@@ -412,6 +494,12 @@ public sealed class ProcessTelegramUpdateHandlerTests
             1001,
             "Tu conversación está siendo atendida por un asesor.",
             default);
+        // La confirmación que recibe el cliente también queda en el hilo.
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<CreateChatMessageCommand>(command =>
+                command.SenderTypesId == AiAgentSenderTypeId &&
+                command.Content == "Tu conversación está siendo atendida por un asesor."),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -629,6 +717,17 @@ public sealed class ProcessTelegramUpdateHandlerTests
                         clientId: Guid.NewGuid())
                 ];
                 return participants;
+            });
+
+        // Al primer mensaje del asistente se crea su participante "Agente IA".
+        sender.Send(Arg.Any<CreateChatParticipantCommand>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var command = callInfo.Arg<CreateChatParticipantCommand>();
+                return ChatParticipantEntity.Create(
+                    command.ChatConversationId,
+                    command.ParticipantTypeId,
+                    clientId: command.ClientId);
             });
 
         return new Fixture(

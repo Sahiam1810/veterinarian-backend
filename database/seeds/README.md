@@ -31,6 +31,17 @@ Orden de ejecución: `roles_seed.sql`, `modules_seed.sql`, `role_permissions_see
 
 > **No mezcles ambos en la misma base.** Los catálogos veterinarios de `insert_all_seeds.sql` (Canino, Felino…) son distintos de los de `extra/` (Perro, Gato…) y quedarían duplicados. Si ya cargaste uno y quieres el otro, resetea la base.
 
+### Datos de demo para pruebas: `demo_data_pruebas.sql`
+
+Carga, **después** de `insert_all_seeds.sql` (o de `extra/apply_all.sql`), datos para probar el flujo completo: unos 45 servicios con precio, 53 medicamentos y 50 procedimientos (radiografías, laboratorios, cirugías…) para las órdenes médicas, 31 insumos con stock, los permisos de Órdenes Médicas / Hospitalización / Insumos por rol, horario Lunes-Viernes 7:00-17:00 para cada veterinario y 12 dueños con 18 mascotas. Es idempotente: cada fila se busca por nombre o cédula y solo se inserta si no existe.
+
+```sql
+SET DEFINE OFF;
+@C:\<ruta>eterinarian-backend\database\seeds\demo_data_pruebas.sql
+```
+
+Después de correrlo, cierra sesión y vuelve a entrar con cada rol: los permisos viajan en el token.
+
 ---
 
 ## Cuentas y Credenciales de Prueba
