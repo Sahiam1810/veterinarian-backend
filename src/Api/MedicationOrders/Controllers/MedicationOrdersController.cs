@@ -63,4 +63,13 @@ public sealed class MedicationOrdersController(ISender sender) : ControllerBase
         await sender.Send(new CompleteMedicationOrderCommand(id), cancellationToken);
         return NoContent();
     }
+
+    [HttpGet("pending")]
+    [RequirePermission("Órdenes Médicas", PermissionAction.View)]
+    public async Task<ActionResult<IEnumerable<PendingMedicationOrderDto>>> GetPending(CancellationToken cancellationToken)
+    {
+        var query = new GetPendingMedicationOrdersQuery();
+        var result = await sender.Send(query, cancellationToken);
+        return Ok(result.Select(x => x.ToPendingDto()));
+    }
 }

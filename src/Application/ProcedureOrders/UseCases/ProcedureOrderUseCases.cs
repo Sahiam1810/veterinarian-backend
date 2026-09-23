@@ -23,6 +23,8 @@ public sealed record GetProcedureOrderByIdQuery(Guid Id) : IRequest<ProcedureOrd
 
 public sealed record GetProcedureOrdersByAppointmentIdQuery(Guid AppointmentId) : IRequest<IEnumerable<ProcedureOrder>>;
 
+public sealed record GetPendingProcedureOrdersQuery() : IRequest<IEnumerable<ProcedureOrder>>;
+
 // Handlers
 public sealed class CreateProcedureOrderCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<CreateProcedureOrderCommand, ProcedureOrder>
@@ -118,6 +120,17 @@ public sealed class GetProcedureOrdersByAppointmentIdQueryHandler(IUnitOfWork un
         CancellationToken cancellationToken)
     {
         return await unitOfWork.ProcedureOrdersRepository.GetByAppointmentIdAsync(request.AppointmentId, cancellationToken);
+    }
+}
+
+public sealed class GetPendingProcedureOrdersQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetPendingProcedureOrdersQuery, IEnumerable<ProcedureOrder>>
+{
+    public async Task<IEnumerable<ProcedureOrder>> Handle(
+        GetPendingProcedureOrdersQuery request,
+        CancellationToken cancellationToken)
+    {
+        return await unitOfWork.ProcedureOrdersRepository.GetPendingAsync(cancellationToken);
     }
 }
 

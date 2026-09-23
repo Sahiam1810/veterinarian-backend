@@ -22,6 +22,8 @@ public sealed record GetMedicationOrderByIdQuery(Guid Id) : IRequest<MedicationO
 
 public sealed record GetMedicationOrdersByAppointmentIdQuery(Guid AppointmentId) : IRequest<IEnumerable<MedicationOrder>>;
 
+public sealed record GetPendingMedicationOrdersQuery() : IRequest<IEnumerable<MedicationOrder>>;
+
 // Handlers
 public sealed class CreateMedicationOrderCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<CreateMedicationOrderCommand, MedicationOrder>
@@ -98,6 +100,17 @@ public sealed class GetMedicationOrdersByAppointmentIdQueryHandler(IUnitOfWork u
         CancellationToken cancellationToken)
     {
         return await unitOfWork.MedicationOrdersRepository.GetByAppointmentIdAsync(request.AppointmentId, cancellationToken);
+    }
+}
+
+public sealed class GetPendingMedicationOrdersQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetPendingMedicationOrdersQuery, IEnumerable<MedicationOrder>>
+{
+    public async Task<IEnumerable<MedicationOrder>> Handle(
+        GetPendingMedicationOrdersQuery request,
+        CancellationToken cancellationToken)
+    {
+        return await unitOfWork.MedicationOrdersRepository.GetPendingAsync(cancellationToken);
     }
 }
 

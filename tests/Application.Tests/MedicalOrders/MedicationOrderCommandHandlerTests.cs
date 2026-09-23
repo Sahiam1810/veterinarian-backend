@@ -206,4 +206,30 @@ public class MedicationOrderCommandHandlerTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _completeHandler.Handle(new CompleteMedicationOrderCommand(order.Id), CancellationToken.None));
     }
+
+    [Fact]
+    public async Task GetPendingMedicationOrders_ReturnsPendingOrdersFromRepository()
+    {
+        var handler = new GetPendingMedicationOrdersQueryHandler(_unitOfWork);
+        var pendingOrders = new List<MedicationOrder>
+        {
+            new MedicationOrder(
+                Guid.NewGuid(),
+                VetId,
+                Guid.NewGuid(),
+                isInHouse: true,
+                referredTo: null,
+                referralReason: null,
+                items: new[] { (Guid.NewGuid(), (string?)"Dosis 1") })
+        };
+
+        _repository.GetPendingAsync(Arg.Any<CancellationToken>())
+            .Returns(pendingOrders);
+
+        var result = await handler.Handle(new GetPendingMedicationOrdersQuery(), CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Single(result);
+        await _repository.Received(1).GetPendingAsync(Arg.Any<CancellationToken>());
+    }
 }

@@ -35,3 +35,14 @@ public record CreateProcedureOrderDto(
 
 public record CompleteProcedureOrderDto(
     string? ResultFileUrl = null);
+
+public record PendingProcedureOrderDto(
+    Guid Id,
+    string PetName,
+    string OwnerName,
+    Guid AppointmentId,
+    bool IsInHouse,
+    string Status,
+    string? ResultFileUrl,
+    DateTime CreatedAt,
+    List<ProcedureOrderItemDto> Items);

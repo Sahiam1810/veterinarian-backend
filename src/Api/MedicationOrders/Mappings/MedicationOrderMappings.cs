@@ -37,6 +37,11 @@ public static class MedicationOrderMappings
         return orders.Select(o => o.ToResponse());
     }
 
+    public static MedicationOrderItemDto ToDto(this MedicationOrderItem item)
+    {
+        return item.ToResponse();
+    }
+
     public static CreateMedicationOrderCommand ToCommand(this CreateMedicationOrderDto dto)
     {
         var items = dto.Items?.Select(i => new MedicationOrderItemInput(i.MedicationId, i.Notes)).ToList();
@@ -47,5 +52,18 @@ public static class MedicationOrderMappings
             dto.ReferredTo,
             dto.ReferralReason,
             items);
+    }
+
+    public static PendingMedicationOrderDto ToPendingDto(this MedicationOrder order)
+    {
+        return new PendingMedicationOrderDto(
+            order.Id,
+            order.ClientPet?.Pet?.Name?.Value ?? "Desconocida",
+            order.ClientPet?.Client?.FullName?.Value ?? "Desconocido",
+            order.AppointmentId,
+            order.IsInHouse,
+            order.Status,
+            order.CreatedAt,
+            order.Items.Select(i => i.ToDto()).ToList());
     }
 }
