@@ -214,4 +214,20 @@ WHEN NOT MATCHED THEN
     INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
     VALUES (source.ID, 'Signos Vitales', 'Registro de peso, temperatura y frecuencias al llegar la mascota', SYSTIMESTAMP);
 
+-- 25. Órdenes Médicas
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000025' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Órdenes Médicas'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Órdenes Médicas', 'Órdenes de medicamentos y procedimientos médicos', SYSTIMESTAMP);
+
+-- 26. Hospitalización
+MERGE INTO MODULES target
+USING (SELECT 'a1000000-0000-0000-0000-000000000026' AS ID FROM DUAL) source
+ON (target.MODULE_ID = source.ID OR UPPER(target.NAME) = UPPER('Hospitalización'))
+WHEN NOT MATCHED THEN
+    INSERT (MODULE_ID, NAME, DESCRIPTION, CREATED_AT)
+    VALUES (source.ID, 'Hospitalización', 'Admisión, notas de turno y alta de estancias hospitalarias', SYSTIMESTAMP);
+
 COMMIT;

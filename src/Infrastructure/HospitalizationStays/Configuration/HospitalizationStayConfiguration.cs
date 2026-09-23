@@ -61,6 +61,7 @@ public sealed class HospitalizationStayConfiguration : IEntityTypeConfiguration<
 
         builder.Property(x => x.Motivo)
             .HasColumnName("MOTIVO")
+            .HasColumnType("VARCHAR2(500)")
             .HasMaxLength(500)
             .IsRequired();
 
