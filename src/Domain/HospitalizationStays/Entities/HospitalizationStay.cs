@@ -53,6 +53,8 @@ public sealed class HospitalizationStay : BaseEntity<Guid>
     public DateTime? FechaAlta { get; private set; }
     public HospitalizationStayStatus Estado { get; private set; }
     public string Motivo { get; private set; } = string.Empty;
+    public bool IsPaid { get; private set; } = false;
+    public DateTime? PaidAt { get; private set; }
 
     public void Discharge()
     {
@@ -63,6 +65,18 @@ public sealed class HospitalizationStay : BaseEntity<Guid>
 
         Estado = HospitalizationStayStatus.DadaDeAlta;
         FechaAlta = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void RegisterPayment()
+    {
+        if (IsPaid)
+        {
+            throw new InvalidOperationException("La estancia ya está pagada.");
+        }
+
+        IsPaid = true;
+        PaidAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 }

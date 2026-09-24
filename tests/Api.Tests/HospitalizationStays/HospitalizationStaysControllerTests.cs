@@ -18,6 +18,7 @@ public sealed class HospitalizationStaysControllerAttributeTests
     [InlineData(nameof(HospitalizationStaysController.Admit), PermissionAction.Create)]
     [InlineData(nameof(HospitalizationStaysController.AddNote), PermissionAction.Create)]
     [InlineData(nameof(HospitalizationStaysController.Discharge), PermissionAction.Edit)]
+    [InlineData(nameof(HospitalizationStaysController.RegisterPayment), PermissionAction.Edit)]
     public void Endpoint_has_correct_RequirePermission_attribute(string methodName, PermissionAction expectedAction)
     {
         var method = typeof(HospitalizationStaysController).GetMethod(methodName);
