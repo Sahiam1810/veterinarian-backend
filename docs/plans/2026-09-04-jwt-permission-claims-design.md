@@ -19,7 +19,14 @@ El backend calculará los permisos efectivos durante el inicio de sesión y la r
 }
 ```
 
-El access token tendrá una vigencia predeterminada de 15 minutos. Los cambios de permisos se persistirán inmediatamente en Oracle y aparecerán en el siguiente login o refresh. Una sesión existente podrá conservar permisos anteriores durante un máximo de 15 minutos.
+El access token tendrá una vigencia predeterminada de 15 minutos.
+
+Cuando se agrega o modifica un permiso nuevo en la matriz de roles o usuarios:
+- Se persiste inmediatamente en Oracle.
+- No aparece en tokens ya emitidos.
+- Se refleja en el siguiente login o refresh.
+- Un re-login lo hace efectivo inmediatamente.
+- Sin re-login, la espera máxima esperada es de hasta 15 minutos, correspondiente a la vigencia del access token.
 
 ## Fuente de permisos
 
