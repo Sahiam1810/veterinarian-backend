@@ -17,7 +17,7 @@ public sealed class Medication : BaseEntity<Guid>
 
         Id = Guid.NewGuid();
         Name = name.Trim();
-        Code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+        Code = NormalizeCode(code);
         IsActive = isActive;
         CreatedAt = DateTime.UtcNow;
     }
@@ -34,7 +34,7 @@ public sealed class Medication : BaseEntity<Guid>
         }
 
         Name = name.Trim();
-        Code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+        Code = NormalizeCode(code);
         IsActive = isActive;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -49,5 +49,10 @@ public sealed class Medication : BaseEntity<Guid>
     {
         IsActive = true;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public static string? NormalizeCode(string? code)
+    {
+        return string.IsNullOrWhiteSpace(code) ? null : code.Trim().ToUpperInvariant();
     }
 }

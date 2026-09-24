@@ -23,6 +23,22 @@ public sealed class MedicationRepository(VeterinaryDbContext context) : IMedicat
         return await context.Medications.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
     }
 
+    public async Task<bool> ExistsByCodeAsync(
+        string? code,
+        CancellationToken cancellationToken = default,
+        Guid? excludedId = null)
+    {
+        var normalizedCode = Medication.NormalizeCode(code);
+        if (normalizedCode is null)
+        {
+            return false;
+        }
+
+        return await context.Medications.AnyAsync(
+            medication => medication.Id != excludedId && medication.Code == normalizedCode,
+            cancellationToken);
+    }
+
     public async Task AddAsync(Medication medication, CancellationToken cancellationToken = default)
     {
         await context.Medications.AddAsync(medication, cancellationToken);
