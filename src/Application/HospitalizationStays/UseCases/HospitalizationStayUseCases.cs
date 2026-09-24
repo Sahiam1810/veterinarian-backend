@@ -33,6 +33,9 @@ public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<
 
 public sealed record GetHospitalizationStaffQuery : IRequest<IReadOnlyCollection<HospitalizationStaffUserDto>>;
 
+public sealed record GetHospitalizationAdmissionOptionsQuery
+    : IRequest<IReadOnlyCollection<HospitalizationAdmissionOptionDto>>;
+
 public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<AdmitHospitalizationStayCommand, Guid>
 {
@@ -234,5 +237,26 @@ public sealed class GetHospitalizationStaffQueryHandler(IUnitOfWork unitOfWork)
     {
         var staffUsers = await unitOfWork.UsersRepository.GetStaffUsersAsync(cancellationToken);
         return staffUsers.Select(x => new HospitalizationStaffUserDto(x.User.Id, x.User.FullName, x.RoleName)).ToList();
+    }
+}
+
+public sealed class GetHospitalizationAdmissionOptionsQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetHospitalizationAdmissionOptionsQuery, IReadOnlyCollection<HospitalizationAdmissionOptionDto>>
+{
+    public async Task<IReadOnlyCollection<HospitalizationAdmissionOptionDto>> Handle(
+        GetHospitalizationAdmissionOptionsQuery request,
+        CancellationToken cancellationToken)
+    {
+        var relationships = await unitOfWork.ClientPetsRepository.GetAllWithDetailsAsync(cancellationToken);
+
+        return relationships
+            .Where(relationship => relationship.Client is not null && relationship.Pet is not null)
+            .Select(relationship => new HospitalizationAdmissionOptionDto(
+                relationship.Id,
+                relationship.Pet.Name.Value,
+                relationship.Client.FullName.Value))
+            .OrderBy(option => option.PetName)
+            .ThenBy(option => option.OwnerName)
+            .ToList();
     }
 }
