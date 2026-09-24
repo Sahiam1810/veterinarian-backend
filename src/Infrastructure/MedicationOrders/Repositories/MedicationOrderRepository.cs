@@ -29,6 +29,15 @@ public sealed class MedicationOrderRepository(VeterinaryDbContext context) : IMe
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<MedicationOrder>> GetByHospitalizationStayIdAsync(Guid stayId, CancellationToken cancellationToken = default)
+    {
+        return await context.MedicationOrders
+            .Include(o => o.Items)
+            .Where(o => o.HospitalizationStayId == stayId)
+            .OrderBy(o => o.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<MedicationOrder>> GetPendingAsync(CancellationToken cancellationToken = default)
     {
         return await context.MedicationOrders

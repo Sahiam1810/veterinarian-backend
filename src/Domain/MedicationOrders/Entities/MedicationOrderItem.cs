@@ -12,7 +12,8 @@ public sealed class MedicationOrderItem : BaseEntity<Guid>
     public MedicationOrderItem(
         Guid medicationOrderId,
         Guid medicationId,
-        string? notes)
+        string? notes,
+        decimal unitPrice = 0m)
     {
         if (medicationOrderId == Guid.Empty)
         {
@@ -24,9 +25,15 @@ public sealed class MedicationOrderItem : BaseEntity<Guid>
             throw new ArgumentException("El ID del medicamento es obligatorio.", nameof(medicationId));
         }
 
+        if (unitPrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitPrice), "El precio unitario del medicamento no puede ser negativo.");
+        }
+
         Id = Guid.NewGuid();
         MedicationOrderId = medicationOrderId;
         MedicationId = medicationId;
+        UnitPrice = unitPrice;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         CreatedAt = DateTime.UtcNow;
     }
@@ -34,5 +41,16 @@ public sealed class MedicationOrderItem : BaseEntity<Guid>
     public Guid MedicationOrderId { get; private set; }
     public Guid MedicationId { get; private set; }
     public Medication? Medication { get; private set; }
+    public decimal UnitPrice { get; private set; }
     public string? Notes { get; private set; }
+
+    public void SetUnitPrice(decimal unitPrice)
+    {
+        if (unitPrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitPrice), "El precio unitario del medicamento no puede ser negativo.");
+        }
+
+        UnitPrice = unitPrice;
+    }
 }

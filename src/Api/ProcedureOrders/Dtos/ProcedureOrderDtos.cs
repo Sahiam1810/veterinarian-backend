@@ -5,13 +5,15 @@ public record ProcedureOrderItemDto(
     Guid ProcedureOrderId,
     Guid ProcedureId,
     string? ProcedureName,
+    decimal UnitPrice,
     string? Notes);
 
 public record ProcedureOrderDto(
     Guid Id,
     Guid ClientPetId,
     Guid VeterinarianId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
+    Guid? HospitalizationStayId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
@@ -27,7 +29,8 @@ public record CreateProcedureOrderItemDto(
 
 public record CreateProcedureOrderDto(
     Guid ClientPetId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
+    Guid? HospitalizationStayId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
@@ -40,7 +43,8 @@ public record PendingProcedureOrderDto(
     Guid Id,
     string PetName,
     string OwnerName,
-    Guid AppointmentId,
+    Guid? AppointmentId,
+    Guid? HospitalizationStayId,
     bool IsInHouse,
     string Status,
     string? ResultFileUrl,

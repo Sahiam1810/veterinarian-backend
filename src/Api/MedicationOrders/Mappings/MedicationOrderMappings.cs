@@ -13,6 +13,7 @@ public static class MedicationOrderMappings
             item.MedicationOrderId,
             item.MedicationId,
             item.Medication?.Name,
+            item.UnitPrice,
             item.Notes);
     }
 
@@ -23,6 +24,7 @@ public static class MedicationOrderMappings
             order.ClientPetId,
             order.VeterinarianId,
             order.AppointmentId,
+            order.HospitalizationStayId,
             order.IsInHouse,
             order.ReferredTo,
             order.ReferralReason,
@@ -51,7 +53,8 @@ public static class MedicationOrderMappings
             dto.IsInHouse,
             dto.ReferredTo,
             dto.ReferralReason,
-            items);
+            items,
+            dto.HospitalizationStayId);
     }
 
     public static PendingMedicationOrderDto ToPendingDto(this MedicationOrder order)
@@ -61,6 +64,7 @@ public static class MedicationOrderMappings
             order.ClientPet?.Pet?.Name?.Value ?? "Desconocida",
             order.ClientPet?.Client?.FullName?.Value ?? "Desconocido",
             order.AppointmentId,
+            order.HospitalizationStayId,
             order.IsInHouse,
             order.Status,
             order.CreatedAt,

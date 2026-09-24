@@ -17,11 +17,12 @@ public sealed class MedicationOrder : BaseEntity<Guid>
     public MedicationOrder(
         Guid clientPetId,
         Guid veterinarianId,
-        Guid appointmentId,
+        Guid? appointmentId,
         bool isInHouse,
         string? referredTo,
         string? referralReason,
-        IEnumerable<(Guid MedicationId, string? Notes)>? items = null)
+        IEnumerable<(Guid MedicationId, string? Notes)>? items = null,
+        Guid? hospitalizationStayId = null)
     {
         if (clientPetId == Guid.Empty)
         {
@@ -33,9 +34,16 @@ public sealed class MedicationOrder : BaseEntity<Guid>
             throw new ArgumentException("El veterinario es obligatorio.", nameof(veterinarianId));
         }
 
-        if (appointmentId == Guid.Empty)
+        var hasAppointment = appointmentId.HasValue && appointmentId.Value != Guid.Empty;
+        var hasStay = hospitalizationStayId.HasValue && hospitalizationStayId.Value != Guid.Empty;
+        if (!hasAppointment && !hasStay)
         {
-            throw new ArgumentException("La consulta de origen (AppointmentId) es obligatoria.", nameof(appointmentId));
+            throw new ArgumentException("La orden debe tener una cita o una estancia como origen.", nameof(appointmentId));
+        }
+
+        if (hasAppointment && hasStay)
+        {
+            throw new ArgumentException("La orden no puede tener cita y estancia al mismo tiempo.", nameof(hospitalizationStayId));
         }
 
         var itemList = items?.ToList() ?? new List<(Guid MedicationId, string? Notes)>();
@@ -46,6 +54,7 @@ public sealed class MedicationOrder : BaseEntity<Guid>
         ClientPetId = clientPetId;
         VeterinarianId = veterinarianId;
         AppointmentId = appointmentId;
+        HospitalizationStayId = hospitalizationStayId;
         IsInHouse = isInHouse;
         ReferredTo = isInHouse ? null : referredTo?.Trim();
         ReferralReason = isInHouse ? null : referralReason?.Trim();
@@ -56,7 +65,7 @@ public sealed class MedicationOrder : BaseEntity<Guid>
         {
             foreach (var item in itemList)
             {
-                _items.Add(new MedicationOrderItem(Id, item.MedicationId, item.Notes));
+                _items.Add(new MedicationOrderItem(Id, item.MedicationId, item.Notes, 0m));
             }
         }
     }
@@ -67,8 +76,11 @@ public sealed class MedicationOrder : BaseEntity<Guid>
     public Guid VeterinarianId { get; private set; }
     public Veterinarian? Veterinarian { get; private set; }
 
-    public Guid AppointmentId { get; private set; }
+    public Guid? AppointmentId { get; private set; }
     public Appointment? Appointment { get; private set; }
+
+    public Guid? HospitalizationStayId { get; private set; }
+    public Domain.HospitalizationStays.Entities.HospitalizationStay? HospitalizationStay { get; private set; }
 
     public bool IsInHouse { get; private set; }
     public string? ReferredTo { get; private set; }

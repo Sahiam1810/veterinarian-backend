@@ -1,11 +1,15 @@
 using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.HospitalizationStays.Abstraction;
 using Application.Notifications.UseCases;
+using Application.Procedures.Abstraction;
 using Application.ProcedureOrders.Abstraction;
 using Application.ProcedureOrders.UseCases;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
+using Domain.HospitalizationStays.Entities;
+using Domain.Procedures.Entities;
 using Domain.ProcedureOrders.Entities;
 using Domain.Veterinarians.Entities;
 using MediatR;
@@ -20,6 +24,8 @@ public class ProcedureOrderCommandHandlerTests
     private readonly IProcedureOrderRepository _orderRepo = Substitute.For<IProcedureOrderRepository>();
     private readonly IVeterinarianRepository _vetRepo = Substitute.For<IVeterinarianRepository>();
     private readonly IAppointmentRepository _appointmentRepo = Substitute.For<IAppointmentRepository>();
+    private readonly IHospitalizationStayRepository _stayRepo = Substitute.For<IHospitalizationStayRepository>();
+    private readonly IProcedureRepository _procedureRepo = Substitute.For<IProcedureRepository>();
     private readonly ISender _sender = Substitute.For<ISender>();
     private readonly CreateProcedureOrderCommandHandler _createHandler;
     private readonly CompleteProcedureOrderCommandHandler _completeHandler;
@@ -31,6 +37,8 @@ public class ProcedureOrderCommandHandlerTests
         _unitOfWork.ProcedureOrdersRepository.Returns(_orderRepo);
         _unitOfWork.VeterinariansRepository.Returns(_vetRepo);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepo);
+        _unitOfWork.HospitalizationStaysRepository.Returns(_stayRepo);
+        _unitOfWork.ProceduresRepository.Returns(_procedureRepo);
         _createHandler = new CreateProcedureOrderCommandHandler(_unitOfWork);
         _completeHandler = new CompleteProcedureOrderCommandHandler(_unitOfWork, _sender);
     }
@@ -135,6 +143,38 @@ public class ProcedureOrderCommandHandlerTests
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             _createHandler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CreateProcedureOrder_ForActiveStay_CopiesCatalogPrice()
+    {
+        var petId = Guid.NewGuid();
+        var procedureId = Guid.NewGuid();
+        var stayId = Guid.NewGuid();
+        var procedure = new Procedure("Radiografía", "RX", true, 420m);
+        typeof(Procedure).GetProperty(nameof(Procedure.Id))!.SetValue(procedure, procedureId);
+
+        var stay = new HospitalizationStay(petId, null, Guid.NewGuid(), "Observación");
+        typeof(HospitalizationStay).GetProperty(nameof(HospitalizationStay.Id))!.SetValue(stay, stayId);
+
+        _stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(stay);
+        _procedureRepo.GetByIdAsync(procedureId, Arg.Any<CancellationToken>()).Returns(procedure);
+
+        var command = new CreateProcedureOrderCommand(
+            ClientPetId: petId,
+            AppointmentId: null,
+            HospitalizationStayId: stayId,
+            IsInHouse: true,
+            ReferredTo: null,
+            ReferralReason: null,
+            Items: new List<ProcedureOrderItemInput> { new(procedureId, "Rx torácica") });
+
+        var result = await _createHandler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(stayId, result.HospitalizationStayId);
+        Assert.Null(result.AppointmentId);
+        Assert.Single(result.Items);
+        Assert.Equal(420m, result.Items.First().UnitPrice);
     }
 
     [Fact]

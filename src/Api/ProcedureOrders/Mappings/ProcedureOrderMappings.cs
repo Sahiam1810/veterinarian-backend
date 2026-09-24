@@ -13,6 +13,7 @@ public static class ProcedureOrderMappings
             item.ProcedureOrderId,
             item.ProcedureId,
             item.Procedure?.Name,
+            item.UnitPrice,
             item.Notes);
     }
 
@@ -23,6 +24,7 @@ public static class ProcedureOrderMappings
             order.ClientPetId,
             order.VeterinarianId,
             order.AppointmentId,
+            order.HospitalizationStayId,
             order.IsInHouse,
             order.ReferredTo,
             order.ReferralReason,
@@ -52,7 +54,8 @@ public static class ProcedureOrderMappings
             dto.IsInHouse,
             dto.ReferredTo,
             dto.ReferralReason,
-            items);
+            items,
+            dto.HospitalizationStayId);
     }
 
     public static PendingProcedureOrderDto ToPendingDto(this ProcedureOrder order)
@@ -62,6 +65,7 @@ public static class ProcedureOrderMappings
             order.ClientPet?.Pet?.Name?.Value ?? "Desconocida",
             order.ClientPet?.Client?.FullName?.Value ?? "Desconocido",
             order.AppointmentId,
+            order.HospitalizationStayId,
             order.IsInHouse,
             order.Status,
             order.ResultFileUrl,

@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.HospitalizationStays.Entities;
 using Domain.MedicationOrders.Entities;
 using FluentValidation;
 using MediatR;
@@ -10,11 +11,12 @@ public sealed record MedicationOrderItemInput(Guid MedicationId, string? Notes);
 
 public sealed record CreateMedicationOrderCommand(
     Guid ClientPetId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
-    List<MedicationOrderItemInput>? Items) : IRequest<MedicationOrder>;
+    List<MedicationOrderItemInput>? Items,
+    Guid? HospitalizationStayId = null) : IRequest<MedicationOrder>;
 
 public sealed record CompleteMedicationOrderCommand(Guid Id) : IRequest<Unit>;
 
@@ -32,26 +34,75 @@ public sealed class CreateMedicationOrderCommandHandler(IUnitOfWork unitOfWork)
         CreateMedicationOrderCommand request,
         CancellationToken cancellationToken)
     {
-        var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(request.AppointmentId, cancellationToken);
-        if (appointment is null)
+        Guid veterinarianId;
+
+        if (request.AppointmentId is Guid appointmentId)
         {
-            throw new NotFoundException($"No se encontró la cita con ID '{request.AppointmentId}'.");
+            var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(appointmentId, cancellationToken);
+            if (appointment is null)
+            {
+                throw new NotFoundException($"No se encontró la cita con ID '{appointmentId}'.");
+            }
+
+            veterinarianId = appointment.VeterinarianId;
+        }
+        else if (request.HospitalizationStayId is Guid stayId)
+        {
+            var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(stayId, cancellationToken)
+                ?? throw new NotFoundException($"No se encontró la estancia con ID '{stayId}'.");
+
+            if (stay.Estado != HospitalizationStayStatus.Activa)
+            {
+                throw new InvalidOperationException("No se pueden crear órdenes en una estancia dada de alta.");
+            }
+
+            if (stay.ClientPetId != request.ClientPetId)
+            {
+                throw new BadRequestException("La estancia y la mascota de la orden deben coincidir.");
+            }
+
+            veterinarianId = await ResolveVeterinarianIdForStayAsync(stay, cancellationToken)
+                ?? stay.AdmittedByUserId;
+        }
+        else
+        {
+            throw new BadRequestException("La orden debe tener una cita o una estancia como origen.");
         }
 
-        var itemsTuple = request.Items?.Select(i => (i.MedicationId, i.Notes));
-
+        var itemsTuple = request.Items?.Select(i => (i.MedicationId, i.Notes)).ToList() ?? new List<(Guid MedicationId, string? Notes)>();
         var medicationOrder = new MedicationOrder(
             request.ClientPetId,
-            appointment.VeterinarianId,
+            veterinarianId,
             request.AppointmentId,
             request.IsInHouse,
             request.ReferredTo,
             request.ReferralReason,
-            itemsTuple);
+            itemsTuple,
+            request.HospitalizationStayId);
+
+        foreach (var item in medicationOrder.Items)
+        {
+            var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
+            if (medication is not null)
+            {
+                item.SetUnitPrice(medication.Price);
+            }
+        }
 
         await unitOfWork.MedicationOrdersRepository.AddAsync(medicationOrder, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return medicationOrder;
+    }
+
+    private async Task<Guid?> ResolveVeterinarianIdForStayAsync(HospitalizationStay stay, CancellationToken cancellationToken)
+    {
+        if (stay.AppointmentId is Guid appointmentId)
+        {
+            var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(appointmentId, cancellationToken);
+            return appointment?.VeterinarianId;
+        }
+
+        return null;
     }
 }
 
@@ -122,8 +173,13 @@ public sealed class CreateMedicationOrderCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.ClientPetId)
             .NotEmpty().WithMessage("El paciente es obligatorio.");
 
-        RuleFor(x => x.AppointmentId)
-            .NotEmpty().WithMessage("La consulta de origen es obligatoria.");
+        RuleFor(x => x)
+            .Must(x => x.AppointmentId.HasValue || x.HospitalizationStayId.HasValue)
+            .WithMessage("La orden debe tener una cita o una estancia como origen.");
+
+        RuleFor(x => x)
+            .Must(x => !(x.AppointmentId.HasValue && x.HospitalizationStayId.HasValue))
+            .WithMessage("La orden no puede tener cita y estancia al mismo tiempo.");
 
         When(x => x.IsInHouse, () =>
         {

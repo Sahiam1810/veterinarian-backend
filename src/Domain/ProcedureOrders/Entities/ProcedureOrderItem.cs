@@ -12,7 +12,8 @@ public sealed class ProcedureOrderItem : BaseEntity<Guid>
     public ProcedureOrderItem(
         Guid procedureOrderId,
         Guid procedureId,
-        string? notes)
+        string? notes,
+        decimal unitPrice = 0m)
     {
         if (procedureOrderId == Guid.Empty)
         {
@@ -24,9 +25,15 @@ public sealed class ProcedureOrderItem : BaseEntity<Guid>
             throw new ArgumentException("El ID del procedimiento es obligatorio.", nameof(procedureId));
         }
 
+        if (unitPrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitPrice), "El precio unitario del procedimiento no puede ser negativo.");
+        }
+
         Id = Guid.NewGuid();
         ProcedureOrderId = procedureOrderId;
         ProcedureId = procedureId;
+        UnitPrice = unitPrice;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         CreatedAt = DateTime.UtcNow;
     }
@@ -34,5 +41,16 @@ public sealed class ProcedureOrderItem : BaseEntity<Guid>
     public Guid ProcedureOrderId { get; private set; }
     public Guid ProcedureId { get; private set; }
     public Procedure? Procedure { get; private set; }
+    public decimal UnitPrice { get; private set; }
     public string? Notes { get; private set; }
+
+    public void SetUnitPrice(decimal unitPrice)
+    {
+        if (unitPrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitPrice), "El precio unitario del procedimiento no puede ser negativo.");
+        }
+
+        UnitPrice = unitPrice;
+    }
 }

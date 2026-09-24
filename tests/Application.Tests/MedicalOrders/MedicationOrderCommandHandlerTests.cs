@@ -1,10 +1,14 @@
 using Application.Appointments.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.HospitalizationStays.Abstraction;
+using Application.Medications.Abstraction;
 using Application.MedicationOrders.Abstraction;
 using Application.MedicationOrders.UseCases;
 using Domain.Appointments.Entities;
+using Domain.HospitalizationStays.Entities;
 using Domain.MedicationOrders.Entities;
+using Domain.Medications.Entities;
 using NSubstitute;
 using Xunit;
 
@@ -15,6 +19,8 @@ public class MedicationOrderCommandHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IMedicationOrderRepository _repository = Substitute.For<IMedicationOrderRepository>();
     private readonly IAppointmentRepository _appointmentRepo = Substitute.For<IAppointmentRepository>();
+    private readonly IHospitalizationStayRepository _stayRepo = Substitute.For<IHospitalizationStayRepository>();
+    private readonly IMedicationRepository _medicationRepo = Substitute.For<IMedicationRepository>();
     private readonly CreateMedicationOrderCommandHandler _createHandler;
     private readonly CompleteMedicationOrderCommandHandler _completeHandler;
 
@@ -24,6 +30,8 @@ public class MedicationOrderCommandHandlerTests
     {
         _unitOfWork.MedicationOrdersRepository.Returns(_repository);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepo);
+        _unitOfWork.HospitalizationStaysRepository.Returns(_stayRepo);
+        _unitOfWork.MedicationsRepository.Returns(_medicationRepo);
         _createHandler = new CreateMedicationOrderCommandHandler(_unitOfWork);
         _completeHandler = new CompleteMedicationOrderCommandHandler(_unitOfWork);
     }
@@ -152,6 +160,40 @@ public class MedicationOrderCommandHandlerTests
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             _createHandler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CreateMedicationOrder_ForActiveStay_CopiesCatalogPriceAndValidatesOrigin()
+    {
+        var petId = Guid.NewGuid();
+        var medicationId = Guid.NewGuid();
+        var stayId = Guid.NewGuid();
+        var medication = new Medication("Metronidazol", "MET", true, 180m);
+        typeof(Medication).GetProperty(nameof(Medication.Id))!.SetValue(medication, medicationId);
+
+        var stay = new HospitalizationStay(petId, null, Guid.NewGuid(), "Cuidados intensivos");
+        typeof(HospitalizationStay).GetProperty(nameof(HospitalizationStay.Id))!.SetValue(stay, stayId);
+
+        _stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(stay);
+        _medicationRepo.GetByIdAsync(medicationId, Arg.Any<CancellationToken>()).Returns(medication);
+
+        var command = new CreateMedicationOrderCommand(
+            ClientPetId: petId,
+            AppointmentId: null,
+            HospitalizationStayId: stayId,
+            IsInHouse: true,
+            ReferredTo: null,
+            ReferralReason: null,
+            Items: new List<MedicationOrderItemInput> { new(medicationId, "Cada 12h") });
+
+        var result = await _createHandler.Handle(command, CancellationToken.None);
+
+        Assert.Equal(stayId, result.HospitalizationStayId);
+        Assert.Null(result.AppointmentId);
+        Assert.Single(result.Items);
+        Assert.Equal(180m, result.Items.First().UnitPrice);
+
+        await _repository.Received(1).AddAsync(Arg.Any<MedicationOrder>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

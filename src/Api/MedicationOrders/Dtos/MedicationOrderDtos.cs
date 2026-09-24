@@ -5,13 +5,15 @@ public record MedicationOrderItemDto(
     Guid MedicationOrderId,
     Guid MedicationId,
     string? MedicationName,
+    decimal UnitPrice,
     string? Notes);
 
 public record MedicationOrderDto(
     Guid Id,
     Guid ClientPetId,
     Guid VeterinarianId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
+    Guid? HospitalizationStayId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
@@ -26,7 +28,8 @@ public record CreateMedicationOrderItemDto(
 
 public record CreateMedicationOrderDto(
     Guid ClientPetId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
+    Guid? HospitalizationStayId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
@@ -36,7 +39,8 @@ public record PendingMedicationOrderDto(
     Guid Id,
     string PetName,
     string OwnerName,
-    Guid AppointmentId,
+    Guid? AppointmentId,
+    Guid? HospitalizationStayId,
     bool IsInHouse,
     string Status,
     DateTime CreatedAt,
