@@ -296,7 +296,7 @@ public sealed class HospitalizationStayCommandHandlerTests
     }
 
     [Fact]
-    public async Task HOSPITALIZATION_T16_admit_stay_concurrent_requests_handled_safely()
+    public async Task HOSPITALIZATION_T16_admit_stay_concurrent_requests_rely_on_unique_database_constraint()
     {
         clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>())
             .Returns(new Domain.ClientsPets.Entities.ClientPetEntity(
@@ -307,14 +307,41 @@ public sealed class HospitalizationStayCommandHandlerTests
         staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
             .Returns((HospitalizationStay?)null);
 
+        var saveAttempts = 0;
+        unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                if (Interlocked.Increment(ref saveAttempts) == 1)
+                {
+                    return Task.FromResult(1);
+                }
+
+                throw new InvalidOperationException("Unique active hospitalization stay constraint.");
+            });
+
         var task1 = admitHandler.Handle(new AdmitHospitalizationStayCommand(ClientPetId, null, "Ingreso A", AdmittingUserId), CancellationToken.None);
         var task2 = admitHandler.Handle(new AdmitHospitalizationStayCommand(ClientPetId, null, "Ingreso B", AdmittingUserId), CancellationToken.None);
 
-        var results = await Task.WhenAll(task1, task2);
+        var outcomes = await Task.WhenAll(
+            CaptureOutcome(task1),
+            CaptureOutcome(task2));
 
-        Assert.Equal(2, results.Length);
-        Assert.NotEqual(Guid.Empty, results[0]);
-        Assert.NotEqual(Guid.Empty, results[1]);
+        Assert.Single(outcomes, outcome => outcome.Success);
+        Assert.Single(outcomes, outcome => outcome.Exception is InvalidOperationException);
+        Assert.Equal(2, saveAttempts);
+    }
+
+    private static async Task<(bool Success, Exception? Exception)> CaptureOutcome(Task<Guid> task)
+    {
+        try
+        {
+            _ = await task;
+            return (true, null);
+        }
+        catch (Exception exception)
+        {
+            return (false, exception);
+        }
     }
 }
 

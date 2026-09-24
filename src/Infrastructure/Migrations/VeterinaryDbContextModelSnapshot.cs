@@ -836,9 +836,7 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClientPetId", "Estado")
-                        .IsUnique()
-                        .HasDatabaseName("IX_HOSP_STAY_ACTIVE_PER_PET")
-                        .HasFilter("ESTADO = 0");
+                        .HasDatabaseName("IX_HOSP_STAY_ACTIVE_PER_PET");
 
                     b.ToTable("HOSPITALIZATION_STAYS", (string)null);
                 });
@@ -908,6 +906,7 @@ namespace Infrastructure.Migrations
                         .HasColumnName("MEDICATION_ORDER_ID");
 
                     b.Property<string>("AppointmentId")
+                        .IsRequired()
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("APPOINTMENT_ID");
 
@@ -919,10 +918,6 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("HospitalizationStayId")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("HOSPITALIZATION_STAY_ID");
 
                     b.Property<int>("IsInHouse")
                         .HasColumnType("NUMBER(10)")
@@ -958,8 +953,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("ClientPetId");
-
-                    b.HasIndex("HospitalizationStayId");
 
                     b.HasIndex("VeterinarianId");
 
@@ -1209,6 +1202,7 @@ namespace Infrastructure.Migrations
                         .HasColumnName("PROCEDURE_ORDER_ID");
 
                     b.Property<string>("AppointmentId")
+                        .IsRequired()
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("APPOINTMENT_ID");
 
@@ -1220,10 +1214,6 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("CREATED_AT");
-
-                    b.Property<string>("HospitalizationStayId")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("HOSPITALIZATION_STAY_ID");
 
                     b.Property<int>("IsInHouse")
                         .HasColumnType("NUMBER(10)")
@@ -1264,8 +1254,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("ClientPetId");
-
-                    b.HasIndex("HospitalizationStayId");
 
                     b.HasIndex("VeterinarianId");
 
@@ -2354,17 +2342,15 @@ namespace Infrastructure.Migrations
                 {
                     b.HasOne("Domain.Appointments.Entities.Appointment", "Appointment")
                         .WithMany()
-                        .HasForeignKey("AppointmentId");
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Domain.ClientsPets.Entities.ClientPetEntity", "ClientPet")
                         .WithMany()
                         .HasForeignKey("ClientPetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.HospitalizationStays.Entities.HospitalizationStay", "HospitalizationStay")
-                        .WithMany()
-                        .HasForeignKey("HospitalizationStayId");
 
                     b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
                         .WithMany()
@@ -2375,8 +2361,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("ClientPet");
-
-                    b.Navigation("HospitalizationStay");
 
                     b.Navigation("Veterinarian");
                 });
@@ -2446,17 +2430,15 @@ namespace Infrastructure.Migrations
                 {
                     b.HasOne("Domain.Appointments.Entities.Appointment", "Appointment")
                         .WithMany()
-                        .HasForeignKey("AppointmentId");
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Domain.ClientsPets.Entities.ClientPetEntity", "ClientPet")
                         .WithMany()
                         .HasForeignKey("ClientPetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.HospitalizationStays.Entities.HospitalizationStay", "HospitalizationStay")
-                        .WithMany()
-                        .HasForeignKey("HospitalizationStayId");
 
                     b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
                         .WithMany()
@@ -2467,8 +2449,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("ClientPet");
-
-                    b.Navigation("HospitalizationStay");
 
                     b.Navigation("Veterinarian");
                 });

@@ -197,6 +197,39 @@ public class ProcedureOrderCommandHandlerTests
     }
 
     [Fact]
+    public async Task CompleteProcedureOrder_FromHospitalizationStay_DoesNotDispatchAppointmentNotification()
+    {
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(
+            Guid.NewGuid(),
+            null,
+            VetId,
+            "Monitoreo");
+        var order = new ProcedureOrder(
+            stay.ClientPetId,
+            VetId,
+            appointmentId: null,
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Rayos X") },
+            hospitalizationStayId: stay.Id);
+
+        _orderRepo.GetByIdAsync(order.Id, Arg.Any<CancellationToken>())
+            .Returns(order);
+
+        await _completeHandler.Handle(
+            new CompleteProcedureOrderCommand(order.Id, "resultado.pdf"),
+            CancellationToken.None);
+
+        Assert.Equal("Completada", order.Status);
+        Assert.Equal("resultado.pdf", order.ResultFileUrl);
+        await _orderRepo.Received(1).UpdateAsync(order, Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _sender.DidNotReceive().Send(Arg.Any<object>(), Arg.Any<CancellationToken>());
+        await _vetRepo.DidNotReceive().GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task CompleteMedicationOrder_DoesNotDispatchNotification()
     {
         // Este test verifica que completar una orden de MEDICAMENTO no dispara notificación

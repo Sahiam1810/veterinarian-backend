@@ -9,8 +9,18 @@ using Api.ProcedureOrders.Controllers;
 using Api.Supplies.Controllers;
 using Api.SupplyConsumptions.Controllers;
 using Api.Tests.Support;
+using Application.Common.Exceptions;
+using Application.HospitalizationStays.UseCases;
+using Application.MedicationOrders.UseCases;
+using Application.ProcedureOrders.UseCases;
+using Application.SupplyConsumptions.UseCases;
+using Domain.MedicationOrders.Entities;
+using Domain.ProcedureOrders.Entities;
+using Domain.SupplyConsumptions.Entities;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NSubstitute;
 using Xunit;
 
 namespace Api.Tests.Security;
@@ -192,6 +202,106 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         Assert.Contains(properties, property => property.Name == "clientPetId");
         Assert.Contains(properties, property => property.Name == "petName");
         Assert.Contains(properties, property => property.Name == "ownerName");
+    }
+
+    [Fact]
+    public async Task Completing_delivered_medication_order_returns_409()
+    {
+        factory.Sender.Send(Arg.Any<CompleteMedicationOrderCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<Unit>(new ConflictException("La orden de medicamento ya se encuentra entregada.")));
+
+        using var client = factory.CreateClientWithPermissions("Órdenes Médicas:Edit");
+        using var response = await client.PatchAsync($"/api/medication-orders/{Guid.NewGuid()}/complete", content: null);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Completing_cancelled_medication_order_returns_409()
+    {
+        factory.Sender.Send(Arg.Any<CompleteMedicationOrderCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<Unit>(new ConflictException("No se puede entregar una orden de medicamento cancelada.")));
+
+        using var client = factory.CreateClientWithPermissions("Órdenes Médicas:Edit");
+        using var response = await client.PatchAsync($"/api/medication-orders/{Guid.NewGuid()}/complete", content: null);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Completing_completed_procedure_order_returns_409()
+    {
+        factory.Sender.Send(Arg.Any<CompleteProcedureOrderCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<Unit>(new ConflictException("La orden de procedimiento ya se encuentra completada.")));
+
+        using var client = factory.CreateClientWithPermissions("Órdenes Médicas:Edit");
+        using var response = await client.PatchAsync($"/api/procedure-orders/{Guid.NewGuid()}/complete", content: null);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Completing_cancelled_procedure_order_returns_409()
+    {
+        factory.Sender.Send(Arg.Any<CompleteProcedureOrderCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<Unit>(new ConflictException("No se puede completar una orden de procedimiento cancelada.")));
+
+        using var client = factory.CreateClientWithPermissions("Órdenes Médicas:Edit");
+        using var response = await client.PatchAsync($"/api/procedure-orders/{Guid.NewGuid()}/complete", content: null);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("medication")]
+    [InlineData("procedure")]
+    public async Task Creating_order_for_discharged_stay_returns_409(string orderType)
+    {
+        if (orderType == "medication")
+        {
+            factory.Sender.Send(Arg.Any<CreateMedicationOrderCommand>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromException<MedicationOrder>(new ConflictException("No se puede crear una orden en una estancia dada de alta.")));
+        }
+        else
+        {
+            factory.Sender.Send(Arg.Any<CreateProcedureOrderCommand>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromException<ProcedureOrder>(new ConflictException("No se puede crear una orden en una estancia dada de alta.")));
+        }
+
+        var route = orderType == "medication" ? "/api/medication-orders" : "/api/procedure-orders";
+        var body = new
+        {
+            ClientPetId = Guid.NewGuid(),
+            AppointmentId = (Guid?)null,
+            IsInHouse = true,
+            ReferredTo = (string?)null,
+            ReferralReason = (string?)null,
+            Items = Array.Empty<object>(),
+            HospitalizationStayId = Guid.NewGuid()
+        };
+
+        using var client = factory.CreateClientWithPermissions("Órdenes Médicas:Create");
+        using var request = CreateRequest("POST", route, body);
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Registering_consumption_after_discharge_returns_409()
+    {
+        factory.Sender.Send(Arg.Any<RegisterSupplyConsumptionCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<SupplyConsumption>(new ConflictException("No se pueden registrar consumos de insumos en una estancia dada de alta.")));
+
+        var body = new { SupplyId = Guid.NewGuid(), Quantity = 2m };
+        using var client = factory.CreateClientWithPermissions("Insumos:Create");
+        using var request = CreateRequest(
+            "POST",
+            $"/api/hospitalization-stays/{Guid.NewGuid()}/supply-consumptions",
+            body);
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     private static HttpStatusCode ExpectedSuccess(string httpMethod) => httpMethod switch

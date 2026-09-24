@@ -125,19 +125,22 @@ public sealed class CompleteProcedureOrderCommandHandler(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Notificación al veterinario que realizó la orden
-        var veterinarian = await unitOfWork.VeterinariansRepository.GetByIdAsync(order.VeterinarianId, cancellationToken);
-        if (veterinarian is not null)
+        if (order.AppointmentId is Guid appointmentId && appointmentId != Guid.Empty)
         {
-            var message = $"Se ha completado la orden de procedimiento para la cita.";
-            await sender.Send(
-                new CreateNotificationCommand(
-                    veterinarian.UserId,
-                    order.AppointmentId ?? Guid.Empty,
-                    message,
-                    DateTime.UtcNow,
-                    "Pendiente",
-                    "ProcedimientoComp"),
-                cancellationToken);
+            var veterinarian = await unitOfWork.VeterinariansRepository.GetByIdAsync(order.VeterinarianId, cancellationToken);
+            if (veterinarian is not null)
+            {
+                var message = $"Se ha completado la orden de procedimiento para la cita.";
+                await sender.Send(
+                    new CreateNotificationCommand(
+                        veterinarian.UserId,
+                        appointmentId,
+                        message,
+                        DateTime.UtcNow,
+                        "Pendiente",
+                        "ProcedimientoComp"),
+                    cancellationToken);
+            }
         }
 
         return Unit.Value;
