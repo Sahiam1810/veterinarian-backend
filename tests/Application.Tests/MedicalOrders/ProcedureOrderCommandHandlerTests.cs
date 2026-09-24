@@ -4,9 +4,11 @@ using Application.Common.Exceptions;
 using Application.Notifications.UseCases;
 using Application.ProcedureOrders.Abstraction;
 using Application.ProcedureOrders.UseCases;
+using Application.Procedures.Abstraction;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
 using Domain.ProcedureOrders.Entities;
+using Domain.Procedures.Entities;
 using Domain.Veterinarians.Entities;
 using MediatR;
 using NSubstitute;
@@ -20,17 +22,22 @@ public class ProcedureOrderCommandHandlerTests
     private readonly IProcedureOrderRepository _orderRepo = Substitute.For<IProcedureOrderRepository>();
     private readonly IVeterinarianRepository _vetRepo = Substitute.For<IVeterinarianRepository>();
     private readonly IAppointmentRepository _appointmentRepo = Substitute.For<IAppointmentRepository>();
+    private readonly IProcedureRepository _procedureRepo = Substitute.For<IProcedureRepository>();
     private readonly ISender _sender = Substitute.For<ISender>();
     private readonly CreateProcedureOrderCommandHandler _createHandler;
     private readonly CompleteProcedureOrderCommandHandler _completeHandler;
 
     private static readonly Guid VetId = Guid.NewGuid();
+    private static readonly Guid ClientPetId = Guid.NewGuid();
 
     public ProcedureOrderCommandHandlerTests()
     {
         _unitOfWork.ProcedureOrdersRepository.Returns(_orderRepo);
         _unitOfWork.VeterinariansRepository.Returns(_vetRepo);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepo);
+        _unitOfWork.ProceduresRepository.Returns(_procedureRepo);
+        _procedureRepo.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new Procedure("Procedimiento de prueba", price: 7500m));
         _createHandler = new CreateProcedureOrderCommandHandler(_unitOfWork);
         _completeHandler = new CompleteProcedureOrderCommandHandler(_unitOfWork, _sender);
     }
@@ -40,6 +47,7 @@ public class ProcedureOrderCommandHandlerTests
         var apt = (Appointment)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Appointment));
         typeof(Appointment).GetProperty("Id")?.SetValue(apt, appointmentId);
         typeof(Appointment).GetProperty("VeterinarianId")?.SetValue(apt, VetId);
+        typeof(Appointment).GetProperty("ClientPetId")?.SetValue(apt, ClientPetId);
         return apt;
     }
 
@@ -51,7 +59,7 @@ public class ProcedureOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: true,
             ReferredTo: null,
@@ -67,6 +75,7 @@ public class ProcedureOrderCommandHandlerTests
         Assert.True(result.IsInHouse);
         Assert.Equal("Pendiente", result.Status);
         Assert.Single(result.Items);
+        Assert.Equal(7500m, result.Items.Single().UnitPrice);
         Assert.Equal(VetId, result.VeterinarianId);
 
         await _orderRepo.Received(1).AddAsync(Arg.Any<ProcedureOrder>(), Arg.Any<CancellationToken>());
@@ -81,7 +90,7 @@ public class ProcedureOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: false,
             ReferredTo: "Centro de Diagnóstico Externo",
@@ -107,7 +116,7 @@ public class ProcedureOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: true,
             ReferredTo: null,
@@ -126,7 +135,7 @@ public class ProcedureOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: false,
             ReferredTo: "Centro X",

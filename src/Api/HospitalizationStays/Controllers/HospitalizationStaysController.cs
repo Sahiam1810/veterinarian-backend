@@ -69,6 +69,16 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
         return Ok(options);
     }
 
+    [HttpGet("{id:guid}/liquidation")]
+    [RequirePermission("Hospitalización", PermissionAction.View)]
+    [ProducesResponseType(typeof(HospitalizationLiquidationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<HospitalizationLiquidationDto>> GetLiquidation(Guid id, CancellationToken cancellationToken)
+    {
+        var liquidation = await sender.Send(new GetHospitalizationLiquidationQuery(id), cancellationToken);
+        return Ok(liquidation);
+    }
+
     [HttpGet("pet/{clientPetId:guid}")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
     [ProducesResponseType(typeof(IReadOnlyCollection<ApiHospitalizationStayDto>), StatusCodes.Status200OK)]

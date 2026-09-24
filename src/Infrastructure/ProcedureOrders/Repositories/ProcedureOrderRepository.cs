@@ -29,6 +29,18 @@ public sealed class ProcedureOrderRepository(VeterinaryDbContext context) : IPro
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<ProcedureOrder>> GetByHospitalizationStayIdAsync(Guid hospitalizationStayId, CancellationToken cancellationToken = default)
+        => await context.ProcedureOrders
+            .AsNoTracking()
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Procedure)
+            .Include(o => o.ClientPet)
+            .Include(o => o.Veterinarian)
+                .ThenInclude(v => v!.User)
+            .Where(o => o.HospitalizationStayId == hospitalizationStayId)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync(cancellationToken);
+
     public async Task<IEnumerable<ProcedureOrder>> GetPendingAsync(CancellationToken cancellationToken = default)
     {
         return await context.ProcedureOrders

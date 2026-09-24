@@ -3,7 +3,9 @@ using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.MedicationOrders.Abstraction;
 using Application.MedicationOrders.UseCases;
+using Application.Medications.Abstraction;
 using Domain.Appointments.Entities;
+using Domain.Medications.Entities;
 using Domain.MedicationOrders.Entities;
 using NSubstitute;
 using Xunit;
@@ -15,15 +17,20 @@ public class MedicationOrderCommandHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IMedicationOrderRepository _repository = Substitute.For<IMedicationOrderRepository>();
     private readonly IAppointmentRepository _appointmentRepo = Substitute.For<IAppointmentRepository>();
+    private readonly IMedicationRepository _medicationRepo = Substitute.For<IMedicationRepository>();
     private readonly CreateMedicationOrderCommandHandler _createHandler;
     private readonly CompleteMedicationOrderCommandHandler _completeHandler;
 
     private static readonly Guid VetId = Guid.NewGuid();
+    private static readonly Guid ClientPetId = Guid.NewGuid();
 
     public MedicationOrderCommandHandlerTests()
     {
         _unitOfWork.MedicationOrdersRepository.Returns(_repository);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepo);
+        _unitOfWork.MedicationsRepository.Returns(_medicationRepo);
+        _medicationRepo.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new Medication("Medicamento de prueba", price: 2500m));
         _createHandler = new CreateMedicationOrderCommandHandler(_unitOfWork);
         _completeHandler = new CompleteMedicationOrderCommandHandler(_unitOfWork);
     }
@@ -34,6 +41,7 @@ public class MedicationOrderCommandHandlerTests
         var apt = (Appointment)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Appointment));
         typeof(Appointment).GetProperty("Id")?.SetValue(apt, appointmentId);
         typeof(Appointment).GetProperty("VeterinarianId")?.SetValue(apt, VetId);
+        typeof(Appointment).GetProperty("ClientPetId")?.SetValue(apt, ClientPetId);
         return apt;
     }
 
@@ -45,7 +53,7 @@ public class MedicationOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateMedicationOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: true,
             ReferredTo: null,
@@ -63,6 +71,7 @@ public class MedicationOrderCommandHandlerTests
         Assert.Null(result.ReferredTo);
         Assert.Null(result.ReferralReason);
         Assert.Single(result.Items);
+        Assert.Equal(2500m, result.Items.Single().UnitPrice);
         Assert.Equal(VetId, result.VeterinarianId);
 
         await _repository.Received(1).AddAsync(Arg.Any<MedicationOrder>(), Arg.Any<CancellationToken>());
@@ -77,7 +86,7 @@ public class MedicationOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateMedicationOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: false,
             ReferredTo: "Farmacia Veterinaria Central",
@@ -105,7 +114,7 @@ public class MedicationOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateMedicationOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: true,
             ReferredTo: null,
@@ -124,7 +133,7 @@ public class MedicationOrderCommandHandlerTests
             .Returns(BuildAppointment(appointmentId));
 
         var command = new CreateMedicationOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: false,
             ReferredTo: "Centro Externo",
@@ -143,7 +152,7 @@ public class MedicationOrderCommandHandlerTests
             .Returns((Appointment?)null);
 
         var command = new CreateMedicationOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: ClientPetId,
             AppointmentId: appointmentId,
             IsInHouse: true,
             ReferredTo: null,

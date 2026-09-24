@@ -19,7 +19,18 @@ public record ApiHospitalizationStayDto(
     Guid AdmittedByUserId,
     string? AdmittedByName,
     bool IsPaid,
-    DateTime? PaidAt);
+    DateTime? PaidAt,
+    decimal DailyRate = 0m);
+
+public record HospitalizationLiquidationDto(
+    Guid HospitalizationStayId,
+    int BillableDays,
+    decimal DailyRate,
+    decimal HospitalizationTotal,
+    decimal MedicationsTotal,
+    decimal ProceduresTotal,
+    decimal SuppliesTotal,
+    decimal GrandTotal);
 
 public record ApiHospitalizationNoteDto(
     Guid Id,

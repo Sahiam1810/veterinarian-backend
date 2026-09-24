@@ -13,7 +13,8 @@ public static class MedicationOrderMappings
             item.MedicationOrderId,
             item.MedicationId,
             item.Medication?.Name,
-            item.Notes);
+            item.Notes,
+            item.UnitPrice);
     }
 
     public static MedicationOrderDto ToResponse(this MedicationOrder order)
@@ -23,6 +24,9 @@ public static class MedicationOrderMappings
             order.ClientPetId,
             order.VeterinarianId,
             order.AppointmentId,
+            order.HospitalizationStayId,
+            order.Veterinarian?.User?.FullName,
+            order.HospitalizationStayId.HasValue ? "Hospitalización" : "Cita",
             order.IsInHouse,
             order.ReferredTo,
             order.ReferralReason,
@@ -42,7 +46,7 @@ public static class MedicationOrderMappings
         return item.ToResponse();
     }
 
-    public static CreateMedicationOrderCommand ToCommand(this CreateMedicationOrderDto dto)
+    public static CreateMedicationOrderCommand ToCommand(this CreateMedicationOrderDto dto, Guid? requestingUserId = null)
     {
         var items = dto.Items?.Select(i => new MedicationOrderItemInput(i.MedicationId, i.Notes)).ToList();
         return new CreateMedicationOrderCommand(
@@ -51,7 +55,9 @@ public static class MedicationOrderMappings
             dto.IsInHouse,
             dto.ReferredTo,
             dto.ReferralReason,
-            items);
+            items,
+            dto.HospitalizationStayId,
+            requestingUserId);
     }
 
     public static PendingMedicationOrderDto ToPendingDto(this MedicationOrder order)
@@ -61,6 +67,9 @@ public static class MedicationOrderMappings
             order.ClientPet?.Pet?.Name?.Value ?? "Desconocida",
             order.ClientPet?.Client?.FullName?.Value ?? "Desconocido",
             order.AppointmentId,
+            order.HospitalizationStayId,
+            order.Veterinarian?.User?.FullName,
+            order.HospitalizationStayId.HasValue ? "Hospitalización" : "Cita",
             order.IsInHouse,
             order.Status,
             order.CreatedAt,

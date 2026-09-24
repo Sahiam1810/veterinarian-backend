@@ -13,9 +13,9 @@ public sealed record GetAllProceduresQuery(bool OnlyActive = true) : IRequest<IE
 public sealed record GetProcedureByIdQuery(Guid Id) : IRequest<Procedure>;
 
 // Commands
-public sealed record CreateProcedureCommand(string Name, string? Code, bool IsActive = true) : IRequest<Procedure>;
+public sealed record CreateProcedureCommand(string Name, string? Code, bool IsActive = true, decimal Price = 0m) : IRequest<Procedure>;
 
-public sealed record UpdateProcedureCommand(Guid Id, string Name, string? Code, bool IsActive) : IRequest<Unit>;
+public sealed record UpdateProcedureCommand(Guid Id, string Name, string? Code, bool IsActive, decimal Price = 0m) : IRequest<Unit>;
 
 public sealed record DeleteProcedureCommand(Guid Id) : IRequest<Unit>;
 
@@ -56,7 +56,7 @@ public sealed class CreateProcedureCommandHandler(IUnitOfWork unitOfWork)
         CreateProcedureCommand request,
         CancellationToken cancellationToken)
     {
-        var procedure = new Procedure(request.Name, request.Code, request.IsActive);
+        var procedure = new Procedure(request.Name, request.Code, request.IsActive, request.Price);
         await unitOfWork.ProceduresRepository.AddAsync(procedure, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return procedure;
@@ -76,7 +76,7 @@ public sealed class UpdateProcedureCommandHandler(IUnitOfWork unitOfWork)
             throw new NotFoundException($"No se encontró el procedimiento con ID '{request.Id}'.");
         }
 
-        procedure.Update(request.Name, request.Code, request.IsActive);
+        procedure.Update(request.Name, request.Code, request.IsActive, request.Price);
         await unitOfWork.ProceduresRepository.UpdateAsync(procedure, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Unit.Value;
@@ -113,6 +113,9 @@ public sealed class CreateProcedureCommandValidator : AbstractValidator<CreatePr
 
         RuleFor(x => x.Code)
             .MaximumLength(50).WithMessage("El código no puede superar los 50 caracteres.");
+
+        RuleFor(x => x.Price)
+            .GreaterThanOrEqualTo(0).WithMessage("El precio no puede ser negativo.");
     }
 }
 
@@ -129,5 +132,8 @@ public sealed class UpdateProcedureCommandValidator : AbstractValidator<UpdatePr
 
         RuleFor(x => x.Code)
             .MaximumLength(50).WithMessage("El código no puede superar los 50 caracteres.");
+
+        RuleFor(x => x.Price)
+            .GreaterThanOrEqualTo(0).WithMessage("El precio no puede ser negativo.");
     }
 }

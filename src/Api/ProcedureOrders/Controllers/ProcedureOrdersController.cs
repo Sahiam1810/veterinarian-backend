@@ -1,4 +1,5 @@
 using Api.Common.Security.Permissions;
+using System.Security.Claims;
 using Api.ProcedureOrders.Dtos;
 using Api.ProcedureOrders.Mappings;
 using Application.ProcedureOrders.UseCases;
@@ -36,6 +37,19 @@ public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
         return Ok(orders.ToResponse());
     }
 
+    [HttpGet("hospitalization/{hospitalizationStayId:guid}")]
+    [RequirePermission("Órdenes Médicas", PermissionAction.View)]
+    [ProducesResponseType(typeof(IEnumerable<ProcedureOrderDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ProcedureOrderDto>>> GetByHospitalizationStayId(
+        [FromRoute] Guid hospitalizationStayId,
+        CancellationToken cancellationToken = default)
+    {
+        var orders = await sender.Send(
+            new GetProcedureOrdersByHospitalizationStayIdQuery(hospitalizationStayId),
+            cancellationToken);
+        return Ok(orders.ToResponse());
+    }
+
     [HttpPost]
     [RequirePermission("Órdenes Médicas", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva orden de procedimiento (interna o remitida)")]
@@ -45,7 +59,7 @@ public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
         [FromBody] CreateProcedureOrderDto dto,
         CancellationToken cancellationToken = default)
     {
-        var order = await sender.Send(dto.ToCommand(), cancellationToken);
+        var order = await sender.Send(dto.ToCommand(GetCurrentUserId()), cancellationToken);
         var response = order.ToResponse();
         return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
     }
@@ -72,5 +86,12 @@ public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
         var query = new GetPendingProcedureOrdersQuery();
         var result = await sender.Send(query, cancellationToken);
         return Ok(result.Select(x => x.ToPendingDto()));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub")
+            ?? throw new InvalidOperationException("No se encontró el identificador del usuario autenticado.");
+        return Guid.Parse(value);
     }
 }

@@ -43,6 +43,12 @@ public class MedicationOrderItemConfiguration : IEntityTypeConfiguration<Medicat
             .HasMaxLength(500)
             .IsRequired(false);
 
+        builder.Property(x => x.UnitPrice)
+            .HasColumnName("UNIT_PRICE")
+            .HasColumnType("NUMBER(18,2)")
+            .HasDefaultValue(0m)
+            .IsRequired();
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .IsRequired();

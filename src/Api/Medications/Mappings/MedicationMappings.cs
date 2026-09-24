@@ -13,6 +13,7 @@ public static class MedicationMappings
             medication.Name,
             medication.Code,
             medication.IsActive,
+            medication.Price,
             medication.CreatedAt,
             medication.UpdatedAt);
     }
@@ -24,11 +25,11 @@ public static class MedicationMappings
 
     public static CreateMedicationCommand ToCommand(this CreateMedicationDto dto)
     {
-        return new CreateMedicationCommand(dto.Name, dto.Code, dto.IsActive);
+        return new CreateMedicationCommand(dto.Name, dto.Code, dto.IsActive, dto.Price);
     }
 
     public static UpdateMedicationCommand ToCommand(this UpdateMedicationDto dto, Guid id)
     {
-        return new UpdateMedicationCommand(id, dto.Name, dto.Code, dto.IsActive);
+        return new UpdateMedicationCommand(id, dto.Name, dto.Code, dto.IsActive, dto.Price);
     }
 }

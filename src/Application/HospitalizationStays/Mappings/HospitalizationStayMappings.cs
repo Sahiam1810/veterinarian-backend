@@ -26,7 +26,8 @@ public static class HospitalizationStayMappings
             stay.AdmittedByUserId,
             admittedByName,
             stay.IsPaid,
-            stay.PaidAt);
+            stay.PaidAt,
+            stay.DailyRate);
     }
 
     public static ApiHospitalizationNoteDto ToDto(

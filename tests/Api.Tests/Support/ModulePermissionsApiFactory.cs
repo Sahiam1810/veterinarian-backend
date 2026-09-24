@@ -88,6 +88,9 @@ public sealed class ModulePermissionsApiFactory : WebApplicationFactory<AuthCont
                 DateTime.UtcNow, null, "Activa", "Motivo de prueba", Guid.NewGuid(), "Dra. Ana", false, null));
         Sender.Send(Arg.Any<GetAllActiveHospitalizationStaysQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<ApiHospitalizationStayDto>)Array.Empty<ApiHospitalizationStayDto>());
+        Sender.Send(Arg.Any<GetHospitalizationLiquidationQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new HospitalizationLiquidationDto(
+                Guid.NewGuid(), 1, 0m, 0m, 0m, 0m, 0m, 0m));
         Sender.Send(Arg.Any<GetHospitalizationAdmissionOptionsQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<HospitalizationAdmissionOptionDto>)[
                 new(Guid.NewGuid(), "Luna", "Juan Pérez")]);
@@ -97,6 +100,10 @@ public sealed class ModulePermissionsApiFactory : WebApplicationFactory<AuthCont
             .Returns((IReadOnlyCollection<ApiHospitalizationNoteDto>)Array.Empty<ApiHospitalizationNoteDto>());
         Sender.Send(Arg.Any<GetHospitalizationStaffQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<HospitalizationStaffUserDto>)Array.Empty<HospitalizationStaffUserDto>());
+        Sender.Send(Arg.Any<GetMedicationOrdersByHospitalizationStayIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<Domain.MedicationOrders.Entities.MedicationOrder>());
+        Sender.Send(Arg.Any<GetProcedureOrdersByHospitalizationStayIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<Domain.ProcedureOrders.Entities.ProcedureOrder>());
 
         Sender.Send(Arg.Any<GetSupplyConsumptionsByStayIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<SupplyConsumption>());

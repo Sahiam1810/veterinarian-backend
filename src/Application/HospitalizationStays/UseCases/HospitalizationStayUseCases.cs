@@ -33,6 +33,8 @@ public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<
 
 public sealed record GetHospitalizationStaffQuery : IRequest<IReadOnlyCollection<HospitalizationStaffUserDto>>;
 
+public sealed record GetHospitalizationLiquidationQuery(Guid Id) : IRequest<HospitalizationLiquidationDto>;
+
 public sealed record GetHospitalizationAdmissionOptionsQuery
     : IRequest<IReadOnlyCollection<HospitalizationAdmissionOptionDto>>;
 
@@ -68,11 +70,25 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
             throw new ConflictException("La mascota ya tiene una estancia activa.");
         }
 
+        var hospitalizationService = (await unitOfWork.ServicesRepository.GetAllAsync(cancellationToken))
+            .FirstOrDefault(service => string.Equals(service.Name.Trim(), "Hospitalización", StringComparison.OrdinalIgnoreCase));
+
+        if (hospitalizationService is null)
+        {
+            throw new NotFoundException("No se encontró el servicio de catálogo 'Hospitalización'.");
+        }
+
+        if (hospitalizationService.Price < 0)
+        {
+            throw new BadRequestException("El precio del servicio de hospitalización no puede ser negativo.");
+        }
+
         var stay = new HospitalizationStay(
             request.ClientPetId,
             request.AppointmentId,
             request.AdmittedByUserId,
-            request.Motivo);
+            request.Motivo,
+            hospitalizationService.Price);
 
         await unitOfWork.HospitalizationStaysRepository.AddAsync(stay, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -258,5 +274,47 @@ public sealed class GetHospitalizationAdmissionOptionsQueryHandler(IUnitOfWork u
             .OrderBy(option => option.PetName)
             .ThenBy(option => option.OwnerName)
             .ToList();
+    }
+}
+
+public sealed class GetHospitalizationLiquidationQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetHospitalizationLiquidationQuery, HospitalizationLiquidationDto>
+{
+    public async Task<HospitalizationLiquidationDto> Handle(
+        GetHospitalizationLiquidationQuery request,
+        CancellationToken cancellationToken)
+    {
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new NotFoundException("Estancia de hospitalización no encontrada.");
+
+        var end = stay.FechaAlta ?? DateTime.UtcNow;
+        var billableDays = Math.Max(1, (end.Date - stay.FechaIngreso.Date).Days + 1);
+        var hospitalizationTotal = billableDays * stay.DailyRate;
+
+        var medicationOrders = await unitOfWork.MedicationOrdersRepository
+            .GetByHospitalizationStayIdAsync(stay.Id, cancellationToken);
+        var procedureOrders = await unitOfWork.ProcedureOrdersRepository
+            .GetByHospitalizationStayIdAsync(stay.Id, cancellationToken);
+        var suppliesTotal = await unitOfWork.SupplyConsumptionsRepository
+            .GetTotalByHospitalizationStayIdAsync(stay.Id, cancellationToken);
+
+        var medicationsTotal = medicationOrders
+            .Where(order => order.Status == "Entregada")
+            .SelectMany(order => order.Items)
+            .Sum(item => item.UnitPrice);
+        var proceduresTotal = procedureOrders
+            .Where(order => order.Status == "Completada")
+            .SelectMany(order => order.Items)
+            .Sum(item => item.UnitPrice);
+
+        return new HospitalizationLiquidationDto(
+            stay.Id,
+            billableDays,
+            stay.DailyRate,
+            hospitalizationTotal,
+            medicationsTotal,
+            proceduresTotal,
+            suppliesTotal,
+            hospitalizationTotal + medicationsTotal + proceduresTotal + suppliesTotal);
     }
 }

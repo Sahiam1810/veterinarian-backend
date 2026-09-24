@@ -39,6 +39,12 @@ public class MedicationConfiguration : IEntityTypeConfiguration<Medication>
             .HasDefaultValue(true)
             .IsRequired();
 
+        builder.Property(x => x.Price)
+            .HasColumnName("PRICE")
+            .HasColumnType("NUMBER(18,2)")
+            .HasDefaultValue(0m)
+            .IsRequired();
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .IsRequired();

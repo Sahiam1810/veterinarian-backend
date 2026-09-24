@@ -12,7 +12,8 @@ public sealed class MedicationOrderItem : BaseEntity<Guid>
     public MedicationOrderItem(
         Guid medicationOrderId,
         Guid medicationId,
-        string? notes)
+        string? notes,
+        decimal unitPrice = 0m)
     {
         if (medicationOrderId == Guid.Empty)
         {
@@ -28,6 +29,12 @@ public sealed class MedicationOrderItem : BaseEntity<Guid>
         MedicationOrderId = medicationOrderId;
         MedicationId = medicationId;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        if (unitPrice < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitPrice), "El precio unitario no puede ser negativo.");
+        }
+
+        UnitPrice = unitPrice;
         CreatedAt = DateTime.UtcNow;
     }
 
@@ -35,4 +42,5 @@ public sealed class MedicationOrderItem : BaseEntity<Guid>
     public Guid MedicationId { get; private set; }
     public Medication? Medication { get; private set; }
     public string? Notes { get; private set; }
+    public decimal UnitPrice { get; private set; }
 }

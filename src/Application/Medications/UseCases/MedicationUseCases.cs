@@ -13,9 +13,9 @@ public sealed record GetAllMedicationsQuery(bool OnlyActive = true) : IRequest<I
 public sealed record GetMedicationByIdQuery(Guid Id) : IRequest<Medication>;
 
 // Commands
-public sealed record CreateMedicationCommand(string Name, string? Code, bool IsActive = true) : IRequest<Medication>;
+public sealed record CreateMedicationCommand(string Name, string? Code, bool IsActive = true, decimal Price = 0m) : IRequest<Medication>;
 
-public sealed record UpdateMedicationCommand(Guid Id, string Name, string? Code, bool IsActive) : IRequest<Unit>;
+public sealed record UpdateMedicationCommand(Guid Id, string Name, string? Code, bool IsActive, decimal Price = 0m) : IRequest<Unit>;
 
 public sealed record DeleteMedicationCommand(Guid Id) : IRequest<Unit>;
 
@@ -56,7 +56,7 @@ public sealed class CreateMedicationCommandHandler(IUnitOfWork unitOfWork)
         CreateMedicationCommand request,
         CancellationToken cancellationToken)
     {
-        var medication = new Medication(request.Name, request.Code, request.IsActive);
+        var medication = new Medication(request.Name, request.Code, request.IsActive, request.Price);
         await unitOfWork.MedicationsRepository.AddAsync(medication, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return medication;
@@ -76,7 +76,7 @@ public sealed class UpdateMedicationCommandHandler(IUnitOfWork unitOfWork)
             throw new NotFoundException($"No se encontró el medicamento con ID '{request.Id}'.");
         }
 
-        medication.Update(request.Name, request.Code, request.IsActive);
+        medication.Update(request.Name, request.Code, request.IsActive, request.Price);
         await unitOfWork.MedicationsRepository.UpdateAsync(medication, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Unit.Value;
@@ -113,6 +113,9 @@ public sealed class CreateMedicationCommandValidator : AbstractValidator<CreateM
 
         RuleFor(x => x.Code)
             .MaximumLength(50).WithMessage("El código no puede superar los 50 caracteres.");
+
+        RuleFor(x => x.Price)
+            .GreaterThanOrEqualTo(0).WithMessage("El precio no puede ser negativo.");
     }
 }
 
@@ -129,5 +132,8 @@ public sealed class UpdateMedicationCommandValidator : AbstractValidator<UpdateM
 
         RuleFor(x => x.Code)
             .MaximumLength(50).WithMessage("El código no puede superar los 50 caracteres.");
+
+        RuleFor(x => x.Price)
+            .GreaterThanOrEqualTo(0).WithMessage("El precio no puede ser negativo.");
     }
 }

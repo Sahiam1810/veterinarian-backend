@@ -43,7 +43,25 @@ public class ProcedureOrderConfiguration : IEntityTypeConfiguration<ProcedureOrd
             .HasConversion(
                 guid => guid.ToString(),
                 str => Guid.Parse(str))
-            .IsRequired();
+            .IsRequired(false);
+
+        builder.Property(x => x.HospitalizationStayId)
+            .HasColumnName("HOSPITALIZATION_STAY_ID")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.HasValue ? guid.Value.ToString() : null,
+                value => string.IsNullOrWhiteSpace(value) ? null : Guid.Parse(value))
+            .IsRequired(false);
+
+        builder.HasOne(x => x.Appointment)
+            .WithMany()
+            .HasForeignKey(x => x.AppointmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.HospitalizationStay)
+            .WithMany()
+            .HasForeignKey(x => x.HospitalizationStayId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.IsInHouse)
             .HasColumnName("IS_IN_HOUSE")
@@ -86,5 +104,8 @@ public class ProcedureOrderConfiguration : IEntityTypeConfiguration<ProcedureOrd
             .WithOne()
             .HasForeignKey(x => x.ProcedureOrderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => x.AppointmentId);
+        builder.HasIndex(x => x.HospitalizationStayId);
     }
 }

@@ -72,6 +72,11 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         new object?[] { "POST", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "Create", "View", new { Nota = "Nota prueba", EntregadoAUserId = (Guid?)null } },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "View", "Create", null },
         new object?[] { "GET", "/api/hospitalization-stays/staff", "Hospitalización", "View", "Create", null },
+        new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/liquidation", "Hospitalización", "View", "Create", null },
+
+        // Órdenes médicas por estancia
+        new object?[] { "GET", $"/api/medication-orders/hospitalization/{TestGuid}", "Órdenes Médicas", "View", "Create", null },
+        new object?[] { "GET", $"/api/procedure-orders/hospitalization/{TestGuid}", "Órdenes Médicas", "View", "Create", null },
 
         // Insumos
         new object?[] { "GET", "/api/supplies", "Insumos", "View", "Create", null },

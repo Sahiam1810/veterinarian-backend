@@ -8,6 +8,7 @@ using Application.Users.Abstraction;
 using Domain.Appointments.Entities;
 using Domain.HospitalizationStays.Entities;
 using Domain.Races.Entities;
+using Domain.Services.Entities;
 using Domain.Species.Entities;
 using NSubstitute;
 using Xunit;
@@ -45,6 +46,8 @@ public sealed class HospitalizationStayCommandHandlerTests
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
         unitOfWork.HospitalizationStaysRepository.Returns(staysRepository);
         unitOfWork.HospitalizationNotesRepository.Returns(notesRepository);
+        unitOfWork.ServicesRepository.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(new[] { new Service(Guid.NewGuid(), "Hospitalización", 1440, 125000m) });
 
         admitHandler = new AdmitHospitalizationStayCommandHandler(unitOfWork);
         dischargeHandler = new DischargeHospitalizationStayCommandHandler(unitOfWork);
@@ -74,6 +77,7 @@ public sealed class HospitalizationStayCommandHandlerTests
             stay.ClientPetId == ClientPetId &&
             stay.AdmittedByUserId == AdmittingUserId &&
             stay.Motivo == "Observación inicial" &&
+            stay.DailyRate == 125000m &&
             stay.Estado == HospitalizationStayStatus.Activa), Arg.Any<CancellationToken>());
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }

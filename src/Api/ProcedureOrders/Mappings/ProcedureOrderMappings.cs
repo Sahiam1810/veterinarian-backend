@@ -13,7 +13,8 @@ public static class ProcedureOrderMappings
             item.ProcedureOrderId,
             item.ProcedureId,
             item.Procedure?.Name,
-            item.Notes);
+            item.Notes,
+            item.UnitPrice);
     }
 
     public static ProcedureOrderDto ToResponse(this ProcedureOrder order)
@@ -23,6 +24,9 @@ public static class ProcedureOrderMappings
             order.ClientPetId,
             order.VeterinarianId,
             order.AppointmentId,
+            order.HospitalizationStayId,
+            order.Veterinarian?.User?.FullName,
+            order.HospitalizationStayId.HasValue ? "Hospitalización" : "Cita",
             order.IsInHouse,
             order.ReferredTo,
             order.ReferralReason,
@@ -43,7 +47,7 @@ public static class ProcedureOrderMappings
         return item.ToResponse();
     }
 
-    public static CreateProcedureOrderCommand ToCommand(this CreateProcedureOrderDto dto)
+    public static CreateProcedureOrderCommand ToCommand(this CreateProcedureOrderDto dto, Guid? requestingUserId = null)
     {
         var items = dto.Items?.Select(i => new ProcedureOrderItemInput(i.ProcedureId, i.Notes)).ToList();
         return new CreateProcedureOrderCommand(
@@ -52,7 +56,9 @@ public static class ProcedureOrderMappings
             dto.IsInHouse,
             dto.ReferredTo,
             dto.ReferralReason,
-            items);
+            items,
+            dto.HospitalizationStayId,
+            requestingUserId);
     }
 
     public static PendingProcedureOrderDto ToPendingDto(this ProcedureOrder order)
@@ -62,6 +68,9 @@ public static class ProcedureOrderMappings
             order.ClientPet?.Pet?.Name?.Value ?? "Desconocida",
             order.ClientPet?.Client?.FullName?.Value ?? "Desconocido",
             order.AppointmentId,
+            order.HospitalizationStayId,
+            order.Veterinarian?.User?.FullName,
+            order.HospitalizationStayId.HasValue ? "Hospitalización" : "Cita",
             order.IsInHouse,
             order.Status,
             order.ResultFileUrl,
