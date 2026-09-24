@@ -43,10 +43,8 @@ public sealed class ProcedureOrderRepository(VeterinaryDbContext context) : IPro
     }
 
     public async Task<IEnumerable<ProcedureOrder>> GetByHospitalizationStayAsync(
+        Guid hospitalizationStayId,
         Guid? appointmentId,
-        Guid clientPetId,
-        DateTime admittedAt,
-        DateTime? dischargedAt,
         CancellationToken cancellationToken = default)
     {
         var query = context.ProcedureOrders
@@ -56,15 +54,8 @@ public sealed class ProcedureOrderRepository(VeterinaryDbContext context) : IPro
             .Include(o => o.Veterinarian)
             .AsQueryable();
 
-        if (appointmentId.HasValue)
-        {
-            query = query.Where(o => o.AppointmentId == appointmentId.Value ||
-                (o.ClientPetId == clientPetId && o.CreatedAt >= admittedAt && (dischargedAt == null || o.CreatedAt <= dischargedAt.Value)));
-        }
-        else
-        {
-            query = query.Where(o => o.ClientPetId == clientPetId && o.CreatedAt >= admittedAt && (dischargedAt == null || o.CreatedAt <= dischargedAt.Value));
-        }
+        query = query.Where(o => o.HospitalizationStayId == hospitalizationStayId ||
+            (appointmentId.HasValue && o.AppointmentId == appointmentId.Value));
 
         return await query.OrderByDescending(o => o.CreatedAt).ToListAsync(cancellationToken);
     }

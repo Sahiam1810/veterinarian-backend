@@ -32,6 +32,8 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
     private readonly ISupplyRepository suppliesRepository = Substitute.For<ISupplyRepository>();
     private readonly IMedicationOrderRepository medicationOrdersRepository = Substitute.For<IMedicationOrderRepository>();
     private readonly IProcedureOrderRepository procedureOrdersRepository = Substitute.For<IProcedureOrderRepository>();
+    private readonly Application.Medications.Abstraction.IMedicationRepository medicationsRepository = Substitute.For<Application.Medications.Abstraction.IMedicationRepository>();
+    private readonly Application.Procedures.Abstraction.IProcedureRepository proceduresRepository = Substitute.For<Application.Procedures.Abstraction.IProcedureRepository>();
 
     private readonly GetHospitalizationStayInvoiceQueryHandler handler;
 
@@ -61,13 +63,15 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
         unitOfWork.SuppliesRepository.Returns(suppliesRepository);
         unitOfWork.MedicationOrdersRepository.Returns(medicationOrdersRepository);
         unitOfWork.ProcedureOrdersRepository.Returns(procedureOrdersRepository);
+        unitOfWork.MedicationsRepository.Returns(medicationsRepository);
+        unitOfWork.ProceduresRepository.Returns(proceduresRepository);
 
         handler = new GetHospitalizationStayInvoiceQueryHandler(unitOfWork);
     }
 
     private HospitalizationStay CreateStay(bool discharged = false, bool isPaid = false)
     {
-        var stay = new HospitalizationStay(ClientPetId, AppointmentId, AdmittedByUserId, "Observación médica");
+        var stay = new HospitalizationStay(ClientPetId, AppointmentId, AdmittedByUserId, "Observación médica", 50000m);
 
         // Set ClientPet entity for navigation properties
         typeof(HospitalizationStay).GetProperty(nameof(HospitalizationStay.ClientPet))!
@@ -111,11 +115,11 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
             .Returns(Enumerable.Empty<SupplyConsumption>());
 
         medicationOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<MedicationOrder>());
 
         procedureOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<ProcedureOrder>());
 
         var result = await handler.Handle(new GetHospitalizationStayInvoiceQuery(stay.Id), CancellationToken.None);
@@ -145,11 +149,11 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
             .Returns(Enumerable.Empty<SupplyConsumption>());
 
         medicationOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<MedicationOrder>());
 
         procedureOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<ProcedureOrder>());
 
         var result = await handler.Handle(new GetHospitalizationStayInvoiceQuery(stay.Id), CancellationToken.None);
@@ -179,11 +183,11 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
             .Returns(supply);
 
         medicationOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<MedicationOrder>());
 
         procedureOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<ProcedureOrder>());
 
         var result = await handler.Handle(new GetHospitalizationStayInvoiceQuery(stay.Id), CancellationToken.None);
@@ -208,8 +212,10 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
         supplyConsumptionsRepository.GetByHospitalizationStayIdAsync(stay.Id, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<SupplyConsumption>());
 
-        var med1 = new Medication("Amoxicilina 500mg");
-        var med2 = new Medication("Analgesico");
+        var med1 = new Medication("Amoxicilina 500mg", price: 30000m);
+        var med2 = new Medication("Analgesico", price: 10000m);
+        medicationsRepository.GetByIdAsync(med1.Id, Arg.Any<CancellationToken>()).Returns(med1);
+        medicationsRepository.GetByIdAsync(med2.Id, Arg.Any<CancellationToken>()).Returns(med2);
 
         var deliveredOrder = new MedicationOrder(stay.ClientPetId, VeterinarianId, stay.AppointmentId!.Value, true, null, null,
             new (Guid MedicationId, string? Notes)[] { (med1.Id, "1 cada 8 horas") });
@@ -224,17 +230,20 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
         itemProp.SetValue(pendingOrder.Items.First(), med2);
 
         medicationOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(new[] { deliveredOrder, pendingOrder });
 
         procedureOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<ProcedureOrder>());
 
         var result = await handler.Handle(new GetHospitalizationStayInvoiceQuery(stay.Id), CancellationToken.None);
 
         Assert.Single(result.Medications);
         Assert.Equal("Amoxicilina 500mg", result.Medications[0].Name);
+        Assert.Equal(30000m, result.Medications[0].UnitPrice);
+        Assert.Equal(30000m, result.Medications[0].Total);
+        Assert.Equal(30000m, result.MedicationsTotal);
         Assert.Equal("1 cada 8 horas", result.Medications[0].Notes);
     }
 
@@ -248,10 +257,10 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
             .Returns(Enumerable.Empty<SupplyConsumption>());
 
         medicationOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(Enumerable.Empty<MedicationOrder>());
 
-        var proc1 = new Procedure("Hemograma completo");
+        var proc1 = new Procedure("Hemograma completo", price: 60000m);
         var proc2 = new Procedure("Ecografía abdominal");
 
         var completedOrder = new ProcedureOrder(stay.ClientPetId, VeterinarianId, stay.AppointmentId!.Value, true, null, null,
@@ -260,6 +269,7 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
 
         var itemProp = typeof(ProcedureOrderItem).GetProperty(nameof(ProcedureOrderItem.Procedure))!;
         itemProp.SetValue(completedOrder.Items.First(), proc1);
+        proceduresRepository.GetByIdAsync(proc1.Id, Arg.Any<CancellationToken>()).Returns(proc1);
 
         var pendingOrder = new ProcedureOrder(stay.ClientPetId, VeterinarianId, stay.AppointmentId!.Value, true, null, null,
             new (Guid ProcedureId, string? Notes)[] { (proc2.Id, "Rutina") }); // Status: Pendiente
@@ -267,13 +277,16 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
         itemProp.SetValue(pendingOrder.Items.First(), proc2);
 
         procedureOrdersRepository.GetByHospitalizationStayAsync(
-            stay.AppointmentId, stay.ClientPetId, stay.FechaIngreso, stay.FechaAlta, Arg.Any<CancellationToken>())
+            stay.Id, stay.AppointmentId, Arg.Any<CancellationToken>())
             .Returns(new[] { completedOrder, pendingOrder });
 
         var result = await handler.Handle(new GetHospitalizationStayInvoiceQuery(stay.Id), CancellationToken.None);
 
         Assert.Single(result.Procedures);
         Assert.Equal("Hemograma completo", result.Procedures[0].Name);
+        Assert.Equal(60000m, result.Procedures[0].UnitPrice);
+        Assert.Equal(60000m, result.Procedures[0].Total);
+        Assert.Equal(60000m, result.ProceduresTotal);
         Assert.Equal("Urgente", result.Procedures[0].Notes);
     }
 }

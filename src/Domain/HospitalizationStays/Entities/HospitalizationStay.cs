@@ -19,7 +19,8 @@ public sealed class HospitalizationStay : BaseEntity<Guid>
         Guid clientPetId,
         Guid? appointmentId,
         Guid admittedByUserId,
-        string motivo)
+        string motivo,
+        decimal dailyRate = 0m)
     {
         if (clientPetId == Guid.Empty)
         {
@@ -36,11 +37,17 @@ public sealed class HospitalizationStay : BaseEntity<Guid>
             throw new ArgumentException("El motivo es obligatorio.", nameof(motivo));
         }
 
+        if (dailyRate < 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dailyRate), "La tarifa diaria no puede ser negativa.");
+        }
+
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;
         AppointmentId = appointmentId;
         AdmittedByUserId = admittedByUserId;
         Motivo = motivo.Trim();
+        DailyRate = dailyRate;
         FechaIngreso = DateTime.UtcNow;
         Estado = HospitalizationStayStatus.Activa;
     }
@@ -53,6 +60,7 @@ public sealed class HospitalizationStay : BaseEntity<Guid>
     public DateTime? FechaAlta { get; private set; }
     public HospitalizationStayStatus Estado { get; private set; }
     public string Motivo { get; private set; } = string.Empty;
+    public decimal DailyRate { get; private set; }
     public bool IsPaid { get; private set; } = false;
     public DateTime? PaidAt { get; private set; }
 

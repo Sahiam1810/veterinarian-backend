@@ -67,11 +67,20 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
             throw new ConflictException("La mascota ya tiene una estancia activa.");
         }
 
+        var availableServices = await unitOfWork.ServicesRepository.GetAvailableAsync(cancellationToken)
+            ?? Array.Empty<Domain.Services.Entities.Service>();
+        var dailyRate = availableServices
+            .FirstOrDefault(service =>
+                string.Equals(service.Name.Trim(), "Hospitalización", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(service.Name.Trim(), "Hospitalizacion", StringComparison.OrdinalIgnoreCase))
+            ?.Price ?? 0m;
+
         var stay = new HospitalizationStay(
             request.ClientPetId,
             request.AppointmentId,
             request.AdmittedByUserId,
-            request.Motivo);
+            request.Motivo,
+            dailyRate);
 
         await unitOfWork.HospitalizationStaysRepository.AddAsync(stay, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -254,7 +263,7 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
 
         var endDate = stay.FechaAlta ?? DateTime.UtcNow;
         var billedDays = Math.Max(1, (int)(endDate.Date - stay.FechaIngreso.Date).TotalDays);
-        const decimal dailyRate = 50000m;
+        var dailyRate = stay.DailyRate;
         var hospitalizationTotal = dailyRate * billedDays;
 
         // Insumos registrados
@@ -273,10 +282,8 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
 
         // Medicamentos con estado Entregada
         var medOrders = await unitOfWork.MedicationOrdersRepository.GetByHospitalizationStayAsync(
+            stay.Id,
             stay.AppointmentId,
-            stay.ClientPetId,
-            stay.FechaIngreso,
-            stay.FechaAlta,
             cancellationToken);
 
         var medList = new List<BillableItemDto>();
@@ -284,21 +291,21 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
         {
             foreach (var item in order.Items)
             {
+                var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
+                var unitPrice = medication?.Price ?? 0m;
                 medList.Add(new BillableItemDto(
-                    item.Medication?.Name ?? "Medicamento",
+                    medication?.Name ?? item.Medication?.Name ?? "Medicamento",
                     1m,
-                    0m,
-                    0m,
+                    unitPrice,
+                    unitPrice,
                     item.Notes));
             }
         }
 
         // Procedimientos con estado Completada
         var procOrders = await unitOfWork.ProcedureOrdersRepository.GetByHospitalizationStayAsync(
+            stay.Id,
             stay.AppointmentId,
-            stay.ClientPetId,
-            stay.FechaIngreso,
-            stay.FechaAlta,
             cancellationToken);
 
         var procList = new List<BillableItemDto>();
@@ -306,11 +313,13 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
         {
             foreach (var item in order.Items)
             {
+                var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
+                var unitPrice = procedure?.Price ?? 0m;
                 procList.Add(new BillableItemDto(
-                    item.Procedure?.Name ?? "Procedimiento",
+                    procedure?.Name ?? item.Procedure?.Name ?? "Procedimiento",
                     1m,
-                    0m,
-                    0m,
+                    unitPrice,
+                    unitPrice,
                     item.Notes));
             }
         }
