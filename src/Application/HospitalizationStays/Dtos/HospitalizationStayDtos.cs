@@ -35,3 +35,30 @@ public record HospitalizationStaffUserDto(
     Guid Id,
     string Name,
     string RoleName);
+
+public record BillableItemDto(
+    string Name,
+    decimal Quantity,
+    decimal UnitPrice,
+    decimal Total,
+    string? Notes);
+
+public record HospitalizationStayInvoiceDto(
+    Guid StayId,
+    string PetName,
+    string OwnerName,
+    DateTime AdmittedAt,
+    DateTime? DischargedAt,
+    string Status,
+    decimal DailyRate,
+    int BilledDays,
+    bool IsPaid,
+    DateTime? PaidAt,
+    decimal HospitalizationTotal,
+    decimal SuppliesTotal,
+    decimal MedicationsTotal,
+    decimal ProceduresTotal,
+    decimal Total,
+    IReadOnlyList<BillableItemDto> Supplies,
+    IReadOnlyList<BillableItemDto> Medications,
+    IReadOnlyList<BillableItemDto> Procedures);

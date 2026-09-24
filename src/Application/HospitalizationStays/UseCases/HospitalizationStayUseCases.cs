@@ -33,8 +33,12 @@ public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<
 
 public sealed record GetHospitalizationStaffQuery : IRequest<IReadOnlyCollection<HospitalizationStaffUserDto>>;
 
+
+public sealed record GetHospitalizationStayInvoiceQuery(Guid StayId) : IRequest<HospitalizationStayInvoiceDto>;
+
 public sealed record GetHospitalizationAdmissionOptionsQuery
     : IRequest<IReadOnlyCollection<HospitalizationAdmissionOptionDto>>;
+
 
 public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<AdmitHospitalizationStayCommand, Guid>
@@ -68,11 +72,20 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
             throw new ConflictException("La mascota ya tiene una estancia activa.");
         }
 
+        var availableServices = await unitOfWork.ServicesRepository.GetAvailableAsync(cancellationToken)
+            ?? Array.Empty<Domain.Services.Entities.Service>();
+        var dailyRate = availableServices
+            .FirstOrDefault(service =>
+                string.Equals(service.Name.Trim(), "Hospitalización", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(service.Name.Trim(), "Hospitalizacion", StringComparison.OrdinalIgnoreCase))
+            ?.Price ?? 0m;
+
         var stay = new HospitalizationStay(
             request.ClientPetId,
             request.AppointmentId,
             request.AdmittedByUserId,
-            request.Motivo);
+            request.Motivo,
+            dailyRate);
 
         await unitOfWork.HospitalizationStaysRepository.AddAsync(stay, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -240,6 +253,108 @@ public sealed class GetHospitalizationStaffQueryHandler(IUnitOfWork unitOfWork)
     }
 }
 
+
+public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetHospitalizationStayInvoiceQuery, HospitalizationStayInvoiceDto>
+{
+    public async Task<HospitalizationStayInvoiceDto> Handle(
+        GetHospitalizationStayInvoiceQuery request,
+        CancellationToken cancellationToken)
+    {
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(request.StayId, cancellationToken)
+            ?? throw new NotFoundException("Estancia de hospitalización no encontrada.");
+
+        var petName = stay.ClientPet?.Pet?.Name?.Value ?? "Mascota";
+        var ownerName = stay.ClientPet?.Client?.FullName?.Value ?? "Cliente";
+
+        var endDate = stay.FechaAlta ?? DateTime.UtcNow;
+        var billedDays = Math.Max(1, (int)(endDate.Date - stay.FechaIngreso.Date).TotalDays);
+        var dailyRate = stay.DailyRate;
+        var hospitalizationTotal = dailyRate * billedDays;
+
+        // Insumos registrados
+        var supplyConsumptions = await unitOfWork.SupplyConsumptionsRepository.GetByHospitalizationStayIdAsync(stay.Id, cancellationToken);
+        var supplyList = new List<BillableItemDto>();
+        foreach (var sc in supplyConsumptions)
+        {
+            var supply = await unitOfWork.SuppliesRepository.GetByIdAsync(sc.SupplyId, cancellationToken);
+            supplyList.Add(new BillableItemDto(
+                supply?.Name ?? "Insumo",
+                sc.Quantity,
+                sc.UnitPrice,
+                sc.Total,
+                sc.Notes));
+        }
+
+        // Medicamentos con estado Entregada
+        var medOrders = await unitOfWork.MedicationOrdersRepository.GetByHospitalizationStayAsync(
+            stay.Id,
+            stay.AppointmentId,
+            cancellationToken);
+
+        var medList = new List<BillableItemDto>();
+        foreach (var order in medOrders.Where(o => o.Status == "Entregada"))
+        {
+            foreach (var item in order.Items)
+            {
+                var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
+                var unitPrice = medication?.Price ?? 0m;
+                medList.Add(new BillableItemDto(
+                    medication?.Name ?? item.Medication?.Name ?? "Medicamento",
+                    1m,
+                    unitPrice,
+                    unitPrice,
+                    item.Notes));
+            }
+        }
+
+        // Procedimientos con estado Completada
+        var procOrders = await unitOfWork.ProcedureOrdersRepository.GetByHospitalizationStayAsync(
+            stay.Id,
+            stay.AppointmentId,
+            cancellationToken);
+
+        var procList = new List<BillableItemDto>();
+        foreach (var order in procOrders.Where(o => o.Status == "Completada"))
+        {
+            foreach (var item in order.Items)
+            {
+                var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
+                var unitPrice = procedure?.Price ?? 0m;
+                procList.Add(new BillableItemDto(
+                    procedure?.Name ?? item.Procedure?.Name ?? "Procedimiento",
+                    1m,
+                    unitPrice,
+                    unitPrice,
+                    item.Notes));
+            }
+        }
+
+        var suppliesTotal = supplyList.Sum(s => s.Total);
+        var medicationsTotal = medList.Sum(m => m.Total);
+        var proceduresTotal = procList.Sum(p => p.Total);
+        var grandTotal = hospitalizationTotal + suppliesTotal + medicationsTotal + proceduresTotal;
+
+        return new HospitalizationStayInvoiceDto(
+            stay.Id,
+            petName,
+            ownerName,
+            stay.FechaIngreso,
+            stay.FechaAlta,
+            stay.Estado.ToStatusLabel(),
+            dailyRate,
+            billedDays,
+            stay.IsPaid,
+            stay.PaidAt,
+            hospitalizationTotal,
+            suppliesTotal,
+            medicationsTotal,
+            proceduresTotal,
+            grandTotal,
+            supplyList,
+            medList,
+            procList);
+
 public sealed class GetHospitalizationAdmissionOptionsQueryHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<GetHospitalizationAdmissionOptionsQuery, IReadOnlyCollection<HospitalizationAdmissionOptionDto>>
 {
@@ -261,5 +376,6 @@ public sealed class GetHospitalizationAdmissionOptionsQueryHandler(IUnitOfWork u
             .OrderBy(option => option.PetName)
             .ThenBy(option => option.OwnerName)
             .ToList();
+
     }
 }
