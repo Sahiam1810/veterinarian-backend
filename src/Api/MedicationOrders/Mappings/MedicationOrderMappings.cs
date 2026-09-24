@@ -29,7 +29,8 @@ public static class MedicationOrderMappings
             order.Status,
             order.CreatedAt,
             order.UpdatedAt,
-            order.Items.Select(i => i.ToResponse()).ToList());
+            order.Items.Select(i => i.ToResponse()).ToList(),
+            order.HospitalizationStayId);
     }
 
     public static IEnumerable<MedicationOrderDto> ToResponse(this IEnumerable<MedicationOrder> orders)
@@ -51,7 +52,8 @@ public static class MedicationOrderMappings
             dto.IsInHouse,
             dto.ReferredTo,
             dto.ReferralReason,
-            items);
+            items,
+            dto.HospitalizationStayId);
     }
 
     public static PendingMedicationOrderDto ToPendingDto(this MedicationOrder order)
@@ -64,6 +66,8 @@ public static class MedicationOrderMappings
             order.IsInHouse,
             order.Status,
             order.CreatedAt,
-            order.Items.Select(i => i.ToDto()).ToList());
+            order.Items.Select(i => i.ToDto()).ToList(),
+            order.HospitalizationStayId);
     }
 }
+

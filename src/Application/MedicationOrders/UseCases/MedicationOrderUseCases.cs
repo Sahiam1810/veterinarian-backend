@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.HospitalizationStays.Entities;
 using Domain.MedicationOrders.Entities;
 using FluentValidation;
 using MediatR;
@@ -10,11 +11,12 @@ public sealed record MedicationOrderItemInput(Guid MedicationId, string? Notes);
 
 public sealed record CreateMedicationOrderCommand(
     Guid ClientPetId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
-    List<MedicationOrderItemInput>? Items) : IRequest<MedicationOrder>;
+    List<MedicationOrderItemInput>? Items,
+    Guid? HospitalizationStayId = null) : IRequest<MedicationOrder>;
 
 public sealed record CompleteMedicationOrderCommand(Guid Id) : IRequest<Unit>;
 
@@ -32,22 +34,59 @@ public sealed class CreateMedicationOrderCommandHandler(IUnitOfWork unitOfWork)
         CreateMedicationOrderCommand request,
         CancellationToken cancellationToken)
     {
-        var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(request.AppointmentId, cancellationToken);
-        if (appointment is null)
+        Guid veterinarianId;
+
+        if (request.AppointmentId is Guid appointmentId && appointmentId != Guid.Empty)
         {
-            throw new NotFoundException($"No se encontró la cita con ID '{request.AppointmentId}'.");
+            var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(appointmentId, cancellationToken);
+            if (appointment is null)
+            {
+                throw new NotFoundException($"No se encontró la cita con ID '{appointmentId}'.");
+            }
+
+            if (appointment.ClientPetId != request.ClientPetId)
+            {
+                throw new BadRequestException("La mascota de la orden no coincide con la cita.");
+            }
+
+            veterinarianId = appointment.VeterinarianId;
+        }
+        else if (request.HospitalizationStayId is Guid stayId && stayId != Guid.Empty)
+        {
+            var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(stayId, cancellationToken);
+            if (stay is null)
+            {
+                throw new NotFoundException($"No se encontró la estancia de hospitalización con ID '{stayId}'.");
+            }
+
+            if (stay.Estado != HospitalizationStayStatus.Activa)
+            {
+                throw new ConflictException("No se puede crear una orden en una estancia dada de alta.");
+            }
+
+            if (stay.ClientPetId != request.ClientPetId)
+            {
+                throw new BadRequestException("La mascota de la orden no coincide con la estancia.");
+            }
+
+            veterinarianId = stay.AdmittedByUserId;
+        }
+        else
+        {
+            throw new BadRequestException("Debe especificar exactamente uno de los orígenes: AppointmentId o HospitalizationStayId.");
         }
 
         var itemsTuple = request.Items?.Select(i => (i.MedicationId, i.Notes));
 
         var medicationOrder = new MedicationOrder(
             request.ClientPetId,
-            appointment.VeterinarianId,
+            veterinarianId,
             request.AppointmentId,
             request.IsInHouse,
             request.ReferredTo,
             request.ReferralReason,
-            itemsTuple);
+            itemsTuple,
+            request.HospitalizationStayId);
 
         await unitOfWork.MedicationOrdersRepository.AddAsync(medicationOrder, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -66,6 +105,16 @@ public sealed class CompleteMedicationOrderCommandHandler(IUnitOfWork unitOfWork
         if (order is null)
         {
             throw new NotFoundException($"No se encontró la orden de medicamento con ID '{request.Id}'.");
+        }
+
+        if (string.Equals(order.Status, "Entregada", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException("La orden de medicamento ya se encuentra entregada.");
+        }
+
+        if (string.Equals(order.Status, "Cancelada", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException("No se puede entregar una orden de medicamento cancelada.");
         }
 
         order.Complete();
@@ -122,8 +171,9 @@ public sealed class CreateMedicationOrderCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.ClientPetId)
             .NotEmpty().WithMessage("El paciente es obligatorio.");
 
-        RuleFor(x => x.AppointmentId)
-            .NotEmpty().WithMessage("La consulta de origen es obligatoria.");
+        RuleFor(x => x)
+            .Must(x => (x.AppointmentId.HasValue && x.AppointmentId.Value != Guid.Empty) ^ (x.HospitalizationStayId.HasValue && x.HospitalizationStayId.Value != Guid.Empty))
+            .WithMessage("Debe especificar exactamente uno de los orígenes: AppointmentId o HospitalizationStayId.");
 
         When(x => x.IsInHouse, () =>
         {
@@ -155,3 +205,4 @@ public sealed class CreateMedicationOrderCommandValidator : AbstractValidator<Cr
         });
     }
 }
+

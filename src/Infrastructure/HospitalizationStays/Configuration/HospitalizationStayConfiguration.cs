@@ -101,6 +101,9 @@ public sealed class HospitalizationStayConfiguration : IEntityTypeConfiguration<
         //   CREATE UNIQUE INDEX UX_HOSP_STAY_ACTIVE_PER_PET
         //     ON HOSPITALIZATION_STAYS (CASE WHEN ESTADO = 0 THEN CLIENT_PET_ID END)
         builder.HasIndex(x => new { x.ClientPetId, x.Estado })
+            .IsUnique()
+            .HasFilter("ESTADO = 0")
             .HasDatabaseName("IX_HOSP_STAY_ACTIVE_PER_PET");
     }
 }
+

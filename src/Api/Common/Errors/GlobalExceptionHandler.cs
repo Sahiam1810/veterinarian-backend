@@ -241,7 +241,9 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             NotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             KeyNotFoundException notFound => (StatusCodes.Status404NotFound, notFound.Message, null),
             ConflictException conflict => (StatusCodes.Status409Conflict, conflict.Message, conflict.Code),
+            InvalidOperationException invalidOp => (StatusCodes.Status409Conflict, invalidOp.Message, null),
             DbUpdateException => (StatusCodes.Status409Conflict, "Data integrity violation", null),
+
             _ => (StatusCodes.Status500InternalServerError, "Unexpected error", null)
         };
 

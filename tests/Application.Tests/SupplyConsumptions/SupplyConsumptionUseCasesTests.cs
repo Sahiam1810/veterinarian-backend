@@ -18,9 +18,12 @@ public sealed class SupplyConsumptionUseCasesTests
         var stayId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var supply = new Supply("Gasa esteril", "unidad", 1500m, 50);
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(Guid.NewGuid(), null, userId, "Ingreso");
 
-        var uow = CreateUnitOfWork(out var suppliesRepo, out var consumptionRepo);
+        var uow = CreateUnitOfWork(out var suppliesRepo, out var consumptionRepo, out var stayRepo);
+        stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(stay);
         suppliesRepo.GetByIdAsync(supply.Id, Arg.Any<CancellationToken>()).Returns(supply);
+
 
         var command = new RegisterSupplyConsumptionCommand(stayId, supply.Id, 5, userId, "Uso en cirugia");
 
@@ -49,8 +52,11 @@ public sealed class SupplyConsumptionUseCasesTests
         var supplyId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        var uow = CreateUnitOfWork(out var suppliesRepo, out _);
+        var uow = CreateUnitOfWork(out var suppliesRepo, out _, out var stayRepo);
+        stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>())
+            .Returns(new Domain.HospitalizationStays.Entities.HospitalizationStay(Guid.NewGuid(), null, userId, "Ingreso"));
         suppliesRepo.GetByIdAsync(supplyId, Arg.Any<CancellationToken>()).Returns((Supply?)null);
+
 
         var command = new RegisterSupplyConsumptionCommand(stayId, supplyId, 5, userId);
 
@@ -67,7 +73,9 @@ public sealed class SupplyConsumptionUseCasesTests
         var userId = Guid.NewGuid();
         var supply = new Supply("Gasa esteril", "unidad", 1500m, 50, isActive: false);
 
-        var uow = CreateUnitOfWork(out var suppliesRepo, out _);
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(Guid.NewGuid(), null, userId, "Ingreso");
+        var uow = CreateUnitOfWork(out var suppliesRepo, out _, out var stayRepo);
+        stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(stay);
         suppliesRepo.GetByIdAsync(supply.Id, Arg.Any<CancellationToken>()).Returns(supply);
 
         var command = new RegisterSupplyConsumptionCommand(stayId, supply.Id, 5, userId);
@@ -75,9 +83,46 @@ public sealed class SupplyConsumptionUseCasesTests
         var action = () => new RegisterSupplyConsumptionCommandHandler(uow)
             .Handle(command, CancellationToken.None);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(action);
+        var ex = await Assert.ThrowsAsync<ConflictException>(action);
         Assert.Contains("inactivo", ex.Message);
     }
+
+    [Fact]
+    public async Task Register_throws_NotFoundException_when_stay_does_not_exist()
+    {
+        var stayId = Guid.NewGuid();
+        var supplyId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var uow = CreateUnitOfWork(out _, out _, out var stayRepo);
+        stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>()).Returns((Domain.HospitalizationStays.Entities.HospitalizationStay?)null);
+
+        var command = new RegisterSupplyConsumptionCommand(stayId, supplyId, 5, userId);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => new RegisterSupplyConsumptionCommandHandler(uow)
+            .Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Register_throws_ConflictException_when_stay_is_discharged()
+    {
+        var stayId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var supply = new Supply("Gasa esteril", "unidad", 1500m, 50);
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(Guid.NewGuid(), null, userId, "Ingreso");
+        stay.Discharge();
+
+        var uow = CreateUnitOfWork(out var suppliesRepo, out _, out var stayRepo);
+        stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(stay);
+        suppliesRepo.GetByIdAsync(supply.Id, Arg.Any<CancellationToken>()).Returns(supply);
+
+        var command = new RegisterSupplyConsumptionCommand(stayId, supply.Id, 5, userId);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => new RegisterSupplyConsumptionCommandHandler(uow)
+            .Handle(command, CancellationToken.None));
+        Assert.Contains("dada de alta", ex.Message);
+    }
+
 
     [Fact]
     public async Task Register_throws_InvalidOperationException_when_stock_insufficient()
@@ -86,8 +131,11 @@ public sealed class SupplyConsumptionUseCasesTests
         var userId = Guid.NewGuid();
         var supply = new Supply("Gasa esteril", "unidad", 1500m, 3);
 
-        var uow = CreateUnitOfWork(out var suppliesRepo, out _);
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(Guid.NewGuid(), null, userId, "Ingreso");
+        var uow = CreateUnitOfWork(out var suppliesRepo, out _, out var stayRepo);
+        stayRepo.GetByIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(stay);
         suppliesRepo.GetByIdAsync(supply.Id, Arg.Any<CancellationToken>()).Returns(supply);
+
 
         var command = new RegisterSupplyConsumptionCommand(stayId, supply.Id, 5, userId);
 
@@ -110,7 +158,7 @@ public sealed class SupplyConsumptionUseCasesTests
             new(stayId, supplyId, 1, 1000m, userId, "Nota 2")
         };
 
-        var uow = CreateUnitOfWork(out _, out var consumptionRepo);
+        var uow = CreateUnitOfWork(out _, out var consumptionRepo, out _);
         consumptionRepo.GetByHospitalizationStayIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(list);
 
         var result = await new GetSupplyConsumptionsByStayIdQueryHandler(uow)
@@ -123,7 +171,8 @@ public sealed class SupplyConsumptionUseCasesTests
     public async Task GetTotalByStayId_returns_total_cost()
     {
         var stayId = Guid.NewGuid();
-        var uow = CreateUnitOfWork(out _, out var consumptionRepo);
+        var uow = CreateUnitOfWork(out _, out var consumptionRepo, out _);
+
         consumptionRepo.GetTotalByHospitalizationStayIdAsync(stayId, Arg.Any<CancellationToken>()).Returns(3500m);
 
         var total = await new GetSupplyConsumptionTotalByStayIdQueryHandler(uow)
@@ -134,13 +183,17 @@ public sealed class SupplyConsumptionUseCasesTests
 
     private static IUnitOfWork CreateUnitOfWork(
         out ISupplyRepository suppliesRepo,
-        out ISupplyConsumptionRepository consumptionRepo)
+        out ISupplyConsumptionRepository consumptionRepo,
+        out Application.HospitalizationStays.Abstraction.IHospitalizationStayRepository stayRepo)
     {
         var uow = Substitute.For<IUnitOfWork>();
         suppliesRepo = Substitute.For<ISupplyRepository>();
         consumptionRepo = Substitute.For<ISupplyConsumptionRepository>();
+        stayRepo = Substitute.For<Application.HospitalizationStays.Abstraction.IHospitalizationStayRepository>();
         uow.SuppliesRepository.Returns(suppliesRepo);
         uow.SupplyConsumptionsRepository.Returns(consumptionRepo);
+        uow.HospitalizationStaysRepository.Returns(stayRepo);
         return uow;
     }
+
 }

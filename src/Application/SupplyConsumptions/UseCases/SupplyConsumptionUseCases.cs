@@ -1,8 +1,10 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.HospitalizationStays.Entities;
 using Domain.SupplyConsumptions.Entities;
 using FluentValidation;
 using MediatR;
+
 
 namespace Application.SupplyConsumptions.UseCases;
 
@@ -42,6 +44,7 @@ public sealed class GetSupplyConsumptionTotalByStayIdQueryHandler(IUnitOfWork un
     }
 }
 
+
 public sealed class RegisterSupplyConsumptionCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<RegisterSupplyConsumptionCommand, SupplyConsumption>
 {
@@ -49,6 +52,17 @@ public sealed class RegisterSupplyConsumptionCommandHandler(IUnitOfWork unitOfWo
         RegisterSupplyConsumptionCommand request,
         CancellationToken cancellationToken)
     {
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(request.HospitalizationStayId, cancellationToken);
+        if (stay is null)
+        {
+            throw new NotFoundException($"No se encontró la estancia de hospitalización con ID '{request.HospitalizationStayId}'.");
+        }
+
+        if (stay.Estado != HospitalizationStayStatus.Activa)
+        {
+            throw new ConflictException("No se pueden registrar consumos de insumos en una estancia dada de alta.");
+        }
+
         var supply = await unitOfWork.SuppliesRepository.GetByIdAsync(request.SupplyId, cancellationToken);
         if (supply is null)
         {
@@ -57,7 +71,7 @@ public sealed class RegisterSupplyConsumptionCommandHandler(IUnitOfWork unitOfWo
 
         if (!supply.IsActive)
         {
-            throw new InvalidOperationException("El insumo seleccionado está inactivo y no se puede consumir.");
+            throw new ConflictException("El insumo seleccionado está inactivo y no se puede consumir.");
         }
 
         // Deducts stock (throws InvalidOperationException("Stock insuficiente.") if quantity > stock)
@@ -78,6 +92,7 @@ public sealed class RegisterSupplyConsumptionCommandHandler(IUnitOfWork unitOfWo
         return consumption;
     }
 }
+
 
 // Validators
 public sealed class RegisterSupplyConsumptionCommandValidator : AbstractValidator<RegisterSupplyConsumptionCommand>

@@ -294,5 +294,28 @@ public sealed class HospitalizationStayCommandHandlerTests
         var ex = Assert.Throws<InvalidOperationException>(() => stay.RegisterPayment());
         Assert.Equal("La estancia ya está pagada.", ex.Message);
     }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T16_admit_stay_concurrent_requests_handled_safely()
+    {
+        clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns(new Domain.ClientsPets.Entities.ClientPetEntity(
+                    new Domain.Clients.Entities.ClientEntity("Juan Pérez", "juan@vet.com", "12345678", "5551010", null),
+                    new Domain.Pets.Entities.PetEntity("Perry", 5, "M", 12.5m, null, DefaultSpecies, DefaultRace),
+                true));
+
+        staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+
+        var task1 = admitHandler.Handle(new AdmitHospitalizationStayCommand(ClientPetId, null, "Ingreso A", AdmittingUserId), CancellationToken.None);
+        var task2 = admitHandler.Handle(new AdmitHospitalizationStayCommand(ClientPetId, null, "Ingreso B", AdmittingUserId), CancellationToken.None);
+
+        var results = await Task.WhenAll(task1, task2);
+
+        Assert.Equal(2, results.Length);
+        Assert.NotEqual(Guid.Empty, results[0]);
+        Assert.NotEqual(Guid.Empty, results[1]);
+    }
 }
+
 

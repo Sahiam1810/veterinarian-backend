@@ -30,7 +30,8 @@ public static class ProcedureOrderMappings
             order.ResultFileUrl,
             order.CreatedAt,
             order.UpdatedAt,
-            order.Items.Select(i => i.ToResponse()).ToList());
+            order.Items.Select(i => i.ToResponse()).ToList(),
+            order.HospitalizationStayId);
     }
 
     public static IEnumerable<ProcedureOrderDto> ToResponse(this IEnumerable<ProcedureOrder> orders)
@@ -52,7 +53,8 @@ public static class ProcedureOrderMappings
             dto.IsInHouse,
             dto.ReferredTo,
             dto.ReferralReason,
-            items);
+            items,
+            dto.HospitalizationStayId);
     }
 
     public static PendingProcedureOrderDto ToPendingDto(this ProcedureOrder order)
@@ -66,6 +68,8 @@ public static class ProcedureOrderMappings
             order.Status,
             order.ResultFileUrl,
             order.CreatedAt,
-            order.Items.Select(i => i.ToDto()).ToList());
+            order.Items.Select(i => i.ToDto()).ToList(),
+            order.HospitalizationStayId);
     }
 }
+

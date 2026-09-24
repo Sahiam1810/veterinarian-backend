@@ -78,6 +78,8 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return stay.Id;
+
+
     }
 }
 

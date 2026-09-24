@@ -20,6 +20,7 @@ public class ProcedureOrderCommandHandlerTests
     private readonly IProcedureOrderRepository _orderRepo = Substitute.For<IProcedureOrderRepository>();
     private readonly IVeterinarianRepository _vetRepo = Substitute.For<IVeterinarianRepository>();
     private readonly IAppointmentRepository _appointmentRepo = Substitute.For<IAppointmentRepository>();
+    private readonly Application.HospitalizationStays.Abstraction.IHospitalizationStayRepository _stayRepo = Substitute.For<Application.HospitalizationStays.Abstraction.IHospitalizationStayRepository>();
     private readonly ISender _sender = Substitute.For<ISender>();
     private readonly CreateProcedureOrderCommandHandler _createHandler;
     private readonly CompleteProcedureOrderCommandHandler _completeHandler;
@@ -31,27 +32,35 @@ public class ProcedureOrderCommandHandlerTests
         _unitOfWork.ProcedureOrdersRepository.Returns(_orderRepo);
         _unitOfWork.VeterinariansRepository.Returns(_vetRepo);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepo);
+        _unitOfWork.HospitalizationStaysRepository.Returns(_stayRepo);
         _createHandler = new CreateProcedureOrderCommandHandler(_unitOfWork);
         _completeHandler = new CompleteProcedureOrderCommandHandler(_unitOfWork, _sender);
     }
 
-    private Appointment BuildAppointment(Guid appointmentId)
+
+    private Appointment BuildAppointment(Guid appointmentId, Guid? clientPetId = null)
     {
         var apt = (Appointment)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Appointment));
         typeof(Appointment).GetProperty("Id")?.SetValue(apt, appointmentId);
         typeof(Appointment).GetProperty("VeterinarianId")?.SetValue(apt, VetId);
+        if (clientPetId.HasValue)
+        {
+            typeof(Appointment).GetProperty("ClientPetId")?.SetValue(apt, clientPetId.Value);
+        }
         return apt;
     }
+
 
     [Fact]
     public async Task CreateInHouseProcedureOrder_Succeeds()
     {
+        var clientPetId = Guid.NewGuid();
         var appointmentId = Guid.NewGuid();
         _appointmentRepo.GetByIdAsync(appointmentId, Arg.Any<CancellationToken>())
-            .Returns(BuildAppointment(appointmentId));
+            .Returns(BuildAppointment(appointmentId, clientPetId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: clientPetId,
             AppointmentId: appointmentId,
             IsInHouse: true,
             ReferredTo: null,
@@ -60,6 +69,7 @@ public class ProcedureOrderCommandHandlerTests
             {
                 new(Guid.NewGuid(), "Ecografía abdominal completa")
             });
+
 
         var result = await _createHandler.Handle(command, CancellationToken.None);
 
@@ -76,17 +86,19 @@ public class ProcedureOrderCommandHandlerTests
     [Fact]
     public async Task CreateReferredProcedureOrder_Succeeds()
     {
+        var clientPetId = Guid.NewGuid();
         var appointmentId = Guid.NewGuid();
         _appointmentRepo.GetByIdAsync(appointmentId, Arg.Any<CancellationToken>())
-            .Returns(BuildAppointment(appointmentId));
+            .Returns(BuildAppointment(appointmentId, clientPetId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: clientPetId,
             AppointmentId: appointmentId,
             IsInHouse: false,
             ReferredTo: "Centro de Diagnóstico Externo",
             ReferralReason: "Equipo especializado no disponible",
             Items: null);
+
 
         var result = await _createHandler.Handle(command, CancellationToken.None);
 
@@ -102,12 +114,13 @@ public class ProcedureOrderCommandHandlerTests
     [Fact]
     public async Task CreateInHouseProcedureOrder_WithoutItems_ThrowsArgumentException()
     {
+        var clientPetId = Guid.NewGuid();
         var appointmentId = Guid.NewGuid();
         _appointmentRepo.GetByIdAsync(appointmentId, Arg.Any<CancellationToken>())
-            .Returns(BuildAppointment(appointmentId));
+            .Returns(BuildAppointment(appointmentId, clientPetId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: clientPetId,
             AppointmentId: appointmentId,
             IsInHouse: true,
             ReferredTo: null,
@@ -121,12 +134,13 @@ public class ProcedureOrderCommandHandlerTests
     [Fact]
     public async Task CreateReferredProcedureOrder_WithItems_ThrowsArgumentException()
     {
+        var clientPetId = Guid.NewGuid();
         var appointmentId = Guid.NewGuid();
         _appointmentRepo.GetByIdAsync(appointmentId, Arg.Any<CancellationToken>())
-            .Returns(BuildAppointment(appointmentId));
+            .Returns(BuildAppointment(appointmentId, clientPetId));
 
         var command = new CreateProcedureOrderCommand(
-            ClientPetId: Guid.NewGuid(),
+            ClientPetId: clientPetId,
             AppointmentId: appointmentId,
             IsInHouse: false,
             ReferredTo: "Centro X",
@@ -136,6 +150,7 @@ public class ProcedureOrderCommandHandlerTests
         await Assert.ThrowsAsync<ArgumentException>(() =>
             _createHandler.Handle(command, CancellationToken.None));
     }
+
 
     [Fact]
     public async Task CompleteProcedureOrder_SetsStatusAndDispatchesNotification()
@@ -238,9 +253,99 @@ public class ProcedureOrderCommandHandlerTests
         _orderRepo.GetByIdAsync(order.Id, Arg.Any<CancellationToken>())
             .Returns(order);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsAsync<ConflictException>(() =>
             _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id), CancellationToken.None));
     }
+
+    [Fact]
+    public async Task CompleteProcedureOrder_WhenCancelled_ThrowsConflictException()
+    {
+        var order = new ProcedureOrder(
+            Guid.NewGuid(),
+            VetId,
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Prueba") });
+        order.Cancel();
+
+        _orderRepo.GetByIdAsync(order.Id, Arg.Any<CancellationToken>())
+            .Returns(order);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CreateProcedureOrder_WithHospitalizationStay_Succeeds()
+    {
+        var clientPetId = Guid.NewGuid();
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(clientPetId, null, VetId, "Monitoreo");
+        _stayRepo.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
+
+        var command = new CreateProcedureOrderCommand(
+            ClientPetId: clientPetId,
+            AppointmentId: null,
+            IsInHouse: true,
+            ReferredTo: null,
+            ReferralReason: null,
+            Items: new List<ProcedureOrderItemInput> { new(Guid.NewGuid(), "Rayos X estancia") },
+            HospitalizationStayId: stay.Id);
+
+        var result = await _createHandler.Handle(command, CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(stay.Id, result.HospitalizationStayId);
+        Assert.Null(result.AppointmentId);
+        Assert.Equal("Pendiente", result.Status);
+    }
+
+    [Fact]
+    public async Task CreateProcedureOrder_WithDischargedStay_ThrowsConflictException()
+    {
+        var clientPetId = Guid.NewGuid();
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(clientPetId, null, VetId, "Monitoreo");
+        stay.Discharge();
+        _stayRepo.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
+
+        var command = new CreateProcedureOrderCommand(
+            ClientPetId: clientPetId,
+            AppointmentId: null,
+            IsInHouse: true,
+            ReferredTo: null,
+            ReferralReason: null,
+            Items: new List<ProcedureOrderItemInput> { new(Guid.NewGuid(), "Rayos X alta") },
+            HospitalizationStayId: stay.Id);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            _createHandler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CreateProcedureOrder_WithMismatchedPetInStay_ThrowsBadRequestException()
+    {
+        var stayPetId = Guid.NewGuid();
+        var orderPetId = Guid.NewGuid();
+        var stay = new Domain.HospitalizationStays.Entities.HospitalizationStay(stayPetId, null, VetId, "Monitoreo");
+        _stayRepo.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
+
+        var command = new CreateProcedureOrderCommand(
+            ClientPetId: orderPetId,
+            AppointmentId: null,
+            IsInHouse: true,
+            ReferredTo: null,
+            ReferralReason: null,
+            Items: new List<ProcedureOrderItemInput> { new(Guid.NewGuid(), "Rayos X pet mala") },
+            HospitalizationStayId: stay.Id);
+
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            _createHandler.Handle(command, CancellationToken.None));
+    }
+
 
     [Fact]
     public async Task GetPendingProcedureOrders_ReturnsPendingOrdersFromRepository()

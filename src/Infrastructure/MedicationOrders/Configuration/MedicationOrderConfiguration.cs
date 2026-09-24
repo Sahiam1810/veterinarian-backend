@@ -41,9 +41,18 @@ public class MedicationOrderConfiguration : IEntityTypeConfiguration<MedicationO
             .HasColumnName("APPOINTMENT_ID")
             .HasColumnType("VARCHAR2(36)")
             .HasConversion(
-                guid => guid.ToString(),
-                str => Guid.Parse(str))
-            .IsRequired();
+                guid => guid.HasValue ? guid.Value.ToString() : null,
+                str => string.IsNullOrEmpty(str) ? null : Guid.Parse(str))
+            .IsRequired(false);
+
+        builder.Property(x => x.HospitalizationStayId)
+            .HasColumnName("HOSPITALIZATION_STAY_ID")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.HasValue ? guid.Value.ToString() : null,
+                str => string.IsNullOrEmpty(str) ? null : Guid.Parse(str))
+            .IsRequired(false);
+
 
         builder.Property(x => x.IsInHouse)
             .HasColumnName("IS_IN_HOUSE")

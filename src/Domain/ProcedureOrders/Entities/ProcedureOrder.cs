@@ -1,6 +1,7 @@
 using Domain.Appointments.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Common;
+using Domain.HospitalizationStays.Entities;
 using Domain.MedicalOrders;
 using Domain.Veterinarians.Entities;
 
@@ -17,11 +18,12 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
     public ProcedureOrder(
         Guid clientPetId,
         Guid veterinarianId,
-        Guid appointmentId,
+        Guid? appointmentId,
         bool isInHouse,
         string? referredTo,
         string? referralReason,
-        IEnumerable<(Guid ProcedureId, string? Notes)>? items = null)
+        IEnumerable<(Guid ProcedureId, string? Notes)>? items = null,
+        Guid? hospitalizationStayId = null)
     {
         if (clientPetId == Guid.Empty)
         {
@@ -33,9 +35,17 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
             throw new ArgumentException("El veterinario es obligatorio.", nameof(veterinarianId));
         }
 
-        if (appointmentId == Guid.Empty)
+        var hasAppointment = appointmentId.HasValue && appointmentId.Value != Guid.Empty;
+        var hasStay = hospitalizationStayId.HasValue && hospitalizationStayId.Value != Guid.Empty;
+
+        if (!hasAppointment && !hasStay)
         {
-            throw new ArgumentException("La consulta de origen (AppointmentId) es obligatoria.", nameof(appointmentId));
+            throw new ArgumentException("Debe especificar exactamente uno de los orígenes: AppointmentId o HospitalizationStayId.");
+        }
+
+        if (hasAppointment && hasStay)
+        {
+            throw new ArgumentException("La orden no puede estar asociada simultáneamente a una consulta y a una estancia de hospitalización.");
         }
 
         var itemList = items?.ToList() ?? new List<(Guid ProcedureId, string? Notes)>();
@@ -45,7 +55,8 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;
         VeterinarianId = veterinarianId;
-        AppointmentId = appointmentId;
+        AppointmentId = hasAppointment ? appointmentId : null;
+        HospitalizationStayId = hasStay ? hospitalizationStayId : null;
         IsInHouse = isInHouse;
         ReferredTo = isInHouse ? null : referredTo?.Trim();
         ReferralReason = isInHouse ? null : referralReason?.Trim();
@@ -68,8 +79,11 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
     public Guid VeterinarianId { get; private set; }
     public Veterinarian? Veterinarian { get; private set; }
 
-    public Guid AppointmentId { get; private set; }
+    public Guid? AppointmentId { get; private set; }
     public Appointment? Appointment { get; private set; }
+
+    public Guid? HospitalizationStayId { get; private set; }
+    public HospitalizationStay? HospitalizationStay { get; private set; }
 
     public bool IsInHouse { get; private set; }
     public string? ReferredTo { get; private set; }
@@ -82,13 +96,40 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
 
     public void Complete(string? resultFileUrl = null)
     {
-        if (Status == "Completada")
+        if (string.Equals(Status, "Completada", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("La orden de procedimiento ya se encuentra completada.");
+        }
+
+        if (string.Equals(Status, "Cancelada", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("No se puede completar una orden de procedimiento cancelada.");
+        }
+
+        if (!string.Equals(Status, "Pendiente", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Transición de estado no permitida para la orden de procedimiento: {Status}.");
         }
 
         Status = "Completada";
         ResultFileUrl = string.IsNullOrWhiteSpace(resultFileUrl) ? null : resultFileUrl.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void Cancel()
+    {
+        if (string.Equals(Status, "Completada", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("No se puede cancelar una orden de procedimiento completada.");
+        }
+
+        if (string.Equals(Status, "Cancelada", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("La orden de procedimiento ya se encuentra cancelada.");
+        }
+
+        Status = "Cancelada";
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
+
