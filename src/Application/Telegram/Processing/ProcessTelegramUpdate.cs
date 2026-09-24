@@ -36,6 +36,11 @@ public sealed class ProcessTelegramUpdateHandler(
         "¡Hola! Puedes hacer preguntas generales sobre Huellitas y sus servicios. " +
         "Si quieres agendar una cita o registrar una mascota, te pediré tu nombre, cédula, " +
         "correo y teléfono para registrarte.";
+    // SENDER_TYPES "Agente IA" (seed 82000000-...-0002). Hardcodeado con el mismo
+    // criterio que Telegram__PendingEscalationStatusId / el id de "Cliente".
+    private static readonly Guid AiAgentSenderTypeId =
+        Guid.Parse("82000000-0000-0000-0000-000000000002");
+
     private const string EscalationConfirmedReply =
         "Tu conversación está siendo atendida por un asesor.";
     // Decisión 1 (Ticket B2): un invitado sin vincular nunca escala directamente.
@@ -182,6 +187,11 @@ public sealed class ProcessTelegramUpdateHandler(
             {
                 await EscalateAsync(context, messageText, cancellationToken);
                 await DeliverAsync(update, EscalationConfirmedReply, cancellationToken);
+                await PersistAssistantMessageAsync(
+                    context.ConversationId,
+                    userLink.ClientId,
+                    EscalationConfirmedReply,
+                    cancellationToken);
                 return;
             }
 
@@ -193,6 +203,14 @@ public sealed class ProcessTelegramUpdateHandler(
                 update.Id,
                 cancellationToken);
             await DeliverAsync(update, ResponseText(result), cancellationToken);
+            if (!string.IsNullOrWhiteSpace(result.Message))
+            {
+                await PersistAssistantMessageAsync(
+                    context.ConversationId,
+                    userLink.ClientId,
+                    result.Message,
+                    cancellationToken);
+            }
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -376,6 +394,57 @@ public sealed class ProcessTelegramUpdateHandler(
                 messageText,
                 Metadata: null),
             cancellationToken);
+    }
+
+    // Guarda la respuesta del asistente en CHAT_MESSAGES para que la bandeja de
+    // asesores muestre la conversación completa. Se llama DESPUÉS de entregar el
+    // mensaje: si el procesamiento se reintenta, no se duplica; y un fallo al
+    // guardar nunca impide que el cliente reciba la respuesta.
+    // CHAT_PARTICIPANTS exige exactamente una identidad (cliente o agente humano),
+    // así que el participante "Agente IA" de la conversación se asocia al cliente
+    // atendido; se distingue del participante "Cliente" por su tipo.
+    private async Task PersistAssistantMessageAsync(
+        Guid conversationId,
+        Guid clientId,
+        string text,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        try
+        {
+            var participants = await sender.Send(
+                new GetChatParticipantsByConversationIdQuery(conversationId),
+                cancellationToken);
+            var assistant = participants.FirstOrDefault(
+                participant => participant.ParticipantTypeId == AiAgentSenderTypeId)
+                ?? await sender.Send(
+                    new CreateChatParticipantCommand(
+                        conversationId,
+                        AiAgentSenderTypeId,
+                        clientId,
+                        null),
+                    cancellationToken);
+
+            await sender.Send(
+                new CreateChatMessageCommand(
+                    conversationId,
+                    assistant.Id,
+                    AiAgentSenderTypeId,
+                    text.Trim(),
+                    Metadata: null),
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "No se pudo guardar la respuesta del asistente en la conversación {ConversationId}.",
+                conversationId);
+        }
     }
 
     private static string ResponseText(AgentMessageResult result) =>

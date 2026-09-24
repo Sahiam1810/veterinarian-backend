@@ -1,3 +1,4 @@
+using Domain.ClientsPets.Entities;
 using Domain.Common;
 
 namespace Domain.HospitalizationStays.Entities;
@@ -45,6 +46,7 @@ public sealed class HospitalizationStay : BaseEntity<Guid>
     }
 
     public Guid ClientPetId { get; private set; }
+    public ClientPetEntity? ClientPet { get; private set; }
     public Guid? AppointmentId { get; private set; }
     public Guid AdmittedByUserId { get; private set; }
     public DateTime FechaIngreso { get; private set; }
