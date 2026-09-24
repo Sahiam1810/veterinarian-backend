@@ -1,29 +1,28 @@
-using Domain.HospitalizationStays.Entities;
+namespace Application.HospitalizationStays.Dtos;
 
-namespace Api.HospitalizationStays.Dtos;
-
+// Contrato JSON acordado con el frontend (Ticket A). Nunca se expone la entidad de dominio.
 public record ApiHospitalizationStayDto(
     Guid Id,
     Guid ClientPetId,
     string? PetName,
     string? OwnerName,
     Guid? AppointmentId,
+    DateTime AdmittedAt,
+    DateTime? DischargedAt,
+    string Status,
+    string Motivo,
     Guid AdmittedByUserId,
-    string? AdmittedByUserName,
-    DateTime FechaIngreso,
-    DateTime? FechaAlta,
-    HospitalizationStayStatus Estado,
-    string Motivo);
+    string? AdmittedByName);
 
 public record ApiHospitalizationNoteDto(
     Guid Id,
     Guid StayId,
-    Guid AutorUserId,
-    string? AutorUserName,
-    DateTime FechaHora,
+    Guid AuthorUserId,
+    string? AuthorName,
+    DateTime CreatedAt,
     string Nota,
-    Guid? EntregadoAUserId,
-    string? EntregadoAUserName);
+    Guid? HandedToUserId,
+    string? HandedToName);
 
 public record HospitalizationStaffUserDto(
     Guid Id,

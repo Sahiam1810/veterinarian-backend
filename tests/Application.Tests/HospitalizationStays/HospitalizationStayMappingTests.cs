@@ -1,4 +1,4 @@
-using Api.HospitalizationStays.Mappings;
+using Application.HospitalizationStays.Mappings;
 using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.HospitalizationStays.Entities;
@@ -33,8 +33,10 @@ public sealed class HospitalizationStayMappingTests
         Assert.Equal(clientPet.Id, dto.ClientPetId);
         Assert.Equal("Max", dto.PetName);
         Assert.Equal("Carlos Ruiz", dto.OwnerName);
-        Assert.Equal("Dra. Ana Lopez", dto.AdmittedByUserName);
-        Assert.Equal(HospitalizationStayStatus.Activa, dto.Estado);
+        Assert.Equal("Dra. Ana Lopez", dto.AdmittedByName);
+        Assert.Equal("Activa", dto.Status);
+        Assert.Null(dto.DischargedAt);
+        Assert.Equal(stay.FechaIngreso, dto.AdmittedAt);
         Assert.Equal("Chequeo", dto.Motivo);
     }
 
@@ -48,6 +50,48 @@ public sealed class HospitalizationStayMappingTests
         Assert.Equal(stay.Id, dto.Id);
         Assert.Null(dto.PetName);
         Assert.Null(dto.OwnerName);
-        Assert.Equal("Dr. Pedro", dto.AdmittedByUserName);
+        Assert.Equal("Dr. Pedro", dto.AdmittedByName);
+    }
+
+    [Fact]
+    public void ToDto_labels_a_discharged_stay_as_dada_de_alta()
+    {
+        var stay = new HospitalizationStay(Guid.NewGuid(), null, Guid.NewGuid(), "Recuperado");
+        stay.Discharge();
+
+        var dto = stay.ToDto();
+
+        Assert.Equal("Dada de alta", dto.Status);
+        Assert.NotNull(dto.DischargedAt);
+    }
+
+    [Fact]
+    public void Note_ToDto_maps_author_and_handover_names()
+    {
+        var stayId = Guid.NewGuid();
+        var authorId = Guid.NewGuid();
+        var receiverId = Guid.NewGuid();
+        var note = new HospitalizationNote(stayId, authorId, "Sin fiebre, come bien.", receiverId);
+
+        var dto = note.ToDto("Dra. Ana", "Aux. Pedro");
+
+        Assert.Equal(stayId, dto.StayId);
+        Assert.Equal(authorId, dto.AuthorUserId);
+        Assert.Equal("Dra. Ana", dto.AuthorName);
+        Assert.Equal(receiverId, dto.HandedToUserId);
+        Assert.Equal("Aux. Pedro", dto.HandedToName);
+        Assert.Equal("Sin fiebre, come bien.", dto.Nota);
+        Assert.Equal(note.FechaHora, dto.CreatedAt);
+    }
+
+    [Fact]
+    public void Note_ToDto_without_handover_leaves_receiver_empty()
+    {
+        var note = new HospitalizationNote(Guid.NewGuid(), Guid.NewGuid(), "Turno tranquilo.", null);
+
+        var dto = note.ToDto("Dra. Ana");
+
+        Assert.Null(dto.HandedToUserId);
+        Assert.Null(dto.HandedToName);
     }
 }

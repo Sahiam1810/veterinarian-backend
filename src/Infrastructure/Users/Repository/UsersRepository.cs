@@ -96,15 +96,19 @@ public sealed class UsersRepository : IUsersRepository
     public async Task<IReadOnlyCollection<(UserEntity User, string RoleName)>> GetStaffUsersAsync(
         CancellationToken cancellationToken = default)
     {
-        var allowedRoles = new[] { "Veterinario", "Auxiliar", "Administrador" };
+        // Se compara contra el value object (igual que RolesRepository.GetByNameAsync):
+        // acceder a r.Name.Value dentro del Where no se traduce a SQL con Oracle.
+        var allowedRoles = new[] { "Veterinario", "Auxiliar", "Administrador" }
+            .Select(Domain.Roles.ValueObjects.RoleName.Create)
+            .ToArray();
 
         var query = from u in _context.Set<UserEntity>().AsNoTracking()
                     join r in _context.Set<Domain.Roles.Entities.Roles>().AsNoTracking() on u.RoleId equals r.Id
-                    where u.IsActive && allowedRoles.Contains(r.Name.Value)
+                    where u.IsActive && allowedRoles.Contains(r.Name)
                     orderby u.FullName
-                    select new { User = u, RoleName = r.Name.Value };
+                    select new { User = u, Role = r };
 
         var results = await query.ToListAsync(cancellationToken);
-        return results.Select(x => (x.User, x.RoleName)).ToList();
+        return results.Select(x => (x.User, x.Role.Name.Value)).ToList();
     }
 }

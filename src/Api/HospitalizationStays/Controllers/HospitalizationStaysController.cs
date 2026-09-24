@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Api.Common.Security.Permissions;
-using Api.HospitalizationStays.Dtos;
+using Application.HospitalizationStays.Dtos;
 using Application.HospitalizationStays.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

@@ -30,7 +30,9 @@ public sealed class HospitalizationStayConfiguration : IEntityTypeConfiguration<
 
         builder.HasOne(x => x.ClientPet)
             .WithMany()
-            .HasForeignKey(x => x.ClientPetId);
+            .HasForeignKey(x => x.ClientPetId)
+            .HasConstraintName("FK_HOSPITALIZATION_STAYS_CLIENT_PET")
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.AppointmentId)
             .HasColumnName("APPOINTMENT_ID")

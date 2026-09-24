@@ -1,7 +1,7 @@
-using Api.HospitalizationStays.Dtos;
-using Api.HospitalizationStays.Mappings;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.HospitalizationStays.Dtos;
+using Application.HospitalizationStays.Mappings;
 using Domain.HospitalizationStays.Entities;
 using MediatR;
 
