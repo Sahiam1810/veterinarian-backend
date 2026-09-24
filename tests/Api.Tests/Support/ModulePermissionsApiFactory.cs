@@ -6,13 +6,13 @@ using System.Text;
 using Api.Auth.Controllers;
 using Api.Tests.Support;
 using Application.Common.Abstractions;
+using Application.HospitalizationStays.Dtos;
 using Application.HospitalizationStays.UseCases;
 using Application.MedicationOrders.UseCases;
 using Application.Permissions.Claims;
 using Application.ProcedureOrders.UseCases;
 using Application.Supplies.UseCases;
 using Application.SupplyConsumptions.UseCases;
-using Domain.HospitalizationStays.Entities;
 using Domain.MedicationOrders.Entities;
 using Domain.ProcedureOrders.Entities;
 using Domain.Supplies.Entities;
@@ -81,18 +81,19 @@ public sealed class ModulePermissionsApiFactory : WebApplicationFactory<AuthCont
         Sender.Send(Arg.Any<GetPendingProcedureOrdersQuery>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<ProcedureOrder>());
 
-        var dummyStay = (HospitalizationStay)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(HospitalizationStay));
-        typeof(HospitalizationStay).GetProperty("Id")?.SetValue(dummyStay, Guid.NewGuid());
-        typeof(HospitalizationStay).GetProperty("Status")?.SetValue(dummyStay, "Activa");
-
+        // Los endpoints de Hospitalización devuelven DTOs (nunca la entidad de dominio).
         Sender.Send(Arg.Any<GetHospitalizationStayByIdQuery>(), Arg.Any<CancellationToken>())
-            .Returns(dummyStay);
+            .Returns(new ApiHospitalizationStayDto(
+                Guid.NewGuid(), Guid.NewGuid(), "Firulais", "Ana Dueña", null,
+                DateTime.UtcNow, null, "Activa", "Motivo de prueba", Guid.NewGuid(), "Dra. Ana"));
         Sender.Send(Arg.Any<GetAllActiveHospitalizationStaysQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<HospitalizationStay>());
+            .Returns((IReadOnlyCollection<ApiHospitalizationStayDto>)Array.Empty<ApiHospitalizationStayDto>());
         Sender.Send(Arg.Any<GetHospitalizationStaysByPetQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<HospitalizationStay>());
+            .Returns((IReadOnlyCollection<ApiHospitalizationStayDto>)Array.Empty<ApiHospitalizationStayDto>());
         Sender.Send(Arg.Any<GetHospitalizationNotesByStayQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<HospitalizationNote>());
+            .Returns((IReadOnlyCollection<ApiHospitalizationNoteDto>)Array.Empty<ApiHospitalizationNoteDto>());
+        Sender.Send(Arg.Any<GetHospitalizationStaffQuery>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyCollection<HospitalizationStaffUserDto>)Array.Empty<HospitalizationStaffUserDto>());
 
         Sender.Send(Arg.Any<GetSupplyConsumptionsByStayIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<SupplyConsumption>());

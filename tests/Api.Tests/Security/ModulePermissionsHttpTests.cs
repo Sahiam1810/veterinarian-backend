@@ -70,13 +70,13 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         new object?[] { "GET", $"/api/hospitalization-stays/pet/{TestGuid}", "Hospitalización", "View", "Create", null },
         new object?[] { "POST", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "Create", "View", new { Nota = "Nota prueba", EntregadoAUserId = (Guid?)null } },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "View", "Create", null },
-        // TODO: GET api/hospitalization-stays/staff (Hospitalización:View) cuando se mergee el ticket de DTOs
+        new object?[] { "GET", "/api/hospitalization-stays/staff", "Hospitalización", "View", "Create", null },
 
         // Insumos
         new object?[] { "GET", "/api/supplies", "Insumos", "View", "Create", null },
         new object?[] { "GET", $"/api/supplies/{TestGuid}", "Insumos", "View", "Create", null },
-        new object?[] { "POST", "/api/supplies", "Insumos", "Create", "View", new { Name = "Gasa Esteril", Code = "INS-001", IsActive = true } },
-        new object?[] { "PUT", $"/api/supplies/{TestGuid}", "Insumos", "Edit", "View", new { Name = "Gasa Esteril Mod", Code = "INS-001", IsActive = true } },
+        new object?[] { "POST", "/api/supplies", "Insumos", "Create", "View", new { Name = "Gasa Estéril", Unit = "unidad", UnitPrice = 1500m, Stock = 10m, IsActive = true } },
+        new object?[] { "PUT", $"/api/supplies/{TestGuid}", "Insumos", "Edit", "View", new { Name = "Gasa Estéril", Unit = "unidad", UnitPrice = 1800m, Stock = 20m, IsActive = true } },
         new object?[] { "DELETE", $"/api/supplies/{TestGuid}", "Insumos", "Delete", "View", null },
         new object?[] { "POST", $"/api/hospitalization-stays/{TestGuid}/supply-consumptions", "Insumos", "Create", "View", new { SupplyId = TestGuid, Quantity = 2 } },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/supply-consumptions", "Insumos", "View", "Create", null },
@@ -170,10 +170,17 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
 
         using var response = await client.SendAsync(request);
 
-        // Verification: The authorization gate must be passed successfully (not 401 Unauthorized and not 403 Forbidden)
-        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+        // Con el permiso exacto la respuesta es de éxito (no solo "pasó la puerta"): así un
+        // body inválido o un endpoint que revienta con 500 tampoco pasa desapercibido.
+        Assert.Equal(ExpectedSuccess(method), response.StatusCode);
     }
+
+    private static HttpStatusCode ExpectedSuccess(string httpMethod) => httpMethod switch
+    {
+        "GET" => HttpStatusCode.OK,
+        "POST" => HttpStatusCode.Created,
+        _ => HttpStatusCode.NoContent // PUT, PATCH y DELETE
+    };
 
     private static HttpRequestMessage CreateRequest(string httpMethod, string route, object? body)
     {
