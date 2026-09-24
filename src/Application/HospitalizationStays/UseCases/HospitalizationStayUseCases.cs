@@ -33,6 +33,8 @@ public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<
 
 public sealed record GetHospitalizationStaffQuery : IRequest<IReadOnlyCollection<HospitalizationStaffUserDto>>;
 
+public sealed record GetHospitalizationStayInvoiceQuery(Guid StayId) : IRequest<HospitalizationStayInvoiceDto>;
+
 public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<AdmitHospitalizationStayCommand, Guid>
 {
@@ -234,5 +236,108 @@ public sealed class GetHospitalizationStaffQueryHandler(IUnitOfWork unitOfWork)
     {
         var staffUsers = await unitOfWork.UsersRepository.GetStaffUsersAsync(cancellationToken);
         return staffUsers.Select(x => new HospitalizationStaffUserDto(x.User.Id, x.User.FullName, x.RoleName)).ToList();
+    }
+}
+
+public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetHospitalizationStayInvoiceQuery, HospitalizationStayInvoiceDto>
+{
+    public async Task<HospitalizationStayInvoiceDto> Handle(
+        GetHospitalizationStayInvoiceQuery request,
+        CancellationToken cancellationToken)
+    {
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(request.StayId, cancellationToken)
+            ?? throw new NotFoundException("Estancia de hospitalización no encontrada.");
+
+        var petName = stay.ClientPet?.Pet?.Name?.Value ?? "Mascota";
+        var ownerName = stay.ClientPet?.Client?.FullName?.Value ?? "Cliente";
+
+        var endDate = stay.FechaAlta ?? DateTime.UtcNow;
+        var billedDays = Math.Max(1, (int)(endDate.Date - stay.FechaIngreso.Date).TotalDays);
+        const decimal dailyRate = 50000m;
+        var hospitalizationTotal = dailyRate * billedDays;
+
+        // Insumos registrados
+        var supplyConsumptions = await unitOfWork.SupplyConsumptionsRepository.GetByHospitalizationStayIdAsync(stay.Id, cancellationToken);
+        var supplyList = new List<BillableItemDto>();
+        foreach (var sc in supplyConsumptions)
+        {
+            var supply = await unitOfWork.SuppliesRepository.GetByIdAsync(sc.SupplyId, cancellationToken);
+            supplyList.Add(new BillableItemDto(
+                supply?.Name ?? "Insumo",
+                sc.Quantity,
+                sc.UnitPrice,
+                sc.Total,
+                sc.Notes));
+        }
+
+        // Medicamentos con estado Entregada
+        var medOrders = await unitOfWork.MedicationOrdersRepository.GetByHospitalizationStayAsync(
+            stay.AppointmentId,
+            stay.ClientPetId,
+            stay.FechaIngreso,
+            stay.FechaAlta,
+            cancellationToken);
+
+        var medList = new List<BillableItemDto>();
+        foreach (var order in medOrders.Where(o => o.Status == "Entregada"))
+        {
+            foreach (var item in order.Items)
+            {
+                medList.Add(new BillableItemDto(
+                    item.Medication?.Name ?? "Medicamento",
+                    1m,
+                    0m,
+                    0m,
+                    item.Notes));
+            }
+        }
+
+        // Procedimientos con estado Completada
+        var procOrders = await unitOfWork.ProcedureOrdersRepository.GetByHospitalizationStayAsync(
+            stay.AppointmentId,
+            stay.ClientPetId,
+            stay.FechaIngreso,
+            stay.FechaAlta,
+            cancellationToken);
+
+        var procList = new List<BillableItemDto>();
+        foreach (var order in procOrders.Where(o => o.Status == "Completada"))
+        {
+            foreach (var item in order.Items)
+            {
+                procList.Add(new BillableItemDto(
+                    item.Procedure?.Name ?? "Procedimiento",
+                    1m,
+                    0m,
+                    0m,
+                    item.Notes));
+            }
+        }
+
+        var suppliesTotal = supplyList.Sum(s => s.Total);
+        var medicationsTotal = medList.Sum(m => m.Total);
+        var proceduresTotal = procList.Sum(p => p.Total);
+        var grandTotal = hospitalizationTotal + suppliesTotal + medicationsTotal + proceduresTotal;
+
+        return new HospitalizationStayInvoiceDto(
+            stay.Id,
+            petName,
+            ownerName,
+            stay.FechaIngreso,
+            stay.FechaAlta,
+            stay.Estado.ToStatusLabel(),
+            dailyRate,
+            billedDays,
+            stay.IsPaid,
+            stay.PaidAt,
+            hospitalizationTotal,
+            suppliesTotal,
+            medicationsTotal,
+            proceduresTotal,
+            grandTotal,
+            supplyList,
+            medList,
+            procList);
     }
 }

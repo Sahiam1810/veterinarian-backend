@@ -51,6 +51,18 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
         return Ok(stay);
     }
 
+    [HttpGet("{stayId:guid}/invoice")]
+    [RequirePermission("Hospitalización", PermissionAction.View)]
+    [ProducesResponseType(typeof(HospitalizationStayInvoiceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<HospitalizationStayInvoiceDto>> GetInvoice(Guid stayId, CancellationToken cancellationToken)
+    {
+        var invoice = await sender.Send(new GetHospitalizationStayInvoiceQuery(stayId), cancellationToken);
+        return Ok(invoice);
+    }
+
     [HttpGet("active")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
     [ProducesResponseType(typeof(IReadOnlyCollection<ApiHospitalizationStayDto>), StatusCodes.Status200OK)]

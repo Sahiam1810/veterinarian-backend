@@ -7,6 +7,7 @@ public interface IProcedureOrderRepository
     Task<ProcedureOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<ProcedureOrder>> GetByAppointmentIdAsync(Guid appointmentId, CancellationToken cancellationToken = default);
     Task<IEnumerable<ProcedureOrder>> GetPendingAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<ProcedureOrder>> GetByHospitalizationStayAsync(Guid? appointmentId, Guid clientPetId, DateTime admittedAt, DateTime? dischargedAt, CancellationToken cancellationToken = default);
     Task AddAsync(ProcedureOrder procedureOrder, CancellationToken cancellationToken = default);
     Task UpdateAsync(ProcedureOrder procedureOrder, CancellationToken cancellationToken = default);
 }
