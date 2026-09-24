@@ -1,5 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.HospitalizationStays.Dtos;
+using Application.HospitalizationStays.Mappings;
 using Domain.HospitalizationStays.Entities;
 using MediatR;
 
@@ -19,13 +21,15 @@ public sealed record AddHospitalizationNoteCommand(
     Guid? EntregadoAUserId,
     Guid AutorUserId) : IRequest<Guid>;
 
-public sealed record GetHospitalizationStayByIdQuery(Guid Id) : IRequest<HospitalizationStay>;
+public sealed record GetHospitalizationStayByIdQuery(Guid Id) : IRequest<ApiHospitalizationStayDto>;
 
-public sealed record GetAllActiveHospitalizationStaysQuery : IRequest<IReadOnlyCollection<HospitalizationStay>>;
+public sealed record GetAllActiveHospitalizationStaysQuery : IRequest<IReadOnlyCollection<ApiHospitalizationStayDto>>;
 
-public sealed record GetHospitalizationStaysByPetQuery(Guid ClientPetId) : IRequest<IReadOnlyCollection<HospitalizationStay>>;
+public sealed record GetHospitalizationStaysByPetQuery(Guid ClientPetId) : IRequest<IReadOnlyCollection<ApiHospitalizationStayDto>>;
 
-public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<IReadOnlyCollection<HospitalizationNote>>;
+public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<IReadOnlyCollection<ApiHospitalizationNoteDto>>;
+
+public sealed record GetHospitalizationStaffQuery : IRequest<IReadOnlyCollection<HospitalizationStaffUserDto>>;
 
 public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<AdmitHospitalizationStayCommand, Guid>
@@ -128,41 +132,87 @@ public sealed class AddHospitalizationNoteCommandHandler(IUnitOfWork unitOfWork)
 }
 
 public sealed class GetHospitalizationStayByIdQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetHospitalizationStayByIdQuery, HospitalizationStay>
+    : IRequestHandler<GetHospitalizationStayByIdQuery, ApiHospitalizationStayDto>
 {
-    public async Task<HospitalizationStay> Handle(
+    public async Task<ApiHospitalizationStayDto> Handle(
         GetHospitalizationStayByIdQuery request,
         CancellationToken cancellationToken)
-        => await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(request.Id, cancellationToken)
+    {
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Estancia de hospitalización no encontrada.");
+
+        var user = await unitOfWork.UsersRepository.GetByIdAsync(stay.AdmittedByUserId, cancellationToken);
+        return stay.ToDto(user?.FullName);
+    }
 }
 
 public sealed class GetAllActiveHospitalizationStaysQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetAllActiveHospitalizationStaysQuery, IReadOnlyCollection<HospitalizationStay>>
+    : IRequestHandler<GetAllActiveHospitalizationStaysQuery, IReadOnlyCollection<ApiHospitalizationStayDto>>
 {
-    public Task<IReadOnlyCollection<HospitalizationStay>> Handle(
+    public async Task<IReadOnlyCollection<ApiHospitalizationStayDto>> Handle(
         GetAllActiveHospitalizationStaysQuery request,
         CancellationToken cancellationToken)
-        => unitOfWork.HospitalizationStaysRepository.GetAllActiveAsync(cancellationToken);
+    {
+        var stays = await unitOfWork.HospitalizationStaysRepository.GetAllActiveAsync(cancellationToken);
+        var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
+        var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
+        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+
+        return stays.Select(s => s.ToDto(userDict.GetValueOrDefault(s.AdmittedByUserId))).ToList();
+    }
 }
 
 public sealed class GetHospitalizationStaysByPetQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetHospitalizationStaysByPetQuery, IReadOnlyCollection<HospitalizationStay>>
+    : IRequestHandler<GetHospitalizationStaysByPetQuery, IReadOnlyCollection<ApiHospitalizationStayDto>>
 {
-    public Task<IReadOnlyCollection<HospitalizationStay>> Handle(
+    public async Task<IReadOnlyCollection<ApiHospitalizationStayDto>> Handle(
         GetHospitalizationStaysByPetQuery request,
         CancellationToken cancellationToken)
-        => unitOfWork.HospitalizationStaysRepository.GetByClientPetIdAsync(request.ClientPetId, cancellationToken);
+    {
+        var stays = await unitOfWork.HospitalizationStaysRepository.GetByClientPetIdAsync(request.ClientPetId, cancellationToken);
+        var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
+        var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
+        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+
+        return stays.Select(s => s.ToDto(userDict.GetValueOrDefault(s.AdmittedByUserId))).ToList();
+    }
 }
 
 public sealed class GetHospitalizationNotesByStayQueryHandler(IUnitOfWork unitOfWork)
-    : IRequestHandler<GetHospitalizationNotesByStayQuery, IReadOnlyCollection<HospitalizationNote>>
+    : IRequestHandler<GetHospitalizationNotesByStayQuery, IReadOnlyCollection<ApiHospitalizationNoteDto>>
 {
-    public async Task<IReadOnlyCollection<HospitalizationNote>> Handle(
+    public async Task<IReadOnlyCollection<ApiHospitalizationNoteDto>> Handle(
         GetHospitalizationNotesByStayQuery request,
         CancellationToken cancellationToken)
     {
+        _ = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(request.StayId, cancellationToken)
+            ?? throw new NotFoundException("Estancia de hospitalización no encontrada.");
+
         var notes = await unitOfWork.HospitalizationNotesRepository.GetByStayIdAsync(request.StayId, cancellationToken);
-        return notes.OrderBy(x => x.FechaHora).ToArray();
+        var orderedNotes = notes.OrderBy(x => x.FechaHora).ToList();
+
+        var userIds = orderedNotes.Select(n => n.AutorUserId)
+            .Concat(orderedNotes.Where(n => n.EntregadoAUserId.HasValue).Select(n => n.EntregadoAUserId!.Value))
+            .Distinct().ToList();
+
+        var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
+        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+
+        return orderedNotes.Select(n => n.ToDto(
+            userDict.GetValueOrDefault(n.AutorUserId),
+            n.EntregadoAUserId.HasValue ? userDict.GetValueOrDefault(n.EntregadoAUserId.Value) : null
+        )).ToList();
+    }
+}
+
+public sealed class GetHospitalizationStaffQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetHospitalizationStaffQuery, IReadOnlyCollection<HospitalizationStaffUserDto>>
+{
+    public async Task<IReadOnlyCollection<HospitalizationStaffUserDto>> Handle(
+        GetHospitalizationStaffQuery request,
+        CancellationToken cancellationToken)
+    {
+        var staffUsers = await unitOfWork.UsersRepository.GetStaffUsersAsync(cancellationToken);
+        return staffUsers.Select(x => new HospitalizationStaffUserDto(x.User.Id, x.User.FullName, x.RoleName)).ToList();
     }
 }

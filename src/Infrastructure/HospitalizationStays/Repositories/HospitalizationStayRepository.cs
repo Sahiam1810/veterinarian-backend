@@ -16,15 +16,27 @@ public sealed class HospitalizationStayRepository : IHospitalizationStayReposito
 
     public Task<HospitalizationStay?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => _context.Set<HospitalizationStay>()
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Pet)
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Client)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public async Task<HospitalizationStay?> GetActiveByPetIdAsync(Guid clientPetId, CancellationToken cancellationToken = default)
         => await _context.Set<HospitalizationStay>()
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Pet)
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Client)
             .FirstOrDefaultAsync(x => x.ClientPetId == clientPetId && x.Estado == HospitalizationStayStatus.Activa, cancellationToken);
 
     public async Task<IReadOnlyCollection<HospitalizationStay>> GetAllActiveAsync(CancellationToken cancellationToken = default)
         => await _context.Set<HospitalizationStay>()
             .AsNoTracking()
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Pet)
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Client)
             .Where(x => x.Estado == HospitalizationStayStatus.Activa)
             .OrderBy(x => x.FechaIngreso)
             .ToListAsync(cancellationToken);
@@ -32,6 +44,10 @@ public sealed class HospitalizationStayRepository : IHospitalizationStayReposito
     public async Task<IReadOnlyCollection<HospitalizationStay>> GetByClientPetIdAsync(Guid clientPetId, CancellationToken cancellationToken = default)
         => await _context.Set<HospitalizationStay>()
             .AsNoTracking()
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Pet)
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Client)
             .Where(x => x.ClientPetId == clientPetId)
             .OrderByDescending(x => x.FechaIngreso)
             .ToListAsync(cancellationToken);
