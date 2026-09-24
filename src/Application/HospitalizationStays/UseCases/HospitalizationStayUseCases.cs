@@ -31,6 +31,8 @@ public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<
 
 public sealed record GetHospitalizationStaffQuery : IRequest<IReadOnlyCollection<HospitalizationStaffUserDto>>;
 
+public sealed record GetAdmissionOptionsQuery : IRequest<IReadOnlyCollection<HospitalizationAdmissionOptionDto>>;
+
 public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<AdmitHospitalizationStayCommand, Guid>
 {
@@ -214,5 +216,24 @@ public sealed class GetHospitalizationStaffQueryHandler(IUnitOfWork unitOfWork)
     {
         var staffUsers = await unitOfWork.UsersRepository.GetStaffUsersAsync(cancellationToken);
         return staffUsers.Select(x => new HospitalizationStaffUserDto(x.User.Id, x.User.FullName, x.RoleName)).ToList();
+    }
+}
+
+public sealed class GetAdmissionOptionsQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetAdmissionOptionsQuery, IReadOnlyCollection<HospitalizationAdmissionOptionDto>>
+{
+    public async Task<IReadOnlyCollection<HospitalizationAdmissionOptionDto>> Handle(
+        GetAdmissionOptionsQuery request,
+        CancellationToken cancellationToken)
+    {
+        var clientPets = await unitOfWork.ClientPetsRepository.GetAllForAdmissionAsync(cancellationToken);
+
+        return clientPets
+            .Where(cp => cp.Pet is not null && cp.Client is not null)
+            .Select(cp => new HospitalizationAdmissionOptionDto(
+                cp.Id,
+                cp.Pet.Name.Value,
+                cp.Client.FullName.Value))
+            .ToList();
     }
 }

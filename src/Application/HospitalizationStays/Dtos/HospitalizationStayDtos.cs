@@ -28,3 +28,10 @@ public record HospitalizationStaffUserDto(
     Guid Id,
     string Name,
     string RoleName);
+
+// DTO para el selector de mascotas en la interfaz de admisión hospitalaria.
+// Expone únicamente los datos necesarios; nunca la entidad de dominio subyacente.
+public record HospitalizationAdmissionOptionDto(
+    Guid ClientPetId,
+    string PetName,
+    string OwnerName);

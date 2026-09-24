@@ -14,6 +14,17 @@ public sealed class ClientPetRepository(VeterinaryDbContext context) : IClientPe
         await context.Set<ClientPetEntity>().AsNoTracking().Where(x => x.ClientId == clientId).ToListAsync(cancellationToken);
     public Task<bool> ExistsByClientAndPetAsync(Guid clientId, Guid petId, CancellationToken cancellationToken, Guid? excludedId = null) =>
         context.Set<ClientPetEntity>().AnyAsync(x => x.ClientId == clientId && x.PetId == petId && (!excludedId.HasValue || x.Id != excludedId.Value), cancellationToken);
+
+    public async Task<IReadOnlyCollection<ClientPetEntity>> GetAllForAdmissionAsync(CancellationToken cancellationToken) =>
+        await context.Set<ClientPetEntity>()
+            .AsNoTracking()
+            .Include(x => x.Pet)
+            .Include(x => x.Client)
+            .Where(x => x.Pet != null && x.Client != null)
+            .OrderBy(x => x.Client.FullName.Value)
+            .ThenBy(x => x.Pet.Name.Value)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) => await context.Set<ClientPetEntity>().AddAsync(clientPet, cancellationToken);
     public Task UpdateAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) { context.Set<ClientPetEntity>().Update(clientPet); return Task.CompletedTask; }
     public Task DeleteAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) { context.Set<ClientPetEntity>().Remove(clientPet); return Task.CompletedTask; }

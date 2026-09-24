@@ -9,8 +9,11 @@ using Api.ProcedureOrders.Controllers;
 using Api.Supplies.Controllers;
 using Api.SupplyConsumptions.Controllers;
 using Api.Tests.Support;
+using Application.HospitalizationStays.Dtos;
+using Application.HospitalizationStays.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NSubstitute;
 using Xunit;
 
 namespace Api.Tests.Security;
@@ -71,6 +74,7 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         new object?[] { "POST", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "Create", "View", new { Nota = "Nota prueba", EntregadoAUserId = (Guid?)null } },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "View", "Create", null },
         new object?[] { "GET", "/api/hospitalization-stays/staff", "Hospitalización", "View", "Create", null },
+        new object?[] { "GET", "/api/hospitalization-stays/admission-options", "Hospitalización", "View", "Create", null },
 
         // Insumos
         new object?[] { "GET", "/api/supplies", "Insumos", "View", "Create", null },
@@ -191,5 +195,64 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
         return request;
+    }
+
+    [Fact]
+    public async Task AdmissionOptions_UserWithHospitalizationView_WithoutMascotasOrClientesPermissions_Returns_200_OK()
+    {
+        // Usuario con únicamente Hospitalización:View (sin Mascotas ni Clientes) recibe 200 OK
+        using var client = factory.CreateClientWithPermissions("Hospitalización:View");
+
+        using var response = await client.GetAsync("/api/hospitalization-stays/admission-options");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("Mascotas:View")]
+    [InlineData("Clientes:View")]
+    [InlineData("Mascotas:View,Clientes:View")]
+    [InlineData("Hospitalización:Create")]
+    public async Task AdmissionOptions_UserWithoutHospitalizationView_Returns_403_Forbidden(string permissions)
+    {
+        // Usuario que carece de Hospitalización:View recibe 403 Forbidden
+        var perms = permissions.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        using var client = factory.CreateClientWithPermissions(perms);
+
+        using var response = await client.GetAsync("/api/hospitalization-stays/admission-options");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdmissionOptions_ResponseStructure_ContainsExclusively_ClientPetId_PetName_and_OwnerName()
+    {
+        var dummyId = Guid.NewGuid();
+        var sampleOption = new HospitalizationAdmissionOptionDto(dummyId, "Firulais", "Juan Pérez");
+
+        factory.Sender.Send(Arg.Any<GetAdmissionOptionsQuery>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyCollection<HospitalizationAdmissionOptionDto>)new[] { sampleOption });
+
+        using var client = factory.CreateClientWithPermissions("Hospitalización:View");
+
+        using var response = await client.GetAsync("/api/hospitalization-stays/admission-options");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(content);
+        var array = doc.RootElement;
+
+        Assert.Equal(JsonValueKind.Array, array.ValueKind);
+        Assert.Equal(1, array.GetArrayLength());
+
+        var firstElement = array[0];
+        var propertyNames = firstElement.EnumerateObject().Select(p => p.Name).OrderBy(n => n).ToArray();
+
+        // Propiedades exactas en camelCase: clientPetId, ownerName, petName (sin campos adicionales ni entidades de dominio)
+        Assert.Equal(new[] { "clientPetId", "ownerName", "petName" }, propertyNames);
+        Assert.Equal(dummyId, firstElement.GetProperty("clientPetId").GetGuid());
+        Assert.Equal("Firulais", firstElement.GetProperty("petName").GetString());
+        Assert.Equal("Juan Pérez", firstElement.GetProperty("ownerName").GetString());
     }
 }
