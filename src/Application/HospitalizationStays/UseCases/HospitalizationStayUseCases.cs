@@ -250,7 +250,10 @@ public sealed class GetHospitalizationAdmissionOptionsQueryHandler(IUnitOfWork u
         var relationships = await unitOfWork.ClientPetsRepository.GetAllWithDetailsAsync(cancellationToken);
 
         return relationships
-            .Where(relationship => relationship.Client is not null && relationship.Pet is not null)
+            .Where(relationship =>
+                relationship.Client is not null &&
+                relationship.Client.IsActive &&
+                relationship.Pet is not null)
             .Select(relationship => new HospitalizationAdmissionOptionDto(
                 relationship.Id,
                 relationship.Pet.Name.Value,

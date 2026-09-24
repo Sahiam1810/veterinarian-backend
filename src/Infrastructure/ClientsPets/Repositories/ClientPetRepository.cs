@@ -12,6 +12,7 @@ public sealed class ClientPetRepository(VeterinaryDbContext context) : IClientPe
     public async Task<IReadOnlyCollection<ClientPetEntity>> GetAllWithDetailsAsync(CancellationToken cancellationToken) =>
         await context.Set<ClientPetEntity>()
             .AsNoTracking()
+            .Where(x => x.Client.IsActive)
             .Include(x => x.Client)
             .Include(x => x.Pet)
             .ToListAsync(cancellationToken);
