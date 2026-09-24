@@ -3,154 +3,146 @@ using Xunit;
 
 namespace Api.Tests.Security;
 
-public sealed class OrdenesHospitalizacionInsumosPermissionsSeedTests
+// Matriz de permisos de Órdenes Médicas, Hospitalización e Insumos. Debe ser idéntica
+// en los tres scripts que siembran ROLE_PERMISSIONS:
+//   extra/role_permissions_seed.sql          -> ensure_permission (solo inserta lo que falta)
+//   insert_all_seeds.sql                     -> sync_permission
+//   extra/role_permissions_repair_2026-09-10.sql -> sync_permission (actualiza filas existentes)
+public sealed partial class OrdenesHospitalizacionInsumosPermissionsSeedTests
 {
-    private const string AdminRoleId = "11111111-1111-1111-1111-111111111111";
-    private const string VeterinarioRoleId = "44444444-4444-4444-4444-444444444444";
-    private const string RecepcionistaRoleId = "55555555-5555-5555-5555-555555555555";
-    private const string AuxiliarRoleId = "66666666-6666-6666-6666-666666666666";
+    private const string Admin = "11111111-1111-1111-1111-111111111111";
+    private const string Veterinario = "44444444-4444-4444-4444-444444444444";
+    private const string Recepcionista = "55555555-5555-5555-5555-555555555555";
+    private const string Auxiliar = "66666666-6666-6666-6666-666666666666";
 
-    private static readonly string[] TargetModules =
+    private static readonly string[] TargetModules = ["Órdenes Médicas", "Hospitalización", "Insumos"];
+
+    private sealed record Row(string Id, string Role, string Module, int View, int Create, int Edit, int Delete);
+
+    private static readonly Row[] ExpectedRows =
     [
-        "Órdenes Médicas",
-        "Hospitalización",
-        "Insumos"
+        new("7f81bb4a-a2b8-4f4e-b0d0-9fef7b20a496", Admin, "Órdenes Médicas", 1, 1, 1, 1),
+        new("8862ffc5-954e-4669-b392-3ea1ac6f930a", Admin, "Hospitalización", 1, 1, 1, 1),
+        new("5debd306-2148-444a-b466-85fafc2ed7d5", Admin, "Insumos", 1, 1, 1, 1),
+
+        new("fa042789-22d8-4728-8849-0c79bc8bc916", Veterinario, "Órdenes Médicas", 1, 1, 1, 0),
+        new("28a49c8b-85be-4f6a-9bd6-b3d7b8bbc6f5", Veterinario, "Hospitalización", 1, 1, 1, 0),
+        new("a6f22e98-0569-4cd2-8541-26d3aa0edc77", Veterinario, "Insumos", 1, 1, 0, 0),
+
+        new("073c9749-8dfa-450a-a84a-2ff04606e274", Recepcionista, "Órdenes Médicas", 1, 0, 1, 0),
+
+        new("10cb7b51-5256-4faf-883e-ab27dc0e6c1a", Auxiliar, "Órdenes Médicas", 1, 0, 1, 0),
+        new("fa083b49-4777-4d4f-a46c-b61d821478dd", Auxiliar, "Hospitalización", 1, 1, 0, 0),
+        new("d476ccb7-90f4-4d68-a63e-f38dc6f419a7", Auxiliar, "Insumos", 1, 1, 0, 0)
     ];
 
-    private static readonly string[] ExpectedPermissionLines =
+    private static readonly string[] Files =
     [
-        // Administrador: (1,1,1,1) en los 3 módulos
-        $"sync_permission('7f81bb4a-a2b8-4f4e-b0d0-9fef7b20a496', '{AdminRoleId}', 'Órdenes Médicas', 1, 1, 1, 1);",
-        $"sync_permission('8862ffc5-954e-4669-b392-3ea1ac6f930a', '{AdminRoleId}', 'Hospitalización', 1, 1, 1, 1);",
-        $"sync_permission('5debd306-2148-444a-b466-85fafc2ed7d5', '{AdminRoleId}', 'Insumos', 1, 1, 1, 1);",
-
-        // Veterinario: Órdenes (1,1,1,0), Hospitalización (1,1,1,0), Insumos (1,1,0,0)
-        $"sync_permission('fa042789-22d8-4728-8849-0c79bc8bc916', '{VeterinarioRoleId}', 'Órdenes Médicas', 1, 1, 1, 0);",
-        $"sync_permission('28a49c8b-85be-4f6a-9bd6-b3d7b8bbc6f5', '{VeterinarioRoleId}', 'Hospitalización', 1, 1, 1, 0);",
-        $"sync_permission('a6f22e98-0569-4cd2-8541-26d3aa0edc77', '{VeterinarioRoleId}', 'Insumos', 1, 1, 0, 0);",
-
-        // Recepcionista: Órdenes (1,0,1,0) - Sin fila en Hospitalización ni en Insumos
-        $"sync_permission('073c9749-8dfa-450a-a84a-2ff04606e274', '{RecepcionistaRoleId}', 'Órdenes Médicas', 1, 0, 1, 0);",
-
-        // Auxiliar: Órdenes (1,0,1,0), Hospitalización (1,1,0,0), Insumos (1,1,0,0)
-        $"sync_permission('10cb7b51-5256-4faf-883e-ab27dc0e6c1a', '{AuxiliarRoleId}', 'Órdenes Médicas', 1, 0, 1, 0);",
-        $"sync_permission('fa083b49-4777-4d4f-a46c-b61d821478dd', '{AuxiliarRoleId}', 'Hospitalización', 1, 1, 0, 0);",
-        $"sync_permission('d476ccb7-90f4-4d68-a63e-f38dc6f419a7', '{AuxiliarRoleId}', 'Insumos', 1, 1, 0, 0);"
+        "extra/role_permissions_seed.sql",
+        "insert_all_seeds.sql",
+        "extra/role_permissions_repair_2026-09-10.sql"
     ];
 
-    private static readonly string[] NewPermissionUuids =
-    [
-        "7f81bb4a-a2b8-4f4e-b0d0-9fef7b20a496",
-        "8862ffc5-954e-4669-b392-3ea1ac6f930a",
-        "5debd306-2148-444a-b466-85fafc2ed7d5",
-        "fa042789-22d8-4728-8849-0c79bc8bc916",
-        "28a49c8b-85be-4f6a-9bd6-b3d7b8bbc6f5",
-        "a6f22e98-0569-4cd2-8541-26d3aa0edc77",
-        "073c9749-8dfa-450a-a84a-2ff04606e274",
-        "10cb7b51-5256-4faf-883e-ab27dc0e6c1a",
-        "fa083b49-4777-4d4f-a46c-b61d821478dd",
-        "d476ccb7-90f4-4d68-a63e-f38dc6f419a7"
-    ];
+    public static IEnumerable<object[]> SeedFiles => Files.Select(file => new object[] { file });
+
+    [GeneratedRegex(
+        @"(?:ensure|sync)_permission\('(?<id>[^']+)',\s*'(?<role>[^']+)',\s*'(?<module>[^']+)',\s*(?<v>\d),\s*(?<c>\d),\s*(?<e>\d),\s*(?<d>\d)\)")]
+    private static partial Regex PermissionCall();
+
+    [Theory]
+    [MemberData(nameof(SeedFiles))]
+    public void Each_seed_file_matches_the_expected_matrix_exactly(string relativePath)
+    {
+        var rows = ReadTargetRows(relativePath);
+
+        Assert.Equal(ExpectedRows.Length, rows.Count);
+        foreach (var expected in ExpectedRows)
+        {
+            Assert.Contains(expected, rows);
+        }
+    }
 
     [Fact]
-    public void Modules_section_defines_expected_modules()
+    public void The_three_seed_files_carry_the_same_matrix()
     {
-        var sql = File.ReadAllText(FindRootSeedPath("insert_all_seeds.sql"));
+        var reference = ReadTargetRows(Files[0]).OrderBy(r => r.Id).ToArray();
+
+        foreach (var path in Files.Skip(1))
+        {
+            var other = ReadTargetRows(path).OrderBy(r => r.Id).ToArray();
+            Assert.Equal(reference, other);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(SeedFiles))]
+    public void Only_Administrador_can_delete_and_Recepcionista_has_no_Hospitalizacion_or_Insumos(string relativePath)
+    {
+        var rows = ReadTargetRows(relativePath);
+
+        Assert.All(rows.Where(r => r.Role != Admin), r => Assert.Equal(0, r.Delete));
+        Assert.DoesNotContain(rows, r => r.Role == Recepcionista && r.Module != "Órdenes Médicas");
+        Assert.DoesNotContain(rows, r => r.Role is Veterinario or Auxiliar && r.Delete == 1);
+    }
+
+    [Theory]
+    [MemberData(nameof(SeedFiles))]
+    public void Permission_ids_are_unique_within_each_seed_file(string relativePath)
+    {
+        var sql = File.ReadAllText(FindSeedPath(relativePath));
+        var ids = PermissionCall().Matches(sql).Select(m => m.Groups["id"].Value.ToLowerInvariant()).ToList();
+
+        Assert.Equal(ids.Count, ids.Distinct().Count());
+        foreach (var expected in ExpectedRows)
+        {
+            Assert.Single(ids, id => id == expected.Id);
+        }
+    }
+
+    [Fact]
+    public void Repair_script_warns_that_it_overwrites_existing_rows()
+    {
+        var sql = File.ReadAllText(FindSeedPath("extra/role_permissions_repair_2026-09-10.sql"));
+
+        Assert.Contains("ADVERTENCIA", sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Modules_are_defined_before_the_permissions_reference_them()
+    {
+        var modulesSeed = File.ReadAllText(FindSeedPath("extra/modules_seed.sql"));
+        var insertAll = File.ReadAllText(FindSeedPath("insert_all_seeds.sql"));
 
         foreach (var module in TargetModules)
         {
-            Assert.Contains($"'{module}'", sql, StringComparison.Ordinal);
+            Assert.Contains($"'{module}'", modulesSeed, StringComparison.Ordinal);
+            Assert.Contains($"'{module}' AS NAME", insertAll, StringComparison.Ordinal);
         }
     }
 
-    [Fact]
-    public void Insert_all_seeds_matches_expected_permission_matrix()
+    private static List<Row> ReadTargetRows(string relativePath)
     {
-        var sql = File.ReadAllText(FindRootSeedPath("insert_all_seeds.sql"));
+        var sql = File.ReadAllText(FindSeedPath(relativePath));
 
-        var assignments = sql
-            .Split('\n')
-            .Select(line => line.Trim())
-            .Where(line => line.StartsWith("sync_permission(") && TargetModules.Any(m => line.Contains($"'{m}'", StringComparison.Ordinal)))
-            .ToArray();
-
-        Assert.Equal(ExpectedPermissionLines.Length, assignments.Length);
-
-        foreach (var expectedLine in ExpectedPermissionLines)
-        {
-            Assert.Contains(assignments, line => line.Equals(expectedLine, StringComparison.Ordinal));
-        }
+        return PermissionCall().Matches(sql)
+            .Select(m => new Row(
+                m.Groups["id"].Value.ToLowerInvariant(),
+                m.Groups["role"].Value,
+                m.Groups["module"].Value,
+                int.Parse(m.Groups["v"].Value),
+                int.Parse(m.Groups["c"].Value),
+                int.Parse(m.Groups["e"].Value),
+                int.Parse(m.Groups["d"].Value)))
+            .Where(r => TargetModules.Contains(r.Module))
+            .ToList();
     }
 
-    [Fact]
-    public void Role_restrictions_negative_cases()
-    {
-        var sql = File.ReadAllText(FindRootSeedPath("insert_all_seeds.sql"));
-
-        var permissionCalls = sql
-            .Split('\n')
-            .Select(line => line.Trim())
-            .Where(line => line.StartsWith("sync_permission("))
-            .ToArray();
-
-        // 1. Recepcionista NO debe tener filas ni permisos para Hospitalización ni Insumos
-        var recepUnexpectedCalls = permissionCalls
-            .Where(line => line.Contains(RecepcionistaRoleId, StringComparison.Ordinal)
-                           && (line.Contains("'Hospitalización'", StringComparison.Ordinal)
-                               || line.Contains("'Insumos'", StringComparison.Ordinal)))
-            .ToArray();
-
-        Assert.Empty(recepUnexpectedCalls);
-
-        // 2. Auxiliar NO debe tener permiso de Eliminar en ninguno de estos 3 módulos
-        var auxDeleteCalls = permissionCalls
-            .Where(line => line.Contains(AuxiliarRoleId, StringComparison.Ordinal)
-                           && TargetModules.Any(m => line.Contains($"'{m}'", StringComparison.Ordinal))
-                           && Regex.IsMatch(line, @",\s*1\s*\);$"))
-            .ToArray();
-
-        Assert.Empty(auxDeleteCalls);
-
-        // 3. Veterinario NO debe tener permiso de Eliminar en ninguno de estos 3 módulos
-        var vetDeleteCalls = permissionCalls
-            .Where(line => line.Contains(VeterinarioRoleId, StringComparison.Ordinal)
-                           && TargetModules.Any(m => line.Contains($"'{m}'", StringComparison.Ordinal))
-                           && Regex.IsMatch(line, @",\s*1\s*\);$"))
-            .ToArray();
-
-        Assert.Empty(vetDeleteCalls);
-    }
-
-    [Fact]
-    public void Uuids_are_unique_and_do_not_collide()
-    {
-        var sql = File.ReadAllText(FindRootSeedPath("insert_all_seeds.sql"));
-
-        // Validar que todos los UUIDs nuevos son válidos y distintos entre sí
-        var parsedGuids = NewPermissionUuids.Select(Guid.Parse).ToHashSet();
-        Assert.Equal(NewPermissionUuids.Length, parsedGuids.Count);
-
-        // Validar que ninguno de los UUIDs colisiona en el archivo (aparece exactamente una vez)
-        foreach (var uuid in NewPermissionUuids)
-        {
-            var matches = Regex.Matches(sql, Regex.Escape(uuid), RegexOptions.IgnoreCase);
-            Assert.Single(matches);
-        }
-
-        // Validar adicionalmente que todos los UUIDs pasados al primer argumento de sync_permission sean únicos en el archivo
-        var syncPermissionUuidMatches = Regex.Matches(sql, @"sync_permission\('([a-f0-9\-]+)'", RegexOptions.IgnoreCase);
-        var syncUuids = syncPermissionUuidMatches.Select(m => m.Groups[1].Value.ToLowerInvariant()).ToList();
-        var distinctSyncUuids = syncUuids.Distinct().ToList();
-
-        Assert.Equal(syncUuids.Count, distinctSyncUuids.Count);
-    }
-
-    private static string FindRootSeedPath(string fileName)
+    private static string FindSeedPath(string relativePath)
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            var candidate = Path.Combine(dir.FullName, "database", "seeds", fileName);
+            var candidate = Path.Combine(dir.FullName, "database", "seeds", relativePath);
             if (File.Exists(candidate))
             {
                 return candidate;
@@ -159,6 +151,6 @@ public sealed class OrdenesHospitalizacionInsumosPermissionsSeedTests
             dir = dir.Parent;
         }
 
-        throw new FileNotFoundException($"No se encontro database/seeds/{fileName}");
+        throw new FileNotFoundException($"No se encontro database/seeds/{relativePath}");
     }
 }
