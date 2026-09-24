@@ -41,6 +41,7 @@ public sealed class MedicationsController(ISender sender) : ControllerBase
     [EndpointSummary("Crea un nuevo medicamento en el catálogo")]
     [ProducesResponseType(typeof(MedicationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<MedicationDto>> Create(
         [FromBody] CreateMedicationDto dto,
         CancellationToken cancellationToken = default)
@@ -56,6 +57,7 @@ public sealed class MedicationsController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(
         [FromRoute] Guid id,
         [FromBody] UpdateMedicationDto dto,

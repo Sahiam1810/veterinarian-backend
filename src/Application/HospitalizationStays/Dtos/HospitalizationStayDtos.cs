@@ -1,5 +1,10 @@
 namespace Application.HospitalizationStays.Dtos;
 
+public record HospitalizationAdmissionOptionDto(
+    Guid ClientPetId,
+    string PetName,
+    string OwnerName);
+
 // Contrato JSON acordado con el frontend (Ticket A). Nunca se expone la entidad de dominio.
 public record ApiHospitalizationStayDto(
     Guid Id,

@@ -68,6 +68,7 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}", "Hospitalización", "View", "Create", null },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/invoice", "Hospitalización", "View", "Create", null },
         new object?[] { "GET", "/api/hospitalization-stays/active", "Hospitalización", "View", "Create", null },
+        new object?[] { "GET", "/api/hospitalization-stays/admission-options", "Hospitalización", "View", "Create", null },
         new object?[] { "GET", $"/api/hospitalization-stays/pet/{TestGuid}", "Hospitalización", "View", "Create", null },
         new object?[] { "POST", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "Create", "View", new { Nota = "Nota prueba", EntregadoAUserId = (Guid?)null } },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "View", "Create", null },
@@ -174,6 +175,24 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         // Con el permiso exacto la respuesta es de éxito (no solo "pasó la puerta"): así un
         // body inválido o un endpoint que revienta con 500 tampoco pasa desapercibido.
         Assert.Equal(ExpectedSuccess(method), response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdmissionOptions_Returns_only_the_expected_fields_with_hospitalization_view_permission()
+    {
+        using var client = factory.CreateClientWithPermissions("Hospitalización:View");
+
+        using var response = await client.GetAsync("/api/hospitalization-stays/admission-options");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var option = Assert.Single(document.RootElement.EnumerateArray());
+        var properties = option.EnumerateObject().ToList();
+
+        Assert.Equal(3, properties.Count);
+        Assert.Contains(properties, property => property.Name == "clientPetId");
+        Assert.Contains(properties, property => property.Name == "petName");
+        Assert.Contains(properties, property => property.Name == "ownerName");
     }
 
     private static HttpStatusCode ExpectedSuccess(string httpMethod) => httpMethod switch

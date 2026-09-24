@@ -11,6 +11,7 @@ public sealed class HospitalizationStaysControllerAttributeTests
 {
     [Theory]
     [InlineData(nameof(HospitalizationStaysController.GetActive), PermissionAction.View)]
+    [InlineData(nameof(HospitalizationStaysController.GetAdmissionOptions), PermissionAction.View)]
     [InlineData(nameof(HospitalizationStaysController.GetById), PermissionAction.View)]
     [InlineData(nameof(HospitalizationStaysController.GetInvoice), PermissionAction.View)]
     [InlineData(nameof(HospitalizationStaysController.GetByPet), PermissionAction.View)]

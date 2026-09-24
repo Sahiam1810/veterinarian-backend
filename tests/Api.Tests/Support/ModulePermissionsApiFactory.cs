@@ -88,6 +88,9 @@ public sealed class ModulePermissionsApiFactory : WebApplicationFactory<AuthCont
                 DateTime.UtcNow, null, "Activa", "Motivo de prueba", Guid.NewGuid(), "Dra. Ana", false, null));
         Sender.Send(Arg.Any<GetAllActiveHospitalizationStaysQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<ApiHospitalizationStayDto>)Array.Empty<ApiHospitalizationStayDto>());
+        Sender.Send(Arg.Any<GetHospitalizationAdmissionOptionsQuery>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyCollection<HospitalizationAdmissionOptionDto>)[
+                new(Guid.NewGuid(), "Luna", "Juan Pérez")]);
         Sender.Send(Arg.Any<GetHospitalizationStaysByPetQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<ApiHospitalizationStayDto>)Array.Empty<ApiHospitalizationStayDto>());
         Sender.Send(Arg.Any<GetHospitalizationNotesByStayQuery>(), Arg.Any<CancellationToken>())

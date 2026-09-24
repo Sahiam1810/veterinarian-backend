@@ -56,7 +56,18 @@ public sealed class CreateMedicationCommandHandler(IUnitOfWork unitOfWork)
         CreateMedicationCommand request,
         CancellationToken cancellationToken)
     {
+
         var medication = new Medication(request.Name, request.Code, request.IsActive, request.Price);
+
+        if (await unitOfWork.MedicationsRepository.ExistsByCodeAsync(request.Code, cancellationToken))
+        {
+            throw new ConflictException(
+                $"Ya existe un medicamento registrado con el código '{Medication.NormalizeCode(request.Code)}'.",
+                "Medications.CodeAlreadyExists");
+        }
+
+        var medication = new Medication(request.Name, request.Code, request.IsActive);
+
         await unitOfWork.MedicationsRepository.AddAsync(medication, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return medication;
@@ -76,7 +87,21 @@ public sealed class UpdateMedicationCommandHandler(IUnitOfWork unitOfWork)
             throw new NotFoundException($"No se encontró el medicamento con ID '{request.Id}'.");
         }
 
+
         medication.Update(request.Name, request.Code, request.IsActive, request.Price);
+
+        if (await unitOfWork.MedicationsRepository.ExistsByCodeAsync(
+                request.Code,
+                cancellationToken,
+                request.Id))
+        {
+            throw new ConflictException(
+                $"Ya existe un medicamento registrado con el código '{Medication.NormalizeCode(request.Code)}'.",
+                "Medications.CodeAlreadyExists");
+        }
+
+        medication.Update(request.Name, request.Code, request.IsActive);
+
         await unitOfWork.MedicationsRepository.UpdateAsync(medication, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Unit.Value;
