@@ -42,7 +42,7 @@ public sealed class HospitalizationStaysControllerHttpTests
     }
 
     [Fact]
-    public async Task GetActive_and_GetStaff_return_403_without_permission()
+    public async Task GetActive_GetStaff_and_GetAdmissionOptions_return_403_without_permission()
     {
         using var client = factory.CreateAnonymousClient();
         var tokens = await AuthSecurityHttpTestHelpers.LoginAsync(
@@ -54,13 +54,15 @@ public sealed class HospitalizationStaysControllerHttpTests
 
         using var activeResponse = await client.GetAsync("/api/hospitalization-stays/active");
         using var staffResponse = await client.GetAsync("/api/hospitalization-stays/staff");
+        using var optionsResponse = await client.GetAsync("/api/hospitalization-stays/admission-options");
 
         Assert.Equal(HttpStatusCode.Forbidden, activeResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, staffResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, optionsResponse.StatusCode);
     }
 
     [Fact]
-    public async Task GetActive_and_GetStaff_return_200_with_permission()
+    public async Task GetActive_GetStaff_and_GetAdmissionOptions_return_200_with_permission()
     {
         using var client = factory.CreateAnonymousClient();
 
@@ -74,8 +76,11 @@ public sealed class HospitalizationStaysControllerHttpTests
 
         using var activeResponse = await client.GetAsync("/api/hospitalization-stays/active");
         using var staffResponse = await client.GetAsync("/api/hospitalization-stays/staff");
+        using var optionsResponse = await client.GetAsync("/api/hospitalization-stays/admission-options");
 
         Assert.Equal(HttpStatusCode.OK, activeResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, staffResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, optionsResponse.StatusCode);
     }
+
 }
