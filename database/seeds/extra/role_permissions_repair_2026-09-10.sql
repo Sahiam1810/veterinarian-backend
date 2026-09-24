@@ -13,6 +13,11 @@
 --   sqlplus VET_APP@//localhost:1521/FREEPDB1 @database\seeds\extra\role_permissions_repair_2026-09-10.sql
 --
 -- Idempotente: puede ejecutarse más de una vez sin efectos adicionales.
+--
+-- ADVERTENCIA: sync_permission ACTUALIZA las filas que ya existen. Para los módulos
+-- 'Órdenes Médicas', 'Hospitalización' e 'Insumos' este script pisa los valores que
+-- alguien haya ajustado a mano desde SuperAdmin (vuelve a la matriz por defecto).
+-- Si solo necesitas sembrar filas faltantes, usa role_permissions_seed.sql.
 SET DEFINE OFF;
 
 DECLARE
@@ -82,6 +87,10 @@ BEGIN
     sync_permission('d1e3a202-1e6c-4a86-94c3-289de0ca7c21', '11111111-1111-1111-1111-111111111111', 'Reportes', 1, 0, 0, 0);
     sync_permission('e2f4c313-2f7d-5b97-a5d4-3a0ef1db3d32', '11111111-1111-1111-1111-111111111111', 'Plataforma', 1, 0, 0, 0);
     sync_permission('e3b5d122-1f4a-4b99-a83d-11e223344556', '11111111-1111-1111-1111-111111111111', 'Reprogramación de Citas', 1, 1, 1, 1);
+    -- Órdenes Médicas, Hospitalización e Insumos (requiere modules_seed.sql: ids ...025, ...026, ...027)
+    sync_permission('7f81bb4a-a2b8-4f4e-b0d0-9fef7b20a496', '11111111-1111-1111-1111-111111111111', 'Órdenes Médicas', 1, 1, 1, 1);
+    sync_permission('8862ffc5-954e-4669-b392-3ea1ac6f930a', '11111111-1111-1111-1111-111111111111', 'Hospitalización', 1, 1, 1, 1);
+    sync_permission('5debd306-2148-444a-b466-85fafc2ed7d5', '11111111-1111-1111-1111-111111111111', 'Insumos', 1, 1, 1, 1);
 
     -- Veterinario
     sync_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
@@ -95,6 +104,9 @@ BEGIN
     sync_permission('bc33442d-6bee-4b34-87b6-4e521551c8a7', '44444444-4444-4444-4444-444444444444', 'Estados de Cita', 1, 0, 0, 0);
     sync_permission('f3a5d424-3a8e-6ca8-b6e5-4b1fd2ec4e43', '44444444-4444-4444-4444-444444444444', 'Plataforma', 1, 0, 0, 0);
     sync_permission('c6d8f757-6d1b-9fdb-e9b8-7e4df5bf7b76', '44444444-4444-4444-4444-444444444444', 'Notificaciones', 1, 0, 0, 0);
+    sync_permission('fa042789-22d8-4728-8849-0c79bc8bc916', '44444444-4444-4444-4444-444444444444', 'Órdenes Médicas', 1, 1, 1, 0);
+    sync_permission('28a49c8b-85be-4f6a-9bd6-b3d7b8bbc6f5', '44444444-4444-4444-4444-444444444444', 'Hospitalización', 1, 1, 1, 0);
+    sync_permission('a6f22e98-0569-4cd2-8541-26d3aa0edc77', '44444444-4444-4444-4444-444444444444', 'Insumos', 1, 1, 0, 0);
 
     -- Recepcionista
     sync_permission('76be45ca-8349-410a-ab5c-ce4825bef0e0', '55555555-5555-5555-5555-555555555555', 'Clientes', 1, 1, 1, 0);
@@ -114,6 +126,7 @@ BEGIN
     sync_permission('a5490daf-1d22-4f3a-baf6-019beea5056f', '55555555-5555-5555-5555-555555555555', 'Chat', 1, 1, 1, 0);
     sync_permission('fd167cd6-9779-4a74-be95-83afb8d53956', '55555555-5555-5555-5555-555555555555', 'Escalamientos', 1, 1, 1, 0);
     sync_permission('8358cf0d-84b4-46a6-a8b2-04583929c52f', '55555555-5555-5555-5555-555555555555', 'Catálogos del Chat', 1, 0, 0, 0);
+    sync_permission('073c9749-8dfa-450a-a84a-2ff04606e274', '55555555-5555-5555-5555-555555555555', 'Órdenes Médicas', 1, 0, 1, 0);
 
     -- Auxiliar
     sync_permission('b7540f8f-7ac3-4479-a46e-b0efc34d588c', '66666666-6666-6666-6666-666666666666', 'Clientes', 1, 0, 0, 0);
@@ -125,6 +138,9 @@ BEGIN
     sync_permission('137f09ee-ac41-4abe-aff8-ba1306281c33', '66666666-6666-6666-6666-666666666666', 'Servicios', 1, 0, 0, 0);
     sync_permission('d8bdcce9-0696-4f40-9828-193708deb19c', '66666666-6666-6666-6666-666666666666', 'Estados de Cita', 1, 0, 0, 0);
     sync_permission('b5c7f646-5c0a-8eca-d8a7-6d3cf4ae6a65', '66666666-6666-6666-6666-666666666666', 'Plataforma', 1, 0, 0, 0);
+    sync_permission('10cb7b51-5256-4faf-883e-ab27dc0e6c1a', '66666666-6666-6666-6666-666666666666', 'Órdenes Médicas', 1, 0, 1, 0);
+    sync_permission('fa083b49-4777-4d4f-a46c-b61d821478dd', '66666666-6666-6666-6666-666666666666', 'Hospitalización', 1, 1, 0, 0);
+    sync_permission('d476ccb7-90f4-4d68-a63e-f38dc6f419a7', '66666666-6666-6666-6666-666666666666', 'Insumos', 1, 1, 0, 0);
 END;
 /
 
