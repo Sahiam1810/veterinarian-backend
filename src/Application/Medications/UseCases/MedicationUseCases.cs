@@ -66,8 +66,6 @@ public sealed class CreateMedicationCommandHandler(IUnitOfWork unitOfWork)
                 "Medications.CodeAlreadyExists");
         }
 
-        var medication = new Medication(request.Name, request.Code, request.IsActive);
-
         await unitOfWork.MedicationsRepository.AddAsync(medication, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return medication;
@@ -86,10 +84,6 @@ public sealed class UpdateMedicationCommandHandler(IUnitOfWork unitOfWork)
         {
             throw new NotFoundException($"No se encontró el medicamento con ID '{request.Id}'.");
         }
-
-
-        medication.Update(request.Name, request.Code, request.IsActive, request.Price);
-
         if (await unitOfWork.MedicationsRepository.ExistsByCodeAsync(
                 request.Code,
                 cancellationToken,
@@ -100,7 +94,7 @@ public sealed class UpdateMedicationCommandHandler(IUnitOfWork unitOfWork)
                 "Medications.CodeAlreadyExists");
         }
 
-        medication.Update(request.Name, request.Code, request.IsActive);
+        medication.Update(request.Name, request.Code, request.IsActive, request.Price);
 
         await unitOfWork.MedicationsRepository.UpdateAsync(medication, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
