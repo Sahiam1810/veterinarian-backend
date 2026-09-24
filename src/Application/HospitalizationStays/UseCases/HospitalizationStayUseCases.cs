@@ -354,6 +354,8 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
             supplyList,
             medList,
             procList);
+    }
+}
 
 public sealed class GetHospitalizationAdmissionOptionsQueryHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<GetHospitalizationAdmissionOptionsQuery, IReadOnlyCollection<HospitalizationAdmissionOptionDto>>
