@@ -15,6 +15,8 @@ public sealed record AdmitHospitalizationStayCommand(
 
 public sealed record DischargeHospitalizationStayCommand(Guid Id) : IRequest;
 
+public sealed record RegisterHospitalizationStayPaymentCommand(Guid Id) : IRequest;
+
 public sealed record AddHospitalizationNoteCommand(
     Guid StayId,
     string Nota,
@@ -94,6 +96,24 @@ public sealed class DischargeHospitalizationStayCommandHandler(IUnitOfWork unitO
         }
 
         stay.Discharge();
+        await unitOfWork.HospitalizationStaysRepository.UpdateAsync(stay, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+}
+
+public sealed class RegisterHospitalizationStayPaymentCommandHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<RegisterHospitalizationStayPaymentCommand>
+{
+    public async Task Handle(
+        RegisterHospitalizationStayPaymentCommand request,
+        CancellationToken cancellationToken)
+    {
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(
+            request.Id,
+            cancellationToken)
+            ?? throw new NotFoundException("Estancia de hospitalización no encontrada.");
+
+        stay.RegisterPayment();
         await unitOfWork.HospitalizationStaysRepository.UpdateAsync(stay, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

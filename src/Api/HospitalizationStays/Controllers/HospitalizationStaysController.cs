@@ -30,6 +30,18 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
         return NoContent();
     }
 
+    [HttpPatch("{id:guid}/register-payment")]
+    [RequirePermission("Hospitalización", PermissionAction.Edit)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterPayment(Guid id, CancellationToken cancellationToken)
+    {
+        await sender.Send(new RegisterHospitalizationStayPaymentCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+
     [HttpGet("{id:guid}")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
     [ProducesResponseType(typeof(ApiHospitalizationStayDto), StatusCodes.Status200OK)]

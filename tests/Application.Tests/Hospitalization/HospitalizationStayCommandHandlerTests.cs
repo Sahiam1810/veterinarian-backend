@@ -25,8 +25,10 @@ public sealed class HospitalizationStayCommandHandlerTests
 
     private readonly AdmitHospitalizationStayCommandHandler admitHandler;
     private readonly DischargeHospitalizationStayCommandHandler dischargeHandler;
+    private readonly RegisterHospitalizationStayPaymentCommandHandler registerPaymentHandler;
     private readonly AddHospitalizationNoteCommandHandler addNoteHandler;
     private readonly GetHospitalizationNotesByStayQueryHandler getNotesHandler;
+
 
     private static readonly Guid ClientPetId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid AppointmentId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -46,9 +48,11 @@ public sealed class HospitalizationStayCommandHandlerTests
 
         admitHandler = new AdmitHospitalizationStayCommandHandler(unitOfWork);
         dischargeHandler = new DischargeHospitalizationStayCommandHandler(unitOfWork);
+        registerPaymentHandler = new RegisterHospitalizationStayPaymentCommandHandler(unitOfWork);
         addNoteHandler = new AddHospitalizationNoteCommandHandler(unitOfWork);
         getNotesHandler = new GetHospitalizationNotesByStayQueryHandler(unitOfWork);
     }
+
 
     [Fact]
     public async Task HOSPITALIZATION_T01_admit_stay_success_without_appointment()
@@ -228,4 +232,67 @@ public sealed class HospitalizationStayCommandHandlerTests
             item => Assert.Equal("Primera", item.Nota),
             item => Assert.Equal("Segunda", item.Nota));
     }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T11_register_payment_success()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
+
+        await registerPaymentHandler.Handle(new RegisterHospitalizationStayPaymentCommand(stay.Id), CancellationToken.None);
+
+        Assert.True(stay.IsPaid);
+        Assert.NotNull(stay.PaidAt);
+        await staysRepository.Received(1).UpdateAsync(stay, Arg.Any<CancellationToken>());
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T12_register_payment_fails_when_stay_not_found()
+    {
+        var nonExistentId = Guid.NewGuid();
+        staysRepository.GetByIdAsync(nonExistentId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            registerPaymentHandler.Handle(new RegisterHospitalizationStayPaymentCommand(nonExistentId), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T13_register_payment_fails_when_already_paid()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        stay.RegisterPayment();
+        staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            registerPaymentHandler.Handle(new RegisterHospitalizationStayPaymentCommand(stay.Id), CancellationToken.None));
+        Assert.Equal("La estancia ya está pagada.", ex.Message);
+    }
+
+    [Fact]
+    public void HOSPITALIZATION_T14_domain_register_payment_sets_is_paid_true_and_paid_at()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        Assert.False(stay.IsPaid);
+        Assert.Null(stay.PaidAt);
+
+        stay.RegisterPayment();
+
+        Assert.True(stay.IsPaid);
+        Assert.NotNull(stay.PaidAt);
+    }
+
+    [Fact]
+    public void HOSPITALIZATION_T15_domain_register_payment_throws_if_already_paid()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        stay.RegisterPayment();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => stay.RegisterPayment());
+        Assert.Equal("La estancia ya está pagada.", ex.Message);
+    }
 }
+

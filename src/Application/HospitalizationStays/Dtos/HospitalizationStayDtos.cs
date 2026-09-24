@@ -12,7 +12,9 @@ public record ApiHospitalizationStayDto(
     string Status,
     string Motivo,
     Guid AdmittedByUserId,
-    string? AdmittedByName);
+    string? AdmittedByName,
+    bool IsPaid,
+    DateTime? PaidAt);
 
 public record ApiHospitalizationNoteDto(
     Guid Id,

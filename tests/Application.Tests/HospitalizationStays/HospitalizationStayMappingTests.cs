@@ -38,7 +38,23 @@ public sealed class HospitalizationStayMappingTests
         Assert.Null(dto.DischargedAt);
         Assert.Equal(stay.FechaIngreso, dto.AdmittedAt);
         Assert.Equal("Chequeo", dto.Motivo);
+        Assert.False(dto.IsPaid);
+        Assert.Null(dto.PaidAt);
     }
+
+    [Fact]
+    public void ToDto_maps_is_paid_and_paid_at_when_stay_is_paid()
+    {
+        var stay = new HospitalizationStay(Guid.NewGuid(), null, Guid.NewGuid(), "Tratamiento");
+        stay.RegisterPayment();
+
+        var dto = stay.ToDto();
+
+        Assert.True(dto.IsPaid);
+        Assert.NotNull(dto.PaidAt);
+        Assert.Equal(stay.PaidAt, dto.PaidAt);
+    }
+
 
     [Fact]
     public void ToDto_handles_fallback_when_client_pet_is_null()

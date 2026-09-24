@@ -24,7 +24,9 @@ public static class HospitalizationStayMappings
             stay.Estado.ToStatusLabel(),
             stay.Motivo,
             stay.AdmittedByUserId,
-            admittedByName);
+            admittedByName,
+            stay.IsPaid,
+            stay.PaidAt);
     }
 
     public static ApiHospitalizationNoteDto ToDto(
