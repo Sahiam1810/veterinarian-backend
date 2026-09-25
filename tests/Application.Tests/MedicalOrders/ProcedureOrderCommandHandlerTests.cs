@@ -288,6 +288,9 @@ public class ProcedureOrderCommandHandlerTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id), CancellationToken.None));
+
+        await _orderRepo.DidNotReceive().UpdateAsync(Arg.Any<ProcedureOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -308,6 +311,33 @@ public class ProcedureOrderCommandHandlerTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id), CancellationToken.None));
+
+        await _orderRepo.DidNotReceive().UpdateAsync(Arg.Any<ProcedureOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CompleteProcedureOrder_WhenStatusIsNotPending_ThrowsConflictWithoutPersisting()
+    {
+        var order = new ProcedureOrder(
+            Guid.NewGuid(),
+            VetId,
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Prueba") });
+        typeof(ProcedureOrder).GetProperty(nameof(ProcedureOrder.Status))!.SetValue(order, "EnProceso");
+
+        _orderRepo.GetByIdAsync(order.Id, Arg.Any<CancellationToken>())
+            .Returns(order);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id, "resultado.pdf"), CancellationToken.None));
+
+        Assert.Equal("EnProceso", order.Status);
+        await _orderRepo.DidNotReceive().UpdateAsync(Arg.Any<ProcedureOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

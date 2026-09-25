@@ -117,6 +117,11 @@ public sealed class CompleteMedicationOrderCommandHandler(IUnitOfWork unitOfWork
             throw new ConflictException("No se puede entregar una orden de medicamento cancelada.");
         }
 
+        if (!string.Equals(order.Status, "Pendiente", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException("Solo se puede entregar una orden de medicamento pendiente.");
+        }
+
         order.Complete();
         await unitOfWork.MedicationOrdersRepository.UpdateAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

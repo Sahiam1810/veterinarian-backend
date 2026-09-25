@@ -120,6 +120,11 @@ public sealed class CompleteProcedureOrderCommandHandler(
             throw new ConflictException("No se puede completar una orden de procedimiento cancelada.");
         }
 
+        if (!string.Equals(order.Status, "Pendiente", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException("Solo se puede completar una orden de procedimiento pendiente.");
+        }
+
         order.Complete(request.ResultFileUrl);
         await unitOfWork.ProcedureOrdersRepository.UpdateAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

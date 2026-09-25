@@ -220,6 +220,9 @@ public class MedicationOrderCommandHandlerTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             _completeHandler.Handle(new CompleteMedicationOrderCommand(order.Id), CancellationToken.None));
+
+        await _repository.DidNotReceive().UpdateAsync(Arg.Any<MedicationOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -240,6 +243,33 @@ public class MedicationOrderCommandHandlerTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             _completeHandler.Handle(new CompleteMedicationOrderCommand(order.Id), CancellationToken.None));
+
+        await _repository.DidNotReceive().UpdateAsync(Arg.Any<MedicationOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CompleteMedicationOrder_WhenStatusIsNotPending_ThrowsConflictWithoutPersisting()
+    {
+        var order = new MedicationOrder(
+            Guid.NewGuid(),
+            VetId,
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Dosis") });
+        typeof(MedicationOrder).GetProperty(nameof(MedicationOrder.Status))!.SetValue(order, "EnPreparacion");
+
+        _repository.GetByIdAsync(order.Id, Arg.Any<CancellationToken>())
+            .Returns(order);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            _completeHandler.Handle(new CompleteMedicationOrderCommand(order.Id), CancellationToken.None));
+
+        Assert.Equal("EnPreparacion", order.Status);
+        await _repository.DidNotReceive().UpdateAsync(Arg.Any<MedicationOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
