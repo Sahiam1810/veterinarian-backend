@@ -33,6 +33,7 @@ public sealed class MedicationOrderRepository(VeterinaryDbContext context) : IMe
     {
         return await context.MedicationOrders
             .Include(o => o.Items)
+                .ThenInclude(i => i.Medication)
             .Include(o => o.ClientPet!)
                 .ThenInclude(cp => cp.Pet)
             .Include(o => o.ClientPet!)

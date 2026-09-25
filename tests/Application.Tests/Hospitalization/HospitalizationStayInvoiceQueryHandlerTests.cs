@@ -220,6 +220,7 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
         var deliveredOrder = new MedicationOrder(stay.ClientPetId, VeterinarianId, stay.AppointmentId!.Value, true, null, null,
             new (Guid MedicationId, string? Notes)[] { (med1.Id, "1 cada 8 horas") });
         deliveredOrder.Complete(); // Status: Entregada
+        deliveredOrder.Items.First().SetUnitPrice(25000m); // Precio congelado antes del cambio de catálogo.
 
         var itemProp = typeof(MedicationOrderItem).GetProperty(nameof(MedicationOrderItem.Medication))!;
         itemProp.SetValue(deliveredOrder.Items.First(), med1);
@@ -241,9 +242,9 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
 
         Assert.Single(result.Medications);
         Assert.Equal("Amoxicilina 500mg", result.Medications[0].Name);
-        Assert.Equal(30000m, result.Medications[0].UnitPrice);
-        Assert.Equal(30000m, result.Medications[0].Total);
-        Assert.Equal(30000m, result.MedicationsTotal);
+        Assert.Equal(25000m, result.Medications[0].UnitPrice);
+        Assert.Equal(25000m, result.Medications[0].Total);
+        Assert.Equal(25000m, result.MedicationsTotal);
         Assert.Equal("1 cada 8 horas", result.Medications[0].Notes);
     }
 

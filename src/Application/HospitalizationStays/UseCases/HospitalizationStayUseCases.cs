@@ -202,7 +202,7 @@ public sealed class GetAllActiveHospitalizationStaysQueryHandler(IUnitOfWork uni
         var stays = await unitOfWork.HospitalizationStaysRepository.GetAllActiveAsync(cancellationToken);
         var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
         var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
-        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+        var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
 
         return stays.Select(s => s.ToDto(userDict.GetValueOrDefault(s.AdmittedByUserId))).ToList();
     }
@@ -218,7 +218,7 @@ public sealed class GetHospitalizationStaysByPetQueryHandler(IUnitOfWork unitOfW
         var stays = await unitOfWork.HospitalizationStaysRepository.GetByClientPetIdAsync(request.ClientPetId, cancellationToken);
         var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
         var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
-        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+        var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
 
         return stays.Select(s => s.ToDto(userDict.GetValueOrDefault(s.AdmittedByUserId))).ToList();
     }
@@ -242,7 +242,7 @@ public sealed class GetHospitalizationNotesByStayQueryHandler(IUnitOfWork unitOf
             .Distinct().ToList();
 
         var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
-        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+        var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
 
         return orderedNotes.Select(n => n.ToDto(
             userDict.GetValueOrDefault(n.AutorUserId),
@@ -308,7 +308,7 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
             foreach (var item in order.Items)
             {
                 var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
-                var unitPrice = medication?.Price ?? 0m;
+                var unitPrice = item.UnitPrice ?? medication?.Price ?? 0m;
                 medList.Add(new BillableItemDto(
                     medication?.Name ?? item.Medication?.Name ?? "Medicamento",
                     1m,
@@ -330,7 +330,7 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
             foreach (var item in order.Items)
             {
                 var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
-                var unitPrice = procedure?.Price ?? 0m;
+                var unitPrice = item.UnitPrice ?? procedure?.Price ?? 0m;
                 procList.Add(new BillableItemDto(
                     procedure?.Name ?? item.Procedure?.Name ?? "Procedimiento",
                     1m,

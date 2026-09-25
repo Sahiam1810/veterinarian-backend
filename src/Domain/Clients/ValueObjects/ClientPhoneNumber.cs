@@ -26,6 +26,18 @@ public sealed record ClientPhoneNumber
         return Create(value);
     }
 
+    // Solo materialización EF (DB → dominio). Blank o histórico inválido → null;
+    // no usar para entrada de API (Create/Update/search siguen por Create/TryCreate).
+    public static ClientPhoneNumber? CreateFromPersistence(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return TryCreate(value, out var phone) ? phone : null;
+    }
+
     public static ClientPhoneNumber Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))

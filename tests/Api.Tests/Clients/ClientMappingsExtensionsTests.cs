@@ -46,6 +46,21 @@ public sealed class ClientMappingsExtensionsTests
         Assert.Equal("Ana Cliente", response.FullName);
         Assert.Equal("ana@test.com", response.Email);
         Assert.True(response.IsActive);
+        Assert.Equal("3001234567", response.PhoneNumber);
+    }
+
+    [Fact]
+    public void ToDto_exposes_null_phone_when_entity_phone_is_null_after_tolerant_read()
+    {
+        var client = TestClients.Create(
+            identificationNumber: "1234567890",
+            phoneNumber: "3001234567");
+        SetProperty(client, nameof(ClientEntity.PhoneNumber), null);
+
+        var response = client.ToDto();
+
+        Assert.Equal(client.Id, response.Id);
+        Assert.Null(response.PhoneNumber);
     }
 
     private static void SetProperty(object target, string propertyName, object? value) =>

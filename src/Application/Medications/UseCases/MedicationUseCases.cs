@@ -57,14 +57,14 @@ public sealed class CreateMedicationCommandHandler(IUnitOfWork unitOfWork)
         CancellationToken cancellationToken)
     {
 
-        var medication = new Medication(request.Name, request.Code, request.IsActive, request.Price);
-
         if (await unitOfWork.MedicationsRepository.ExistsByCodeAsync(request.Code, cancellationToken))
         {
             throw new ConflictException(
                 $"Ya existe un medicamento registrado con el código '{Medication.NormalizeCode(request.Code)}'.",
                 "Medications.CodeAlreadyExists");
         }
+
+        var medication = new Medication(request.Name, request.Code, request.IsActive, request.Price);
 
         await unitOfWork.MedicationsRepository.AddAsync(medication, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

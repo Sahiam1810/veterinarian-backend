@@ -15,19 +15,24 @@ public sealed class GetUserEffectivePermissionsQueryHandler(IUnitOfWork unitOfWo
             request.RoleId,
             cancellationToken);
 
-        var roleByModule = rolePermissions.ToDictionary(permission => permission.ModuleId);
+        var roleByModule = rolePermissions
+            .GroupBy(permission => permission.ModuleId)
+            .ToDictionary(g => g.Key, g => g.First());
 
-        return modules.ToDictionary(
-            module => module.Name.Value,
-            module =>
-            {
-                roleByModule.TryGetValue(module.Id, out var rolePermission);
+        return modules
+            .GroupBy(module => module.Name.Value)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var module = g.First();
+                    roleByModule.TryGetValue(module.Id, out var rolePermission);
 
-                return new EffectivePermission(
-                    rolePermission?.CanView ?? false,
-                    rolePermission?.CanCreate ?? false,
-                    rolePermission?.CanEdit ?? false,
-                    rolePermission?.CanDelete ?? false);
-            });
+                    return new EffectivePermission(
+                        rolePermission?.CanView ?? false,
+                        rolePermission?.CanCreate ?? false,
+                        rolePermission?.CanEdit ?? false,
+                        rolePermission?.CanDelete ?? false);
+                });
     }
 }

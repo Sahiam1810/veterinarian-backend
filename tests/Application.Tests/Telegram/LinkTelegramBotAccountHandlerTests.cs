@@ -64,6 +64,12 @@ public sealed class LinkTelegramBotAccountHandlerTests
             Arg.Any<TelegramUserLink>(), Arg.Any<CancellationToken>());
         await fixture.UserLinks.DidNotReceive().UpdateAsync(
             Arg.Any<TelegramUserLink>(), Arg.Any<CancellationToken>());
+        // Ticket 3 P1: re-vínculo no muta el cliente ni su teléfono.
+        await fixture.Clients.DidNotReceive().UpdateAsync(
+            Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
+        await fixture.Clients.DidNotReceive().AddAsync(
+            Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
+        Assert.Equal("3001234567", client.PhoneNumber!.Value);
     }
 
     [Fact]

@@ -64,15 +64,19 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => ClientAddress.Create(str))
             .IsRequired(false);
 
+        // CLR nullable solo para materializar PHONE_NUMBER histórico inválido como null.
+        // Oracle CLIENTS.PHONE_NUMBER permanece NOT NULL: no generar ni aplicar migration
+        // que convierta la columna a nullable por este cambio. Create/Update siguen
+        // exigiendo ClientPhoneNumber válido vía Create().
         builder.Property(client => client.PhoneNumber)
             .HasColumnName("PHONE_NUMBER")
             .HasMaxLength(ClientPhoneNumber.MaxLength)
             .HasConversion(
-                phone => phone.Value,
-                str => ClientPhoneNumber.Create(str))
-            .IsRequired();
+                phone => phone == null ? null : phone.Value,
+                str => ClientPhoneNumber.CreateFromPersistence(str))
+            .IsRequired(false);
 
-        // UNIQUE obligatorio: el teléfono es requerido, sin filtro.
+        // UNIQUE obligatorio: el teléfono es requerido en escritura, sin filtro.
         builder.HasIndex(client => client.PhoneNumber)
             .IsUnique()
             .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER");

@@ -5,6 +5,7 @@ using Application.MedicationOrders.Abstraction;
 using Application.MedicationOrders.UseCases;
 using Domain.Appointments.Entities;
 using Domain.MedicationOrders.Entities;
+using Domain.Medications.Entities;
 using NSubstitute;
 using Xunit;
 
@@ -15,6 +16,7 @@ public class MedicationOrderCommandHandlerTests
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IMedicationOrderRepository _repository = Substitute.For<IMedicationOrderRepository>();
     private readonly IAppointmentRepository _appointmentRepo = Substitute.For<IAppointmentRepository>();
+    private readonly Application.Medications.Abstraction.IMedicationRepository _medicationRepo = Substitute.For<Application.Medications.Abstraction.IMedicationRepository>();
     private readonly CreateMedicationOrderCommandHandler _createHandler;
     private readonly CompleteMedicationOrderCommandHandler _completeHandler;
 
@@ -24,6 +26,7 @@ public class MedicationOrderCommandHandlerTests
     {
         _unitOfWork.MedicationOrdersRepository.Returns(_repository);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepo);
+        _unitOfWork.MedicationsRepository.Returns(_medicationRepo);
         _createHandler = new CreateMedicationOrderCommandHandler(_unitOfWork);
         _completeHandler = new CompleteMedicationOrderCommandHandler(_unitOfWork);
     }
@@ -174,6 +177,26 @@ public class MedicationOrderCommandHandlerTests
         Assert.Equal("Entregada", order.Status);
         await _repository.Received(1).UpdateAsync(order, Arg.Any<CancellationToken>());
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CompleteMedicationOrder_Freezes_the_catalog_price()
+    {
+        var medication = new Medication("Antibiótico", price: 30000m);
+        var order = new MedicationOrder(
+            Guid.NewGuid(),
+            VetId,
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (medication.Id, (string?)"Dosis") });
+        _repository.GetByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
+        _medicationRepo.GetByIdAsync(medication.Id, Arg.Any<CancellationToken>()).Returns(medication);
+
+        await _completeHandler.Handle(new CompleteMedicationOrderCommand(order.Id), CancellationToken.None);
+
+        Assert.Equal(30000m, order.Items.Single().UnitPrice);
     }
 
     [Fact]

@@ -34,5 +34,12 @@ public sealed class ProcedureOrderItem : BaseEntity<Guid>
     public Guid ProcedureOrderId { get; private set; }
     public Guid ProcedureId { get; private set; }
     public Procedure? Procedure { get; private set; }
+    public decimal? UnitPrice { get; private set; }
     public string? Notes { get; private set; }
+
+    public void SetUnitPrice(decimal? unitPrice)
+    {
+        UnitPrice = unitPrice;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

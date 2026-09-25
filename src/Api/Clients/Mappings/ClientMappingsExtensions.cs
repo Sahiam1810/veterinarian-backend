@@ -24,37 +24,27 @@ public static class ClientMappingsExtensions
             dto.Address,
             dto.IsActive ?? throw new ArgumentException("El estado del cliente es obligatorio.", nameof(dto)));
 
-    public static ClientResponseDto ToDto(this ClientEntity entity)
-    {
-        return new ClientResponseDto(
+    public static ClientResponseDto ToDto(this ClientEntity entity) =>
+        new(
             entity.Id,
             entity.FullName.Value,
             entity.Email?.Value,
             entity.IsActive,
             entity.IdentificationNumber?.Value,
-            entity.PhoneNumber.Value,
+            entity.PhoneNumber?.Value,
             entity.Address?.Value,
             entity.CreatedAt,
-            entity.UpdatedAt
-        );
-    }
+            entity.UpdatedAt);
 
-    public static ClientIdentificationLookupResponseDto ToIdentificationLookupResponse(this ClientEntity entity)
-    {
-        return new ClientIdentificationLookupResponseDto(
+    public static ClientIdentificationLookupResponseDto ToIdentificationLookupResponse(this ClientEntity entity) =>
+        new(
             entity.Id,
             entity.IdentificationNumber?.Value,
-            entity.CreatedAt
-        );
-    }
+            entity.CreatedAt);
 
-    // Lookup anónimo por teléfono: mismo recorte de PII que by-identification.
-    public static ClientPhoneLookupResponseDto ToPhoneLookupResponse(this ClientEntity entity)
-    {
-        return new ClientPhoneLookupResponseDto(
+    public static ClientPhoneLookupResponseDto ToPhoneLookupResponse(this ClientEntity entity) =>
+        new(
             entity.Id,
             entity.IdentificationNumber?.Value,
-            entity.CreatedAt
-        );
-    }
+            entity.CreatedAt);
 }

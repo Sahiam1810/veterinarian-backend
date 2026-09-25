@@ -196,6 +196,46 @@ public sealed class RegisterOwnerCommandHandlerTests
             sut.Handle(StaffCommand(), CancellationToken.None));
 
         Assert.Equal(OwnerRegistrationErrors.PhoneAlreadyInUse.Code, error.Code);
+        await clients.DidNotReceive().AddAsync(Arg.Any<ClientEntity>(), Arg.Any<CancellationToken>());
+        await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    // Ticket 3 P1: el teléfono persistido es el recibido/normalizado, nunca GUID ni placeholder.
+    [Fact]
+    public async Task Handle_telegram_persists_received_normalized_phone_not_guid_or_placeholder()
+    {
+        var sut = CreateSut(requireStaffProof: false);
+        ClientEntity? persisted = null;
+        clients.AddAsync(Arg.Do<ClientEntity>(client => persisted = client), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var command = StaffCommand() with
+        {
+            Channel = RegisterOwnerChannel.Telegram,
+            PhoneNumber = "+57 (301) 555-8899"
+        };
+        clients.ExistsByPhoneAsync("573015558899", Arg.Any<CancellationToken>(), Arg.Any<Guid?>())
+            .Returns(false);
+
+        var result = await sut.Handle(command, CancellationToken.None);
+
+        Assert.NotNull(persisted);
+        Assert.Equal(result.ClientId, persisted!.Id);
+        Assert.Equal("573015558899", persisted.PhoneNumber!.Value);
+        Assert.DoesNotContain(
+            persisted.Id.ToString("N"),
+            persisted.PhoneNumber.Value,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            persisted.Id.ToString("D").Replace("-", string.Empty),
+            persisted.PhoneNumber.Value,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual("3000000000", persisted.PhoneNumber.Value);
+        Assert.False(
+            persisted.PhoneNumber.Value.All(char.IsDigit)
+            && persisted.Id.ToString("N").Where(char.IsDigit)
+                .SequenceEqual(persisted.PhoneNumber.Value),
+            "El teléfono no debe ser la secuencia de dígitos del CLIENT_ID.");
     }
 
     private RegisterOwnerCommandHandler CreateSut(bool requireStaffProof) =>

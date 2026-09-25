@@ -143,6 +143,11 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
             .HasColumnType("TIMESTAMP")
             .IsRequired(false);
 
+        builder.Property(x => x.PaidAmount)
+            .HasColumnName("PAID_AMOUNT")
+            .HasColumnType("NUMBER(12,2)")
+            .IsRequired(false);
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

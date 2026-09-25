@@ -33,6 +33,7 @@ public sealed class ProcedureOrderRepository(VeterinaryDbContext context) : IPro
     {
         return await context.ProcedureOrders
             .Include(o => o.Items)
+                .ThenInclude(i => i.Procedure)
             .Include(o => o.ClientPet!)
                 .ThenInclude(cp => cp.Pet)
             .Include(o => o.ClientPet!)

@@ -51,6 +51,21 @@ public sealed class AgentGuestIdentityProviderTests
         Assert.Equal("TelegramGuest", token.Claims.Single(x => x.Type == "role").Value);
         Assert.Equal("1001", token.Claims.Single(x => x.Type == "telegram_user_id").Value);
         Assert.DoesNotContain(token.Claims, claim => claim.Type == "token_use");
+
+        // Ticket 3 P1: guest no toca CLIENTS ni fabrica teléfono desde GUID/Telegram ID.
+        await clientsRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
+        await clientsRepository.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+        await clientsRepository.DidNotReceiveWithAnyArgs().GetByPhoneAsync(default!, default);
+        await clientsRepository.DidNotReceiveWithAnyArgs()
+            .ExistsByPhoneAsync(default!, default, default);
+        Assert.Equal("guest@telegram.invalid", token.Claims.Single(x => x.Type == "email" || x.Type == JwtRegisteredClaimNames.Email).Value);
+        Assert.DoesNotContain(
+            token.Claims,
+            claim => claim.Type is "phone_number" or "phone" or "phonenumber");
+        Assert.DoesNotContain(
+            first.PersonId.ToString("N"),
+            token.Claims.Single(x => x.Type == "email" || x.Type == JwtRegisteredClaimNames.Email).Value,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

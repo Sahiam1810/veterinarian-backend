@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925161815_AddFrozenPricesToOrdersAndAppointments")]
+    partial class AddFrozenPricesToOrdersAndAppointments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -505,6 +508,7 @@ namespace Infrastructure.Migrations
                         .HasColumnName("CREATED_AT");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("VARCHAR2(150)")
                         .HasColumnName("EMAIL");
 
@@ -514,6 +518,7 @@ namespace Infrastructure.Migrations
                         .HasColumnName("FULL_NAME");
 
                     b.Property<string>("IdentificationNumber")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("NVARCHAR2(20)")
                         .HasColumnName("IDENTIFICATION_NUMBER");
@@ -536,12 +541,10 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique()
-                        .HasDatabaseName("UX_CLIENTS_EMAIL")
-                        .HasFilter("\"EMAIL\" IS NOT NULL");
+                        .HasDatabaseName("UX_CLIENTS_EMAIL");
 
                     b.HasIndex("IdentificationNumber")
-                        .IsUnique()
-                        .HasFilter("\"IDENTIFICATION_NUMBER\" IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique()
@@ -1162,7 +1165,7 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("PET_ID");
 
-                    b.Property<int?>("Age")
+                    b.Property<int>("Age")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("AGE");
 
@@ -1193,6 +1196,7 @@ namespace Infrastructure.Migrations
                         .HasColumnName("PHOTO_URL");
 
                     b.Property<string>("RaceId")
+                        .IsRequired()
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("RACE_ID");
 
@@ -1205,7 +1209,7 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("UPDATED_AT");
 
-                    b.Property<decimal?>("Weight")
+                    b.Property<decimal>("Weight")
                         .HasColumnType("NUMBER(6,3)")
                         .HasColumnName("WEIGHT");
 
@@ -2455,7 +2459,8 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Races.Entities.RaceEntity", "Race")
                         .WithMany()
                         .HasForeignKey("RaceId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Domain.Species.Entities.SpeciesEntity", "Species")
                         .WithMany()
