@@ -53,7 +53,8 @@ public record ClientResponseDto(
     string Email,
     bool IsActive,
     string IdentificationNumber,
-    string PhoneNumber,
+    // null = ausencia en lectura (p. ej. histórico inválido materializado); create/update siguen exigiendo teléfono.
+    string? PhoneNumber,
     string? Address,
     DateTime CreatedAt,
     DateTime? UpdatedAt
