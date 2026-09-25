@@ -3,6 +3,7 @@ using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Domain.Appointments.Entities;
+using Domain.Services.Entities;
 using NSubstitute;
 using Xunit;
 
@@ -35,6 +36,8 @@ public sealed class RegisterAppointmentPaymentCommandHandlerTests
     public async Task Marks_the_appointment_as_paid()
     {
         var appointment = BuildAppointment();
+        var service = new Service(Guid.NewGuid(), "Consulta", 30, 45000m);
+        typeof(Appointment).GetProperty(nameof(Appointment.Service))!.SetValue(appointment, service);
         _appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>())
             .Returns(appointment);
 
@@ -42,6 +45,7 @@ public sealed class RegisterAppointmentPaymentCommandHandlerTests
 
         Assert.True(appointment.IsPaid);
         Assert.NotNull(appointment.PaidAt);
+        Assert.Equal(45000m, appointment.PaidAmount);
         await _appointments.Received(1).UpdateAsync(appointment, Arg.Any<CancellationToken>());
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }

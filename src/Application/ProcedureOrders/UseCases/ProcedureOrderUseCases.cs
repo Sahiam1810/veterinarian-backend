@@ -88,6 +88,12 @@ public sealed class CompleteProcedureOrderCommandHandler(
             throw new ConflictException(order.DescribeInvalidTransition());
         }
 
+        foreach (var item in order.Items)
+        {
+            var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
+            item.SetUnitPrice(procedure?.Price);
+        }
+
         order.Complete(request.ResultFileUrl);
         await unitOfWork.ProcedureOrdersRepository.UpdateAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

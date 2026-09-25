@@ -79,8 +79,9 @@ public sealed class Appointment : BaseEntity<Guid>
 
     public bool IsPaid { get; private set; } = false;
     public DateTime? PaidAt { get; private set; }
+    public decimal? PaidAmount { get; private set; }
 
-    public void RegisterPayment()
+    public void RegisterPayment(decimal? paidAmount = null)
     {
         if (IsPaid)
         {
@@ -89,6 +90,7 @@ public sealed class Appointment : BaseEntity<Guid>
 
         IsPaid = true;
         PaidAt = DateTime.UtcNow;
+        PaidAmount = paidAmount;
         UpdatedAt = DateTime.UtcNow;
     }
 

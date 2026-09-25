@@ -7,6 +7,7 @@ using Application.ProcedureOrders.UseCases;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
 using Domain.ProcedureOrders.Entities;
+using Domain.Procedures.Entities;
 using Domain.Veterinarians.Entities;
 using MediatR;
 using NSubstitute;
@@ -20,6 +21,7 @@ public class ProcedureOrderCommandHandlerTests
     private readonly IProcedureOrderRepository _orderRepo = Substitute.For<IProcedureOrderRepository>();
     private readonly IVeterinarianRepository _vetRepo = Substitute.For<IVeterinarianRepository>();
     private readonly IAppointmentRepository _appointmentRepo = Substitute.For<IAppointmentRepository>();
+    private readonly Application.Procedures.Abstraction.IProcedureRepository _procedureRepo = Substitute.For<Application.Procedures.Abstraction.IProcedureRepository>();
     private readonly ISender _sender = Substitute.For<ISender>();
     private readonly CreateProcedureOrderCommandHandler _createHandler;
     private readonly CompleteProcedureOrderCommandHandler _completeHandler;
@@ -31,6 +33,7 @@ public class ProcedureOrderCommandHandlerTests
         _unitOfWork.ProcedureOrdersRepository.Returns(_orderRepo);
         _unitOfWork.VeterinariansRepository.Returns(_vetRepo);
         _unitOfWork.AppointmentsRepository.Returns(_appointmentRepo);
+        _unitOfWork.ProceduresRepository.Returns(_procedureRepo);
         _createHandler = new CreateProcedureOrderCommandHandler(_unitOfWork);
         _completeHandler = new CompleteProcedureOrderCommandHandler(_unitOfWork, _sender);
     }
@@ -179,6 +182,27 @@ public class ProcedureOrderCommandHandlerTests
                 cmd.AppointmentId == appointmentId &&
                 cmd.Type == "ProcedimientoComp"),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CompleteProcedureOrder_Freezes_the_catalog_price()
+    {
+        var procedure = new Procedure("Hemograma", price: 60000m);
+        var order = new ProcedureOrder(
+            Guid.NewGuid(),
+            VetId,
+            null,
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (procedure.Id, (string?)"Urgente") },
+            hospitalizationStayId: Guid.NewGuid());
+        _orderRepo.GetByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
+        _procedureRepo.GetByIdAsync(procedure.Id, Arg.Any<CancellationToken>()).Returns(procedure);
+
+        await _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id), CancellationToken.None);
+
+        Assert.Equal(60000m, order.Items.Single().UnitPrice);
     }
 
     [Fact]

@@ -21,7 +21,9 @@ public sealed class GetAppointmentReceiptQueryHandler(IUnitOfWork unitOfWork)
         var ownerName = client?.FullName?.Value ?? "Dueño Desconocido";
         var ownerPhone = client?.PhoneNumber?.Value;
         var serviceName = appointment.Service?.Name ?? "Servicio Desconocido";
-        var servicePrice = appointment.Service?.Price ?? 0m;
+        var servicePrice = appointment.IsPaid
+            ? appointment.PaidAmount ?? appointment.Service?.Price ?? 0m
+            : appointment.Service?.Price ?? 0m;
 
         return new AppointmentReceiptResult(
             petName,
