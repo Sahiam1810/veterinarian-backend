@@ -21,4 +21,6 @@ public sealed record AppointmentResponse(
     int? RespiratoryRate,
     DateTime CreatedAt,
     Guid? PetId,
-    string? ConsultingRoom);
+    string? ConsultingRoom,
+    bool IsPaid,
+    DateTime? PaidAt);

@@ -161,7 +161,9 @@ public static class AppointmentMappings
             entity.RespiratoryRate,
             entity.CreatedAt,
             entity.ClientPet?.PetId,
-            entity.ConsultingRoom);
+            entity.ConsultingRoom,
+            entity.IsPaid,
+            entity.PaidAt);
     }
 
     private static DateTime AsUtc(DateTime value)
