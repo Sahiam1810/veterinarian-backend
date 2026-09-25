@@ -25,6 +25,13 @@ public sealed class QuickBookingAppointmentCommandValidator : AbstractValidator<
         RuleFor(command => command.ScheduledStart)
             .NotEmpty().WithMessage("La fecha y hora de inicio es obligatoria.");
 
+        When(command => command.ScheduledEnd.HasValue, () =>
+        {
+            RuleFor(command => command.ScheduledEnd)
+                .GreaterThan(command => command.ScheduledStart)
+                .WithMessage("La fecha de finalizacion debe ser posterior al inicio.");
+        });
+
         When(command => !command.ClientId.HasValue || command.ClientId.Value == Guid.Empty, () =>
         {
             RuleFor(command => command.ClientPhoneNumber)
@@ -39,9 +46,21 @@ public sealed class QuickBookingAppointmentCommandValidator : AbstractValidator<
             });
 
             RuleFor(command => command.ClientFullName)
-                .NotEmpty().WithMessage("El nombre completo del cliente es obligatorio.")
+                .Must(name => !string.IsNullOrWhiteSpace(name))
+                .WithMessage("El nombre completo del cliente es obligatorio.")
                 .MaximumLength(ClientFullName.MaxLength)
                 .WithMessage($"El nombre completo no puede superar los {ClientFullName.MaxLength} caracteres.");
+        });
+
+        When(command => command.ClientId.HasValue && command.ClientId.Value != Guid.Empty, () =>
+        {
+            RuleFor(command => command.ClientPhoneNumber)
+                .Must(string.IsNullOrWhiteSpace)
+                .WithMessage("No envies telefono cuando se utiliza un cliente existente.");
+
+            RuleFor(command => command.ClientFullName)
+                .Must(string.IsNullOrWhiteSpace)
+                .WithMessage("No envies nombre cuando se utiliza un cliente existente.");
         });
     }
 }

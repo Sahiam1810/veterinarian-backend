@@ -125,4 +125,26 @@ public sealed class QuickBookingAppointmentCommandHandlerTests
         var ex = await Assert.ThrowsAsync<BadRequestException>(() => handler.RequestAsync(request, CancellationToken.None));
         Assert.Equal(ClientErrorCodes.EmailMissing, ex.Code);
     }
+
+    [Fact]
+    public void Validator_Rejects_Client_Source_Mixing_And_Invalid_End_Time()
+    {
+        var validator = new QuickBookingAppointmentCommandValidator();
+        var command = new QuickBookingAppointmentCommand(
+            ClientId: Guid.NewGuid(),
+            ClientPhoneNumber: "3001234567",
+            ClientFullName: "Ana Cliente",
+            PetName: "Fido",
+            SpeciesId: Guid.NewGuid(),
+            ServiceId: Guid.NewGuid(),
+            VeterinarianId: Guid.NewGuid(),
+            ScheduledStart: new DateTime(2026, 9, 25, 10, 0, 0),
+            ScheduledEnd: new DateTime(2026, 9, 25, 9, 0, 0));
+
+        var result = validator.Validate(command);
+
+        Assert.Contains(result.Errors, error => error.PropertyName == nameof(command.ClientPhoneNumber));
+        Assert.Contains(result.Errors, error => error.PropertyName == nameof(command.ClientFullName));
+        Assert.Contains(result.Errors, error => error.PropertyName == nameof(command.ScheduledEnd));
+    }
 }
