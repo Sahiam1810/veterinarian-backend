@@ -1,4 +1,4 @@
-﻿using Application.Clients.Abstraction;
+using Application.Clients.Abstraction;
 using Domain.Clients.Entities;
 using Domain.Clients.ValueObjects; // ðŸ‘ˆ 1. Importante para usar ClientIdentificationNumber
 using Infrastructure.Persistence;
@@ -31,6 +31,9 @@ public sealed class ClientRepository : IClientRepository
     // ðŸ‘ˆ 2. CORREGIDO: Compara contra el Value Object
     public async Task<ClientEntity?> GetByIdentificationNumberAsync(string identificationNumber, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(identificationNumber))
+            return null;
+
         var idVo = ClientIdentificationNumber.Create(identificationNumber);
 
         return await _context.Set<ClientEntity>()
@@ -39,12 +42,15 @@ public sealed class ClientRepository : IClientRepository
 
     public async Task<ClientEntity?> GetByEmailAsync(string email, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
         var emailVo = ClientEmail.Create(email);
         return await _context.Set<ClientEntity>()
             .FirstOrDefaultAsync(c => c.Email == emailVo, cancellationToken);
     }
 
-    // Match exacto por VO normalizado (solo dÃ­gitos). Unicidad BD: UX_CLIENTS_PHONE_NUMBER.
+    // Match exacto por VO normalizado (solo dígitos). Unicidad BD: UX_CLIENTS_PHONE_NUMBER.
     public async Task<ClientEntity?> GetByPhoneAsync(string phoneNumber, CancellationToken cancellationToken)
     {
         var phoneVo = ClientPhoneNumber.Create(phoneNumber);
@@ -67,7 +73,7 @@ public sealed class ClientRepository : IClientRepository
             query = query.Where(c => c.IdentificationNumber == idVo);
         }
 
-        // TelÃ©fono obligatorio en este filtro: Create (no Optional) tras el validator.
+        // Teléfono obligatorio en este filtro: Create (no Optional) tras el validator.
         if (!string.IsNullOrWhiteSpace(phoneNumber))
         {
             var phoneVo = ClientPhoneNumber.Create(phoneNumber);
@@ -77,9 +83,11 @@ public sealed class ClientRepository : IClientRepository
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
-    // ðŸ‘ˆ 3. CORREGIDO: Compara contra el Value Object sin usar '.Value'
     public async Task<bool> ExistsByIdentificationNumberAsync(string identificationNumber, CancellationToken cancellationToken, Guid? excludedId = null)
     {
+        if (string.IsNullOrWhiteSpace(identificationNumber))
+            return false;
+
         var idVo = ClientIdentificationNumber.Create(identificationNumber);
 
         var query = _context.Set<ClientEntity>()
@@ -95,6 +103,9 @@ public sealed class ClientRepository : IClientRepository
 
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken, Guid? excludedId = null)
     {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
         var emailVo = ClientEmail.Create(email);
         var query = _context.Set<ClientEntity>().Where(c => c.Email == emailVo);
         if (excludedId.HasValue)

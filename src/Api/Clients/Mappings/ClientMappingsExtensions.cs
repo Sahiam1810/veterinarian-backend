@@ -29,9 +29,9 @@ public static class ClientMappingsExtensions
         return new ClientResponseDto(
             entity.Id,
             entity.FullName.Value,
-            entity.Email.Value,
+            entity.Email?.Value,
             entity.IsActive,
-            entity.IdentificationNumber.Value,
+            entity.IdentificationNumber?.Value,
             entity.PhoneNumber.Value,
             entity.Address?.Value,
             entity.CreatedAt,
@@ -43,7 +43,7 @@ public static class ClientMappingsExtensions
     {
         return new ClientIdentificationLookupResponseDto(
             entity.Id,
-            entity.IdentificationNumber.Value,
+            entity.IdentificationNumber?.Value,
             entity.CreatedAt
         );
     }
@@ -53,7 +53,7 @@ public static class ClientMappingsExtensions
     {
         return new ClientPhoneLookupResponseDto(
             entity.Id,
-            entity.IdentificationNumber.Value,
+            entity.IdentificationNumber?.Value,
             entity.CreatedAt
         );
     }

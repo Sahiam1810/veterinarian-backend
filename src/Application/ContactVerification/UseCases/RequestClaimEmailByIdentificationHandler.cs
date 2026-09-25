@@ -29,6 +29,11 @@ public sealed class RequestClaimEmailByIdentificationHandler(
             throw new NotFoundException("Cliente no encontrado.");
         }
 
+        if (client.Email is null || string.IsNullOrWhiteSpace(client.Email.Value))
+        {
+            throw new BadRequestException("El cliente no tiene un correo registrado para autenticación por OTP.", Application.Clients.Errors.ClientErrorCodes.EmailMissing);
+        }
+
         var email = client.Email.Value;
         var otp = await requestEmail.RequestClaimForClientAsync(
             client.Id,

@@ -55,13 +55,13 @@ public sealed class QueryPetsByClaimProofHandler(
             pet.Name.Value,
             pet.Age,
             pet.Gender.Value,
-            pet.Weight.Value,
+            pet.Weight?.Value,
             // EF deja Observations en null cuando OBSERVATIONS es NULL en Oracle.
             pet.Observations?.Value,
             pet.SpeciesId,
             pet.Species.Name.Value,
             pet.RaceId,
-            pet.Race.Name.Value,
+            pet.Race?.Name.Value,
             pet.UpdatedAt ?? pet.CreatedAt,
             pet.PhotoUrl.Value)).ToArray();
     }

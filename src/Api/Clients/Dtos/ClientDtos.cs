@@ -50,9 +50,9 @@ public record UpdateClientDto(
 public record ClientResponseDto(
     Guid Id,
     string FullName,
-    string Email,
+    string? Email,
     bool IsActive,
-    string IdentificationNumber,
+    string? IdentificationNumber,
     string PhoneNumber,
     string? Address,
     DateTime CreatedAt,
@@ -65,7 +65,7 @@ public record ClientResponseDto(
 // conozca un número de identificación válido puede llamarlo.
 public record ClientIdentificationLookupResponseDto(
     Guid Id,
-    string IdentificationNumber,
+    string? IdentificationNumber,
     DateTime CreatedAt
 );
 
@@ -73,6 +73,6 @@ public record ClientIdentificationLookupResponseDto(
 // El caller ya conoce el teléfono; no se reexpone PII de contacto.
 public record ClientPhoneLookupResponseDto(
     Guid Id,
-    string IdentificationNumber,
+    string? IdentificationNumber,
     DateTime CreatedAt
 );

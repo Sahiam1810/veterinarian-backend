@@ -126,6 +126,26 @@ public sealed class AppointmentsController(ISender sender) : ControllerBase
             new CreateAppointmentResponse(id));
     }
 
+    [HttpPost("quick-booking")]
+    [RequirePermission("Citas", PermissionAction.Create)]
+    [EndpointSummary("Agendamiento rápido de cita médica")]
+    [EndpointDescription("Crea dueño (si no existe), mascota y cita médica sin requerir datos inventados de correo, cédula, peso, edad ni raza.")]
+    [ProducesResponseType(typeof(CreateAppointmentResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CreateAppointmentResponse>> QuickBooking(
+        [FromBody] QuickBookingAppointmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var id = await sender.Send(
+            request.ToCommand(),
+            cancellationToken);
+
+        return StatusCode(
+            StatusCodes.Status201Created,
+            new CreateAppointmentResponse(id));
+    }
+
     // Listado global con Citas.View (no Plataforma:Auxiliar/Vet con Citas pueden leer agenda)
     [HttpGet]
     [RequirePermission("Citas", PermissionAction.View)]
