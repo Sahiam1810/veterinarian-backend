@@ -96,7 +96,7 @@ public sealed class GetAppointmentReceiptQueryHandlerTests
 
         var appointment = BuildAppointment();
         Attach(appointment, clientPet, pet, service);
-        appointment.RegisterPayment();
+        appointment.RegisterPayment(service.Price);
 
         _appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>())
             .Returns(appointment);
@@ -110,6 +110,7 @@ public sealed class GetAppointmentReceiptQueryHandlerTests
         Assert.Equal("3001234567", result.OwnerPhone);
         Assert.Equal("Consulta general", result.ServiceName);
         Assert.Equal(45000m, result.ServicePrice);
+        Assert.Equal(45000m, appointment.PaidAmount);
         Assert.Equal(appointment.ScheduledStart, result.ScheduledStart);
         Assert.True(result.IsPaid);
     }

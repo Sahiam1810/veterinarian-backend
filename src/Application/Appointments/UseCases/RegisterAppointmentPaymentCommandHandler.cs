@@ -22,7 +22,7 @@ public sealed class RegisterAppointmentPaymentCommandHandler(IUnitOfWork unitOfW
             throw new ConflictException("La cita ya está pagada.");
         }
 
-        appointment.RegisterPayment();
+        appointment.RegisterPayment(appointment.Service?.Price);
 
         await unitOfWork.AppointmentsRepository.UpdateAsync(appointment, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

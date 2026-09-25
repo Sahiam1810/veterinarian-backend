@@ -37,6 +37,11 @@ public class MedicationOrderItemConfiguration : IEntityTypeConfiguration<Medicat
                 str => Guid.Parse(str))
             .IsRequired();
 
+        builder.Property(x => x.UnitPrice)
+            .HasColumnName("UNIT_PRICE")
+            .HasColumnType("NUMBER(12,2)")
+            .IsRequired(false);
+
         builder.Property(x => x.Notes)
             .HasColumnName("NOTES")
             .HasColumnType("VARCHAR2(500)")

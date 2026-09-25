@@ -34,5 +34,12 @@ public sealed class MedicationOrderItem : BaseEntity<Guid>
     public Guid MedicationOrderId { get; private set; }
     public Guid MedicationId { get; private set; }
     public Medication? Medication { get; private set; }
+    public decimal? UnitPrice { get; private set; }
     public string? Notes { get; private set; }
+
+    public void SetUnitPrice(decimal? unitPrice)
+    {
+        UnitPrice = unitPrice;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

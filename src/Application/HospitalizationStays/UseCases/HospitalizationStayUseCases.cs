@@ -308,7 +308,7 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
             foreach (var item in order.Items)
             {
                 var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
-                var unitPrice = medication?.Price ?? 0m;
+                var unitPrice = item.UnitPrice ?? medication?.Price ?? 0m;
                 medList.Add(new BillableItemDto(
                     medication?.Name ?? item.Medication?.Name ?? "Medicamento",
                     1m,
@@ -330,7 +330,7 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
             foreach (var item in order.Items)
             {
                 var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
-                var unitPrice = procedure?.Price ?? 0m;
+                var unitPrice = item.UnitPrice ?? procedure?.Price ?? 0m;
                 procList.Add(new BillableItemDto(
                     procedure?.Name ?? item.Procedure?.Name ?? "Procedimiento",
                     1m,

@@ -85,6 +85,12 @@ public sealed class CompleteMedicationOrderCommandHandler(IUnitOfWork unitOfWork
             throw new ConflictException(order.DescribeInvalidTransition());
         }
 
+        foreach (var item in order.Items)
+        {
+            var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
+            item.SetUnitPrice(medication?.Price);
+        }
+
         order.Complete();
         await unitOfWork.MedicationOrdersRepository.UpdateAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
