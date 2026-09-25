@@ -61,6 +61,18 @@ public sealed class CreateProcedureOrderCommandHandler(IUnitOfWork unitOfWork)
             itemsTuple,
             request.HospitalizationStayId);
 
+        foreach (var item in procedureOrder.Items)
+        {
+            if (!item.UnitPrice.HasValue)
+            {
+                var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
+                if (procedure is not null)
+                {
+                    item.SetUnitPrice(procedure.Price);
+                }
+            }
+        }
+
         await unitOfWork.ProcedureOrdersRepository.AddAsync(procedureOrder, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return procedureOrder;
@@ -90,8 +102,11 @@ public sealed class CompleteProcedureOrderCommandHandler(
 
         foreach (var item in order.Items)
         {
-            var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
-            item.SetUnitPrice(procedure?.Price);
+            if (!item.UnitPrice.HasValue)
+            {
+                var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
+                item.SetUnitPrice(procedure?.Price);
+            }
         }
 
         order.Complete(request.ResultFileUrl);

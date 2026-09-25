@@ -259,4 +259,56 @@ public class MedicationOrderCommandHandlerTests
         Assert.Single(result);
         await _repository.Received(1).GetPendingAsync(Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task CreateInHouseOrder_Snapshots_Medication_Catalog_Price_And_Is_Independent_Of_Catalog_Changes()
+    {
+        var appointmentId = Guid.NewGuid();
+        _appointmentRepo.GetByIdAsync(appointmentId, Arg.Any<CancellationToken>())
+            .Returns(BuildAppointment(appointmentId));
+
+        var med = new Medication("Afosolaner", price: 25000m);
+        _medicationRepo.GetByIdAsync(med.Id, Arg.Any<CancellationToken>())
+            .Returns(med);
+
+        var command = new CreateMedicationOrderCommand(
+            ClientPetId: Guid.NewGuid(),
+            AppointmentId: appointmentId,
+            IsInHouse: true,
+            ReferredTo: null,
+            ReferralReason: null,
+            Items: new List<MedicationOrderItemInput> { new(med.Id, "1 tableta") });
+
+        var result = await _createHandler.Handle(command, CancellationToken.None);
+
+        Assert.Single(result.Items);
+        Assert.Equal(25000m, result.Items.Single().UnitPrice);
+
+        // Si el precio en el catálogo cambia después, la orden conserva el precio histórico snapshot.
+        med.Update("Afosolaner", null, true, 40000m);
+        Assert.Equal(25000m, result.Items.Single().UnitPrice);
+    }
+
+    [Fact]
+    public async Task LegacyOrder_With_Null_UnitPrice_Does_Not_Fail()
+    {
+        var order = new MedicationOrder(
+            Guid.NewGuid(),
+            VetId,
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Dosis antigua") });
+
+        Assert.Null(order.Items.Single().UnitPrice);
+
+        _repository.GetByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
+
+        var queryHandler = new GetMedicationOrderByIdQueryHandler(_unitOfWork);
+        var result = await queryHandler.Handle(new GetMedicationOrderByIdQuery(order.Id), CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Null(result.Items.Single().UnitPrice);
+    }
 }

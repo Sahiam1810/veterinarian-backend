@@ -60,6 +60,18 @@ public sealed class CreateMedicationOrderCommandHandler(IUnitOfWork unitOfWork)
             itemsTuple,
             request.HospitalizationStayId);
 
+        foreach (var item in medicationOrder.Items)
+        {
+            if (!item.UnitPrice.HasValue)
+            {
+                var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
+                if (medication is not null)
+                {
+                    item.SetUnitPrice(medication.Price);
+                }
+            }
+        }
+
         await unitOfWork.MedicationOrdersRepository.AddAsync(medicationOrder, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return medicationOrder;
@@ -87,8 +99,11 @@ public sealed class CompleteMedicationOrderCommandHandler(IUnitOfWork unitOfWork
 
         foreach (var item in order.Items)
         {
-            var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
-            item.SetUnitPrice(medication?.Price);
+            if (!item.UnitPrice.HasValue)
+            {
+                var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
+                item.SetUnitPrice(medication?.Price);
+            }
         }
 
         order.Complete();

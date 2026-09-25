@@ -5,6 +5,7 @@ public record MedicationOrderItemDto(
     Guid MedicationOrderId,
     Guid MedicationId,
     string? MedicationName,
+    decimal? UnitPrice,
     string? Notes);
 
 public record MedicationOrderDto(

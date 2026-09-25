@@ -296,4 +296,56 @@ public class ProcedureOrderCommandHandlerTests
         Assert.Single(result);
         await _orderRepo.Received(1).GetPendingAsync(Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task CreateInHouseProcedureOrder_Snapshots_Procedure_Catalog_Price_And_Is_Independent_Of_Catalog_Changes()
+    {
+        var appointmentId = Guid.NewGuid();
+        _appointmentRepo.GetByIdAsync(appointmentId, Arg.Any<CancellationToken>())
+            .Returns(BuildAppointment(appointmentId));
+
+        var proc = new Procedure("Hemograma", price: 50000m);
+        _procedureRepo.GetByIdAsync(proc.Id, Arg.Any<CancellationToken>())
+            .Returns(proc);
+
+        var command = new CreateProcedureOrderCommand(
+            ClientPetId: Guid.NewGuid(),
+            AppointmentId: appointmentId,
+            IsInHouse: true,
+            ReferredTo: null,
+            ReferralReason: null,
+            Items: new List<ProcedureOrderItemInput> { new(proc.Id, "Urgente") });
+
+        var result = await _createHandler.Handle(command, CancellationToken.None);
+
+        Assert.Single(result.Items);
+        Assert.Equal(50000m, result.Items.Single().UnitPrice);
+
+        // Si el precio en el catálogo cambia después, la orden conserva el precio histórico snapshot.
+        proc.Update("Hemograma completo", null, true, 75000m);
+        Assert.Equal(50000m, result.Items.Single().UnitPrice);
+    }
+
+    [Fact]
+    public async Task LegacyProcedureOrder_With_Null_UnitPrice_Does_Not_Fail()
+    {
+        var order = new ProcedureOrder(
+            Guid.NewGuid(),
+            VetId,
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Examen antiguo") });
+
+        Assert.Null(order.Items.Single().UnitPrice);
+
+        _orderRepo.GetByIdAsync(order.Id, Arg.Any<CancellationToken>()).Returns(order);
+
+        var queryHandler = new GetProcedureOrderByIdQueryHandler(_unitOfWork);
+        var result = await queryHandler.Handle(new GetProcedureOrderByIdQuery(order.Id), CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Null(result.Items.Single().UnitPrice);
+    }
 }

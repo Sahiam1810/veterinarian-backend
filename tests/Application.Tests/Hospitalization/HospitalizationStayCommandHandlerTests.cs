@@ -5,6 +5,7 @@ using Application.Appointments.Abstraction;
 using Application.HospitalizationStays.Abstraction;
 using Application.HospitalizationStays.Errors;
 using Application.HospitalizationStays.UseCases;
+using Application.Services.Abstraction;
 using Application.Users.Abstraction;
 using Domain.Appointments.Entities;
 using Domain.HospitalizationStays.Entities;
@@ -23,6 +24,7 @@ public sealed class HospitalizationStayCommandHandlerTests
     private readonly IClientPetRepository clientPetsRepository = Substitute.For<IClientPetRepository>();
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
+    private readonly IServiceRepository servicesRepository = Substitute.For<IServiceRepository>();
 
     private readonly AdmitHospitalizationStayCommandHandler admitHandler;
     private readonly DischargeHospitalizationStayCommandHandler dischargeHandler;
@@ -30,8 +32,6 @@ public sealed class HospitalizationStayCommandHandlerTests
     private readonly AddHospitalizationNoteCommandHandler addNoteHandler;
     private readonly GetHospitalizationNotesByStayQueryHandler getNotesHandler;
     private readonly GetHospitalizationAdmissionOptionsQueryHandler getAdmissionOptionsHandler;
-
-
 
     private static readonly Guid ClientPetId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid AppointmentId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -48,6 +48,11 @@ public sealed class HospitalizationStayCommandHandlerTests
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
         unitOfWork.HospitalizationStaysRepository.Returns(staysRepository);
         unitOfWork.HospitalizationNotesRepository.Returns(notesRepository);
+        unitOfWork.ServicesRepository.Returns(servicesRepository);
+
+        var hospService = new Domain.Services.Entities.Service(Guid.NewGuid(), "Hospitalización", 60, 50000m);
+        servicesRepository.GetAvailableAsync(Arg.Any<CancellationToken>())
+            .Returns(new[] { hospService });
 
         admitHandler = new AdmitHospitalizationStayCommandHandler(unitOfWork);
         dischargeHandler = new DischargeHospitalizationStayCommandHandler(unitOfWork);
@@ -428,6 +433,64 @@ public sealed class HospitalizationStayCommandHandlerTests
         var conflict = Assert.IsType<ConflictException>(Assert.Single(outcomes, outcome => outcome is not null));
         Assert.Equal(HospitalizationStayErrorCodes.ActiveStayAlreadyExists, conflict.Code);
         Assert.Equal(2, saveAttempts);
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T21_admit_fails_when_hospitalization_service_missing_in_catalog()
+    {
+        ArrangeAdmittablePet();
+        staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+        servicesRepository.GetAvailableAsync(Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<Domain.Services.Entities.Service>());
+
+        await Assert.ThrowsAsync<NotFoundException>(() => admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Sin servicio", AdmittingUserId),
+            CancellationToken.None));
+
+        await staysRepository.DidNotReceive().AddAsync(Arg.Any<HospitalizationStay>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T22_admit_fails_when_hospitalization_service_has_negative_price()
+    {
+        ArrangeAdmittablePet();
+        staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+        var negativeService = new Domain.Services.Entities.Service(Guid.NewGuid(), "Hospitalización", 60, -500m);
+        servicesRepository.GetAvailableAsync(Arg.Any<CancellationToken>())
+            .Returns(new[] { negativeService });
+
+        await Assert.ThrowsAsync<BadRequestException>(() => admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Precio negativo", AdmittingUserId),
+            CancellationToken.None));
+
+        await staysRepository.DidNotReceive().AddAsync(Arg.Any<HospitalizationStay>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T23_admit_copies_service_price_and_existing_stay_retains_original_daily_rate()
+    {
+        ArrangeAdmittablePet();
+        staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+        var catalogService = new Domain.Services.Entities.Service(Guid.NewGuid(), "Hospitalización", 60, 45000m);
+        servicesRepository.GetAvailableAsync(Arg.Any<CancellationToken>())
+            .Returns(new[] { catalogService });
+
+        HospitalizationStay? savedStay = null;
+        await staysRepository.AddAsync(Arg.Do<HospitalizationStay>(s => savedStay = s), Arg.Any<CancellationToken>());
+
+        await admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Observación", AdmittingUserId),
+            CancellationToken.None);
+
+        Assert.NotNull(savedStay);
+        Assert.Equal(45000m, savedStay.DailyRate);
+
+        // Si el precio del catálogo cambia después, la estancia conserva su DailyRate original.
+        catalogService.Update(catalogService.TypeServiceId, catalogService.Name, catalogService.DurationMinutes, 80000m, catalogService.IsActive);
+        Assert.Equal(45000m, savedStay.DailyRate);
     }
 
     private static async Task<Exception?> Capture(Task<Guid> task)

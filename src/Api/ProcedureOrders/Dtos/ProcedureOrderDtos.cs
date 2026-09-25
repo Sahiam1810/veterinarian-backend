@@ -5,6 +5,7 @@ public record ProcedureOrderItemDto(
     Guid ProcedureOrderId,
     Guid ProcedureId,
     string? ProcedureName,
+    decimal? UnitPrice,
     string? Notes);
 
 public record ProcedureOrderDto(

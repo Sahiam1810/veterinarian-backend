@@ -77,11 +77,19 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
 
         var availableServices = await unitOfWork.ServicesRepository.GetAvailableAsync(cancellationToken)
             ?? Array.Empty<Domain.Services.Entities.Service>();
-        var dailyRate = availableServices
+
+        var hospitalizationService = availableServices
             .FirstOrDefault(service =>
                 string.Equals(service.Name.Trim(), "Hospitalización", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(service.Name.Trim(), "Hospitalizacion", StringComparison.OrdinalIgnoreCase))
-            ?.Price ?? 0m;
+            ?? throw new NotFoundException("Servicio de hospitalización no encontrado en el catálogo.");
+
+        if (hospitalizationService.Price < 0m)
+        {
+            throw new BadRequestException("El precio del servicio de hospitalización no puede ser negativo.");
+        }
+
+        var dailyRate = hospitalizationService.Price;
 
         var stay = new HospitalizationStay(
             request.ClientPetId,

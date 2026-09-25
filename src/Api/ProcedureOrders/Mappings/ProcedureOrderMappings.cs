@@ -13,6 +13,7 @@ public static class ProcedureOrderMappings
             item.ProcedureOrderId,
             item.ProcedureId,
             item.Procedure?.Name,
+            item.UnitPrice,
             item.Notes);
     }
 

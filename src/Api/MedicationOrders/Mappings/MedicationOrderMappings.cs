@@ -13,6 +13,7 @@ public static class MedicationOrderMappings
             item.MedicationOrderId,
             item.MedicationId,
             item.Medication?.Name,
+            item.UnitPrice,
             item.Notes);
     }
 
