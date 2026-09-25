@@ -34,7 +34,8 @@ public sealed class ClientEntity : BaseEntity<Guid>
     public ClientAddress Address { get; private set; } = null!;
 
     // Contacto general del cliente; no sustituye RequesterPhoneNumber de la cita.
-    public ClientPhoneNumber PhoneNumber { get; private set; } = null!;
+    // Nullable solo para lectura: histórico inválido en BD se materializa como null.
+    public ClientPhoneNumber? PhoneNumber { get; private set; }
 
     public bool IsActive { get; private set; }
 

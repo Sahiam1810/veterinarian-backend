@@ -32,7 +32,7 @@ public static class ClientMappingsExtensions
             entity.Email.Value,
             entity.IsActive,
             entity.IdentificationNumber.Value,
-            entity.PhoneNumber.Value,
+            entity.PhoneNumber?.Value,
             entity.Address?.Value,
             entity.CreatedAt,
             entity.UpdatedAt

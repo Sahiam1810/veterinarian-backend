@@ -9,7 +9,7 @@ namespace Infrastructure.Tests.Clients;
 public sealed class ClientPhoneUniquenessPersistenceTests
 {
     [Fact]
-    public void Client_mapping_has_required_unique_phone_number_index()
+    public void Client_mapping_has_unique_phone_number_index_with_clr_nullable_for_read_tolerance()
     {
         using var context = CreateOracleModelContext();
         var entityType = context.Model.FindEntityType(typeof(ClientEntity));
@@ -17,7 +17,8 @@ public sealed class ClientPhoneUniquenessPersistenceTests
 
         var phone = entityType!.FindProperty(nameof(ClientEntity.PhoneNumber));
         Assert.NotNull(phone);
-        Assert.False(phone!.IsNullable);
+        // CLR/converter nullable: histórico inválido → null en memoria. Oracle sigue NOT NULL (sin migration).
+        Assert.True(phone!.IsNullable);
 
         Assert.Contains(entityType.GetIndexes(), index =>
             index.IsUnique

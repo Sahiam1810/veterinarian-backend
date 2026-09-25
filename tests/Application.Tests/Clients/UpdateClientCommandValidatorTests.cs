@@ -25,6 +25,7 @@ public sealed class UpdateClientCommandValidatorTests
     [Theory]
     [InlineData("abc")]
     [InlineData("123456")]
+    [InlineData("123456789012345678901")]
     public void Validate_rejects_invalid_phone_format(string phone)
     {
         var result = validator.TestValidate(Valid() with { PhoneNumber = phone });
