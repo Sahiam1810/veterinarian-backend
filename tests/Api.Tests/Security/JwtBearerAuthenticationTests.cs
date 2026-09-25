@@ -74,6 +74,30 @@ public sealed class JwtBearerAuthenticationTests : IClassFixture<JwtBearerApiFac
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    // S15-2: valid RS256 signature/issuer/audience but tampered payload (no re-sign) → 401.
+    [Fact]
+    public async Task Me_rejects_tampered_payload_without_resigning()
+    {
+        var validToken = factory.CreateRs256Token();
+        var tamperedToken = JwtTestTokenBuilder.TamperPayloadClaim(
+            validToken,
+            "role_id",
+            Guid.NewGuid().ToString());
+        using var client = CreateClient(tamperedToken);
+
+        using var response = await client.GetAsync("/api/auth/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            Application.Security.Errors.AuthenticationErrors.Unauthorized.Code,
+            document.RootElement.GetProperty("code").GetString());
+    }
+
     [Theory]
     [InlineData(InvalidToken.WrongSigningKey)]
     [InlineData(InvalidToken.Hs256)]
@@ -94,6 +118,11 @@ public sealed class JwtBearerAuthenticationTests : IClassFixture<JwtBearerApiFac
         Assert.Equal(
             "application/problem+json",
             response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            Application.Security.Errors.AuthenticationErrors.Unauthorized.Code,
+            document.RootElement.GetProperty("code").GetString());
     }
 
     private HttpClient CreateClient(string token)
@@ -124,7 +153,7 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
     private const string Issuer = "Veterinaria.Api.Jwt.Tests";
     private const string Audience = "Veterinaria.Client.Jwt.Tests";
     private const string KeyId = "jwt-http-test-key";
-    private static readonly Guid AccountId =
+    private static readonly Guid TokenUserId =
         Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly RsaTestKeys Keys = RsaTestKeys.Create();
 
@@ -134,6 +163,7 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = Issuer,
             ["Jwt__Audience"] = Audience,
@@ -252,7 +282,7 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
         var token = new JwtSecurityToken(
             issuer,
             audience,
-            [new Claim(JwtRegisteredClaimNames.Sub, AccountId.ToString())],
+            [new Claim(JwtRegisteredClaimNames.Sub, TokenUserId.ToString())],
             notBefore,
             expires,
             signingCredentials);
@@ -263,17 +293,14 @@ public sealed class JwtBearerApiFactory : WebApplicationFactory<AuthController>
     private sealed class ProfileAuthenticationService : IAuthenticationService
     {
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) =>
             Task.FromResult(Result<CurrentProfile>.Success(new CurrentProfile(
-                Guid.Parse("22222222-2222-2222-2222-222222222222"),
-                userAccountId,
+                userId,
                 "Cliente Prueba",
                 "CP",
-                "cliente.prueba",
                 "cliente@huellitas.test",
-                "Cliente",
-                "Activo")));
+                "Cliente")));
 
         public Task<Result<AuthenticationTokens>> LoginAsync(
             string email,

@@ -1,0 +1,83 @@
+-- =============================================================================
+-- SCRIPT MAESTRO DE LIMPIEZA TOTAL (CLEANUP ALL SEEDS & TRANSACTIONAL DATA)
+-- Base de datos: Oracle Database
+--
+-- Elimina todos los datos operacionales, transaccionales y catálogos en orden
+-- estricto de integridad referencial (de tablas hijas a tablas padre).
+--
+-- NOTA: NO elimina tablas (no usa DROP TABLE), solo vacía las filas (DELETE FROM).
+-- U5: quitadas USER_ACCOUNTS/USER_CREDENTIALS (fusionadas en USERS) y las
+-- tablas huérfanas de D1-D6/U1 (ACCOUNT_STATEMENTS, USER_PERMISSIONS, el
+-- subsistema de IA y las sesiones legacy de Telegram) que la migración
+-- MergeUsersAndAccounts ya eliminó de la base.
+-- =============================================================================
+
+SET DEFINE OFF;
+
+-- =============================================================================
+-- Nivel 1: Tablas hoja (nadie tiene llaves foráneas apuntando hacia ellas)
+-- =============================================================================
+DELETE FROM CONTACT_VERIFICATION_SESSIONS;
+DELETE FROM VETERINARIAN_ABSENCES;
+DELETE FROM VACCINATIONS;
+DELETE FROM APPOINTMENT_STATUS_HISTORIES;
+DELETE FROM ROLE_PERMISSIONS;
+DELETE FROM NOTIFICATIONS;
+DELETE FROM USER_TOKENS;
+
+-- Hojas del subsistema de Telegram y Chat
+
+-- =============================================================================
+-- Nivel 2: Tablas dependientes de Citas, Usuarios y Conversaciones
+-- =============================================================================
+DELETE FROM MEDICAL_RECORDS;
+DELETE FROM TELEGRAM_USER_LINKS;
+DELETE FROM CHAT_ESCALATIONS;
+
+-- =============================================================================
+-- Nivel 3: Citas y Mensajes de Chat
+-- =============================================================================
+DELETE FROM APPOINTMENTS;
+DELETE FROM CHAT_MESSAGES;
+
+-- =============================================================================
+-- Nivel 4: Disponibilidades, Vínculos Cliente-Mascota y Participantes del Chat
+-- =============================================================================
+DELETE FROM AVAILABILITIES;
+DELETE FROM CLIENTS_PETS;
+DELETE FROM CHAT_PARTICIPANTS;
+
+-- =============================================================================
+-- Nivel 5: Entidades principales de negocio y Conversaciones
+-- =============================================================================
+DELETE FROM PETS;
+DELETE FROM CLIENTS;
+DELETE FROM VETERINARIANS;
+DELETE FROM SERVICES;
+DELETE FROM AGENT_HUMANS;
+DELETE FROM CHAT_CONVERSATIONS;
+
+-- =============================================================================
+-- Nivel 6: Usuarios y Razas (dependen de Roles y Especies)
+-- =============================================================================
+DELETE FROM USERS;
+DELETE FROM RACES;
+
+-- =============================================================================
+-- Nivel 7: Catálogos raíz (sin dependencias externas)
+-- =============================================================================
+DELETE FROM SPECIALTIES;
+DELETE FROM TYPE_SERVICES;
+DELETE FROM DIAGNOSTICS;
+DELETE FROM SPECIES;
+DELETE FROM STATUS_APPOINTMENTS;
+DELETE FROM SENDER_TYPES;
+DELETE FROM ESCALATIONS_STATUSES;
+DELETE FROM MODULES;
+DELETE FROM ROLES;
+
+COMMIT;
+
+-- =============================================================================
+-- Fin de limpieza total
+-- =============================================================================

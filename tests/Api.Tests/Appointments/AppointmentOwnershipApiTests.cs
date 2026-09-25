@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Api.Appointments.Controllers;
+using Domain.Roles;
 using Api.Appointments.Dtos;
 using Api.Common.Errors;
 using Application.Appointments.UseCases;
@@ -16,7 +17,7 @@ namespace Api.Tests.Appointments;
 
 public sealed class AppointmentOwnershipApiTests
 {
-    private static readonly Guid ActorUserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid ActorUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid AppointmentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     private readonly ISender sender = Substitute.For<ISender>();
@@ -52,7 +53,7 @@ public sealed class AppointmentOwnershipApiTests
         await AssertEnforceFlagAsync(
             claims:
             [
-                new Claim("sub", ActorUserAccountId.ToString()),
+                new Claim("sub", ActorUserId.ToString()),
                 new Claim("role", "Veterinario")
             ],
             expectedEnforce: true);
@@ -66,7 +67,7 @@ public sealed class AppointmentOwnershipApiTests
         await AssertEnforceFlagAsync(
             claims:
             [
-                new Claim("sub", ActorUserAccountId.ToString()),
+                new Claim("sub", ActorUserId.ToString()),
                 new Claim("role", role)
             ],
             expectedEnforce: false);
@@ -78,8 +79,8 @@ public sealed class AppointmentOwnershipApiTests
         await AssertEnforceFlagAsync(
             claims:
             [
-                new Claim("sub", ActorUserAccountId.ToString()),
-                new Claim("super_admin", "true")
+                new Claim("sub", ActorUserId.ToString()),
+                new Claim("role_id", SystemRoles.SuperAdminId.ToString())
             ],
             expectedEnforce: false);
     }
@@ -126,19 +127,19 @@ public sealed class AppointmentOwnershipApiTests
         await sender.Received(1).Send(
             Arg.Is<GetAppointmentByIdQuery>(q =>
                 q.Id == AppointmentId
-                && q.ActorUserAccountId == ActorUserAccountId
+                && q.ActorUserId == ActorUserId
                 && q.EnforceVeterinarianOwnership == expectedEnforce),
             Arg.Any<CancellationToken>());
         await sender.Received(1).Send(
             Arg.Is<UpdateAppointmentCommand>(c =>
                 c.Id == AppointmentId
-                && c.ActorUserAccountId == ActorUserAccountId
+                && c.ActorUserId == ActorUserId
                 && c.EnforceVeterinarianOwnership == expectedEnforce),
             Arg.Any<CancellationToken>());
         await sender.Received(1).Send(
             Arg.Is<UpdateAppointmentStatusCommand>(c =>
                 c.AppointmentId == AppointmentId
-                && c.ActorUserAccountId == ActorUserAccountId
+                && c.ActorUserId == ActorUserId
                 && c.EnforceVeterinarianOwnership == expectedEnforce),
             Arg.Any<CancellationToken>());
     }

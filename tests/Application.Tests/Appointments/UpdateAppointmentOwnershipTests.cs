@@ -1,24 +1,35 @@
 using Application.Appointments.Abstraction;
 using Application.Appointments.UseCases;
 using Application.Common.Abstractions;
+using Application.VeterinarianAbsences.Abstraction;
+using Domain.VeterinarianAbsences.Entities;
 using Application.Common.Exceptions;
-using Application.UserAccounts.Abstraction;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
+using Application.Clients.Abstraction;
+using Application.ClientsPets.Abstraction;
 using Domain.Availabilities.Entities;
+using Domain.Clients.Entities;
+using Domain.ClientsPets.Entities;
+using Domain.Pets.Entities;
+using Domain.Races.Entities;
+using Domain.Species.Entities;
 using Domain.Common;
 using Domain.Veterinarians.Entities;
+using Domain.StatusAppointments.Entities;
+using Application.StatusAppointments.Abstraction;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using Application.Tests.Common;
 
 namespace Application.Tests.Appointments;
 
+// U4: el ownership ya resuelve el veterinario directamente por el UserId del
+// actor (el sub del JWT), sin pasar por UserAccounts.
 public sealed class UpdateAppointmentOwnershipTests
 {
     private static readonly Guid AppointmentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid ActorUserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid ActorUserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly Guid OwnVeterinarianId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid ForeignVeterinarianId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid ClientPetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -26,20 +37,45 @@ public sealed class UpdateAppointmentOwnershipTests
     private static readonly Guid StatusId = Guid.Parse("66666666-6666-6666-6666-666666666666");
     private static readonly Guid AvailabilityId = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
+    private static readonly DateTime MondaySlotStartUtc =
+        new(2026, 9, 7, 14, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime MondaySlotEndUtc =
+        new(2026, 9, 7, 15, 0, 0, DateTimeKind.Utc);
+
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
-    private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
     private readonly IVeterinarianRepository veterinariansRepository = Substitute.For<IVeterinarianRepository>();
     private readonly Application.Availabilities.Abstraction.IAvailabilityRepository availabilitiesRepository
         = Substitute.For<Application.Availabilities.Abstraction.IAvailabilityRepository>();
+    private readonly IVeterinarianAbsenceRepository absences
+        = Substitute.For<IVeterinarianAbsenceRepository>();
+    private readonly IClientPetRepository clientPetsRepository = Substitute.For<IClientPetRepository>();
+    private readonly IClientRepository clientsRepository = Substitute.For<IClientRepository>();
+    private readonly IStatusAppointmentRepository statusAppointmentsRepository
+        = Substitute.For<IStatusAppointmentRepository>();
     private readonly UpdateAppointmentCommandHandler sut;
 
     public UpdateAppointmentOwnershipTests()
     {
+        var client = TestClients.Create("1234567890", null, phoneNumber: "3001234567");
+        var species = new SpeciesEntity("Canino");
+        var pet = new PetEntity("Luna", 4, "F", 12m, null, species, new RaceEntity("Mestizo", species));
+        var clientPet = new ClientPetEntity(client, pet, true);
+        typeof(ClientPetEntity).GetProperty(nameof(ClientPetEntity.Id))!.SetValue(clientPet, ClientPetId);
+
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
-        unitOfWork.UserAccountsRepository.Returns(userAccountsRepository);
         unitOfWork.VeterinariansRepository.Returns(veterinariansRepository);
         unitOfWork.AvailabilitiesRepository.Returns(availabilitiesRepository);
+        unitOfWork.ClientPetsRepository.Returns(clientPetsRepository);
+        unitOfWork.ClientsRepository.Returns(clientsRepository);
+        unitOfWork.StatusAppointmentsRepository.Returns(statusAppointmentsRepository);
+        statusAppointmentsRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new StatusAppointment("AGENDADA", null));
+        clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>()).Returns(clientPet);
+        clientsRepository.GetByIdAsync(client.Id, Arg.Any<CancellationToken>()).Returns(client);
+        absences.GetOverlappingAsync(
+                Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<VeterinarianAbsence>());
         availabilitiesRepository.LockByIdAsync(AvailabilityId, Arg.Any<CancellationToken>())
             .Returns(new Availability(
                 OwnVeterinarianId,
@@ -50,7 +86,13 @@ public sealed class UpdateAppointmentOwnershipTests
                 Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                 call.ArgAt<CancellationToken>(1)));
-        sut = new UpdateAppointmentCommandHandler(unitOfWork);
+        sut = new UpdateAppointmentCommandHandler(
+            unitOfWork, absences, new FixedTimeProvider(new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)));
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     [Fact]
@@ -90,12 +132,9 @@ public sealed class UpdateAppointmentOwnershipTests
     public async Task OWN_PUT_T03_throws_NotFoundException_and_does_not_persist_when_veterinarian_profile_is_missing()
     {
         var appointment = CreateAppointment(OwnVeterinarianId);
-        var account = WithId(new UserAccountEntity(UserId, "vet", "vet@test.com", "Active"), ActorUserAccountId);
         appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
             .Returns(appointment);
-        userAccountsRepository.GetByIdAsync(ActorUserAccountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        veterinariansRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+        veterinariansRepository.GetByUserIdAsync(ActorUserId, Arg.Any<CancellationToken>())
             .Returns((Veterinarian?)null);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
@@ -114,7 +153,6 @@ public sealed class UpdateAppointmentOwnershipTests
 
         await sut.Handle(CreateCommand(enforce: false), CancellationToken.None);
 
-        await userAccountsRepository.DidNotReceive().GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await veterinariansRepository.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await appointmentsRepository.Received(1).UpdateAsync(appointment, Arg.Any<CancellationToken>());
         await unitOfWork.Received(1).ExecuteInTransactionAsync(
@@ -129,19 +167,16 @@ public sealed class UpdateAppointmentOwnershipTests
             ServiceId,
             StatusId,
             AvailabilityId,
-            DateTime.UtcNow,
-            DateTime.UtcNow.AddHours(1),
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
             "actualizado",
-            ActorUserAccountId,
+            ActorUserId,
             enforce);
 
     private void ArrangeOwnedVeterinarian()
     {
-        var account = WithId(new UserAccountEntity(UserId, "vet", "vet@test.com", "Active"), ActorUserAccountId);
-        var veterinarian = WithId(new Veterinarian(UserId, Guid.NewGuid(), "LIC-001"), OwnVeterinarianId);
-        userAccountsRepository.GetByIdAsync(ActorUserAccountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        veterinariansRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+        var veterinarian = WithId(new Veterinarian(ActorUserId, Guid.NewGuid(), "LIC-001"), OwnVeterinarianId);
+        veterinariansRepository.GetByUserIdAsync(ActorUserId, Arg.Any<CancellationToken>())
             .Returns(veterinarian);
     }
 
@@ -153,8 +188,8 @@ public sealed class UpdateAppointmentOwnershipTests
                 ServiceId,
                 StatusId,
                 AvailabilityId,
-                DateTime.UtcNow,
-                DateTime.UtcNow.AddHours(1),
+                MondaySlotStartUtc,
+                MondaySlotEndUtc,
                 "original"),
             AppointmentId);
 

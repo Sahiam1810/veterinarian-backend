@@ -25,12 +25,12 @@ public sealed class VeterinariansController(ISender sender) : ControllerBase
     public async Task<ActionResult<VeterinarianResponse>> GetMe(CancellationToken cancellationToken)
     {
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
+        if (!Guid.TryParse(subject, out var userId))
         {
             return Unauthorized();
         }
 
-        var veterinarian = await sender.Send(new GetMyVeterinarianQuery(userAccountId), cancellationToken);
+        var veterinarian = await sender.Send(new GetMyVeterinarianQuery(userId), cancellationToken);
         return Ok(veterinarian.ToResponse());
     }
 

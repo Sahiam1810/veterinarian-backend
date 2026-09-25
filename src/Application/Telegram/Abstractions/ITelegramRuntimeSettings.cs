@@ -6,9 +6,10 @@ public interface ITelegramRuntimeSettings
 
     string BotUsername { get; }
 
-    TimeSpan LinkCodeTtl { get; }
-
     TimeSpan WorkerPollInterval { get; }
+
+    // Slots paralelos del worker de Telegram (chats distintos). Mismo chat sigue en serie.
+    int WorkerConcurrency { get; }
 
     TimeSpan ProcessingLease { get; }
 
@@ -16,21 +17,19 @@ public interface ITelegramRuntimeSettings
 
     TimeSpan DelegatedTokenLifetime { get; }
 
-    TimeSpan OtpLifetime { get; }
+    // Estado inicial (Pendiente) para un ChatEscalation creado automáticamente
+    // al detectar una frase de escalamiento (Ticket B2). Configurable en vez de
+    // hardcodeado, mismo criterio que Agent__InitialConversationStatusId.
+    Guid PendingEscalationStatusId { get; }
 
-    int OtpMaximumAttempts { get; }
+    // SENDER_TYPES "Agente humano" — decide si un ChatMessage se reenvía a
+    // Telegram (Ticket B4). Ningún otro remitente (Cliente, Agente IA) dispara
+    // el reenvío.
+    Guid HumanAgentSenderTypeId { get; }
 
-    TimeSpan OtpResendInterval { get; }
+    TimeSpan PrivateAccessAbsoluteLifetime { get; }
 
-    bool RegistrationEnabled { get; }
+    TimeSpan PrivateAccessIdleLifetime { get; }
 
-    string RegistrationCompletionUrl { get; }
-
-    TimeSpan RegistrationOtpLifetime { get; }
-
-    TimeSpan RegistrationTokenLifetime { get; }
-
-    int RegistrationMaximumOtpAttempts { get; }
-
-    TimeSpan RegistrationResendInterval { get; }
+    TimeSpan RegistrationLinkWindow { get; }
 }

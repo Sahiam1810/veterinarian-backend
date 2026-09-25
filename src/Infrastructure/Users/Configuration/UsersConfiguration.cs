@@ -39,11 +39,16 @@ public sealed class UsersConfiguration
             .HasMaxLength(UserEmail.MaxLength)
             .IsRequired();
 
-        // Nullable: los usuarios con rol Cliente nunca se loguean (solo
-        // interactúan vía chatbot) y por lo tanto no tienen contraseña.
+        // U5: USERS es solo personal (Frente 1 separó Clientes); todo usuario
+        // se loguea y requiere contraseña.
         builder.Property(user => user.PasswordHash)
             .HasColumnName("PASSWORD_HASH")
             .HasColumnType("VARCHAR2(255)")
+            .IsRequired();
+
+        builder.Property(user => user.PasswordChangedAt)
+            .HasColumnName("PASSWORD_CHANGED_AT")
+            .HasColumnType("TIMESTAMP")
             .IsRequired(false);
 
         builder.Property(user => user.RoleId)
@@ -59,6 +64,17 @@ public sealed class UsersConfiguration
             .HasConversion<int>()
             .HasDefaultValue(true)
             .IsRequired();
+
+        // URL de foto de perfil; opcional (NULL en Oracle → campo _photoUrl).
+        builder.Property(user => user.PhotoUrl)
+            .HasColumnName("PHOTO_URL")
+            .HasColumnType("NVARCHAR2(500)")
+            .HasMaxLength(UserPhotoUrl.MaxLength)
+            .HasConversion(
+                photo => photo == null ? null : photo.Value,
+                str => UserPhotoUrl.Create(str))
+            .HasField("_photoUrl")
+            .IsRequired(false);
 
         builder.Property(user => user.CreatedAt)
             .HasColumnName("CREATED_AT")

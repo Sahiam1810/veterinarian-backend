@@ -8,8 +8,11 @@ namespace Infrastructure.Telegram.Repositories;
 public sealed class TelegramUserLinkRepository(VeterinaryDbContext context)
     : ITelegramUserLinkRepository
 {
-    public Task<TelegramUserLink?> GetByPersonIdAsync(Guid personId, CancellationToken cancellationToken) =>
-        context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.PersonId == personId, cancellationToken);
+    public Task<TelegramUserLink?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.Id == id, cancellationToken);
+
+    public Task<TelegramUserLink?> GetByClientIdAsync(Guid clientId, CancellationToken cancellationToken) =>
+        context.Set<TelegramUserLink>().FirstOrDefaultAsync(link => link.ClientId == clientId, cancellationToken);
 
     public Task<TelegramUserLink?> GetByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken) =>
         context.Set<TelegramUserLink>().FirstOrDefaultAsync(
@@ -19,6 +22,11 @@ public sealed class TelegramUserLinkRepository(VeterinaryDbContext context)
     public Task<TelegramUserLink?> GetByTelegramChatIdAsync(long telegramChatId, CancellationToken cancellationToken) =>
         context.Set<TelegramUserLink>().FirstOrDefaultAsync(
             link => link.TelegramChatId == telegramChatId && link.UnlinkedAt == null,
+            cancellationToken);
+
+    public Task<TelegramUserLink?> GetByConversationIdAsync(Guid conversationId, CancellationToken cancellationToken) =>
+        context.Set<TelegramUserLink>().FirstOrDefaultAsync(
+            link => link.ChatConversationId == conversationId && link.UnlinkedAt == null,
             cancellationToken);
 
     public async Task AddAsync(TelegramUserLink link, CancellationToken cancellationToken) =>

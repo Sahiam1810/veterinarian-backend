@@ -81,4 +81,29 @@ public sealed class VeterinarianRepository : IVeterinarianRepository
         _context.Set<Veterinarian>().Remove(veterinarian);
         return Task.CompletedTask;
     }
+
+    // Sin Include(User): evita IdentityConflict al borrar el User en la misma UoW
+    public async Task DeleteByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var veterinarian = await _context.Set<Veterinarian>()
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+        if (veterinarian is null)
+        {
+            return;
+        }
+
+        _context.Set<Veterinarian>().Remove(veterinarian);
+    }
+
+    public async Task<Guid?> GetIdByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+        => await _context.Set<Veterinarian>()
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 }

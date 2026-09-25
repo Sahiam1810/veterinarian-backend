@@ -17,7 +17,10 @@ public sealed class SpeciesRepository : ISpeciesRepository
 
     public async Task<IReadOnlyCollection<SpeciesEntity>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await _context.Set<SpeciesEntity>().ToListAsync(cancellationToken);
+        // Solo lectura: sin tracking en catálogo completo (S26).
+        return await _context.Set<SpeciesEntity>()
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<SpeciesEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

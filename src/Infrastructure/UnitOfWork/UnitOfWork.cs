@@ -1,8 +1,14 @@
-using Application.AccountStatements.Abstraction;
 using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Diagnostics.Abstraction;
+using Application.Medications.Abstraction;
+using Application.Procedures.Abstraction;
+using Application.MedicationOrders.Abstraction;
+using Application.ProcedureOrders.Abstraction;
+using Application.Supplies.Abstraction;
+using Application.SupplyConsumptions.Abstraction;
+using Application.HospitalizationStays.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
@@ -12,7 +18,6 @@ using Application.Races.Abstraction;
 using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.RolePermissions.Abstraction;
-using Application.UserPermissions.Abstraction;
 using Application.Species.Abstraction;
 using Application.StatusAppointments.Abstraction;
 using Application.TypeServices.Abstraction;
@@ -23,41 +28,17 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
-using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 
-using Application.AiRunStatuses.Abstraction;
-
-using Application.ConversationStatuses.Abstraction;
-
-using Application.MessageTypes.Abstraction;
-
 using Application.EscalationStatuses.Abstraction;
-
-
-
 
 using Application.Notifications.Abstraction;
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
-using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 using Application.UserTokens.Abstraction;
 using Infrastructure.Persistence;
@@ -74,7 +55,6 @@ public sealed class UnitOfWork : IUnitOfWork
         IRolesRepository rolesRepository,
         IModulesRepository modulesRepository,
         IRolePermissionsRepository rolePermissionsRepository,
-        IUserPermissionsRepository userPermissionsRepository,
         ISpeciesRepository speciesRepository,
         IRaceRepository racesRepository,
         IUsersRepository usersRepository,
@@ -82,58 +62,38 @@ public sealed class UnitOfWork : IUnitOfWork
         ITypeServiceRepository typeServicesRepository,
         IServiceRepository servicesRepository,
         IPetRepository petsRepository,
-        IUserAccountsRepository userAccountsRepository,
-        IUserCredentialsRepository userCredentialsRepository,
-
         IClientRepository clientsRepository,
-
         IUserTokensRepository userTokensRepository,
         ISpecialtyRepository specialtiesRepository,
         IClientPetRepository clientPetsRepository,
-
-        IAccountStatementsRepository accountStatementsRepository,
-
         ISenderTypeRepository senderTypesRepository,
-        IAiRunStatusRepository aiRunStatusesRepository,
-
-
         IVeterinarianRepository veterinariansRepository,
-
-        IConversationStatusRepository conversationStatusesRepository,
-        IMessageTypeRepository messageTypesRepository,
-
-        IPriorityRepository prioritiesRepository,
         IEscalationStatusRepository escalationStatusesRepository,
         IAvailabilityRepository availabilitiesRepository,
         IAppointmentRepository appointmentsRepository,
         IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository,
+        IHospitalizationStayRepository hospitalizationStaysRepository,
+        IHospitalizationNoteRepository hospitalizationNotesRepository,
         IMedicalRecordRepository medicalRecordsRepository,
         INotificationRepository notificationsRepository,
         IDiagnosticRepository diagnosticsRepository,
+        IMedicationRepository medicationsRepository,
+        IProcedureRepository proceduresRepository,
+        IMedicationOrderRepository medicationOrdersRepository,
+        IProcedureOrderRepository procedureOrdersRepository,
+        ISupplyRepository suppliesRepository,
+        ISupplyConsumptionRepository supplyConsumptionsRepository,
         IVaccinationRepository vaccinationsRepository,
         IAgentHumanRepository agentHumansRepository,
-        IAiModelRepository aiModelsRepository,
-        IChatUserProfileRepository chatUserProfilesRepository,
         IChatConversationRepository chatConversationsRepository,
-        IChatConversationAssignmentRepository chatConversationAssignmentsRepository,
-        IChatConversationAiSettingRepository chatConversationAiSettingsRepository,
         IChatParticipantRepository chatParticipantsRepository,
         IChatMessageRepository chatMessagesRepository,
-        IChatAttachmentRepository chatAttachmentsRepository,
-        IChatEscalationRepository chatEscalationsRepository,
-        IChatEscalationStatusHistoryRepository chatEscalationStatusHistoriesRepository,
-        IChatEscalationResolutionRepository chatEscalationResolutionsRepository,
-        IChatEscalationAssignmentRepository chatEscalationAssignmentsRepository,
-        IChatAiRunRepository chatAiRunsRepository,
-        IChatAiRunMetricsRepository chatAiRunMetricsRepository,
-        IChatAiRunErrorRepository chatAiRunErrorsRepository,
-        IProviderModelAiRepository providerModelsAiRepository)
+        IChatEscalationRepository chatEscalationsRepository)
     {
         _context = context;
         RolesRepository = rolesRepository;
         ModulesRepository = modulesRepository;
         RolePermissionsRepository = rolePermissionsRepository;
-        UserPermissionsRepository = userPermissionsRepository;
         SpeciesRepository = speciesRepository;
         RacesRepository = racesRepository;
         PetsRepository = petsRepository;
@@ -141,124 +101,92 @@ public sealed class UnitOfWork : IUnitOfWork
         StatusAppointmentsRepository = statusAppointmentsRepository;
         TypeServicesRepository = typeServicesRepository;
         ServicesRepository = servicesRepository;
-        UserAccountsRepository = userAccountsRepository;
-        UserCredentialsRepository = userCredentialsRepository;
-
         ClientsRepository = clientsRepository;
-
         UserTokensRepository = userTokensRepository;
         SpecialtiesRepository = specialtiesRepository;
         ClientPetsRepository = clientPetsRepository;
-
-        AccountStatementsRepository = accountStatementsRepository;
-
-
         VeterinariansRepository = veterinariansRepository;
-
-        PrioritiesRepository = prioritiesRepository;
-
         SenderTypesRepository = senderTypesRepository;
-
-        AiRunStatusesRepository = aiRunStatusesRepository;
-
-        ConversationStatusesRepository = conversationStatusesRepository;
-        MessageTypesRepository = messageTypesRepository;
-
         EscalationStatusesRepository = escalationStatusesRepository;
-
         AvailabilitiesRepository = availabilitiesRepository;
         AppointmentsRepository = appointmentsRepository;
         AppointmentStatusHistoriesRepository = appointmentStatusHistoriesRepository;
+        HospitalizationStaysRepository = hospitalizationStaysRepository;
+        HospitalizationNotesRepository = hospitalizationNotesRepository;
         MedicalRecordsRepository = medicalRecordsRepository;
         NotificationsRepository = notificationsRepository;
         DiagnosticsRepository = diagnosticsRepository;
+        MedicationsRepository = medicationsRepository;
+        ProceduresRepository = proceduresRepository;
+        MedicationOrdersRepository = medicationOrdersRepository;
+        ProcedureOrdersRepository = procedureOrdersRepository;
+        SuppliesRepository = suppliesRepository;
+        SupplyConsumptionsRepository = supplyConsumptionsRepository;
         VaccinationsRepository = vaccinationsRepository;
         AgentHumansRepository = agentHumansRepository;
-        AiModelsRepository = aiModelsRepository;
-        ChatUserProfilesRepository = chatUserProfilesRepository;
         ChatConversationsRepository = chatConversationsRepository;
-        ChatConversationAssignmentsRepository = chatConversationAssignmentsRepository;
-        ChatConversationAiSettingsRepository = chatConversationAiSettingsRepository;
         ChatParticipantsRepository = chatParticipantsRepository;
         ChatMessagesRepository = chatMessagesRepository;
-        ChatAttachmentsRepository = chatAttachmentsRepository;
         ChatEscalationsRepository = chatEscalationsRepository;
-        ChatEscalationStatusHistoriesRepository = chatEscalationStatusHistoriesRepository;
-        ChatEscalationResolutionsRepository = chatEscalationResolutionsRepository;
-        ChatEscalationAssignmentsRepository = chatEscalationAssignmentsRepository;
-        ChatAiRunsRepository = chatAiRunsRepository;
-        ChatAiRunMetricsRepository = chatAiRunMetricsRepository;
-        ChatAiRunErrorsRepository = chatAiRunErrorsRepository;
-        ProviderModelsAiRepository = providerModelsAiRepository;
     }
 
     public IRolesRepository RolesRepository { get; }
     public IModulesRepository ModulesRepository { get; }
     public IRolePermissionsRepository RolePermissionsRepository { get; }
-    public IUserPermissionsRepository UserPermissionsRepository { get; }
     public ISpeciesRepository SpeciesRepository { get; }
     public IRaceRepository RacesRepository { get; }
     public IPetRepository PetsRepository { get; }
     public IUsersRepository UsersRepository { get; }
-    public IUserAccountsRepository UserAccountsRepository { get; }
-    public IUserCredentialsRepository UserCredentialsRepository { get; }
-
     public IClientRepository ClientsRepository { get; }
-
     public IUserTokensRepository UserTokensRepository { get; }
-
-    public IAccountStatementsRepository AccountStatementsRepository { get; }
-
     public IStatusAppointmentRepository StatusAppointmentsRepository { get; }
     public ITypeServiceRepository TypeServicesRepository { get; }
-
     public IServiceRepository ServicesRepository { get; }
-
     public ISpecialtyRepository SpecialtiesRepository { get; }
     public IClientPetRepository ClientPetsRepository { get; }
-
     public IVeterinarianRepository VeterinariansRepository { get; }
-
-    public IPriorityRepository PrioritiesRepository { get; }
-
     public ISenderTypeRepository SenderTypesRepository { get; }
-    public IAiRunStatusRepository AiRunStatusesRepository { get; }
-
-    public IConversationStatusRepository ConversationStatusesRepository { get; }
-
-
-    public IMessageTypeRepository MessageTypesRepository { get; }
-
     public IEscalationStatusRepository EscalationStatusesRepository { get; }
-
     public IAvailabilityRepository AvailabilitiesRepository { get; }
     public IAppointmentRepository AppointmentsRepository { get; }
     public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
+    public IHospitalizationStayRepository HospitalizationStaysRepository { get; }
+    public IHospitalizationNoteRepository HospitalizationNotesRepository { get; }
     public IMedicalRecordRepository MedicalRecordsRepository { get; }
     public IVaccinationRepository VaccinationsRepository { get; }
     public INotificationRepository NotificationsRepository { get; }
     public IDiagnosticRepository DiagnosticsRepository { get; }
+    public IMedicationRepository MedicationsRepository { get; }
+    public IProcedureRepository ProceduresRepository { get; }
+    public IMedicationOrderRepository MedicationOrdersRepository { get; }
+    public IProcedureOrderRepository ProcedureOrdersRepository { get; }
+    public ISupplyRepository SuppliesRepository { get; }
+    public ISupplyConsumptionRepository SupplyConsumptionsRepository { get; }
     public IAgentHumanRepository AgentHumansRepository { get; }
-    public IAiModelRepository AiModelsRepository { get; }
-    public IChatUserProfileRepository ChatUserProfilesRepository { get; }
     public IChatConversationRepository ChatConversationsRepository { get; }
-    public IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
-    public IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
     public IChatParticipantRepository ChatParticipantsRepository { get; }
     public IChatMessageRepository ChatMessagesRepository { get; }
-    public IChatAttachmentRepository ChatAttachmentsRepository { get; }
     public IChatEscalationRepository ChatEscalationsRepository { get; }
-    public IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository { get; }
-    public IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
-    public IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
-    public IChatAiRunRepository ChatAiRunsRepository { get; }
-    public IChatAiRunMetricsRepository ChatAiRunMetricsRepository { get; }
-    public IChatAiRunErrorRepository ChatAiRunErrorsRepository { get; }
-    public IProviderModelAiRepository ProviderModelsAiRepository { get; }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => _context.SaveChangesAsync(cancellationToken);
-
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception)
+            when (OracleClientPhoneConflictMapper.TryMapToConflict(exception, out var conflict)
+                  && conflict is not null)
+        {
+            throw conflict;
+        }
+        catch (DbUpdateException exception)
+            when (OracleHospitalizationStayConflictMapper.TryMapToConflict(exception, out var conflict)
+                  && conflict is not null)
+        {
+            throw conflict;
+        }
+    }
 
     public async Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> action,

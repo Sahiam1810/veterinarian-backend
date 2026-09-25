@@ -15,4 +15,12 @@ public sealed record AppointmentResponse(
     DateTime ScheduledEnd,
     string? Notes,
     string? RequesterPhoneNumber,
-    DateTime CreatedAt);
+    decimal? Weight,
+    decimal? Temperature,
+    int? HeartRate,
+    int? RespiratoryRate,
+    DateTime CreatedAt,
+    Guid? PetId,
+    string? ConsultingRoom,
+    bool IsPaid,
+    DateTime? PaidAt);

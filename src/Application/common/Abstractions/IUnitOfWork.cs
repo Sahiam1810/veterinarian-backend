@@ -2,6 +2,7 @@ using Application.Availabilities.Abstraction;
 using Application.Appointments.Abstraction;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.Diagnostics.Abstraction;
+using Application.HospitalizationStays.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
@@ -10,10 +11,7 @@ using Application.Races.Abstraction;
 using Application.Modules.Abstraction;
 using Application.Roles.Abstraction;
 using Application.RolePermissions.Abstraction;
-using Application.UserPermissions.Abstraction;
 using Application.Species.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
 using Application.UserTokens.Abstraction;
@@ -27,43 +25,25 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
-using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 
-using Application.AccountStatements.Abstraction;
-
-using Application.AiRunStatuses.Abstraction;
-
-using Application.ConversationStatuses.Abstraction;
-
-using Application.MessageTypes.Abstraction;
-
 using Application.EscalationStatuses.Abstraction;
-
-
-
-
 
 using Application.Notifications.Abstraction;
 
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
-using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
+
+using Application.Medications.Abstraction;
+using Application.Procedures.Abstraction;
+using Application.MedicationOrders.Abstraction;
+using Application.ProcedureOrders.Abstraction;
+using Application.Supplies.Abstraction;
+using Application.SupplyConsumptions.Abstraction;
 
 namespace Application.Common.Abstractions;
 
@@ -74,8 +54,6 @@ public interface IUnitOfWork
     IModulesRepository ModulesRepository { get; }
 
     IRolePermissionsRepository RolePermissionsRepository { get; }
-
-    IUserPermissionsRepository UserPermissionsRepository { get; }
 
     ISpeciesRepository SpeciesRepository { get; }
 
@@ -89,33 +67,25 @@ public interface IUnitOfWork
 
     ITypeServiceRepository TypeServicesRepository { get; }
 
-
     IServiceRepository ServicesRepository { get; }
 
     ISpecialtyRepository SpecialtiesRepository { get; }
 
     IClientPetRepository ClientPetsRepository { get; }
 
-
     IVeterinarianRepository VeterinariansRepository { get; }
 
-    IPriorityRepository PrioritiesRepository { get; }
-
     ISenderTypeRepository SenderTypesRepository { get; }
-
-
-    IAiRunStatusRepository AiRunStatusesRepository { get; }
-
-    IConversationStatusRepository ConversationStatusesRepository { get; }
-
-
-    IMessageTypeRepository MessageTypesRepository { get; }
 
     IEscalationStatusRepository EscalationStatusesRepository { get; }
 
     IAppointmentRepository AppointmentsRepository { get; }
 
     IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
+
+    IHospitalizationStayRepository HospitalizationStaysRepository => throw new NotImplementedException();
+
+    IHospitalizationNoteRepository HospitalizationNotesRepository => throw new NotImplementedException();
 
     IMedicalRecordRepository MedicalRecordsRepository { get; }
 
@@ -125,49 +95,31 @@ public interface IUnitOfWork
 
     IDiagnosticRepository DiagnosticsRepository { get; }
 
+    IMedicationRepository MedicationsRepository { get; }
+
+    IProcedureRepository ProceduresRepository { get; }
+
+    IMedicationOrderRepository MedicationOrdersRepository { get; }
+
+    IProcedureOrderRepository ProcedureOrdersRepository { get; }
+
+    ISupplyRepository SuppliesRepository => throw new NotImplementedException();
+
+    ISupplyConsumptionRepository SupplyConsumptionsRepository => throw new NotImplementedException();
+
     IAgentHumanRepository AgentHumansRepository { get; }
 
-    IAiModelRepository AiModelsRepository { get; }
-
-    IChatUserProfileRepository ChatUserProfilesRepository { get; }
-
     IChatConversationRepository ChatConversationsRepository { get; }
-
-    IChatConversationAssignmentRepository ChatConversationAssignmentsRepository { get; }
-
-    IChatConversationAiSettingRepository ChatConversationAiSettingsRepository { get; }
 
     IChatParticipantRepository ChatParticipantsRepository { get; }
 
     IChatMessageRepository ChatMessagesRepository { get; }
 
-    IChatAttachmentRepository ChatAttachmentsRepository { get; }
-
     IChatEscalationRepository ChatEscalationsRepository { get; }
-
-    IChatEscalationStatusHistoryRepository ChatEscalationStatusHistoriesRepository { get; }
-
-    IChatEscalationResolutionRepository ChatEscalationResolutionsRepository { get; }
-
-    IChatEscalationAssignmentRepository ChatEscalationAssignmentsRepository { get; }
-
-    IChatAiRunRepository ChatAiRunsRepository { get; }
-
-    IChatAiRunMetricsRepository ChatAiRunMetricsRepository { get; }
-
-    IChatAiRunErrorRepository ChatAiRunErrorsRepository { get; }
-
-    IProviderModelAiRepository ProviderModelsAiRepository { get; }
-
-    IUserAccountsRepository UserAccountsRepository { get; }
-
-    IUserCredentialsRepository UserCredentialsRepository { get; }
 
     IClientRepository ClientsRepository { get; }
 
     IUserTokensRepository UserTokensRepository { get; }
-
-    IAccountStatementsRepository AccountStatementsRepository { get; }
 
     IAvailabilityRepository AvailabilitiesRepository { get; }
 

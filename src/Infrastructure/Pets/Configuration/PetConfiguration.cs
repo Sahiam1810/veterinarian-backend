@@ -33,7 +33,7 @@ public sealed class PetConfiguration : IEntityTypeConfiguration<PetEntity>
 
         builder.Property(pet => pet.Age)
             .HasColumnName("AGE")
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(pet => pet.Gender)
             .HasColumnName("GENDER")
@@ -47,16 +47,26 @@ public sealed class PetConfiguration : IEntityTypeConfiguration<PetEntity>
             .HasColumnName("WEIGHT")
             .HasColumnType("NUMBER(6,3)")
             .HasConversion(
-                weight => weight.Value,
-                val => PetWeight.Create(val))
-            .IsRequired();
+                weight => weight == null ? null : (decimal?)weight.Value,
+                val => val.HasValue ? PetWeight.Create(val.Value) : null)
+            .IsRequired(false);
 
         builder.Property(pet => pet.Observations)
             .HasColumnName("OBSERVATIONS")
             .HasMaxLength(PetObservations.MaxLength)
             .HasConversion(
-                obs => obs.Value,
+                obs => obs == null ? null : obs.Value,
                 str => PetObservations.Create(str))
+            .IsRequired(false);
+
+        // URL de foto externa; opcional (NULL en Oracle → campo _photoUrl)
+        builder.Property(pet => pet.PhotoUrl)
+            .HasColumnName("PHOTO_URL")
+            .HasMaxLength(PetPhotoUrl.MaxLength)
+            .HasConversion(
+                photo => photo == null ? null : photo.Value,
+                str => PetPhotoUrl.Create(str))
+            .HasField("_photoUrl")
             .IsRequired(false);
 
         builder.Property(pet => pet.SpeciesId)
@@ -71,9 +81,9 @@ public sealed class PetConfiguration : IEntityTypeConfiguration<PetEntity>
             .HasColumnName("RACE_ID")
             .HasColumnType("VARCHAR2(36)")
             .HasConversion(
-                guid => guid.ToString(),
-                str => Guid.Parse(str))
-            .IsRequired();
+                guid => guid.HasValue ? guid.Value.ToString() : null,
+                str => string.IsNullOrEmpty(str) ? null : Guid.Parse(str))
+            .IsRequired(false);
 
         builder.Property(pet => pet.CreatedAt)
             .HasColumnName("CREATED_AT")
@@ -91,6 +101,7 @@ public sealed class PetConfiguration : IEntityTypeConfiguration<PetEntity>
         builder.HasOne(pet => pet.Race)
             .WithMany()
             .HasForeignKey(pet => pet.RaceId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

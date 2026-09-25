@@ -5,10 +5,15 @@ namespace Application.ClientsPets.Abstraction;
 public interface IClientPetRepository
 {
     Task<IReadOnlyCollection<ClientPetEntity>> GetAllAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<ClientPetEntity>> GetAllWithDetailsAsync(CancellationToken cancellationToken);
     Task<ClientPetEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<ClientPetEntity>> GetByClientIdAsync(Guid clientId, CancellationToken cancellationToken);
     Task<bool> ExistsByClientAndPetAsync(Guid clientId, Guid petId, CancellationToken cancellationToken, Guid? excludedId = null);
+    Task<IReadOnlyCollection<ClientPetEntity>> GetAllForAdmissionAsync(CancellationToken cancellationToken);
     Task AddAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
     Task UpdateAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
     Task DeleteAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
+
+    // Borra vínculos dueño-mascota del cliente sin AsNoTracking previo
+    Task DeleteByClientIdAsync(Guid clientId, CancellationToken cancellationToken);
 }

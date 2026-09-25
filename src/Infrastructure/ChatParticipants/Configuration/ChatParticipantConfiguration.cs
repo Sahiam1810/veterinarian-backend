@@ -1,6 +1,6 @@
 using Domain.AgentHumans.Entities;
 using Domain.ChatConversations.Entities;
-using Domain.ChatUserProfiles.Entities;
+using Domain.Clients.Entities;
 using Domain.SenderTypes.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -12,7 +12,13 @@ public sealed class ChatParticipantConfiguration : IEntityTypeConfiguration<Chat
 {
     public void Configure(EntityTypeBuilder<ChatParticipantEntity> builder)
     {
-        builder.ToTable("CHAT_PARTICIPANTS");
+        builder.ToTable("CHAT_PARTICIPANTS", table =>
+        {
+            // Exactamente una identidad: cliente o agente humano.
+            table.HasCheckConstraint(
+                "CK_CHAT_PARTICIPANTS_ONE_IDENTITY",
+                "(\"CLIENT_ID\" IS NOT NULL AND \"AGENT_HUMAN_ID\" IS NULL) OR (\"CLIENT_ID\" IS NULL AND \"AGENT_HUMAN_ID\" IS NOT NULL)");
+        });
 
         builder.HasKey(participant => participant.Id);
 
@@ -62,21 +68,21 @@ public sealed class ChatParticipantConfiguration : IEntityTypeConfiguration<Chat
             .HasConstraintName("FK_CHAT_PARTICIPANTS_SENDER_TYPES_PARTICIPANT_TYPE_ID")
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Property(participant => participant.ChatUserProfileId)
-            .HasColumnName("CHAT_USER_PROFILE_ID")
+        builder.Property(participant => participant.ClientId)
+            .HasColumnName("CLIENT_ID")
             .HasColumnType("VARCHAR2(36)")
             .HasConversion(
                 guid => guid.HasValue ? guid.Value.ToString() : null,
                 value => value == null ? null : Guid.Parse(value))
             .IsRequired(false);
 
-        builder.HasIndex(participant => participant.ChatUserProfileId)
-            .HasDatabaseName("IX_CHAT_PARTICIPANTS_CHAT_USER_PROFILE_ID");
+        builder.HasIndex(participant => participant.ClientId)
+            .HasDatabaseName("IX_CHAT_PARTICIPANTS_CLIENT_ID");
 
-        builder.HasOne<ChatUserProfile>()
+        builder.HasOne<ClientEntity>()
             .WithMany()
-            .HasForeignKey(participant => participant.ChatUserProfileId)
-            .HasConstraintName("FK_CHAT_PARTICIPANTS_CHAT_USER_PROFILES_CHAT_USER_PROFILE_ID")
+            .HasForeignKey(participant => participant.ClientId)
+            .HasConstraintName("FK_CHAT_PARTICIPANTS_CLIENTS_CLIENT_ID")
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(participant => participant.AgentHumanId)
@@ -95,14 +101,6 @@ public sealed class ChatParticipantConfiguration : IEntityTypeConfiguration<Chat
             .HasForeignKey(participant => participant.AgentHumanId)
             .HasConstraintName("FK_CHAT_PARTICIPANTS_AGENT_HUMANS_AGENT_HUMAN_ID")
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Property(participant => participant.AiModelId)
-            .HasColumnName("AI_MODEL_ID")
-            .HasColumnType("VARCHAR2(36)")
-            .HasConversion(
-                guid => guid.HasValue ? guid.Value.ToString() : null,
-                value => value == null ? null : Guid.Parse(value))
-            .IsRequired(false);
 
         builder.Property(participant => participant.CreatedAt)
             .HasColumnName("CREATED_AT")

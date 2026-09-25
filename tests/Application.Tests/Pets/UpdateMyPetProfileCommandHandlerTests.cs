@@ -6,15 +6,13 @@ using Application.Pets.Abstraction;
 using Application.Pets.UseCases;
 using Application.Races.Abstraction;
 using Application.Species.Abstraction;
-using Application.UserAccounts.Abstraction;
 using Domain.Clients.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
-using Domain.UserAccounts.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using Application.Tests.Common;
 
 namespace Application.Tests.Pets;
 
@@ -25,7 +23,7 @@ public sealed class UpdateMyPetProfileCommandHandlerTests
     {
         var fixture = new Fixture();
         var command = new UpdateMyPetProfileCommand(
-            fixture.AccountId, fixture.Pet.Id, null, 5, null, 13.2m, null, false,
+            fixture.ClientId, fixture.Pet.Id, null, 5, null, 13.2m, null, false,
             null, null, fixture.Pet.CreatedAt);
 
         var result = await fixture.Sut.Handle(command, CancellationToken.None);
@@ -50,6 +48,17 @@ public sealed class UpdateMyPetProfileCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_rejects_unknown_client()
+    {
+        var fixture = new Fixture(hasClient: false);
+        var command = fixture.NameChange("Nueva");
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => fixture.Sut.Handle(command, CancellationToken.None));
+        await fixture.Pets.DidNotReceive().UpdateAsync(Arg.Any<PetEntity>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_rejects_a_stale_profile_version()
     {
         var fixture = new Fixture();
@@ -65,34 +74,31 @@ public sealed class UpdateMyPetProfileCommandHandlerTests
 
     private sealed class Fixture
     {
-        public Guid AccountId { get; } = Guid.NewGuid();
+        public Guid ClientId { get; }
         public PetEntity Pet { get; }
         public IUnitOfWork UnitOfWork { get; } = Substitute.For<IUnitOfWork>();
         public IPetRepository Pets { get; } = Substitute.For<IPetRepository>();
         public UpdateMyPetProfileCommandHandler Sut { get; }
 
-        public Fixture(bool ownsPet = true)
+        public Fixture(bool ownsPet = true, bool hasClient = true)
         {
-            var userId = Guid.NewGuid();
-            var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Active");
-            var client = new ClientEntity(userId, "1234567890", null);
+            var client = TestClients.Create("1234567890", null);
+            ClientId = client.Id;
             var species = new SpeciesEntity("Canino");
-            var race = new RaceEntity("Mestizo");
+            var race = new RaceEntity("Mestizo", species);
             Pet = new PetEntity("Luna", 4, "F", 12.5m, "Sana", species, race);
 
-            var accounts = Substitute.For<IUserAccountsRepository>();
             var clients = Substitute.For<IClientRepository>();
             var clientPets = Substitute.For<IClientPetRepository>();
             var speciesRepository = Substitute.For<ISpeciesRepository>();
             var racesRepository = Substitute.For<IRaceRepository>();
-            UnitOfWork.UserAccountsRepository.Returns(accounts);
             UnitOfWork.ClientsRepository.Returns(clients);
             UnitOfWork.ClientPetsRepository.Returns(clientPets);
             UnitOfWork.PetsRepository.Returns(Pets);
             UnitOfWork.SpeciesRepository.Returns(speciesRepository);
             UnitOfWork.RacesRepository.Returns(racesRepository);
-            accounts.GetByIdAsync(AccountId, Arg.Any<CancellationToken>()).Returns(account);
-            clients.GetByUserIdAsync(userId, Arg.Any<CancellationToken>()).Returns(client);
+            clients.GetByIdAsync(client.Id, Arg.Any<CancellationToken>())
+                .Returns(hasClient ? client : null);
             clientPets.ExistsByClientAndPetAsync(client.Id, Pet.Id, Arg.Any<CancellationToken>())
                 .Returns(ownsPet);
             Pets.GetByIdAsync(Pet.Id, Arg.Any<CancellationToken>()).Returns(Pet);
@@ -102,7 +108,7 @@ public sealed class UpdateMyPetProfileCommandHandlerTests
         }
 
         public UpdateMyPetProfileCommand NameChange(string name) => new(
-            AccountId, Pet.Id, name, null, null, null, null, false,
+            ClientId, Pet.Id, name, null, null, null, null, false,
             null, null, Pet.UpdatedAt ?? Pet.CreatedAt);
     }
 }

@@ -21,28 +21,39 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => Guid.Parse(str))
             .IsRequired();
 
-        builder.Property(client => client.UserId)
-            .HasColumnName("USER_ID")
-            .HasColumnType("VARCHAR2(36)")
+        builder.Property(client => client.FullName)
+            .HasColumnName("FULL_NAME")
+            .HasColumnType("VARCHAR2(150)")
+            .HasConversion(name => name.Value, str => ClientFullName.Create(str))
+            .IsRequired();
+
+        builder.Property(client => client.Email)
+            .HasColumnName("EMAIL")
+            .HasColumnType("VARCHAR2(150)")
             .HasConversion(
-                guid => guid.ToString(),
-                str => Guid.Parse(str))
+                email => email == null ? null : email.Value,
+                str => string.IsNullOrWhiteSpace(str) ? null : ClientEmail.Create(str))
+            .IsRequired(false);
+
+        builder.HasIndex(client => client.Email)
+            .IsUnique()
+            .HasDatabaseName("UX_CLIENTS_EMAIL");
+
+        builder.Property(client => client.IsActive)
+            .HasColumnName("IS_ACTIVE")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(client => client.IdentificationNumber)
             .HasColumnName("IDENTIFICATION_NUMBER")
             .HasMaxLength(ClientIdentificationNumber.MaxLength)
             .HasConversion(
-                idNumber => idNumber.Value,
-                str => ClientIdentificationNumber.Create(str))
-            .IsRequired();
+                idNumber => idNumber == null ? null : idNumber.Value,
+                str => string.IsNullOrWhiteSpace(str) ? null : ClientIdentificationNumber.Create(str))
+            .IsRequired(false);
 
         builder.HasIndex(client => client.IdentificationNumber)
-            .IsUnique();
-
-        // Un usuario no puede tener dos perfiles de cliente -- si no, /clients/me
-        // (GetByUserIdAsync + FirstOrDefault) sería no determinístico.
-        builder.HasIndex(client => client.UserId)
             .IsUnique();
 
         builder.Property(client => client.Address)
@@ -53,17 +64,22 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
                 str => ClientAddress.Create(str))
             .IsRequired(false);
 
+        // CLR nullable solo para materializar PHONE_NUMBER histórico inválido como null.
+        // Oracle CLIENTS.PHONE_NUMBER permanece NOT NULL: no generar ni aplicar migration
+        // que convierta la columna a nullable por este cambio. Create/Update siguen
+        // exigiendo ClientPhoneNumber válido vía Create().
         builder.Property(client => client.PhoneNumber)
             .HasColumnName("PHONE_NUMBER")
             .HasMaxLength(ClientPhoneNumber.MaxLength)
             .HasConversion(
                 phone => phone == null ? null : phone.Value,
-                str => ClientPhoneNumber.CreateOptional(str))
+                str => ClientPhoneNumber.CreateFromPersistence(str))
             .IsRequired(false);
 
-        builder.Property(client => client.RegistrationDate)
-            .HasColumnName("REGISTRATION_DATE")
-            .IsRequired();
+        // UNIQUE obligatorio: el teléfono es requerido en escritura, sin filtro.
+        builder.HasIndex(client => client.PhoneNumber)
+            .IsUnique()
+            .HasDatabaseName("UX_CLIENTS_PHONE_NUMBER");
 
         builder.Property(client => client.CreatedAt)
             .HasColumnName("CREATED_AT")
@@ -72,10 +88,5 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
         builder.Property(client => client.UpdatedAt)
             .HasColumnName("UPDATE_AT")
             .IsRequired(false);
-
-        builder.HasOne(client => client.User)
-            .WithMany()
-            .HasForeignKey(client => client.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

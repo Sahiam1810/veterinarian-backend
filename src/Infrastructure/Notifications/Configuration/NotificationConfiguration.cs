@@ -9,7 +9,13 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Notific
 {
     public void Configure(EntityTypeBuilder<Notification> builder)
     {
-        builder.ToTable("NOTIFICATIONS");
+        builder.ToTable("NOTIFICATIONS", table =>
+        {
+            // Exactamente uno: usuario del personal o cliente.
+            table.HasCheckConstraint(
+                "CK_NOTIFICATIONS_ONE_RECIPIENT",
+                "(\"USER_ID\" IS NOT NULL AND \"CLIENT_ID\" IS NULL) OR (\"USER_ID\" IS NULL AND \"CLIENT_ID\" IS NOT NULL)");
+        });
 
         builder.HasKey(x => x.Id);
 
@@ -28,7 +34,15 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Notific
             .HasConversion(
                 guid => guid.ToString(),
                 value => Guid.Parse(value))
-            .IsRequired();
+            .IsRequired(false);
+
+        builder.Property(x => x.ClientId)
+            .HasColumnName("CLIENT_ID")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.ToString(),
+                value => Guid.Parse(value))
+            .IsRequired(false);
 
         builder.Property(x => x.AppointmentId)
             .HasColumnName("APPOINTMENT_ID")
@@ -82,6 +96,13 @@ public sealed class NotificationConfiguration : IEntityTypeConfiguration<Notific
         builder.HasOne(x => x.User)
             .WithMany()
             .HasForeignKey(x => x.UserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Client)
+            .WithMany()
+            .HasForeignKey(x => x.ClientId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Appointment)

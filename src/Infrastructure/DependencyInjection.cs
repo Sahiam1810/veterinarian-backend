@@ -1,16 +1,30 @@
-using Application.AccountStatements.Abstraction;
 using Application.Agent.Abstractions;
 using Application.Agent.Conversations;
 using Application.Availabilities.Abstraction;
+using Application.VeterinarianAbsences.Abstraction;
 using Application.Appointments.Abstraction;
+using Application.Reports.Abstraction;
 using Infrastructure.Appointments.BackgroundServices;
 using Infrastructure.Appointments.Configuration;
+using Infrastructure.Reports.Repositories;
 using Application.AppointmentStatusHistories.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
 using Application.Common.Abstractions;
 using Application.Diagnostics.Abstraction;
+using Application.Medications.Abstraction;
+using Application.Procedures.Abstraction;
+using Application.MedicationOrders.Abstraction;
+using Application.ProcedureOrders.Abstraction;
+using Application.Supplies.Abstraction;
+using Application.SupplyConsumptions.Abstraction;
+using Infrastructure.Medications.Repositories;
+using Infrastructure.Procedures.Repositories;
+using Infrastructure.MedicationOrders.Repositories;
+using Infrastructure.ProcedureOrders.Repositories;
+using Infrastructure.Supplies.Repositories;
+using Infrastructure.SupplyConsumptions.Repositories;
 using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Modules.Abstraction;
@@ -25,32 +39,26 @@ using Application.Specialties.Abstraction;
 using Application.ClientsPets.Abstraction;
 
 using Application.Veterinarians.Abstraction;
-using Application.Priorities.Abstraction;
 
 using Application.SenderTypes.Abstraction;
 
-using Application.AiRunStatuses.Abstraction;
-
-using Application.ConversationStatuses.Abstraction;
-
-using Application.MessageTypes.Abstraction;
-
 using Application.EscalationStatuses.Abstraction;
+using Application.HospitalizationStays.Abstraction;
 
 
 
 
 using Application.Notifications.Abstraction;
-using Application.UserAccounts.Abstraction;
-using Application.UserCredentials.Abstraction;
 using Application.Users.Abstraction;
 
-using Infrastructure.AccountStatements.Repositories;
 using Infrastructure.Agent.Configuration;
 using Infrastructure.Agent.Conversations;
 using Infrastructure.Agent.Http;
+using Application.ChatConversations.Enrichment;
+using Infrastructure.ChatConversations;
 using Infrastructure.Notifications.Repositories;
 using Infrastructure.Availabilities.Repositories;
+using Infrastructure.VeterinarianAbsences.Repositories;
 using Infrastructure.Appointments.Repositories;
 using Infrastructure.AppointmentStatusHistories.Repositories;
 using Infrastructure.MedicalRecords.Repositories;
@@ -58,58 +66,30 @@ using Infrastructure.Vaccinations.Repositories;
 using Infrastructure.Clients.Repositories;
 
 using Application.AgentHumans.Abstraction;
-using Application.AiModels.Abstraction;
-using Application.ChatConversationAssignments.Abstraction;
-using Application.ChatConversationAiSettings.Abstraction;
 using Application.ChatConversations.Abstraction;
-using Application.ChatAiRunErrors.Abstraction;
-using Application.ChatAiRunMetrics.Abstraction;
-using Application.ChatAiRuns.Abstraction;
-using Application.ChatAttachments.Abstraction;
-using Application.ChatEscalationAssignments.Abstraction;
-using Application.ChatEscalationResolutions.Abstraction;
 using Application.ChatEscalations.Abstraction;
-using Application.ChatEscalationStatusHistories.Abstraction;
 using Application.ChatMessages.Abstraction;
 using Application.ChatParticipants.Abstraction;
-using Application.ChatUserProfiles.Abstraction;
-using Application.ProviderModelsAi.Abstraction;
 using Application.UserTokens.Abstraction;
 using Application.Telegram.Abstractions;
-using Application.Telegram.Linking;
-using Application.Telegram.Registration;
 using Infrastructure.AgentHumans.Repository;
-using Infrastructure.AiModels.Repository;
-using Infrastructure.ChatConversationAssignments.Repository;
-using Infrastructure.ChatConversationAiSettings.Repository;
 using Infrastructure.ChatConversations.Repository;
-using Infrastructure.ChatEscalationAssignments.Repository;
-using Infrastructure.ChatEscalationResolutions.Repository;
 using Infrastructure.ChatEscalations.Repository;
-using Infrastructure.ChatEscalationStatusHistories.Repository;
-using Infrastructure.ChatAiRunErrors.Repository;
-using Infrastructure.ChatAiRunMetrics.Repository;
-using Infrastructure.ChatAiRuns.Repository;
-using Infrastructure.ChatAttachments.Repository;
 using Infrastructure.ChatMessages.Repository;
 using Infrastructure.ChatParticipants.Repository;
-using Infrastructure.ChatUserProfiles.Repository;
-using Infrastructure.ProviderModelsAi.Repository;
 
 using Application.Security.Abstractions;
-using Application.Security.Registration;
 using Infrastructure.Diagnostics.Repositories;
+using Infrastructure.HospitalizationStays.Repositories;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
 using Infrastructure.Races.Repositories;
 using Infrastructure.Roles.Repository;
 using Application.RolePermissions.Abstraction;
-using Application.UserPermissions.Abstraction;
 
 using Infrastructure.Modules.Repositories;
 
 using Infrastructure.RolePermissions.Repositories;
-using Infrastructure.UserPermissions.Repositories;
 using Infrastructure.Security;
 using Infrastructure.Security.Authentication;
 using Infrastructure.Security.Options;
@@ -124,23 +104,14 @@ using Infrastructure.Specialties.Repositories;
 using Infrastructure.ClientsPets.Repositories;
 
 using Infrastructure.Veterinarians.Repositories;
-using Infrastructure.Priorities.Repositories;
 
 using Infrastructure.SenderTypes.Repositories;
-
-using Infrastructure.AiRunStatuses.Repositories;
-
-using Infrastructure.ConversationStatuses.Repositories;
-
-using Infrastructure.MessageTypes.Repositories;
 
 using Infrastructure.EscalationStatuses.Repositories;
 
 
 
 
-using Infrastructure.UserAccounts.Repository;
-using Infrastructure.UserCredentials.Repositories;
 using Infrastructure.Users.Repository;
 using Infrastructure.UserTokens.Repositories;
 using Infrastructure.Telegram;
@@ -148,17 +119,24 @@ using Infrastructure.Telegram.Repositories;
 using Infrastructure.Telegram.Configuration;
 using Infrastructure.Telegram.Security;
 using Infrastructure.Telegram.Http;
+using Infrastructure.Chat.Configuration;
 using Infrastructure.Telegram.Workers;
-using Infrastructure.Telegram.Identity;
 using Infrastructure.Email;
 using Infrastructure.Email.Configuration;
 using Infrastructure.Messaging;
 using Infrastructure.Messaging.Configuration;
 using Application.Verification.Abstractions;
+using Application.ContactVerification.Abstractions;
+using Application.ContactVerification.UseCases;
+using Application.Owners.Abstractions;
+using Application.Owners.Adapters;
 using Infrastructure.Verification;
-using Infrastructure.Verification.Configuration;
-using Infrastructure.Verification.Repositories;
 using Infrastructure.Verification.Security;
+using Infrastructure.ContactVerification;
+using Infrastructure.ContactVerification.Configuration;
+using Infrastructure.ContactVerification.Repositories;
+using Infrastructure.Owners;
+using Infrastructure.Owners.Configuration;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -177,19 +155,25 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Oracle connection string is not configured.");
 
+        // Etapa 6.2: nunca EnableSensitiveDataLogging (ni en Development): evita SQL con PII en claro.
         services.AddDbContext<VeterinaryDbContext>(options =>
             options.UseOracle(connectionString, oracle =>
                 // XE 21c no soporta booleanos nativos (default del provider 23).
                 oracle.UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion21)));
 
         services.AddScoped<IDiagnosticRepository, DiagnosticRepository>();
+        services.AddScoped<IMedicationRepository, MedicationRepository>();
+        services.AddScoped<IProcedureRepository, ProcedureRepository>();
+        services.AddScoped<IMedicationOrderRepository, MedicationOrderRepository>();
+        services.AddScoped<IProcedureOrderRepository, ProcedureOrderRepository>();
+        services.AddScoped<ISupplyRepository, SupplyRepository>();
+        services.AddScoped<ISupplyConsumptionRepository, SupplyConsumptionRepository>();
         services.AddScoped<IPetRepository, PetRepository>();
         services.AddScoped<IRaceRepository, RaceRepository>();
         services.AddScoped<ISpeciesRepository, SpeciesRepository>();
         services.AddScoped<IRolesRepository, RolesRepository>();
         services.AddScoped<IModulesRepository, ModulesRepository>();
         services.AddScoped<IRolePermissionsRepository, RolePermissionsRepository>();
-        services.AddScoped<IUserPermissionsRepository, UserPermissionsRepository>();
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IStatusAppointmentRepository, StatusAppointmentRepository>();
         services.AddScoped<ITypeServiceRepository, TypeServiceRepository>();
@@ -201,76 +185,40 @@ public static class DependencyInjection
 
         services.AddScoped<IVeterinarianRepository, VeterinarianRepository>();
 
-        services.AddScoped<IPriorityRepository, PriorityRepository>();
-
         services.AddScoped<ISenderTypeRepository, SenderTypeRepository>();
 
-        services.AddScoped<IAiRunStatusRepository, AiRunStatusRepository>();
-
-        services.AddScoped<IConversationStatusRepository, ConversationStatusRepository>();
-
-        services.AddScoped<IMessageTypeRepository, MessageTypeRepository>();
-
         services.AddScoped<IEscalationStatusRepository, EscalationStatusRepository>();
-
-
-        services.AddScoped<IUserAccountsRepository, UserAccountsRepository>();
-        services.AddScoped<IUserCredentialsRepository, UserCredentialsRepository>();
 
         services.AddScoped<IClientRepository, ClientRepository>();
 
         services.AddScoped<IUserTokensRepository, UserTokensRepository>();
-        services.AddScoped<IAccountStatementsRepository, AccountStatementsRepository>();
         services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+        services.AddScoped<IVeterinarianAbsenceRepository, VeterinarianAbsenceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<IHospitalizationStayRepository, HospitalizationStayRepository>();
+        services.AddScoped<IHospitalizationNoteRepository, HospitalizationNoteRepository>();
+        services.AddScoped<IReportsReadRepository, ReportsReadRepository>();
         services.AddScoped<IAppointmentBookingSettings, ConfiguredAppointmentBookingSettings>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();
         services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
         services.AddScoped<IVaccinationRepository, VaccinationRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
-        services.AddScoped<IProviderModelAiRepository, ProviderModelAiRepository>();
-        services.AddScoped<IAiModelRepository, AiModelRepository>();
-        services.AddScoped<IChatUserProfileRepository, ChatUserProfileRepository>();
         services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
-        services.AddScoped<IChatConversationAssignmentRepository, ChatConversationAssignmentRepository>();
-        services.AddScoped<IChatConversationAiSettingRepository, ChatConversationAiSettingRepository>();
         services.AddScoped<IChatParticipantRepository, ChatParticipantRepository>();
         services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
-        services.AddScoped<IChatAttachmentRepository, ChatAttachmentRepository>();
         services.AddScoped<IChatEscalationRepository, ChatEscalationRepository>();
-        services.AddScoped<IChatEscalationStatusHistoryRepository, ChatEscalationStatusHistoryRepository>();
-        services.AddScoped<IChatEscalationResolutionRepository, ChatEscalationResolutionRepository>();
-        services.AddScoped<IChatEscalationAssignmentRepository, ChatEscalationAssignmentRepository>();
-        services.AddScoped<IChatAiRunRepository, ChatAiRunRepository>();
-        services.AddScoped<IChatAiRunMetricsRepository, ChatAiRunMetricsRepository>();
-        services.AddScoped<IChatAiRunErrorRepository, ChatAiRunErrorRepository>();
         services.AddScoped<IAgentHumanRepository, AgentHumanRepository>();
-        services.AddScoped<ITelegramLinkCodeRepository, TelegramLinkCodeRepository>();
         services.AddScoped<ITelegramUserLinkRepository, TelegramUserLinkRepository>();
-        services.AddScoped<ITelegramConversationLinkRepository, TelegramConversationLinkRepository>();
         services.AddScoped<ITelegramInboundUpdateRepository, TelegramInboundUpdateRepository>();
-        services.AddScoped<ITelegramLinkingSessionRepository, TelegramLinkingSessionRepository>();
-        services.AddScoped<ITelegramRegistrationSessionRepository, TelegramRegistrationSessionRepository>();
         services.AddScoped<ITelegramUnitOfWork, TelegramUnitOfWork>();
         services.AddScoped<TelegramUpdatePump>();
         services.AddSingleton<ITelegramUpdateSignal, InMemoryTelegramUpdateSignal>();
-        services.AddScoped<ITelegramChatLinkingService, TelegramChatLinkingService>();
-        services.AddScoped<ITelegramRegistrationService, TelegramRegistrationService>();
-        services.AddSingleton<ITelegramLinkCodeProtector, TelegramLinkCodeProtector>();
-        services.AddSingleton<ITelegramRegistrationProtector>(provider =>
-        {
-            var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
-            var key = options.RegistrationEnabled
-                ? options.RegistrationProtectionKeyBase64
-                : Convert.ToBase64String(new byte[32]);
-            return new TelegramRegistrationProtector(key);
-        });
         services.AddSingleton<IOtpProtector>(provider =>
         {
-            var appointmentOptions = provider.GetRequiredService<IOptions<AppointmentVerificationOptions>>().Value;
-            if (!string.IsNullOrWhiteSpace(appointmentOptions.OtpPepperBase64))
+            var contactOptions = provider.GetRequiredService<IOptions<ContactVerificationOptions>>().Value;
+            if (!string.IsNullOrWhiteSpace(contactOptions.OtpPepperBase64))
             {
-                return new OtpProtector(appointmentOptions.OtpPepperBase64);
+                return new OtpProtector(contactOptions.OtpPepperBase64);
             }
 
             var telegramOptions = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
@@ -279,17 +227,19 @@ public static class DependencyInjection
                 return new OtpProtector(telegramOptions.OtpPepperBase64);
             }
 
-            // Pepper de desarrollo cuando Telegram y AppointmentVerification están apagados.
+            // Pepper de desarrollo cuando los OTP de contacto/Telegram están apagados.
             return new OtpProtector(Convert.ToBase64String(new byte[32]));
         });
-        services.AddScoped<ITelegramAccountLookup, TelegramAccountLookup>();
-        services.AddScoped<ITelegramRegistrationAccountLookup, TelegramRegistrationAccountLookup>();
         services.AddScoped<IVerificationCodeSender, SmtpEmailVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioSmsVerificationCodeSender>();
         services.AddScoped<IVerificationCodeSender, TwilioWhatsAppVerificationCodeSender>();
         services.AddScoped<IVerificationCodeDispatcher, VerificationCodeDispatcher>();
-        services.AddScoped<IAppointmentActionVerificationSessionRepository, AppointmentActionVerificationSessionRepository>();
-        services.AddScoped<IAppointmentVerificationSettings, ConfiguredAppointmentVerificationSettings>();
+        services.AddScoped<IContactVerificationSessionRepository, ContactVerificationSessionRepository>();
+        services.AddScoped<IContactVerificationSettings, ConfiguredContactVerificationSettings>();
+        services.AddScoped<IRequestContactEmailVerification, ContactEmailVerificationRequestHandler>();
+        services.AddScoped<IRequestClaimEmailByIdentification, RequestClaimEmailByIdentificationHandler>();
+        services.AddScoped<IConfirmContactEmailVerification, ConfirmContactEmailVerificationHandler>();
+        services.AddScoped<IConsumeContactVerificationProof, ConsumeContactVerificationProofHandler>();
         services.AddScoped<ISmtpTransport, SmtpTransport>();
         services.AddHttpClient(nameof(TwilioSmsVerificationCodeSender));
         services.AddHttpClient(nameof(TwilioWhatsAppVerificationCodeSender));
@@ -304,6 +254,18 @@ public static class DependencyInjection
         services.AddOptions<TelegramOptions>()
             .Bind(configuration.GetSection(TelegramOptions.SectionName))
             .ValidateOnStart();
+        // Ticket B8: independiente de Telegram/Agent — la bandeja de
+        // Recepcionista y su flujo de resolución siempre están disponibles.
+        services.AddSingleton<IValidateOptions<ChatOptions>, ChatOptionsValidator>();
+        services.AddOptions<ChatOptions>()
+            .Bind(configuration.GetSection(ChatOptions.SectionName))
+            .ValidateOnStart();
+        services.AddScoped<IChatEscalationRuntimeSettings>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<ChatOptions>>().Value;
+            return new ConfiguredChatEscalationRuntimeSettings(
+                Guid.Parse(options.ResolvedEscalationStatusId));
+        });
         services.AddSingleton<IValidateOptions<EmailOptions>, EmailOptionsValidator>();
         services.AddOptions<EmailOptions>()
             .Bind(configuration.GetSection(EmailOptions.SectionName))
@@ -312,28 +274,29 @@ public static class DependencyInjection
         services.AddOptions<TwilioOptions>()
             .Bind(configuration.GetSection(TwilioOptions.SectionName))
             .ValidateOnStart();
-        services.AddOptions<AppointmentVerificationOptions>()
-            .Bind(configuration.GetSection(AppointmentVerificationOptions.SectionName));
+        services.AddSingleton<IValidateOptions<ContactVerificationOptions>, ContactVerificationOptionsValidator>();
+        services.AddOptions<ContactVerificationOptions>()
+            .Bind(configuration.GetSection(ContactVerificationOptions.SectionName))
+            .ValidateOnStart();
+        services.AddOptions<RegisterOwnerOptions>()
+            .Bind(configuration.GetSection(RegisterOwnerOptions.SectionName));
+        services.AddScoped<IRegisterOwnerSettings, ConfiguredRegisterOwnerSettings>();
         services.AddScoped<ITelegramRuntimeSettings>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<TelegramOptions>>().Value;
             return new ConfiguredTelegramRuntimeSettings(
                 options.GuestModeEnabled,
                 options.BotUsername,
-                TimeSpan.FromMinutes(options.LinkCodeTtlMinutes),
                 TimeSpan.FromMilliseconds(options.WorkerPollMilliseconds),
+                options.WorkerConcurrency,
                 TimeSpan.FromSeconds(options.ProcessingLeaseSeconds),
                 options.MaxProcessingAttempts,
                 TimeSpan.FromMinutes(options.DelegatedTokenMinutes),
-                TimeSpan.FromMinutes(options.OtpTtlMinutes),
-                options.OtpMaximumAttempts,
-                TimeSpan.FromSeconds(options.OtpResendSeconds),
-                options.RegistrationEnabled,
-                options.RegistrationCompletionUrl,
-                TimeSpan.FromMinutes(options.RegistrationOtpTtlMinutes),
-                TimeSpan.FromMinutes(options.RegistrationTokenTtlMinutes),
-                options.RegistrationMaxOtpAttempts,
-                TimeSpan.FromSeconds(options.RegistrationResendSeconds));
+                Guid.Parse(options.PendingEscalationStatusId),
+                Guid.Parse(options.HumanAgentSenderTypeId),
+                TimeSpan.FromHours(options.PrivateAccessAbsoluteTtlHours),
+                TimeSpan.FromMinutes(options.PrivateAccessIdleTtlMinutes),
+                TimeSpan.FromMinutes(options.RegistrationLinkWindowMinutes));
         });
 
         var telegramOptions = configuration
@@ -361,7 +324,6 @@ public static class DependencyInjection
             {
                 var options = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
                 return new ConfiguredAgentConversationDefaults(
-                    Guid.Parse(options.InitialConversationStatusId),
                     Guid.Parse(options.ClientParticipantTypeId));
             });
             services.AddScoped<
@@ -370,6 +332,9 @@ public static class DependencyInjection
             services.AddScoped<
                 IConversationContextProvider,
                 PersistentConversationContextProvider>();
+            services.AddScoped<
+                IChatConversationClientResolver,
+                ChatConversationClientResolver>();
             services.AddHttpClient<IAgentMessagingClient, AgentMessagingHttpClient>((provider, client) =>
             {
                 var validated = provider.GetRequiredService<IOptions<AgentOptions>>().Value;
@@ -382,6 +347,12 @@ public static class DependencyInjection
             services.AddSingleton<
                 IConversationContextProvider,
                 DisabledConversationContextProvider>();
+            // Ticket B7: sin Agent__Enabled no hay ClientParticipantTypeId
+            // configurado — los listados de chat siguen funcionando, solo
+            // sin enriquecer con datos de cliente.
+            services.AddSingleton<
+                IChatConversationClientResolver,
+                DisabledChatConversationClientResolver>();
             services.AddSingleton<IAgentMessagingClient, DisabledAgentMessagingClient>();
         }
 
@@ -390,16 +361,10 @@ public static class DependencyInjection
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<RefreshTokenProtector>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<IClientAccountRegistrationService, ClientAccountRegistrationService>();
 
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateOnStart();
-
-        services.AddSingleton<IValidateOptions<SuperAdminOptions>, SuperAdminOptionsValidator>();
-        services.AddOptions<SuperAdminOptions>()
-            .Bind(configuration.GetSection(SuperAdminOptions.SectionName))
             .ValidateOnStart();
 
         services.AddSingleton<IValidateOptions<ReminderOptions>, ReminderOptionsValidator>();
@@ -411,6 +376,11 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(AppointmentBookingOptions.SectionName))
             .ValidateOnStart();
         services.AddHostedService<AppointmentReminderBackgroundService>();
+        services.AddSingleton<IValidateOptions<TelegramReminderOptions>, TelegramReminderOptionsValidator>();
+        services.AddOptions<TelegramReminderOptions>()
+            .Bind(configuration.GetSection(TelegramReminderOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHostedService<TelegramAppointmentReminderBackgroundService>();
 
         var mapsterConfig = TypeAdapterConfig.GlobalSettings;
         mapsterConfig.Scan(typeof(DependencyInjection).Assembly);

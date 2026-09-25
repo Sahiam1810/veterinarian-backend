@@ -21,5 +21,5 @@ public sealed record CreateAppointmentMedicalRecordCommand(
     decimal? WeightAtVisit,
     decimal? Temperature,
     IReadOnlyCollection<CreateAppointmentMedicalRecordVaccinationItem>? Vaccinations,
-    Guid ActorUserAccountId,
+    Guid ActorUserId,
     bool EnforceVeterinarianOwnership) : IRequest<CreateAppointmentMedicalRecordResult>;

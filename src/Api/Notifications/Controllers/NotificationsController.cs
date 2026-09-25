@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Notifications.Dtos;
 using Api.Notifications.Mappings;
 using Application.Notifications.UseCases;
+using Application.Permissions.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -68,15 +70,35 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         return Ok(notification.ToResponse());
     }
 
+    // Lectura propia: cualquier usuario autenticado puede ver SUS notificaciones
+    // (misma idea que PATCH .../read). Lectura de terceros: Notificaciones.View.
     [HttpGet("user/{userId:guid}")]
-    [RequirePermission("Notificaciones", PermissionAction.View)]
     [EndpointSummary("Obtiene las notificaciones de un usuario")]
-    [EndpointDescription("Retorna todas las notificaciones pertenecientes a un usuario especificado.")]
+    [EndpointDescription("Retorna las notificaciones del usuario indicado. Sin Notificaciones.View solo se permiten las propias.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<NotificationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IReadOnlyCollection<NotificationResponse>>> GetByUserId(
         Guid userId,
         CancellationToken cancellationToken)
     {
+        if (!TryGetActorUserId(out var actorUserId))
+        {
+            return Unauthorized();
+        }
+
+        var isOwnInbox = userId == actorUserId;
+        var canViewOthers =
+            User.IsSuperAdmin() ||
+            User.HasClaim(
+                PermissionClaimValue.ClaimType,
+                PermissionClaimValue.Create("Notificaciones", PermissionAction.View.ToString()));
+
+        if (!isOwnInbox && !canViewOthers)
+        {
+            return Forbid();
+        }
+
         var notifications = await sender.Send(
             new GetNotificationsByUserIdQuery(userId),
             cancellationToken);
@@ -119,6 +141,33 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
         return NoContent();
     }
 
+    // S43: marcar como leída es una acción propia del dueño de la notificación,
+    // no la edición general que exige el permiso "Notificaciones.Edit" (que
+    // ningún rol tiene). Solo requiere sesión autenticada (política global) +
+    // que la notificación sea del usuario que la marca.
+    [HttpPatch("{id:guid}/read")]
+    [EndpointSummary("Marca una notificación propia como leída")]
+    [EndpointDescription("Actualiza el estado de la notificación indicada a 'Leída'. Solo el dueño de la notificación puede marcarla.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarkAsRead(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var actorUserId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            new MarkNotificationAsReadCommand(id, actorUserId),
+            cancellationToken);
+
+        return NoContent();
+    }
+
     [HttpDelete("{id:guid}")]
     [RequirePermission("Notificaciones", PermissionAction.Delete)]
     [EndpointSummary("Elimina una notificación por su ID")]
@@ -134,5 +183,11 @@ public sealed class NotificationsController(ISender sender) : ControllerBase
             cancellationToken);
 
         return NoContent();
+    }
+
+    private bool TryGetActorUserId(out Guid actorUserId)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return Guid.TryParse(subject, out actorUserId);
     }
 }

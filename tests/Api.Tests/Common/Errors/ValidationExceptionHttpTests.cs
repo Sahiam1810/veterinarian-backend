@@ -61,6 +61,7 @@ public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
             ["ConnectionStrings__DefaultConnection"] =
                 "User Id=unused;Password=unused;Data Source=unused",
             ["Agent__Enabled"] = "false",
+            ["Chat__ResolvedEscalationStatusId"] = "85000000-0000-0000-0000-000000000004",
             ["Cors__AllowedOrigins__0"] = "https://frontend.huellitas.test",
             ["Jwt__Issuer"] = "https://issuer.huellitas.test",
             ["Jwt__Audience"] = "huellitas-api-tests",
@@ -131,7 +132,7 @@ public sealed class OracleFreeApiFactory : WebApplicationFactory<AuthController>
             throw UnexpectedCall();
 
         public Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-            Guid userAccountId,
+            Guid userId,
             CancellationToken cancellationToken) =>
             throw UnexpectedCall();
     }

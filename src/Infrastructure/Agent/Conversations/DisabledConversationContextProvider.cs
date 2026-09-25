@@ -10,6 +10,7 @@ public sealed class DisabledConversationContextProvider : IConversationContextPr
         Guid personId,
         Guid? requestedConversationId,
         string idempotencyKey,
+        string channel,
         CancellationToken cancellationToken) =>
         ValueTask.FromException<AgentConversationContext>(
             new AgentUnavailableException());

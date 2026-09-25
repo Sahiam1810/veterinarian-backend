@@ -13,6 +13,6 @@ public sealed class GetCurrentProfileQueryHandler(
         GetCurrentProfileQuery request,
         CancellationToken cancellationToken) =>
         authenticationService.GetCurrentProfileAsync(
-            request.UserAccountId,
+            request.UserId,
             cancellationToken);
 }

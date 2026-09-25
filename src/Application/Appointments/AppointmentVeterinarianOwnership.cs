@@ -9,7 +9,7 @@ internal static class AppointmentVeterinarianOwnership
     public static async Task EnsureAsync(
         IUnitOfWork unitOfWork,
         Appointment appointment,
-        Guid actorUserAccountId,
+        Guid actorUserId,
         bool enforceVeterinarianOwnership,
         CancellationToken cancellationToken)
     {
@@ -18,13 +18,9 @@ internal static class AppointmentVeterinarianOwnership
             return;
         }
 
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
-            actorUserAccountId,
-            cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-
+        // U4: el sub ya es el id del usuario; ya no hace falta pasar por UserAccounts.
         var veterinarian = await unitOfWork.VeterinariansRepository.GetByUserIdAsync(
-            account.UserId,
+            actorUserId,
             cancellationToken)
             ?? throw new NotFoundException(
                 "El usuario autenticado no tiene un perfil de veterinario asociado.");

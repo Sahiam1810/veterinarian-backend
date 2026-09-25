@@ -16,6 +16,7 @@ public sealed class AgentMessagingHttpClient(
     IOptions<AgentOptions> options) : IAgentMessagingClient
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private const int MaximumResumeMessageLength = 500;
     private readonly AgentOptions agentOptions = options.Value;
 
     public async Task<AgentMessageResult> SendAsync(
@@ -41,9 +42,29 @@ public sealed class AgentMessagingHttpClient(
             if (payload.ConversationId != message.ConversationId ||
                 payload.CorrelationId != message.CorrelationId ||
                 string.IsNullOrWhiteSpace(payload.ResponseType) ||
+                string.IsNullOrWhiteSpace(payload.AccessRequirement) ||
                 payload.Rag is null ||
                 string.IsNullOrWhiteSpace(payload.Rag.Status) ||
                 string.IsNullOrWhiteSpace(payload.Rag.Route))
+            {
+                throw new AgentContractException();
+            }
+
+            if (payload.ResumeMessage is { Length: > MaximumResumeMessageLength })
+            {
+                throw new AgentContractException();
+            }
+
+            var accessRequirement = ParseAccessRequirement(payload.AccessRequirement);
+            var resumeMessage = string.IsNullOrWhiteSpace(payload.ResumeMessage)
+                ? null
+                : payload.ResumeMessage.Trim();
+            // resumeMessage may accompany identity_verification (deferred OTP) or none
+            // (conversational guest registration just linked this Telegram and wants
+            // ProcessTelegramUpdate to continue the deferred intent as Cliente).
+            if (resumeMessage is not null &&
+                accessRequirement != AgentAccessRequirement.IdentityVerification &&
+                accessRequirement != AgentAccessRequirement.None)
             {
                 throw new AgentContractException();
             }
@@ -68,7 +89,9 @@ public sealed class AgentMessagingHttpClient(
                     payload.Rag.GlobalMatches,
                     payload.Rag.ConversationMatches,
                     payload.Rag.MemoryStored,
-                    payload.Rag.KnowledgePublished));
+                    payload.Rag.KnowledgePublished),
+                accessRequirement,
+                resumeMessage);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -156,4 +179,11 @@ public sealed class AgentMessagingHttpClient(
             _ => new AgentContractException()
         };
     }
+
+    private static AgentAccessRequirement ParseAccessRequirement(string value) => value switch
+    {
+        "none" => AgentAccessRequirement.None,
+        "identity_verification" => AgentAccessRequirement.IdentityVerification,
+        _ => throw new AgentContractException()
+    };
 }

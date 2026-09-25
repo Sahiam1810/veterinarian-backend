@@ -46,9 +46,6 @@ public sealed class AgentDependencyInjectionTests
             .GetRequiredService<IAgentConversationDefaults>();
 
         Assert.Equal(
-            Guid.Parse("81000000-0000-0000-0000-000000000001"),
-            defaults.InitialConversationStatusId);
-        Assert.Equal(
             Guid.Parse("82000000-0000-0000-0000-000000000001"),
             defaults.ClientParticipantTypeId);
     }
@@ -69,6 +66,7 @@ public sealed class AgentDependencyInjectionTests
                 Guid.Parse("11111111-1111-1111-1111-111111111111"),
                 null,
                 "message-disabled",
+                "Web",
                 default);
         });
     }

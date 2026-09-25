@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Appointments.Controllers;
+using Domain.Roles;
 using Api.Appointments.Dtos;
 using Application.MedicalRecords.UseCases;
 using MediatR;
@@ -12,7 +13,7 @@ namespace Api.Tests.Appointments;
 
 public sealed class AppointmentMedicalRecordApiTests
 {
-    private static readonly Guid ActorUserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid ActorUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid AppointmentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid DiagnosticId = Guid.Parse("55555555-5555-5555-5555-555555555555");
 
@@ -24,7 +25,7 @@ public sealed class AppointmentMedicalRecordApiTests
         await AssertEnforceFlagAsync(
             claims:
             [
-                new Claim("sub", ActorUserAccountId.ToString()),
+                new Claim("sub", ActorUserId.ToString()),
                 new Claim("role", "Veterinario")
             ],
             expectedEnforce: true);
@@ -39,7 +40,7 @@ public sealed class AppointmentMedicalRecordApiTests
         await AssertEnforceFlagAsync(
             claims:
             [
-                new Claim("sub", ActorUserAccountId.ToString()),
+                new Claim("sub", ActorUserId.ToString()),
                 new Claim("role", role)
             ],
             expectedEnforce: false);
@@ -51,8 +52,8 @@ public sealed class AppointmentMedicalRecordApiTests
         await AssertEnforceFlagAsync(
             claims:
             [
-                new Claim("sub", ActorUserAccountId.ToString()),
-                new Claim("super_admin", "true")
+                new Claim("sub", ActorUserId.ToString()),
+                new Claim("role_id", SystemRoles.SuperAdminId.ToString())
             ],
             expectedEnforce: false);
     }
@@ -83,7 +84,7 @@ public sealed class AppointmentMedicalRecordApiTests
             Arg.Is<CreateAppointmentMedicalRecordCommand>(c =>
                 c.AppointmentId == AppointmentId
                 && c.DiagnosticId == DiagnosticId
-                && c.ActorUserAccountId == ActorUserAccountId
+                && c.ActorUserId == ActorUserId
                 && c.EnforceVeterinarianOwnership == expectedEnforce
                 && c.Vaccinations == null),
             Arg.Any<CancellationToken>());

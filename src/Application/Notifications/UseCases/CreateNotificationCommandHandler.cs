@@ -14,7 +14,7 @@ public sealed class CreateNotificationCommandHandler(
         CreateNotificationCommand request,
         CancellationToken cancellationToken)
     {
-        var notification = new Notification(
+        var notification = Notification.ForUser(
             request.UserId,
             request.AppointmentId,
             request.Message,

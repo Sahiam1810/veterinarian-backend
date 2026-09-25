@@ -11,6 +11,10 @@ public interface IUsersRepository
         Guid id,
         CancellationToken cancellationToken);
 
+    Task<UserEntity?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken);
+
     Task<bool> ExistsByEmailAsync(
         string email,
         CancellationToken cancellationToken,
@@ -23,4 +27,16 @@ public interface IUsersRepository
     Task UpdateAsync(
         UserEntity user,
         CancellationToken cancellationToken);
+
+    // Hard-delete del usuario (cascada a cuenta/permisos en EF)
+    Task DeleteAsync(
+        UserEntity user,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyCollection<UserEntity>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<(UserEntity User, string RoleName)>> GetStaffUsersAsync(
+        CancellationToken cancellationToken = default);
 }

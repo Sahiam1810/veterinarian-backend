@@ -1,4 +1,5 @@
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Api.SenderTypes.Dtos;
 using Api.SenderTypes.Mappings;
 using Application.SenderTypes.UseCases;
@@ -10,16 +11,17 @@ namespace Api.SenderTypes.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class SenderTypesController(ISender sender) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission("Catálogos del Chat", PermissionAction.View)]
     [EndpointSummary("Obtiene los tipos de remitente")]
     [EndpointDescription("Lista los tipos de mensaje registrados.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<SenderTypeResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<SenderTypeResponseDto>>> GetAll(CancellationToken ct) => Ok((await sender.Send(new GetAllSenderTypesQuery(), ct)).Select(x => x.ToDto()).ToArray());
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Catálogos del Chat", PermissionAction.View)]
     [EndpointSummary("Obtiene un tipo de remitente")]
     [EndpointDescription("Busca un tipo de mensaje por su identificador.")]
     [ProducesResponseType(typeof(SenderTypeResponseDto), StatusCodes.Status200OK)]
@@ -27,6 +29,7 @@ public sealed class SenderTypesController(ISender sender) : ControllerBase
     public async Task<ActionResult<SenderTypeResponseDto>> GetById(Guid id, CancellationToken ct) => Ok((await sender.Send(new GetSenderTypeByIdQuery(id), ct)).ToDto());
 
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crea un tipo de remitente")]
     [EndpointDescription("Registra un tipo de mensaje.")]
     [ProducesResponseType(typeof(SenderTypeResponseDto), StatusCodes.Status201Created)]
@@ -39,6 +42,7 @@ public sealed class SenderTypesController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualiza un tipo de remitente")]
     [EndpointDescription("Actualiza el nombre de un tipo de mensaje.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -51,6 +55,7 @@ public sealed class SenderTypesController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Elimina un tipo de remitente")]
     [EndpointDescription("Elimina un tipo de mensaje por su identificador.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

@@ -6,5 +6,5 @@ public sealed record UpdateAppointmentStatusCommand(
     Guid AppointmentId,
     Guid StatusId,
     string? Comment,
-    Guid ActorUserAccountId = default,
+    Guid ActorUserId = default,
     bool EnforceVeterinarianOwnership = false) : IRequest;

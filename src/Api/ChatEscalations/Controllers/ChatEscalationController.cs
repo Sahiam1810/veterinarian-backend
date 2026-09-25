@@ -1,6 +1,7 @@
 using Api.ChatEscalations.Dtos;
 using Api.ChatEscalations.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatEscalations.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.ChatEscalations.Controllers;
 
 [ApiController]
 [Route("api/chat/escalations")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatEscalationController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Escalamientos", PermissionAction.Create)]
     [EndpointSummary("Crear un escalamiento de chat")]
     [EndpointDescription("Registra un escalamiento asociado a una conversación existente.")]
     [ProducesResponseType(typeof(ChatEscalationResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +42,7 @@ public sealed class ChatEscalationController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Listar escalamientos de chat")]
     [EndpointDescription("Devuelve todos los escalamientos registrados.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationResponseDto>), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class ChatEscalationController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Obtener escalamiento por identificador")]
     [EndpointDescription("Devuelve el escalamiento indicado.")]
     [ProducesResponseType(typeof(ChatEscalationResponseDto), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class ChatEscalationController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-conversation/{chatConversationId:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.View)]
     [EndpointSummary("Consultar escalamientos por conversación")]
     [EndpointDescription("Devuelve los escalamientos asociados a la conversación indicada.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatEscalationResponseDto>), StatusCodes.Status200OK)]
@@ -81,6 +85,7 @@ public sealed class ChatEscalationController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("Escalamientos", PermissionAction.Edit)]
     [EndpointSummary("Actualizar un escalamiento de chat")]
     [EndpointDescription("Actualiza el estado, origen y motivo del escalamiento.")]
     [ProducesResponseType(typeof(ChatEscalationResponseDto), StatusCodes.Status200OK)]
@@ -106,7 +111,35 @@ public sealed class ChatEscalationController(ISender sender) : ControllerBase
         }
     }
 
+    [HttpPatch("{id:guid}/resolve")]
+    [RequirePermission("Escalamientos", PermissionAction.Edit)]
+    [EndpointSummary("Resolver un escalamiento de chat")]
+    [EndpointDescription("Resuelve el escalamiento registrando el usuario que resuelve, la nota de resolución y el nuevo estado.")]
+    [ProducesResponseType(typeof(ChatEscalationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ChatEscalationResponseDto>> Resolve(
+        Guid id,
+        [FromBody] ResolveChatEscalationDto dto,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var escalation = await sender.Send(dto.ToCommand(id), cancellationToken);
+            return Ok(escalation.ToResponse());
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { Message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Eliminar un escalamiento de chat")]
     [EndpointDescription("Elimina el escalamiento indicado.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

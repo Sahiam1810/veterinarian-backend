@@ -12,5 +12,6 @@ public sealed record UpdateAppointmentCommand(
     DateTime ScheduledStart,
     DateTime ScheduledEnd,
     string? Notes,
-    Guid ActorUserAccountId = default,
-    bool EnforceVeterinarianOwnership = false) : IRequest;
+    Guid ActorUserId = default,
+    bool EnforceVeterinarianOwnership = false,
+    string? ConsultingRoom = null) : IRequest;

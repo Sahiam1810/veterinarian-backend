@@ -20,6 +20,7 @@ public sealed class NotificationRepository : INotificationRepository
         => await _context.Set<Notification>()
             .Include(x => x.User)
             .Include(x => x.Appointment)
+            .Where(x => x.UserId != null)
             .AsNoTracking()
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -30,7 +31,7 @@ public sealed class NotificationRepository : INotificationRepository
         => _context.Set<Notification>()
             .Include(x => x.User)
             .Include(x => x.Appointment)
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == id && x.UserId != null, cancellationToken);
 
     public async Task<IReadOnlyCollection<Notification>> GetByUserIdAsync(
         Guid userId,
@@ -49,7 +50,7 @@ public sealed class NotificationRepository : INotificationRepository
         => await _context.Set<Notification>()
             .Include(x => x.User)
             .Include(x => x.Appointment)
-            .Where(x => x.AppointmentId == appointmentId)
+            .Where(x => x.AppointmentId == appointmentId && x.UserId != null)
             .AsNoTracking()
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -88,5 +89,21 @@ public sealed class NotificationRepository : INotificationRepository
     {
         _context.Set<Notification>().Remove(notification);
         return Task.CompletedTask;
+    }
+
+    public async Task DeleteByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var notifications = await _context.Set<Notification>()
+            .Where(x => x.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        if (notifications.Count == 0)
+        {
+            return;
+        }
+
+        _context.Set<Notification>().RemoveRange(notifications);
     }
 }

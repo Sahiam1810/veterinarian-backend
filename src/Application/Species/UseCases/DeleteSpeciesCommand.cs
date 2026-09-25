@@ -24,6 +24,14 @@ public sealed class DeleteSpeciesCommandHandler : IRequestHandler<DeleteSpeciesC
             throw new NotFoundException("Especie no encontrada.");
         }
 
+        // No borrar si aún hay razas (Restrict en BD)
+        var races = await _uow.RacesRepository.GetAllAsync(species.Id, cancellationToken);
+        if (races.Count > 0)
+        {
+            throw new ConflictException(
+                "La especie tiene razas asociadas. Elimina las razas primero.");
+        }
+
         await _uow.SpeciesRepository.DeleteAsync(species, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
     }

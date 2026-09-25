@@ -7,6 +7,6 @@ public interface IAgentDelegatedIdentityProvider
     AgentDelegatedIdentity GetGuest(long telegramUserId);
 
     Task<AgentDelegatedIdentity> GetAsync(
-        Guid personId,
+        Guid clientId,
         CancellationToken cancellationToken);
 }

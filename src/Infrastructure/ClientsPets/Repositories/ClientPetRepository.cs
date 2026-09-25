@@ -9,12 +9,44 @@ public sealed class ClientPetRepository(VeterinaryDbContext context) : IClientPe
 {
     public async Task<IReadOnlyCollection<ClientPetEntity>> GetAllAsync(CancellationToken cancellationToken) =>
         await context.Set<ClientPetEntity>().AsNoTracking().OrderBy(x => x.ClientId).ThenBy(x => x.PetId).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<ClientPetEntity>> GetAllWithDetailsAsync(CancellationToken cancellationToken) =>
+        await context.Set<ClientPetEntity>()
+            .AsNoTracking()
+            .Where(x => x.Client.IsActive)
+            .Include(x => x.Client)
+            .Include(x => x.Pet)
+            .ToListAsync(cancellationToken);
     public Task<ClientPetEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken) => context.Set<ClientPetEntity>().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     public async Task<IReadOnlyCollection<ClientPetEntity>> GetByClientIdAsync(Guid clientId, CancellationToken cancellationToken) =>
         await context.Set<ClientPetEntity>().AsNoTracking().Where(x => x.ClientId == clientId).ToListAsync(cancellationToken);
     public Task<bool> ExistsByClientAndPetAsync(Guid clientId, Guid petId, CancellationToken cancellationToken, Guid? excludedId = null) =>
         context.Set<ClientPetEntity>().AnyAsync(x => x.ClientId == clientId && x.PetId == petId && (!excludedId.HasValue || x.Id != excludedId.Value), cancellationToken);
+
+    public async Task<IReadOnlyCollection<ClientPetEntity>> GetAllForAdmissionAsync(CancellationToken cancellationToken) =>
+        await context.Set<ClientPetEntity>()
+            .AsNoTracking()
+            .Include(x => x.Pet)
+            .Include(x => x.Client)
+            .Where(x => x.Pet != null && x.Client != null)
+            .OrderBy(x => x.Client.FullName.Value)
+            .ThenBy(x => x.Pet.Name.Value)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) => await context.Set<ClientPetEntity>().AddAsync(clientPet, cancellationToken);
     public Task UpdateAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) { context.Set<ClientPetEntity>().Update(clientPet); return Task.CompletedTask; }
     public Task DeleteAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) { context.Set<ClientPetEntity>().Remove(clientPet); return Task.CompletedTask; }
+
+    public async Task DeleteByClientIdAsync(Guid clientId, CancellationToken cancellationToken)
+    {
+        var links = await context.Set<ClientPetEntity>()
+            .Where(x => x.ClientId == clientId)
+            .ToListAsync(cancellationToken);
+
+        if (links.Count == 0)
+        {
+            return;
+        }
+
+        context.Set<ClientPetEntity>().RemoveRange(links);
+    }
 }

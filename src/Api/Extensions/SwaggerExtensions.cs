@@ -1,3 +1,6 @@
+using Api.Configuration;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
 
 namespace Api.Extensions;
@@ -30,5 +33,10 @@ public static class SwaggerExtensions
         });
 
         return services;
+    }
+
+    public static IApplicationBuilder UseSwaggerBasicAuth(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<SwaggerBasicAuthMiddleware>();
     }
 }

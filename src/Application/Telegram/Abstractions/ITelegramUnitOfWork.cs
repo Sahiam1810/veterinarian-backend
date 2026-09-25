@@ -1,22 +1,17 @@
+using Application.Clients.Abstraction;
 using Application.Users.Abstraction;
 
 namespace Application.Telegram.Abstractions;
 
 public interface ITelegramUnitOfWork
 {
-    IUsersRepository UsersRepository { get; }
+    IClientRepository ClientsRepository { get; }
 
-    ITelegramLinkCodeRepository LinkCodesRepository { get; }
+    IUsersRepository UsersRepository { get; }
 
     ITelegramUserLinkRepository UserLinksRepository { get; }
 
-    ITelegramConversationLinkRepository ConversationLinksRepository { get; }
-
     ITelegramInboundUpdateRepository InboundUpdatesRepository { get; }
-
-    ITelegramLinkingSessionRepository LinkingSessionsRepository { get; }
-
-    ITelegramRegistrationSessionRepository RegistrationSessionsRepository { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

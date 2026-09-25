@@ -6,13 +6,6 @@ public sealed class CreateChatConversationCommandValidator : AbstractValidator<C
 {
     public CreateChatConversationCommandValidator()
     {
-        RuleFor(command => command.ConversationStatusId)
-            .NotEmpty()
-            .WithMessage("El identificador del estado de conversación es obligatorio.");
-
-        RuleFor(command => command.PriorityId)
-            .Must(priorityId => !priorityId.HasValue || priorityId.Value != Guid.Empty)
-            .WithMessage("El identificador de prioridad no puede ser vacío cuando se proporciona.");
     }
 }
 
@@ -23,36 +16,6 @@ public sealed class GetChatConversationByIdQueryValidator : AbstractValidator<Ge
         RuleFor(query => query.Id)
             .NotEmpty()
             .WithMessage("El identificador de la conversación es obligatorio.");
-    }
-}
-
-public sealed class UpdateChatConversationStatusCommandValidator
-    : AbstractValidator<UpdateChatConversationStatusCommand>
-{
-    public UpdateChatConversationStatusCommandValidator()
-    {
-        RuleFor(command => command.Id)
-            .NotEmpty()
-            .WithMessage("El identificador de la conversación es obligatorio.");
-
-        RuleFor(command => command.ConversationStatusId)
-            .NotEmpty()
-            .WithMessage("El identificador del estado de conversación es obligatorio.");
-    }
-}
-
-public sealed class UpdateChatConversationPriorityCommandValidator
-    : AbstractValidator<UpdateChatConversationPriorityCommand>
-{
-    public UpdateChatConversationPriorityCommandValidator()
-    {
-        RuleFor(command => command.Id)
-            .NotEmpty()
-            .WithMessage("El identificador de la conversación es obligatorio.");
-
-        RuleFor(command => command.PriorityId)
-            .Must(priorityId => !priorityId.HasValue || priorityId.Value != Guid.Empty)
-            .WithMessage("El identificador de prioridad no puede ser vacío cuando se proporciona.");
     }
 }
 

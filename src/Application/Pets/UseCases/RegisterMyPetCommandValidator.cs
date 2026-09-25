@@ -7,7 +7,7 @@ public sealed class RegisterMyPetCommandValidator : AbstractValidator<RegisterMy
 {
     public RegisterMyPetCommandValidator()
     {
-        RuleFor(command => command.UserAccountId).NotEmpty();
+        RuleFor(command => command.ClientId).NotEmpty();
         RuleFor(command => command.Name)
             .NotEmpty()
             .MaximumLength(PetName.MaxLength);

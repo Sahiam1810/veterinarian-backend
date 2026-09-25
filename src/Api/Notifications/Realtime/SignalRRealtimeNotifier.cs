@@ -16,7 +16,7 @@ public sealed class SignalRRealtimeNotifier(
         CancellationToken cancellationToken = default)
     {
         return hubContext.Clients
-            .User(notification.UserId.ToString())
+            .User(notification.UserId!.Value.ToString())
             .SendAsync(
                 ReceiveNotificationMethod,
                 notification.ToResponse(),

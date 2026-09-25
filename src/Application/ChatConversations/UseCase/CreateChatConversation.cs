@@ -6,9 +6,8 @@ using ChatConversationEntity = Domain.ChatConversations.Entities.ChatConversatio
 namespace Application.ChatConversations.UseCase;
 
 public sealed record CreateChatConversationCommand(
-    Guid ConversationStatusId,
-    Guid? PriorityId,
-    bool AiEnabled = true) : IRequest<ChatConversationEntity>;
+    bool AiEnabled = true,
+    string Channel = "Web") : IRequest<ChatConversationEntity>;
 
 public sealed class CreateChatConversationCommandHandler
     : IRequestHandler<CreateChatConversationCommand, ChatConversationEntity>
@@ -24,31 +23,9 @@ public sealed class CreateChatConversationCommandHandler
         CreateChatConversationCommand request,
         CancellationToken cancellationToken)
     {
-        var status = await _uow.ConversationStatusesRepository.GetByIdAsync(
-            request.ConversationStatusId,
-            cancellationToken);
-        if (status is null)
-        {
-            throw new NotFoundException(
-                $"No se encontró el estado de conversación '{request.ConversationStatusId}'.");
-        }
-
-        if (request.PriorityId.HasValue)
-        {
-            var priority = await _uow.PrioritiesRepository.GetByIdAsync(
-                request.PriorityId.Value,
-                cancellationToken);
-            if (priority is null)
-            {
-                throw new NotFoundException(
-                    $"No se encontró la prioridad '{request.PriorityId.Value}'.");
-            }
-        }
-
         var conversation = ChatConversationEntity.Create(
-            request.ConversationStatusId,
-            request.PriorityId,
-            request.AiEnabled);
+            request.AiEnabled,
+            request.Channel);
 
         await _uow.ChatConversationsRepository.AddAsync(conversation, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

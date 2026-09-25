@@ -13,6 +13,17 @@ public sealed class TelegramUpdateWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await using var bootstrapScope = scopeFactory.CreateAsyncScope();
+        var settings = bootstrapScope.ServiceProvider.GetRequiredService<ITelegramRuntimeSettings>();
+        var concurrency = Math.Max(1, settings.WorkerConcurrency);
+        var slots = Enumerable.Range(0, concurrency)
+            .Select(slot => RunSlotAsync(slot, stoppingToken))
+            .ToArray();
+        await Task.WhenAll(slots);
+    }
+
+    private async Task RunSlotAsync(int slot, CancellationToken stoppingToken)
+    {
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -34,7 +45,9 @@ public sealed class TelegramUpdateWorker(
             {
                 logger.LogError(
                     new EventId(7101, "TelegramWorkerCycleFailed"),
-                    "Telegram update worker cycle failed with type {ExceptionType}",
+                    exception,
+                    "Telegram update worker slot {Slot} cycle failed with type {ExceptionType}",
+                    slot,
                     exception.GetType().Name);
                 await Task.Delay(TimeSpan.FromSeconds(2), timeProvider, stoppingToken);
             }

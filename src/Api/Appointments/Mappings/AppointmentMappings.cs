@@ -26,16 +26,18 @@ public static class AppointmentMappings
         return slots.Select(slot => new AppointmentBookingSlotResponse(
             slot.AvailabilityId,
             slot.ScheduledStartUtc,
-            slot.ScheduledEndUtc)).ToArray();
+            slot.ScheduledEndUtc,
+            slot.ConsultingRoom,
+            slot.ShiftName)).ToArray();
     }
 
     public static CreateMyAppointmentCommand ToCommand(
         this CreateMyAppointmentRequest request,
-        Guid userAccountId,
+        Guid clientId,
         string idempotencyKey)
     {
         return new CreateMyAppointmentCommand(
-            userAccountId,
+            clientId,
             request.PetId,
             request.VeterinarianId,
             request.ServiceId,
@@ -57,13 +59,32 @@ public static class AppointmentMappings
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes,
-            request.RequesterPhoneNumber);
+            request.RequesterPhoneNumber,
+            request.ConsultingRoom);
+    }
+
+    public static QuickBookingAppointmentCommand ToCommand(
+        this QuickBookingAppointmentRequest request)
+    {
+        return new QuickBookingAppointmentCommand(
+            request.ClientId,
+            request.ClientPhoneNumber,
+            request.ClientFullName,
+            request.PetName,
+            request.SpeciesId,
+            request.ServiceId,
+            request.VeterinarianId,
+            request.ScheduledStart,
+            request.ScheduledEnd,
+            request.AvailabilityId,
+            request.ConsultingRoom,
+            request.Notes);
     }
 
     public static CreateAppointmentMedicalRecordCommand ToCommand(
         this CreateAppointmentMedicalRecordRequest request,
         Guid appointmentId,
-        Guid actorUserAccountId,
+        Guid actorUserId,
         bool enforceVeterinarianOwnership)
     {
         IReadOnlyCollection<CreateAppointmentMedicalRecordVaccinationItem>? vaccinations = null;
@@ -86,7 +107,7 @@ public static class AppointmentMappings
             request.WeightAtVisit,
             request.Temperature,
             vaccinations,
-            actorUserAccountId,
+            actorUserId,
             enforceVeterinarianOwnership);
     }
 
@@ -102,7 +123,7 @@ public static class AppointmentMappings
     public static UpdateAppointmentCommand ToCommand(
         this UpdateAppointmentRequest request,
         Guid id,
-        Guid actorUserAccountId,
+        Guid actorUserId,
         bool enforceVeterinarianOwnership)
     {
         return new UpdateAppointmentCommand(
@@ -115,21 +136,22 @@ public static class AppointmentMappings
             request.ScheduledStart,
             request.ScheduledEnd,
             request.Notes,
-            actorUserAccountId,
-            enforceVeterinarianOwnership);
+            actorUserId,
+            enforceVeterinarianOwnership,
+            request.ConsultingRoom);
     }
 
     public static UpdateAppointmentStatusCommand ToCommand(
         this UpdateAppointmentStatusRequest request,
         Guid appointmentId,
-        Guid actorUserAccountId,
+        Guid actorUserId,
         bool enforceVeterinarianOwnership)
     {
         return new UpdateAppointmentStatusCommand(
             appointmentId,
             request.StatusId,
             request.Comment,
-            actorUserAccountId,
+            actorUserId,
             enforceVeterinarianOwnership);
     }
 
@@ -151,7 +173,15 @@ public static class AppointmentMappings
             AsUtc(entity.ScheduledEnd),
             entity.Notes,
             entity.RequesterPhoneNumber?.Value,
-            entity.CreatedAt);
+            entity.Weight,
+            entity.Temperature,
+            entity.HeartRate,
+            entity.RespiratoryRate,
+            entity.CreatedAt,
+            entity.ClientPet?.PetId,
+            entity.ConsultingRoom,
+            entity.IsPaid,
+            entity.PaidAt);
     }
 
     private static DateTime AsUtc(DateTime value)

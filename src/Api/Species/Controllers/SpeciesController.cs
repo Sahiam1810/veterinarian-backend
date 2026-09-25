@@ -1,7 +1,10 @@
 using Api.Common.Security;
 using Api.Common.Security.Permissions;
+using Api.Races.Dtos;
+using Api.Races.Mappings;
 using Api.Species.Dtos;
 using Api.Species.Mappings;
+using Application.Races.UseCases;
 using Application.Species.UseCases;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -44,6 +47,26 @@ public sealed class SpeciesController(ISender sender) : ControllerBase
             cancellationToken);
 
         return Ok(species.ToDto());
+    }
+
+    // Razas de una especie (mismo filtro que GET /api/Races?speciesId=)
+    [HttpGet("{id:guid}/races")]
+    [Authorize]
+    [EndpointSummary("Obtiene las razas de una especie")]
+    [EndpointDescription("Retorna las razas asociadas a la especie indicada.")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<RaceResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<RaceResponseDto>>> GetRacesBySpecies(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new GetSpeciesByIdQuery(id), cancellationToken);
+
+        var races = await sender.Send(
+            new GetAllRacesQuery(id),
+            cancellationToken);
+
+        return Ok(races.ToDto());
     }
 
     [HttpPost]
@@ -101,6 +124,7 @@ public sealed class SpeciesController(ISender sender) : ControllerBase
     [EndpointDescription("Elimina permanentemente una especie del sistema por su ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(
         Guid id,
         CancellationToken cancellationToken)

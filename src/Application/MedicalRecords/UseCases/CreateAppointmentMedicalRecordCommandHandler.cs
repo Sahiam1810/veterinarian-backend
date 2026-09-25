@@ -1,6 +1,7 @@
 using Application.Appointments;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.AppointmentStatusHistories.Entities;
 using Domain.MedicalRecords.Entities;
 using Domain.Vaccinations.Entities;
 using MediatR;
@@ -22,9 +23,22 @@ public sealed class CreateAppointmentMedicalRecordCommandHandler(IUnitOfWork uni
         await AppointmentVeterinarianOwnership.EnsureAsync(
             unitOfWork,
             appointment,
-            request.ActorUserAccountId,
+            request.ActorUserId,
             request.EnforceVeterinarianOwnership,
             cancellationToken);
+
+        // AGENDADA o CONFIRMADA (paciente ya hizo check-in en recepción) admiten
+        // registrar historia clinica; No Asistio/Cancelada/Atendida quedan cerradas.
+        var currentStatus = await unitOfWork.StatusAppointmentsRepository.GetByIdAsync(
+            appointment.StatusId,
+            cancellationToken)
+            ?? throw new ConflictException("El estado actual de la cita no es válido.");
+        if (!string.Equals(currentStatus.Name, AppointmentStatusNames.Agendada, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(currentStatus.Name, AppointmentStatusNames.Confirmada, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException(
+                "No se puede registrar la historia clínica de una cita que no está agendada o confirmada.");
+        }
 
         if (await unitOfWork.MedicalRecordsRepository.ExistsByAppointmentIdAsync(
                 request.AppointmentId,
@@ -32,6 +46,16 @@ public sealed class CreateAppointmentMedicalRecordCommandHandler(IUnitOfWork uni
         {
             throw new ConflictException("Ya existe una historia clínica para esta cita.");
         }
+
+        var targetStatus = (await unitOfWork.StatusAppointmentsRepository.GetAllAsync(cancellationToken))
+            .FirstOrDefault(item =>
+                string.Equals(item.Name, "ATENDIDA", StringComparison.OrdinalIgnoreCase))
+            ?? throw new ConflictException("No está configurado el estado ATENDIDA.");
+
+        AppointmentStatusTransitionRules.EnsureValidTransition(
+            currentStatus.Name,
+            targetStatus.Name,
+            null);
 
         var diagnostic = await unitOfWork.DiagnosticsRepository.GetByIdAsync(
             request.DiagnosticId,
@@ -76,6 +100,31 @@ public sealed class CreateAppointmentMedicalRecordCommandHandler(IUnitOfWork uni
                 vaccinationIds.Add(vaccination.Id);
             }
         }
+
+        var history = new AppointmentStatusHistory(
+            appointment.Id,
+            targetStatus.Id,
+            appointment.ClientPetId,
+            "Historia clínica registrada por el veterinario.");
+
+        await unitOfWork.AppointmentStatusHistoriesRepository.AddAsync(
+            history,
+            cancellationToken);
+
+        appointment.Update(
+            appointment.ClientPetId,
+            appointment.VeterinarianId,
+            appointment.ServiceId,
+            targetStatus.Id,
+            appointment.AvailabilityId,
+            appointment.ScheduledStart,
+            appointment.ScheduledEnd,
+            appointment.Notes,
+            appointment.ConsultingRoom);
+
+        await unitOfWork.AppointmentsRepository.UpdateAsync(
+            appointment,
+            cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

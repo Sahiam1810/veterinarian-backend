@@ -20,8 +20,7 @@ public static class VaccinationMappings
 
     public static UpdateVaccinationCommand ToCommand(
         this UpdateVaccinationRequest request,
-        Guid id,
-        Guid? userAccountId = null)
+        Guid id)
     {
         return new UpdateVaccinationCommand(
             id,
@@ -30,8 +29,7 @@ public static class VaccinationMappings
             request.VaccineName,
             request.DoseNumber,
             request.ApplicationDate,
-            request.NextDoseDate,
-            userAccountId);
+            request.NextDoseDate);
     }
 
     public static VaccinationResponse ToResponse(

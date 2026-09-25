@@ -17,22 +17,18 @@ public sealed class CreateChatParticipantCommandValidator
 
         RuleFor(command => command)
             .Must(command => ChatParticipantIdentityValidation.HasExactlyOneIdentity(
-                command.ChatUserProfileId,
-                command.AgentHumanId,
-                command.AiModelId))
-            .WithMessage("El participante debe tener exactamente una identidad (perfil de chat, agente humano o modelo de IA).");
+                command.ClientId,
+                command.AgentHumanId))
+            .WithMessage("El participante debe tener exactamente una identidad (cliente o agente humano).");
 
-        RuleFor(command => command.ChatUserProfileId)
-            .Must(profileId => !profileId.HasValue || profileId.Value != Guid.Empty)
-            .WithMessage("El identificador del perfil de chat no puede ser vacío.");
+        RuleFor(command => command.ClientId)
+            .Must(clientId => !clientId.HasValue || clientId.Value != Guid.Empty)
+            .WithMessage("El identificador del cliente no puede ser vacío.");
 
         RuleFor(command => command.AgentHumanId)
             .Must(agentId => !agentId.HasValue || agentId.Value != Guid.Empty)
             .WithMessage("El identificador del agente humano no puede ser vacío.");
 
-        RuleFor(command => command.AiModelId)
-            .Must(aiModelId => !aiModelId.HasValue || aiModelId.Value != Guid.Empty)
-            .WithMessage("El identificador del modelo de IA no puede ser vacío.");
     }
 }
 
@@ -69,49 +65,23 @@ public sealed class ChangeChatParticipantIdentityCommandValidator
 
         RuleFor(command => command)
             .Must(command => ChatParticipantIdentityValidation.HasExactlyOneIdentity(
-                command.ChatUserProfileId,
-                command.AgentHumanId,
-                command.AiModelId))
-            .WithMessage("El participante debe tener exactamente una identidad (perfil de chat, agente humano o modelo de IA).");
+                command.ClientId,
+                command.AgentHumanId))
+            .WithMessage("El participante debe tener exactamente una identidad (cliente o agente humano).");
 
-        RuleFor(command => command.ChatUserProfileId)
-            .Must(profileId => !profileId.HasValue || profileId.Value != Guid.Empty)
-            .WithMessage("El identificador del perfil de chat no puede ser vacío.");
+        RuleFor(command => command.ClientId)
+            .Must(clientId => !clientId.HasValue || clientId.Value != Guid.Empty)
+            .WithMessage("El identificador del cliente no puede ser vacío.");
 
         RuleFor(command => command.AgentHumanId)
             .Must(agentId => !agentId.HasValue || agentId.Value != Guid.Empty)
             .WithMessage("El identificador del agente humano no puede ser vacío.");
 
-        RuleFor(command => command.AiModelId)
-            .Must(aiModelId => !aiModelId.HasValue || aiModelId.Value != Guid.Empty)
-            .WithMessage("El identificador del modelo de IA no puede ser vacío.");
     }
 }
 
 internal static class ChatParticipantIdentityValidation
 {
-    internal static bool HasExactlyOneIdentity(
-        Guid? chatUserProfileId,
-        Guid? agentHumanId,
-        Guid? aiModelId)
-    {
-        var identityCount = 0;
-
-        if (chatUserProfileId.HasValue)
-        {
-            identityCount++;
-        }
-
-        if (agentHumanId.HasValue)
-        {
-            identityCount++;
-        }
-
-        if (aiModelId.HasValue)
-        {
-            identityCount++;
-        }
-
-        return identityCount == 1;
-    }
+    internal static bool HasExactlyOneIdentity(Guid? clientId, Guid? agentHumanId) =>
+        clientId.HasValue != agentHumanId.HasValue;
 }

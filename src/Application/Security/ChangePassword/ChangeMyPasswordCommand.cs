@@ -3,6 +3,6 @@ using MediatR;
 namespace Application.Security.ChangePassword;
 
 public sealed record ChangeMyPasswordCommand(
-    Guid UserAccountId,
+    Guid UserId,
     string CurrentPassword,
     string NewPassword) : IRequest;

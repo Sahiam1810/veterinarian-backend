@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Api.Clients.Dtos;
 using Api.Clients.Mappings;
 using Api.Common.Security;
@@ -16,26 +15,6 @@ namespace Api.Clients.Controllers;
 [Route("api/[controller]")]
 public class ClientsController(ISender sender) : ControllerBase
 {
-    // GET /api/clients/me
-    [HttpGet("me")]
-    [Authorize(Policy = AuthorizationPolicies.ClientOnly)]
-    [EndpointSummary("Obtiene el perfil del cliente autenticado")]
-    [EndpointDescription("Retorna los datos del cliente asociado al usuario autenticado actual (portal de dueño).")]
-    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ClientResponseDto>> GetMe(CancellationToken ct)
-    {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        if (!Guid.TryParse(subject, out var userAccountId))
-        {
-            return Unauthorized();
-        }
-
-        var client = await sender.Send(new GetMyClientQuery(userAccountId), ct);
-        return Ok(client.ToDto());
-    }
-
     // GET /api/clients/by-identification/{identificationNumber}
     [HttpGet("by-identification/{identificationNumber}")]
     [AllowAnonymous]
@@ -51,6 +30,43 @@ public class ClientsController(ISender sender) : ControllerBase
     {
         var client = await sender.Send(new GetClientByIdentificationQuery(identificationNumber), ct);
         return Ok(client.ToIdentificationLookupResponse());
+    }
+
+    // GET /api/clients/by-phone/{phone}
+    [HttpGet("by-phone/{phone}")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.ClientPhoneLookup)]
+    [EndpointSummary("Resuelve un cliente por teléfono")]
+    [EndpointDescription("Equivalente anónimo a by-identification para el chatbot: ubica al cliente por teléfono normalizado (solo dígitos). Respuesta acotada (sin dirección ni teléfono) y rate-limited. Sin JWT.")]
+    [ProducesResponseType(typeof(ClientPhoneLookupResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ClientPhoneLookupResponseDto>> GetByPhone(
+        string phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientByPhoneQuery(phone), ct);
+        return Ok(client.ToPhoneLookupResponse());
+    }
+
+    // GET /api/clients/lookup
+    [HttpGet("lookup")]
+    [RequirePermission("Clientes", PermissionAction.View)]
+    [EndpointSummary("Busca un cliente por cédula y/o teléfono (Staff)")]
+    // Semántica: match exacto (VO normalizado); si vienen identification y phone → AND; sin fila → 404.
+    [EndpointDescription("Lookup staff autenticado (Clientes View). Match exacto por cédula y/o teléfono; si ambos params vienen aplica AND. Sin coincidencia → 404. DTO operativo (no el acotado anónimo).")]
+    [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClientResponseDto>> Lookup(
+        [FromQuery] string? identification,
+        [FromQuery] string? phone,
+        CancellationToken ct)
+    {
+        var client = await sender.Send(new GetClientLookupQuery(identification, phone), ct);
+        return Ok(client.ToDto());
     }
 
     // GET /api/clients
@@ -82,19 +98,13 @@ public class ClientsController(ISender sender) : ControllerBase
     [HttpPost]
     [RequirePermission("Clientes", PermissionAction.Create)]
     [EndpointSummary("Registra un nuevo cliente")]
-    [EndpointDescription("Crea un nuevo registro de cliente asociándolo a un usuario existente.")]
+    [EndpointDescription("Crea un cliente con sus propios datos (nombre, correo, cédula, teléfono y dirección). El cliente no tiene usuario ni acceso a la plataforma.")]
     [ProducesResponseType(typeof(ClientResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ClientResponseDto>> Create([FromBody] CreateClientDto dto, CancellationToken ct)
     {
-        var id = await sender.Send(new CreateClientCommand(
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.RegistrationDate,
-            dto.PhoneNumber), ct);
+        var id = await sender.Send(dto.ToCommand(), ct);
 
         var client = await sender.Send(new GetClientByIdQuery(id), ct);
         return CreatedAtAction(nameof(GetById), new { id }, client.ToDto());
@@ -104,20 +114,14 @@ public class ClientsController(ISender sender) : ControllerBase
     [HttpPut("{id:guid}")]
     [RequirePermission("Clientes", PermissionAction.Edit)]
     [EndpointSummary("Actualiza los datos de un cliente")]
-    [EndpointDescription("Modifica los datos de un cliente existente identificado por su ID.")]
+    [EndpointDescription("Modifica los datos de un cliente existente (nombre, correo, cédula, teléfono, dirección y estado activo). Cédula, correo y teléfono deben ser únicos entre los demás clientes.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientDto dto, CancellationToken ct)
     {
-        await sender.Send(new UpdateClientCommand(
-            id,
-            dto.UserId,
-            dto.IdentificationNumber,
-            dto.Address,
-            dto.RegistrationDate,
-            dto.PhoneNumber), ct);
+        await sender.Send(dto.ToCommand(id), ct);
 
         return NoContent();
     }

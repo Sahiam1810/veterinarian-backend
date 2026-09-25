@@ -8,7 +8,8 @@ using Xunit;
 namespace Api.Tests.Security;
 
 // La gestión de permisos por rol es exclusiva de SuperAdmin -- no pasa por
-// RequirePermission ni se puede delegar vía UserPermission (sería circular).
+// RequirePermission (sería circular: el propio permiso decidiría quién puede
+// tocar los permisos).
 public sealed class RolePermissionsAuthorizationTests
 {
     [Theory]
