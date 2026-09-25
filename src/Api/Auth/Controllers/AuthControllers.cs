@@ -158,13 +158,13 @@ public sealed class AuthController(ISender sender) : ControllerBase
         if (isSuperAdmin)
         {
             return Ok(new UserPermissionsResponseDto(
-                modules.ToDictionary(
-                    module => module.Name.Value,
+                modules.GroupBy(m => m.Name.Value).ToDictionary(
+                    g => g.Key,
                     _ => new ModulePermissionDto(true, true, true, true))));
         }
 
-        var permissions = modules.ToDictionary(
-            module => module.Name.Value,
+        var permissions = modules.GroupBy(m => m.Name.Value).ToDictionary(
+            g => g.Key,
             _ => new ModulePermissionDto(false, false, false, false));
 
         foreach (var claim in User.FindAll(PermissionClaimValue.ClaimType))

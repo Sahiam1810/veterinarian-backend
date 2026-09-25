@@ -202,7 +202,7 @@ public sealed class GetAllActiveHospitalizationStaysQueryHandler(IUnitOfWork uni
         var stays = await unitOfWork.HospitalizationStaysRepository.GetAllActiveAsync(cancellationToken);
         var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
         var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
-        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+        var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
 
         return stays.Select(s => s.ToDto(userDict.GetValueOrDefault(s.AdmittedByUserId))).ToList();
     }
@@ -218,7 +218,7 @@ public sealed class GetHospitalizationStaysByPetQueryHandler(IUnitOfWork unitOfW
         var stays = await unitOfWork.HospitalizationStaysRepository.GetByClientPetIdAsync(request.ClientPetId, cancellationToken);
         var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
         var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
-        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+        var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
 
         return stays.Select(s => s.ToDto(userDict.GetValueOrDefault(s.AdmittedByUserId))).ToList();
     }
@@ -242,7 +242,7 @@ public sealed class GetHospitalizationNotesByStayQueryHandler(IUnitOfWork unitOf
             .Distinct().ToList();
 
         var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
-        var userDict = users.ToDictionary(u => u.Id, u => u.FullName);
+        var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
 
         return orderedNotes.Select(n => n.ToDto(
             userDict.GetValueOrDefault(n.AutorUserId),
