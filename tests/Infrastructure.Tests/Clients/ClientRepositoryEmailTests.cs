@@ -18,7 +18,7 @@ public sealed class ClientRepositoryEmailTests
 
         var email = entityType!.FindProperty(nameof(ClientEntity.Email));
         Assert.NotNull(email);
-        Assert.False(email!.IsNullable);
+        Assert.True(email!.IsNullable);
 
         Assert.Contains(entityType.GetIndexes(), index =>
             index.IsUnique

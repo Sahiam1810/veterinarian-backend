@@ -13,33 +13,36 @@ public sealed class PetEntity : BaseEntity<Guid>
 
     public PetEntity(
         string name,
-        int age,
+        int? age,
         string gender,
-        decimal weight,
+        decimal? weight,
         string? observations,
         SpeciesEntity speciesEntity,
-        RaceEntity raceEntity,
+        RaceEntity? raceEntity = null,
         string? photoUrl = null)
     {
-        EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
+        if (raceEntity != null)
+        {
+            EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
+        }
 
         Id = Guid.NewGuid();
         Name = PetName.Create(name);
         Age = age;
         Gender = PetGender.Create(gender);
-        Weight = PetWeight.Create(weight);
+        Weight = weight.HasValue ? PetWeight.Create(weight.Value) : null;
         Observations = PetObservations.Create(observations);
         PhotoUrl = PetPhotoUrl.Create(photoUrl);
         Species = speciesEntity;
         Race = raceEntity;
         SpeciesId = speciesEntity.Id;
-        RaceId = raceEntity.Id;
+        RaceId = raceEntity?.Id;
     }
 
     public PetName Name { get; private set; } = null!;
-    public int Age { get; private set; }
+    public int? Age { get; private set; }
     public PetGender Gender { get; private set; } = null!;
-    public PetWeight Weight { get; private set; } = null!;
+    public PetWeight? Weight { get; private set; }
     public PetObservations Observations { get; private set; } = null!;
     // EF deja null si PHOTO_URL es NULL; el getter garantiza VO vacío
     private PetPhotoUrl? _photoUrl;
@@ -49,34 +52,37 @@ public sealed class PetEntity : BaseEntity<Guid>
         private set => _photoUrl = value;
     }
     public Guid SpeciesId { get; private set; }
-    public Guid RaceId { get; private set; }
+    public Guid? RaceId { get; private set; }
 
     // Navigation properties
     public SpeciesEntity Species { get; private set; } = null!;
-    public RaceEntity Race { get; private set; } = null!;
+    public RaceEntity? Race { get; private set; }
 
     public void Update(
         string name,
-        int age,
+        int? age,
         string gender,
-        decimal weight,
+        decimal? weight,
         string? observations,
         SpeciesEntity speciesEntity,
-        RaceEntity raceEntity,
+        RaceEntity? raceEntity = null,
         string? photoUrl = null)
     {
-        EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
+        if (raceEntity != null)
+        {
+            EnsureRaceBelongsToSpecies(speciesEntity, raceEntity);
+        }
 
         Name = PetName.Create(name);
         Age = age;
         Gender = PetGender.Create(gender);
-        Weight = PetWeight.Create(weight);
+        Weight = weight.HasValue ? PetWeight.Create(weight.Value) : null;
         Observations = PetObservations.Create(observations);
         PhotoUrl = PetPhotoUrl.Create(photoUrl);
         Species = speciesEntity;
         Race = raceEntity;
         SpeciesId = speciesEntity.Id;
-        RaceId = raceEntity.Id;
+        RaceId = raceEntity?.Id;
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -13,7 +13,7 @@ public static class PetMappings
             entity.Name.Value,
             entity.Age,
             entity.Gender.Value,
-            entity.Weight.Value,
+            entity.Weight?.Value,
             entity.Observations?.Value,
             entity.SpeciesId,
             entity.RaceId,

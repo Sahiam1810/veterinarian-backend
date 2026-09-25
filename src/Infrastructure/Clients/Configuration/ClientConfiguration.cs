@@ -30,8 +30,10 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
         builder.Property(client => client.Email)
             .HasColumnName("EMAIL")
             .HasColumnType("VARCHAR2(150)")
-            .HasConversion(email => email.Value, str => ClientEmail.Create(str))
-            .IsRequired();
+            .HasConversion(
+                email => email == null ? null : email.Value,
+                str => string.IsNullOrWhiteSpace(str) ? null : ClientEmail.Create(str))
+            .IsRequired(false);
 
         builder.HasIndex(client => client.Email)
             .IsUnique()
@@ -47,9 +49,9 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<ClientEntity>
             .HasColumnName("IDENTIFICATION_NUMBER")
             .HasMaxLength(ClientIdentificationNumber.MaxLength)
             .HasConversion(
-                idNumber => idNumber.Value,
-                str => ClientIdentificationNumber.Create(str))
-            .IsRequired();
+                idNumber => idNumber == null ? null : idNumber.Value,
+                str => string.IsNullOrWhiteSpace(str) ? null : ClientIdentificationNumber.Create(str))
+            .IsRequired(false);
 
         builder.HasIndex(client => client.IdentificationNumber)
             .IsUnique();

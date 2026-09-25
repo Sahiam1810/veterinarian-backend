@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925153010_MakeClientAndPetFieldsNullable")]
+    partial class MakeClientAndPetFieldsNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -141,10 +144,6 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("VARCHAR2(500)")
                         .HasColumnName("NOTES");
-
-                    b.Property<decimal?>("PaidAmount")
-                        .HasColumnType("NUMBER(12,2)")
-                        .HasColumnName("PAID_AMOUNT");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("TIMESTAMP")
@@ -1000,10 +999,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(500)")
                         .HasColumnName("NOTES");
 
-                    b.Property<decimal?>("UnitPrice")
-                        .HasColumnType("NUMBER(12,2)")
-                        .HasColumnName("UNIT_PRICE");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("UPDATED_AT");
@@ -1315,10 +1310,6 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("VARCHAR2(36)")
                         .HasColumnName("PROCEDURE_ORDER_ID");
-
-                    b.Property<decimal?>("UnitPrice")
-                        .HasColumnType("NUMBER(12,2)")
-                        .HasColumnName("UNIT_PRICE");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7)")

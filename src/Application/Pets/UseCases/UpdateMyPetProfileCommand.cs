@@ -54,16 +54,20 @@ public sealed class UpdateMyPetProfileCommandHandler
             throw new NotFoundException("Especie no encontrada.");
 
         var raceId = request.RaceId ?? pet.RaceId;
-        var race = await _uow.RacesRepository.GetByIdAsync(raceId, cancellationToken);
-        if (race is null)
-            throw new NotFoundException("Raza no encontrada.");
+        Domain.Races.Entities.RaceEntity? race = null;
+        if (raceId.HasValue)
+        {
+            race = await _uow.RacesRepository.GetByIdAsync(raceId.Value, cancellationToken);
+            if (race is null)
+                throw new NotFoundException("Raza no encontrada.");
+        }
 
         pet.Update(
             request.Name ?? pet.Name.Value,
             request.Age ?? pet.Age,
             request.Gender ?? pet.Gender.Value,
-            request.Weight ?? pet.Weight.Value,
-            request.ChangeObservations ? request.Observations : pet.Observations.Value,
+            request.Weight ?? pet.Weight?.Value,
+            request.ChangeObservations ? request.Observations : pet.Observations?.Value,
             species,
             race,
             request.ChangePhotoUrl ? request.PhotoUrl : pet.PhotoUrl.Value);
@@ -72,9 +76,9 @@ public sealed class UpdateMyPetProfileCommandHandler
         await _uow.SaveChangesAsync(cancellationToken);
 
         return new OwnedPetProfile(
-            pet.Id, pet.Name.Value, pet.Age, pet.Gender.Value, pet.Weight.Value,
-            pet.Observations.Value, pet.SpeciesId, pet.Species.Name.Value,
-            pet.RaceId, pet.Race.Name.Value, pet.UpdatedAt ?? pet.CreatedAt,
+            pet.Id, pet.Name.Value, pet.Age, pet.Gender.Value, pet.Weight?.Value,
+            pet.Observations?.Value, pet.SpeciesId, pet.Species.Name.Value,
+            pet.RaceId, pet.Race?.Name.Value, pet.UpdatedAt ?? pet.CreatedAt,
             pet.PhotoUrl.Value);
     }
 

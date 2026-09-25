@@ -89,26 +89,26 @@ public record UpdatePetDto(
 public record PetResponseDto(
     Guid Id,
     string Name,
-    int Age,
+    int? Age,
     string Gender,
-    decimal Weight,
+    decimal? Weight,
     string? Observations,
     Guid SpeciesId,
-    Guid RaceId,
+    Guid? RaceId,
     string? PhotoUrl
 );
 
 public sealed record OwnedPetProfileResponseDto(
     Guid Id,
     string Name,
-    int Age,
+    int? Age,
     string Gender,
-    decimal Weight,
+    decimal? Weight,
     string? Observations,
     Guid SpeciesId,
     string SpeciesName,
-    Guid RaceId,
-    string RaceName,
+    Guid? RaceId,
+    string? RaceName,
     DateTime UpdatedAt,
     string? PhotoUrl);
 

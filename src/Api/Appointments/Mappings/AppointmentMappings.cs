@@ -63,6 +63,24 @@ public static class AppointmentMappings
             request.ConsultingRoom);
     }
 
+    public static QuickBookingAppointmentCommand ToCommand(
+        this QuickBookingAppointmentRequest request)
+    {
+        return new QuickBookingAppointmentCommand(
+            request.ClientId,
+            request.ClientPhoneNumber,
+            request.ClientFullName,
+            request.PetName,
+            request.SpeciesId,
+            request.ServiceId,
+            request.VeterinarianId,
+            request.ScheduledStart,
+            request.ScheduledEnd,
+            request.AvailabilityId,
+            request.ConsultingRoom,
+            request.Notes);
+    }
+
     public static CreateAppointmentMedicalRecordCommand ToCommand(
         this CreateAppointmentMedicalRecordRequest request,
         Guid appointmentId,

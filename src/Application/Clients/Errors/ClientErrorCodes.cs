@@ -9,4 +9,5 @@ public static class ClientErrorCodes
     public const string PhoneAlreadyInUse = "Clients.PhoneAlreadyInUse";
     public const string IdentificationAlreadyInUse = "Clients.IdentificationAlreadyInUse";
     public const string EmailAlreadyInUse = "Clients.EmailAlreadyInUse";
+    public const string EmailMissing = "Clients.EmailMissing";
 }
