@@ -17,11 +17,12 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
     public ProcedureOrder(
         Guid clientPetId,
         Guid veterinarianId,
-        Guid appointmentId,
+        Guid? appointmentId,
         bool isInHouse,
         string? referredTo,
         string? referralReason,
-        IEnumerable<(Guid ProcedureId, string? Notes)>? items = null)
+        IEnumerable<(Guid ProcedureId, string? Notes)>? items = null,
+        Guid? hospitalizationStayId = null)
     {
         if (clientPetId == Guid.Empty)
         {
@@ -33,10 +34,7 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
             throw new ArgumentException("El veterinario es obligatorio.", nameof(veterinarianId));
         }
 
-        if (appointmentId == Guid.Empty)
-        {
-            throw new ArgumentException("La consulta de origen (AppointmentId) es obligatoria.", nameof(appointmentId));
-        }
+        var origin = MedicalOrderOriginRules.Normalize(appointmentId, hospitalizationStayId);
 
         var itemList = items?.ToList() ?? new List<(Guid ProcedureId, string? Notes)>();
 
@@ -45,7 +43,8 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;
         VeterinarianId = veterinarianId;
-        AppointmentId = appointmentId;
+        AppointmentId = origin.AppointmentId;
+        HospitalizationStayId = origin.HospitalizationStayId;
         IsInHouse = isInHouse;
         ReferredTo = isInHouse ? null : referredTo?.Trim();
         ReferralReason = isInHouse ? null : referralReason?.Trim();
@@ -68,7 +67,7 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
     public Guid VeterinarianId { get; private set; }
     public Veterinarian? Veterinarian { get; private set; }
 
-    public Guid AppointmentId { get; private set; }
+    public Guid? AppointmentId { get; private set; }
     public Appointment? Appointment { get; private set; }
     public Guid? HospitalizationStayId { get; private set; }
 
@@ -76,19 +75,52 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
     public string? ReferredTo { get; private set; }
     public string? ReferralReason { get; private set; }
 
-    public string Status { get; private set; } = "Pendiente";
+    public string Status { get; private set; } = PendingStatus;
     public string? ResultFileUrl { get; private set; }
 
     public IReadOnlyCollection<ProcedureOrderItem> Items => _items.AsReadOnly();
 
-    public void Complete(string? resultFileUrl = null)
+    public const string PendingStatus = "Pendiente";
+    public const string CompletedStatus = "Completada";
+    public const string CancelledStatus = "Cancelada";
+
+    public bool IsPending => string.Equals(Status, PendingStatus, StringComparison.OrdinalIgnoreCase);
+
+    // Mensaje de por qué la orden ya no admite transición (solo Pendiente → Completada/Cancelada).
+    public string DescribeInvalidTransition()
     {
-        if (Status == "Completada")
+        if (string.Equals(Status, CompletedStatus, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("La orden de procedimiento ya se encuentra completada.");
+            return "La orden de procedimiento ya se encuentra completada.";
         }
 
-        Status = "Completada";
+        if (string.Equals(Status, CancelledStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return "La orden de procedimiento está cancelada y no se puede modificar.";
+        }
+
+        return $"La orden de procedimiento no está pendiente (estado actual: {Status}).";
+    }
+
+    public void Cancel()
+    {
+        if (!IsPending)
+        {
+            throw new InvalidOperationException(DescribeInvalidTransition());
+        }
+
+        Status = CancelledStatus;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Complete(string? resultFileUrl = null)
+    {
+        if (!IsPending)
+        {
+            throw new InvalidOperationException(DescribeInvalidTransition());
+        }
+
+        Status = CompletedStatus;
         ResultFileUrl = string.IsNullOrWhiteSpace(resultFileUrl) ? null : resultFileUrl.Trim();
         UpdatedAt = DateTime.UtcNow;
     }

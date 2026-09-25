@@ -19,6 +19,7 @@ public sealed class SupplyConsumptionsController(ISender sender) : ControllerBas
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<SupplyConsumptionDto>> Register(
         [FromRoute] Guid stayId,
         [FromBody] CreateSupplyConsumptionDto dto,

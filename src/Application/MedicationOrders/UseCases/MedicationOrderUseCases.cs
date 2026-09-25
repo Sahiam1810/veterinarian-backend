@@ -1,5 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.MedicalOrders;
+using Domain.MedicalOrders;
 using Domain.MedicationOrders.Entities;
 using FluentValidation;
 using MediatR;
@@ -8,13 +10,17 @@ namespace Application.MedicationOrders.UseCases;
 
 public sealed record MedicationOrderItemInput(Guid MedicationId, string? Notes);
 
+// Origen: exactamente uno de AppointmentId o HospitalizationStayId.
+// ActorUserId: usuario autenticado; firma como veterinario las órdenes de hospitalización.
 public sealed record CreateMedicationOrderCommand(
     Guid ClientPetId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
-    List<MedicationOrderItemInput>? Items) : IRequest<MedicationOrder>;
+    List<MedicationOrderItemInput>? Items,
+    Guid? HospitalizationStayId = null,
+    Guid ActorUserId = default) : IRequest<MedicationOrder>;
 
 public sealed record CompleteMedicationOrderCommand(Guid Id) : IRequest<Unit>;
 
@@ -24,6 +30,8 @@ public sealed record GetMedicationOrdersByAppointmentIdQuery(Guid AppointmentId)
 
 public sealed record GetPendingMedicationOrdersQuery() : IRequest<IEnumerable<MedicationOrder>>;
 
+public sealed record GetMedicationOrdersByHospitalizationStayIdQuery(Guid HospitalizationStayId) : IRequest<IEnumerable<MedicationOrder>>;
+
 // Handlers
 public sealed class CreateMedicationOrderCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<CreateMedicationOrderCommand, MedicationOrder>
@@ -32,22 +40,25 @@ public sealed class CreateMedicationOrderCommandHandler(IUnitOfWork unitOfWork)
         CreateMedicationOrderCommand request,
         CancellationToken cancellationToken)
     {
-        var appointment = await unitOfWork.AppointmentsRepository.GetByIdAsync(request.AppointmentId, cancellationToken);
-        if (appointment is null)
-        {
-            throw new NotFoundException($"No se encontró la cita con ID '{request.AppointmentId}'.");
-        }
+        var veterinarianId = await MedicalOrderOriginResolver.ResolveVeterinarianIdAsync(
+            unitOfWork,
+            request.ClientPetId,
+            request.AppointmentId,
+            request.HospitalizationStayId,
+            request.ActorUserId,
+            cancellationToken);
 
         var itemsTuple = request.Items?.Select(i => (i.MedicationId, i.Notes));
 
         var medicationOrder = new MedicationOrder(
             request.ClientPetId,
-            appointment.VeterinarianId,
+            veterinarianId,
             request.AppointmentId,
             request.IsInHouse,
             request.ReferredTo,
             request.ReferralReason,
-            itemsTuple);
+            itemsTuple,
+            request.HospitalizationStayId);
 
         await unitOfWork.MedicationOrdersRepository.AddAsync(medicationOrder, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -66,6 +77,12 @@ public sealed class CompleteMedicationOrderCommandHandler(IUnitOfWork unitOfWork
         if (order is null)
         {
             throw new NotFoundException($"No se encontró la orden de medicamento con ID '{request.Id}'.");
+        }
+
+        // Solo Pendiente → Entregada; si ya cambió, 409 sin tocar la orden.
+        if (!order.IsPending)
+        {
+            throw new ConflictException(order.DescribeInvalidTransition());
         }
 
         order.Complete();
@@ -114,6 +131,27 @@ public sealed class GetPendingMedicationOrdersQueryHandler(IUnitOfWork unitOfWor
     }
 }
 
+public sealed class GetMedicationOrdersByHospitalizationStayIdQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetMedicationOrdersByHospitalizationStayIdQuery, IEnumerable<MedicationOrder>>
+{
+    // Mismo criterio que la factura: órdenes de la estancia + las de su cita de origen.
+    public async Task<IEnumerable<MedicationOrder>> Handle(
+        GetMedicationOrdersByHospitalizationStayIdQuery request,
+        CancellationToken cancellationToken)
+    {
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(
+            request.HospitalizationStayId,
+            cancellationToken)
+            ?? throw new NotFoundException(
+                $"No se encontró la estancia de hospitalización con ID '{request.HospitalizationStayId}'.");
+
+        return await unitOfWork.MedicationOrdersRepository.GetByHospitalizationStayAsync(
+            stay.Id,
+            stay.AppointmentId,
+            cancellationToken);
+    }
+}
+
 // Validator
 public sealed class CreateMedicationOrderCommandValidator : AbstractValidator<CreateMedicationOrderCommand>
 {
@@ -122,8 +160,10 @@ public sealed class CreateMedicationOrderCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.ClientPetId)
             .NotEmpty().WithMessage("El paciente es obligatorio.");
 
-        RuleFor(x => x.AppointmentId)
-            .NotEmpty().WithMessage("La consulta de origen es obligatoria.");
+        RuleFor(x => x)
+            .Must(x => MedicalOrderOriginRules.HasExactlyOneOrigin(x.AppointmentId, x.HospitalizationStayId))
+            .WithName("AppointmentId")
+            .WithMessage(MedicalOrderOriginRules.ExactlyOneOriginMessage);
 
         When(x => x.IsInHouse, () =>
         {

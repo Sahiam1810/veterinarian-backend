@@ -90,7 +90,11 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
 
         // Órdenes Médicas Pendientes
         new object?[] { "GET", "/api/medication-orders/pending", "Órdenes Médicas", "View", "Create", null },
-        new object?[] { "GET", "/api/procedure-orders/pending", "Órdenes Médicas", "View", "Create", null }
+        new object?[] { "GET", "/api/procedure-orders/pending", "Órdenes Médicas", "View", "Create", null },
+
+        // Órdenes Médicas de una estancia
+        new object?[] { "GET", $"/api/medication-orders/hospitalization-stay/{TestGuid}", "Órdenes Médicas", "View", "Create", null },
+        new object?[] { "GET", $"/api/procedure-orders/hospitalization-stay/{TestGuid}", "Órdenes Médicas", "View", "Create", null }
     ];
 
     [Theory]

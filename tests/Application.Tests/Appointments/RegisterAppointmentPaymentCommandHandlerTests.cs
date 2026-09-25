@@ -54,8 +54,9 @@ public sealed class RegisterAppointmentPaymentCommandHandlerTests
         _appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>())
             .Returns(appointment);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             _handler.Handle(new RegisterAppointmentPaymentCommand(appointment.Id), CancellationToken.None));
+        Assert.Equal("La cita ya está pagada.", ex.Message);
     }
 
     [Fact]

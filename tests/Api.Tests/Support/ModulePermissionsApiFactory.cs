@@ -80,6 +80,10 @@ public sealed class ModulePermissionsApiFactory : WebApplicationFactory<AuthCont
             .Returns(Array.Empty<MedicationOrder>());
         Sender.Send(Arg.Any<GetPendingProcedureOrdersQuery>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<ProcedureOrder>());
+        Sender.Send(Arg.Any<GetMedicationOrdersByHospitalizationStayIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<MedicationOrder>());
+        Sender.Send(Arg.Any<GetProcedureOrdersByHospitalizationStayIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<ProcedureOrder>());
 
         // Los endpoints de Hospitalización devuelven DTOs (nunca la entidad de dominio).
         Sender.Send(Arg.Any<GetHospitalizationStayByIdQuery>(), Arg.Any<CancellationToken>())

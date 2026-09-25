@@ -17,6 +17,11 @@ public sealed class RegisterAppointmentPaymentCommandHandler(IUnitOfWork unitOfW
             throw new NotFoundException("Cita médica no encontrada.");
         }
 
+        if (appointment.IsPaid)
+        {
+            throw new ConflictException("La cita ya está pagada.");
+        }
+
         appointment.RegisterPayment();
 
         await unitOfWork.AppointmentsRepository.UpdateAsync(appointment, cancellationToken);

@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Domain.HospitalizationStays.Entities;
 using Domain.SupplyConsumptions.Entities;
 using FluentValidation;
 using MediatR;
@@ -49,6 +50,18 @@ public sealed class RegisterSupplyConsumptionCommandHandler(IUnitOfWork unitOfWo
         RegisterSupplyConsumptionCommand request,
         CancellationToken cancellationToken)
     {
+        // Tras el alta la cuenta queda cerrada: no se aceptan consumos nuevos.
+        var stay = await unitOfWork.HospitalizationStaysRepository.GetByIdAsync(
+            request.HospitalizationStayId,
+            cancellationToken)
+            ?? throw new NotFoundException(
+                $"No se encontró la estancia de hospitalización con ID '{request.HospitalizationStayId}'.");
+
+        if (stay.Estado != HospitalizationStayStatus.Activa)
+        {
+            throw new ConflictException("No se pueden registrar consumos en una estancia dada de alta.");
+        }
+
         var supply = await unitOfWork.SuppliesRepository.GetByIdAsync(request.SupplyId, cancellationToken);
         if (supply is null)
         {
@@ -57,10 +70,15 @@ public sealed class RegisterSupplyConsumptionCommandHandler(IUnitOfWork unitOfWo
 
         if (!supply.IsActive)
         {
-            throw new InvalidOperationException("El insumo seleccionado está inactivo y no se puede consumir.");
+            throw new ConflictException("El insumo seleccionado está inactivo y no se puede consumir.");
         }
 
-        // Deducts stock (throws InvalidOperationException("Stock insuficiente.") if quantity > stock)
+        if (request.Quantity > supply.Stock)
+        {
+            throw new ConflictException(
+                $"Stock insuficiente: hay {supply.Stock} {supply.Unit} disponibles de '{supply.Name}'.");
+        }
+
         supply.DeductStock(request.Quantity);
 
         var consumption = new SupplyConsumption(

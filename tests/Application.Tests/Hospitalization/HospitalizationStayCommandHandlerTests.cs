@@ -3,6 +3,7 @@ using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Appointments.Abstraction;
 using Application.HospitalizationStays.Abstraction;
+using Application.HospitalizationStays.Errors;
 using Application.HospitalizationStays.UseCases;
 using Application.Users.Abstraction;
 using Domain.Appointments.Entities;
@@ -150,8 +151,9 @@ public sealed class HospitalizationStayCommandHandlerTests
         staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
             .Returns(stay);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsAsync<ConflictException>(() =>
             dischargeHandler.Handle(new DischargeHospitalizationStayCommand(stay.Id), CancellationToken.None));
+        await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -271,9 +273,10 @@ public sealed class HospitalizationStayCommandHandlerTests
         staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
             .Returns(stay);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             registerPaymentHandler.Handle(new RegisterHospitalizationStayPaymentCommand(stay.Id), CancellationToken.None));
         Assert.Equal("La estancia ya está pagada.", ex.Message);
+        await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -339,6 +342,104 @@ public sealed class HospitalizationStayCommandHandlerTests
         Assert.Equal("Carlos Ruiz", result[1].OwnerName);
         Assert.Equal(clientPet1.Id, result[1].ClientPetId);
     }
+
+    private void ArrangeAdmittablePet()
+    {
+        clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns(new Domain.ClientsPets.Entities.ClientPetEntity(
+                    new Domain.Clients.Entities.ClientEntity("Juan Pérez", "juan@vet.com", "12345678", "5551010", null),
+                    new Domain.Pets.Entities.PetEntity("Perry", 5, "M", 12.5m, null, DefaultSpecies, DefaultRace),
+                true));
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T18_admit_stay_allowed_when_previous_stays_are_discharged()
+    {
+        ArrangeAdmittablePet();
+        // GetActiveByPetIdAsync solo devuelve estancias activas: las dadas de alta no bloquean.
+        staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+
+        var id = await admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Reingreso", AdmittingUserId),
+            CancellationToken.None);
+
+        Assert.NotEqual(Guid.Empty, id);
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T19_second_active_stay_returns_typed_conflict_without_persisting()
+    {
+        ArrangeAdmittablePet();
+        staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns(new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Primera"));
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Segunda", AdmittingUserId),
+            CancellationToken.None));
+
+        Assert.Equal(HospitalizationStayErrorCodes.ActiveStayAlreadyExists, ex.Code);
+        await staysRepository.DidNotReceive().AddAsync(Arg.Any<HospitalizationStay>(), Arg.Any<CancellationToken>());
+        await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    // Carrera: las dos solicitudes pasan el chequeo del handler (ninguna ve estancia activa);
+    // el índice único rechaza la segunda y UnitOfWork lo traduce a ConflictException (ver
+    // Infrastructure.Tests/HospitalizationStays/HospitalizationStayActiveUniquenessTests).
+    [Fact]
+    public async Task HOSPITALIZATION_T20_concurrent_admissions_only_one_succeeds_and_the_other_gets_409()
+    {
+        ArrangeAdmittablePet();
+        staysRepository.GetActiveByPetIdAsync(ClientPetId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+
+        var saveAttempts = 0;
+        var bothChecked = new TaskCompletionSource();
+        var checks = 0;
+        staysRepository.AddAsync(Arg.Any<HospitalizationStay>(), Arg.Any<CancellationToken>())
+            .Returns(async _ =>
+            {
+                // Garantiza que ambas solicitudes pasaron el chequeo antes de guardar.
+                if (Interlocked.Increment(ref checks) == 2)
+                {
+                    bothChecked.SetResult();
+                }
+
+                await bothChecked.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            });
+        unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Interlocked.Increment(ref saveAttempts) == 1
+                ? Task.FromResult(1)
+                : Task.FromException<int>(new ConflictException(
+                    HospitalizationStayErrorCodes.ActiveStayAlreadyExistsMessage,
+                    HospitalizationStayErrorCodes.ActiveStayAlreadyExists)));
+
+        var first = admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Ingreso A", AdmittingUserId),
+            CancellationToken.None);
+        var second = admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Ingreso B", AdmittingUserId),
+            CancellationToken.None);
+
+        var outcomes = await Task.WhenAll(Capture(first), Capture(second));
+
+        Assert.Single(outcomes, outcome => outcome is null);
+        var conflict = Assert.IsType<ConflictException>(Assert.Single(outcomes, outcome => outcome is not null));
+        Assert.Equal(HospitalizationStayErrorCodes.ActiveStayAlreadyExists, conflict.Code);
+        Assert.Equal(2, saveAttempts);
+    }
+
+    private static async Task<Exception?> Capture(Task<Guid> task)
+    {
+        try
+        {
+            await task;
+            return null;
+        }
+        catch (Exception exception)
+        {
+            return exception;
+        }
+    }
 }
-
-

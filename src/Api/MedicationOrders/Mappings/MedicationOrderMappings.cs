@@ -29,7 +29,8 @@ public static class MedicationOrderMappings
             order.Status,
             order.CreatedAt,
             order.UpdatedAt,
-            order.Items.Select(i => i.ToResponse()).ToList());
+            order.Items.Select(i => i.ToResponse()).ToList(),
+            order.HospitalizationStayId);
     }
 
     public static IEnumerable<MedicationOrderDto> ToResponse(this IEnumerable<MedicationOrder> orders)
@@ -42,7 +43,7 @@ public static class MedicationOrderMappings
         return item.ToResponse();
     }
 
-    public static CreateMedicationOrderCommand ToCommand(this CreateMedicationOrderDto dto)
+    public static CreateMedicationOrderCommand ToCommand(this CreateMedicationOrderDto dto, Guid actorUserId)
     {
         var items = dto.Items?.Select(i => new MedicationOrderItemInput(i.MedicationId, i.Notes)).ToList();
         return new CreateMedicationOrderCommand(
@@ -51,7 +52,9 @@ public static class MedicationOrderMappings
             dto.IsInHouse,
             dto.ReferredTo,
             dto.ReferralReason,
-            items);
+            items,
+            dto.HospitalizationStayId,
+            actorUserId);
     }
 
     public static PendingMedicationOrderDto ToPendingDto(this MedicationOrder order)
@@ -64,6 +67,7 @@ public static class MedicationOrderMappings
             order.IsInHouse,
             order.Status,
             order.CreatedAt,
-            order.Items.Select(i => i.ToDto()).ToList());
+            order.Items.Select(i => i.ToDto()).ToList(),
+            order.HospitalizationStayId);
     }
 }

@@ -1,8 +1,10 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.HospitalizationStays.Abstraction;
 using Application.Supplies.Abstraction;
 using Application.SupplyConsumptions.Abstraction;
 using Application.SupplyConsumptions.UseCases;
+using Domain.HospitalizationStays.Entities;
 using Domain.Supplies.Entities;
 using Domain.SupplyConsumptions.Entities;
 using NSubstitute;
@@ -61,7 +63,7 @@ public sealed class SupplyConsumptionUseCasesTests
     }
 
     [Fact]
-    public async Task Register_throws_InvalidOperationException_when_supply_is_inactive()
+    public async Task Register_throws_ConflictException_when_supply_is_inactive()
     {
         var stayId = Guid.NewGuid();
         var userId = Guid.NewGuid();
@@ -75,12 +77,12 @@ public sealed class SupplyConsumptionUseCasesTests
         var action = () => new RegisterSupplyConsumptionCommandHandler(uow)
             .Handle(command, CancellationToken.None);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(action);
+        var ex = await Assert.ThrowsAsync<ConflictException>(action);
         Assert.Contains("inactivo", ex.Message);
     }
 
     [Fact]
-    public async Task Register_throws_InvalidOperationException_when_stock_insufficient()
+    public async Task Register_throws_ConflictException_when_stock_insufficient_without_touching_stock()
     {
         var stayId = Guid.NewGuid();
         var userId = Guid.NewGuid();
@@ -94,8 +96,10 @@ public sealed class SupplyConsumptionUseCasesTests
         var action = () => new RegisterSupplyConsumptionCommandHandler(uow)
             .Handle(command, CancellationToken.None);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(action);
-        Assert.Equal("Stock insuficiente.", ex.Message);
+        var ex = await Assert.ThrowsAsync<ConflictException>(action);
+        Assert.StartsWith("Stock insuficiente", ex.Message);
+        Assert.Equal(3, supply.Stock);
+        await uow.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -132,15 +136,67 @@ public sealed class SupplyConsumptionUseCasesTests
         Assert.Equal(3500m, total);
     }
 
+    [Fact]
+    public async Task Register_throws_NotFoundException_when_stay_does_not_exist()
+    {
+        var supply = new Supply("Gasa esteril", "unidad", 1500m, 50);
+        var uow = CreateUnitOfWork(out var suppliesRepo, out var consumptionRepo, out var staysRepo);
+        suppliesRepo.GetByIdAsync(supply.Id, Arg.Any<CancellationToken>()).Returns(supply);
+        staysRepo.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+
+        var command = new RegisterSupplyConsumptionCommand(Guid.NewGuid(), supply.Id, 5, Guid.NewGuid());
+
+        await Assert.ThrowsAsync<NotFoundException>(() => new RegisterSupplyConsumptionCommandHandler(uow)
+            .Handle(command, CancellationToken.None));
+
+        Assert.Equal(50, supply.Stock);
+        await consumptionRepo.DidNotReceive().AddAsync(Arg.Any<SupplyConsumption>(), Arg.Any<CancellationToken>());
+        await uow.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Register_throws_ConflictException_when_stay_is_discharged_without_touching_stock()
+    {
+        var supply = new Supply("Gasa esteril", "unidad", 1500m, 50);
+        var stay = new HospitalizationStay(Guid.NewGuid(), null, Guid.NewGuid(), "Observación");
+        stay.Discharge();
+
+        var uow = CreateUnitOfWork(out var suppliesRepo, out var consumptionRepo, out var staysRepo);
+        suppliesRepo.GetByIdAsync(supply.Id, Arg.Any<CancellationToken>()).Returns(supply);
+        staysRepo.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>()).Returns(stay);
+
+        var command = new RegisterSupplyConsumptionCommand(stay.Id, supply.Id, 5, Guid.NewGuid());
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => new RegisterSupplyConsumptionCommandHandler(uow)
+            .Handle(command, CancellationToken.None));
+
+        Assert.Equal("No se pueden registrar consumos en una estancia dada de alta.", ex.Message);
+        Assert.Equal(50, supply.Stock);
+        await consumptionRepo.DidNotReceive().AddAsync(Arg.Any<SupplyConsumption>(), Arg.Any<CancellationToken>());
+        await uow.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
     private static IUnitOfWork CreateUnitOfWork(
         out ISupplyRepository suppliesRepo,
-        out ISupplyConsumptionRepository consumptionRepo)
+        out ISupplyConsumptionRepository consumptionRepo) =>
+        CreateUnitOfWork(out suppliesRepo, out consumptionRepo, out _);
+
+    // Por defecto cualquier estancia consultada está activa.
+    private static IUnitOfWork CreateUnitOfWork(
+        out ISupplyRepository suppliesRepo,
+        out ISupplyConsumptionRepository consumptionRepo,
+        out IHospitalizationStayRepository staysRepo)
     {
         var uow = Substitute.For<IUnitOfWork>();
         suppliesRepo = Substitute.For<ISupplyRepository>();
         consumptionRepo = Substitute.For<ISupplyConsumptionRepository>();
+        staysRepo = Substitute.For<IHospitalizationStayRepository>();
+        staysRepo.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new HospitalizationStay(Guid.NewGuid(), null, Guid.NewGuid(), "Observación"));
         uow.SuppliesRepository.Returns(suppliesRepo);
         uow.SupplyConsumptionsRepository.Returns(consumptionRepo);
+        uow.HospitalizationStaysRepository.Returns(staysRepo);
         return uow;
     }
 }

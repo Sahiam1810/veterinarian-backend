@@ -188,7 +188,7 @@ public class MedicationOrderCommandHandlerTests
     }
 
     [Fact]
-    public async Task CompleteMedicationOrder_WhenAlreadyEntregada_ThrowsInvalidOperationException()
+    public async Task CompleteMedicationOrder_WhenAlreadyEntregada_ThrowsConflictWithoutPersisting()
     {
         var order = new MedicationOrder(
             Guid.NewGuid(),
@@ -203,8 +203,12 @@ public class MedicationOrderCommandHandlerTests
         _repository.GetByIdAsync(order.Id, Arg.Any<CancellationToken>())
             .Returns(order);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             _completeHandler.Handle(new CompleteMedicationOrderCommand(order.Id), CancellationToken.None));
+
+        Assert.Equal("La orden de medicamento ya se encuentra entregada.", ex.Message);
+        await _repository.DidNotReceive().UpdateAsync(Arg.Any<MedicationOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

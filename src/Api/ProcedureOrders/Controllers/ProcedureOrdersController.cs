@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Api.Common.Security.Permissions;
 using Api.ProcedureOrders.Dtos;
 using Api.ProcedureOrders.Mappings;
@@ -36,16 +37,38 @@ public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
         return Ok(orders.ToResponse());
     }
 
+    [HttpGet("hospitalization-stay/{stayId:guid}")]
+    [RequirePermission("Órdenes Médicas", PermissionAction.View)]
+    [EndpointSummary("Obtiene las órdenes de procedimiento de una estancia de hospitalización")]
+    [EndpointDescription("Incluye las órdenes creadas en la estancia y las de su cita de origen.")]
+    [ProducesResponseType(typeof(IEnumerable<ProcedureOrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IEnumerable<ProcedureOrderDto>>> GetByHospitalizationStayId(
+        [FromRoute] Guid stayId,
+        CancellationToken cancellationToken = default)
+    {
+        var orders = await sender.Send(new GetProcedureOrdersByHospitalizationStayIdQuery(stayId), cancellationToken);
+        return Ok(orders.ToResponse());
+    }
+
     [HttpPost]
     [RequirePermission("Órdenes Médicas", PermissionAction.Create)]
     [EndpointSummary("Crea una nueva orden de procedimiento (interna o remitida)")]
     [ProducesResponseType(typeof(ProcedureOrderDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ProcedureOrderDto>> Create(
         [FromBody] CreateProcedureOrderDto dto,
         CancellationToken cancellationToken = default)
     {
-        var order = await sender.Send(dto.ToCommand(), cancellationToken);
+        if (!TryGetActorUserId(out var actorUserId))
+        {
+            return Unauthorized();
+        }
+
+        var order = await sender.Send(dto.ToCommand(actorUserId), cancellationToken);
         var response = order.ToResponse();
         return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
     }
@@ -56,6 +79,7 @@ public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Complete(
         [FromRoute] Guid id,
         [FromBody] CompleteProcedureOrderDto? dto,
@@ -72,5 +96,12 @@ public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
         var query = new GetPendingProcedureOrdersQuery();
         var result = await sender.Send(query, cancellationToken);
         return Ok(result.Select(x => x.ToPendingDto()));
+    }
+
+    // Con MapInboundClaims=false el subject queda como "sub".
+    private bool TryGetActorUserId(out Guid actorUserId)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return Guid.TryParse(subject, out actorUserId);
     }
 }

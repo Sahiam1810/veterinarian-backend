@@ -11,7 +11,7 @@ public record ProcedureOrderDto(
     Guid Id,
     Guid ClientPetId,
     Guid VeterinarianId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
@@ -19,7 +19,8 @@ public record ProcedureOrderDto(
     string? ResultFileUrl,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    List<ProcedureOrderItemDto> Items);
+    List<ProcedureOrderItemDto> Items,
+    Guid? HospitalizationStayId = null);
 
 public record CreateProcedureOrderItemDto(
     Guid ProcedureId,
@@ -27,11 +28,12 @@ public record CreateProcedureOrderItemDto(
 
 public record CreateProcedureOrderDto(
     Guid ClientPetId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
-    List<CreateProcedureOrderItemDto>? Items);
+    List<CreateProcedureOrderItemDto>? Items,
+    Guid? HospitalizationStayId = null);
 
 public record CompleteProcedureOrderDto(
     string? ResultFileUrl = null);
@@ -40,9 +42,10 @@ public record PendingProcedureOrderDto(
     Guid Id,
     string PetName,
     string OwnerName,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string Status,
     string? ResultFileUrl,
     DateTime CreatedAt,
-    List<ProcedureOrderItemDto> Items);
+    List<ProcedureOrderItemDto> Items,
+    Guid? HospitalizationStayId = null);

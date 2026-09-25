@@ -9,7 +9,11 @@ public class MedicationOrderConfiguration : IEntityTypeConfiguration<MedicationO
 {
     public void Configure(EntityTypeBuilder<MedicationOrder> builder)
     {
-        builder.ToTable("MEDICATION_ORDERS");
+        // Origen único: la orden nace de una cita o de una estancia, nunca de ambas ni de ninguna.
+        builder.ToTable("MEDICATION_ORDERS", table => table.HasCheckConstraint(
+            "CK_MEDICATION_ORDERS_ORIGIN",
+            "(APPOINTMENT_ID IS NOT NULL AND HOSPITALIZATION_STAY_ID IS NULL) OR "
+            + "(APPOINTMENT_ID IS NULL AND HOSPITALIZATION_STAY_ID IS NOT NULL)"));
 
         builder.HasKey(x => x.Id);
 
@@ -38,13 +42,20 @@ public class MedicationOrderConfiguration : IEntityTypeConfiguration<MedicationO
                 str => Guid.Parse(str))
             .IsRequired();
 
+        // Nullable: las órdenes de hospitalización no tienen cita.
         builder.Property(x => x.AppointmentId)
             .HasColumnName("APPOINTMENT_ID")
             .HasColumnType("VARCHAR2(36)")
             .HasConversion(
-                guid => guid.ToString(),
-                str => Guid.Parse(str))
-            .IsRequired();
+                guid => guid.HasValue ? guid.Value.ToString() : null,
+                value => string.IsNullOrWhiteSpace(value) ? null : Guid.Parse(value))
+            .IsRequired(false);
+
+        // Explícito para conservar el borrado en cascada que tenía la FK obligatoria.
+        builder.HasOne(x => x.Appointment)
+            .WithMany()
+            .HasForeignKey(x => x.AppointmentId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(x => x.HospitalizationStayId)
             .HasColumnName("HOSPITALIZATION_STAY_ID")

@@ -180,6 +180,12 @@ public sealed class UnitOfWork : IUnitOfWork
         {
             throw conflict;
         }
+        catch (DbUpdateException exception)
+            when (OracleHospitalizationStayConflictMapper.TryMapToConflict(exception, out var conflict)
+                  && conflict is not null)
+        {
+            throw conflict;
+        }
     }
 
     public async Task ExecuteInTransactionAsync(

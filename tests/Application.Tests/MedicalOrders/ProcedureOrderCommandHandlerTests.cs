@@ -223,7 +223,7 @@ public class ProcedureOrderCommandHandlerTests
     }
 
     [Fact]
-    public async Task CompleteProcedureOrder_WhenAlreadyCompletada_ThrowsInvalidOperationException()
+    public async Task CompleteProcedureOrder_WhenAlreadyCompletada_ThrowsConflictWithoutPersisting()
     {
         var order = new ProcedureOrder(
             Guid.NewGuid(),
@@ -238,8 +238,13 @@ public class ProcedureOrderCommandHandlerTests
         _orderRepo.GetByIdAsync(order.Id, Arg.Any<CancellationToken>())
             .Returns(order);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id), CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            _completeHandler.Handle(new CompleteProcedureOrderCommand(order.Id, "https://otro-resultado"), CancellationToken.None));
+
+        Assert.Equal("La orden de procedimiento ya se encuentra completada.", ex.Message);
+        Assert.Null(order.ResultFileUrl); // el resultado solo se guarda en la primera finalización
+        await _orderRepo.DidNotReceive().UpdateAsync(Arg.Any<ProcedureOrder>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

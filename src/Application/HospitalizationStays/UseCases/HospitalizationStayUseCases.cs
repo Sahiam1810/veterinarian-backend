@@ -1,6 +1,7 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.HospitalizationStays.Dtos;
+using Application.HospitalizationStays.Errors;
 using Application.HospitalizationStays.Mappings;
 using Domain.HospitalizationStays.Entities;
 using MediatR;
@@ -69,7 +70,9 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
 
         if (activeStay is not null)
         {
-            throw new ConflictException("La mascota ya tiene una estancia activa.");
+            throw new ConflictException(
+                HospitalizationStayErrorCodes.ActiveStayAlreadyExistsMessage,
+                HospitalizationStayErrorCodes.ActiveStayAlreadyExists);
         }
 
         var availableServices = await unitOfWork.ServicesRepository.GetAvailableAsync(cancellationToken)
@@ -87,6 +90,8 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
             request.Motivo,
             dailyRate);
 
+        // Dos admisiones simultáneas pueden pasar el chequeo anterior; el índice único
+        // UX_HOSP_STAY_ACTIVE_PER_PET rechaza la segunda y UnitOfWork la traduce a 409.
         await unitOfWork.HospitalizationStaysRepository.AddAsync(stay, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -108,7 +113,7 @@ public sealed class DischargeHospitalizationStayCommandHandler(IUnitOfWork unitO
 
         if (stay.Estado == HospitalizationStayStatus.DadaDeAlta)
         {
-            throw new InvalidOperationException("La estancia ya está dada de alta.");
+            throw new ConflictException("La estancia ya está dada de alta.");
         }
 
         stay.Discharge();
@@ -128,6 +133,11 @@ public sealed class RegisterHospitalizationStayPaymentCommandHandler(IUnitOfWork
             request.Id,
             cancellationToken)
             ?? throw new NotFoundException("Estancia de hospitalización no encontrada.");
+
+        if (stay.IsPaid)
+        {
+            throw new ConflictException("La estancia ya está pagada.");
+        }
 
         stay.RegisterPayment();
         await unitOfWork.HospitalizationStaysRepository.UpdateAsync(stay, cancellationToken);

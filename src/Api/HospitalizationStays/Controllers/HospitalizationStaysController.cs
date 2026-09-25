@@ -14,6 +14,9 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
     [HttpPost]
     [RequirePermission("Hospitalización", PermissionAction.Create)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<Guid>> Admit([FromBody] AdmitHospitalizationStayRequest request, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -24,6 +27,8 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
     [HttpPatch("{id:guid}/discharge")]
     [RequirePermission("Hospitalización", PermissionAction.Edit)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Discharge(Guid id, CancellationToken cancellationToken)
     {
         await sender.Send(new DischargeHospitalizationStayCommand(id), cancellationToken);
@@ -35,6 +40,7 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> RegisterPayment(Guid id, CancellationToken cancellationToken)
     {
         await sender.Send(new RegisterHospitalizationStayPaymentCommand(id), cancellationToken);

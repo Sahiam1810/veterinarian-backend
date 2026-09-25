@@ -11,14 +11,15 @@ public record MedicationOrderDto(
     Guid Id,
     Guid ClientPetId,
     Guid VeterinarianId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
     string Status,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    List<MedicationOrderItemDto> Items);
+    List<MedicationOrderItemDto> Items,
+    Guid? HospitalizationStayId = null);
 
 public record CreateMedicationOrderItemDto(
     Guid MedicationId,
@@ -26,18 +27,20 @@ public record CreateMedicationOrderItemDto(
 
 public record CreateMedicationOrderDto(
     Guid ClientPetId,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string? ReferredTo,
     string? ReferralReason,
-    List<CreateMedicationOrderItemDto>? Items);
+    List<CreateMedicationOrderItemDto>? Items,
+    Guid? HospitalizationStayId = null);
 
 public record PendingMedicationOrderDto(
     Guid Id,
     string PetName,
     string OwnerName,
-    Guid AppointmentId,
+    Guid? AppointmentId,
     bool IsInHouse,
     string Status,
     DateTime CreatedAt,
-    List<MedicationOrderItemDto> Items);
+    List<MedicationOrderItemDto> Items,
+    Guid? HospitalizationStayId = null);
