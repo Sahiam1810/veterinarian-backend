@@ -9,6 +9,7 @@ public interface IClientPetRepository
     Task<ClientPetEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<ClientPetEntity>> GetByClientIdAsync(Guid clientId, CancellationToken cancellationToken);
     Task<bool> ExistsByClientAndPetAsync(Guid clientId, Guid petId, CancellationToken cancellationToken, Guid? excludedId = null);
+    Task<IReadOnlyCollection<ClientPetEntity>> GetAllForAdmissionAsync(CancellationToken cancellationToken);
     Task AddAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
     Task UpdateAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);
     Task DeleteAsync(ClientPetEntity clientPet, CancellationToken cancellationToken);

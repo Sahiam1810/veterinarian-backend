@@ -17,6 +17,7 @@ public sealed class HospitalizationStaysControllerAttributeTests
     [InlineData(nameof(HospitalizationStaysController.GetByPet), PermissionAction.View)]
     [InlineData(nameof(HospitalizationStaysController.GetNotes), PermissionAction.View)]
     [InlineData(nameof(HospitalizationStaysController.GetStaff), PermissionAction.View)]
+    [InlineData(nameof(HospitalizationStaysController.GetAdmissionOptions), PermissionAction.View)]
     [InlineData(nameof(HospitalizationStaysController.Admit), PermissionAction.Create)]
     [InlineData(nameof(HospitalizationStaysController.AddNote), PermissionAction.Create)]
     [InlineData(nameof(HospitalizationStaysController.Discharge), PermissionAction.Edit)]
