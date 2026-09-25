@@ -85,17 +85,23 @@ public sealed class ModulePermissionsApiFactory : WebApplicationFactory<AuthCont
         Sender.Send(Arg.Any<GetHospitalizationStayByIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(new ApiHospitalizationStayDto(
                 Guid.NewGuid(), Guid.NewGuid(), "Firulais", "Ana Dueña", null,
-                DateTime.UtcNow, null, "Activa", "Motivo de prueba", Guid.NewGuid(), "Dra. Ana"));
+                DateTime.UtcNow, null, "Activa", "Motivo de prueba", Guid.NewGuid(), "Dra. Ana", false, null));
         Sender.Send(Arg.Any<GetAllActiveHospitalizationStaysQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<ApiHospitalizationStayDto>)Array.Empty<ApiHospitalizationStayDto>());
+        Sender.Send(Arg.Any<GetHospitalizationAdmissionOptionsQuery>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyCollection<HospitalizationAdmissionOptionDto>)[
+                new(Guid.NewGuid(), "Luna", "Juan Pérez")]);
         Sender.Send(Arg.Any<GetHospitalizationStaysByPetQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<ApiHospitalizationStayDto>)Array.Empty<ApiHospitalizationStayDto>());
         Sender.Send(Arg.Any<GetHospitalizationNotesByStayQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<ApiHospitalizationNoteDto>)Array.Empty<ApiHospitalizationNoteDto>());
         Sender.Send(Arg.Any<GetHospitalizationStaffQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<HospitalizationStaffUserDto>)Array.Empty<HospitalizationStaffUserDto>());
-        Sender.Send(Arg.Any<GetAdmissionOptionsQuery>(), Arg.Any<CancellationToken>())
-            .Returns((IReadOnlyCollection<HospitalizationAdmissionOptionDto>)Array.Empty<HospitalizationAdmissionOptionDto>());
+        Sender.Send(Arg.Any<GetHospitalizationStayInvoiceQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new HospitalizationStayInvoiceDto(
+                Guid.NewGuid(), "Luna", "Juan Pérez", DateTime.UtcNow, null, "Activa",
+                50000m, 1, false, null, 50000m, 0m, 0m, 0m, 50000m,
+                Array.Empty<BillableItemDto>(), Array.Empty<BillableItemDto>(), Array.Empty<BillableItemDto>()));
 
         Sender.Send(Arg.Any<GetSupplyConsumptionsByStayIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<SupplyConsumption>());

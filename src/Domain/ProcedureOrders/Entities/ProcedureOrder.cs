@@ -70,6 +70,7 @@ public sealed class ProcedureOrder : BaseEntity<Guid>
 
     public Guid AppointmentId { get; private set; }
     public Appointment? Appointment { get; private set; }
+    public Guid? HospitalizationStayId { get; private set; }
 
     public bool IsInHouse { get; private set; }
     public string? ReferredTo { get; private set; }

@@ -71,6 +71,22 @@ public sealed class HospitalizationStayConfiguration : IEntityTypeConfiguration<
             .HasMaxLength(500)
             .IsRequired();
 
+        builder.Property(x => x.DailyRate)
+            .HasColumnName("DAILY_RATE")
+            .HasColumnType("DECIMAL(18,2)")
+            .IsRequired();
+
+        builder.Property(x => x.IsPaid)
+            .HasColumnName("IS_PAID")
+            .HasConversion<int>()
+            .HasDefaultValue(false)
+            .IsRequired();
+
+        builder.Property(x => x.PaidAt)
+            .HasColumnName("PAID_AT")
+            .HasColumnType("TIMESTAMP")
+            .IsRequired(false);
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

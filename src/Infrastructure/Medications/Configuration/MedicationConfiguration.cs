@@ -33,10 +33,20 @@ public class MedicationConfiguration : IEntityTypeConfiguration<Medication>
             .HasMaxLength(50)
             .IsRequired(false);
 
+        // La migraciÃ³n del Ã­ndice Ãºnico la genera y ejecuta la responsable del proyecto.
+        builder.HasIndex(x => x.Code)
+            .HasFilter(null)
+            .IsUnique();
+
         builder.Property(x => x.IsActive)
             .HasColumnName("IS_ACTIVE")
             .HasConversion<int>()
             .HasDefaultValue(true)
+            .IsRequired();
+
+        builder.Property(x => x.Price)
+            .HasColumnName("PRICE")
+            .HasColumnType("DECIMAL(18,2)")
             .IsRequired();
 
         builder.Property(x => x.CreatedAt)

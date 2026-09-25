@@ -1,5 +1,10 @@
 namespace Application.HospitalizationStays.Dtos;
 
+public record HospitalizationAdmissionOptionDto(
+    Guid ClientPetId,
+    string PetName,
+    string OwnerName);
+
 // Contrato JSON acordado con el frontend (Ticket A). Nunca se expone la entidad de dominio.
 public record ApiHospitalizationStayDto(
     Guid Id,
@@ -12,7 +17,9 @@ public record ApiHospitalizationStayDto(
     string Status,
     string Motivo,
     Guid AdmittedByUserId,
-    string? AdmittedByName);
+    string? AdmittedByName,
+    bool IsPaid,
+    DateTime? PaidAt);
 
 public record ApiHospitalizationNoteDto(
     Guid Id,
@@ -29,9 +36,29 @@ public record HospitalizationStaffUserDto(
     string Name,
     string RoleName);
 
-// DTO para el selector de mascotas en la interfaz de admisión hospitalaria.
-// Expone únicamente los datos necesarios; nunca la entidad de dominio subyacente.
-public record HospitalizationAdmissionOptionDto(
-    Guid ClientPetId,
+public record BillableItemDto(
+    string Name,
+    decimal Quantity,
+    decimal UnitPrice,
+    decimal Total,
+    string? Notes);
+
+public record HospitalizationStayInvoiceDto(
+    Guid StayId,
     string PetName,
-    string OwnerName);
+    string OwnerName,
+    DateTime AdmittedAt,
+    DateTime? DischargedAt,
+    string Status,
+    decimal DailyRate,
+    int BilledDays,
+    bool IsPaid,
+    DateTime? PaidAt,
+    decimal HospitalizationTotal,
+    decimal SuppliesTotal,
+    decimal MedicationsTotal,
+    decimal ProceduresTotal,
+    decimal Total,
+    IReadOnlyList<BillableItemDto> Supplies,
+    IReadOnlyList<BillableItemDto> Medications,
+    IReadOnlyList<BillableItemDto> Procedures);

@@ -39,6 +39,11 @@ public class ProcedureConfiguration : IEntityTypeConfiguration<Procedure>
             .HasDefaultValue(true)
             .IsRequired();
 
+        builder.Property(x => x.Price)
+            .HasColumnName("PRICE")
+            .HasColumnType("DECIMAL(18,2)")
+            .IsRequired();
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .IsRequired();

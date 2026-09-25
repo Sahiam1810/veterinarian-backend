@@ -25,8 +25,12 @@ public sealed class HospitalizationStayCommandHandlerTests
 
     private readonly AdmitHospitalizationStayCommandHandler admitHandler;
     private readonly DischargeHospitalizationStayCommandHandler dischargeHandler;
+    private readonly RegisterHospitalizationStayPaymentCommandHandler registerPaymentHandler;
     private readonly AddHospitalizationNoteCommandHandler addNoteHandler;
     private readonly GetHospitalizationNotesByStayQueryHandler getNotesHandler;
+    private readonly GetHospitalizationAdmissionOptionsQueryHandler getAdmissionOptionsHandler;
+
+
 
     private static readonly Guid ClientPetId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid AppointmentId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -46,9 +50,13 @@ public sealed class HospitalizationStayCommandHandlerTests
 
         admitHandler = new AdmitHospitalizationStayCommandHandler(unitOfWork);
         dischargeHandler = new DischargeHospitalizationStayCommandHandler(unitOfWork);
+        registerPaymentHandler = new RegisterHospitalizationStayPaymentCommandHandler(unitOfWork);
         addNoteHandler = new AddHospitalizationNoteCommandHandler(unitOfWork);
         getNotesHandler = new GetHospitalizationNotesByStayQueryHandler(unitOfWork);
+        getAdmissionOptionsHandler = new GetHospitalizationAdmissionOptionsQueryHandler(unitOfWork);
     }
+
+
 
     [Fact]
     public async Task HOSPITALIZATION_T01_admit_stay_success_without_appointment()
@@ -228,4 +236,109 @@ public sealed class HospitalizationStayCommandHandlerTests
             item => Assert.Equal("Primera", item.Nota),
             item => Assert.Equal("Segunda", item.Nota));
     }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T11_register_payment_success()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
+
+        await registerPaymentHandler.Handle(new RegisterHospitalizationStayPaymentCommand(stay.Id), CancellationToken.None);
+
+        Assert.True(stay.IsPaid);
+        Assert.NotNull(stay.PaidAt);
+        await staysRepository.Received(1).UpdateAsync(stay, Arg.Any<CancellationToken>());
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T12_register_payment_fails_when_stay_not_found()
+    {
+        var nonExistentId = Guid.NewGuid();
+        staysRepository.GetByIdAsync(nonExistentId, Arg.Any<CancellationToken>())
+            .Returns((HospitalizationStay?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            registerPaymentHandler.Handle(new RegisterHospitalizationStayPaymentCommand(nonExistentId), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T13_register_payment_fails_when_already_paid()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        stay.RegisterPayment();
+        staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
+            .Returns(stay);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            registerPaymentHandler.Handle(new RegisterHospitalizationStayPaymentCommand(stay.Id), CancellationToken.None));
+        Assert.Equal("La estancia ya está pagada.", ex.Message);
+    }
+
+    [Fact]
+    public void HOSPITALIZATION_T14_domain_register_payment_sets_is_paid_true_and_paid_at()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        Assert.False(stay.IsPaid);
+        Assert.Null(stay.PaidAt);
+
+        stay.RegisterPayment();
+
+        Assert.True(stay.IsPaid);
+        Assert.NotNull(stay.PaidAt);
+    }
+
+    [Fact]
+    public void HOSPITALIZATION_T15_domain_register_payment_throws_if_already_paid()
+    {
+        var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        stay.RegisterPayment();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => stay.RegisterPayment());
+        Assert.Equal("La estancia ya está pagada.", ex.Message);
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T16_get_admission_options_returns_empty_when_no_pets()
+    {
+        clientPetsRepository.GetAllWithDetailsAsync(Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<Domain.ClientsPets.Entities.ClientPetEntity>());
+
+        var result = await getAdmissionOptionsHandler.Handle(new GetHospitalizationAdmissionOptionsQuery(), CancellationToken.None);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_T17_get_admission_options_returns_mapped_dto_ordered_by_pet_name()
+    {
+        var client1 = new Domain.Clients.Entities.ClientEntity("Carlos Ruiz", "carlos@test.com", "123456", "5551234", null);
+        var pet1 = new Domain.Pets.Entities.PetEntity("Zorro", 4, "M", 10m, null, DefaultSpecies, DefaultRace);
+        var clientPet1 = new Domain.ClientsPets.Entities.ClientPetEntity(client1, pet1, isPrimaryOwner: true);
+        typeof(Domain.ClientsPets.Entities.ClientPetEntity).GetProperty(nameof(Domain.ClientsPets.Entities.ClientPetEntity.Pet))!.SetValue(clientPet1, pet1);
+        typeof(Domain.ClientsPets.Entities.ClientPetEntity).GetProperty(nameof(Domain.ClientsPets.Entities.ClientPetEntity.Client))!.SetValue(clientPet1, client1);
+
+        var client2 = new Domain.Clients.Entities.ClientEntity("Ana Lopez", "ana@test.com", "654321", "5554321", null);
+        var pet2 = new Domain.Pets.Entities.PetEntity("Apolo", 2, "M", 8m, null, DefaultSpecies, DefaultRace);
+        var clientPet2 = new Domain.ClientsPets.Entities.ClientPetEntity(client2, pet2, isPrimaryOwner: true);
+        typeof(Domain.ClientsPets.Entities.ClientPetEntity).GetProperty(nameof(Domain.ClientsPets.Entities.ClientPetEntity.Pet))!.SetValue(clientPet2, pet2);
+        typeof(Domain.ClientsPets.Entities.ClientPetEntity).GetProperty(nameof(Domain.ClientsPets.Entities.ClientPetEntity.Client))!.SetValue(clientPet2, client2);
+
+        clientPetsRepository.GetAllWithDetailsAsync(Arg.Any<CancellationToken>())
+            .Returns(new[] { clientPet1, clientPet2 });
+
+        var result = (await getAdmissionOptionsHandler.Handle(new GetHospitalizationAdmissionOptionsQuery(), CancellationToken.None)).ToList();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Apolo", result[0].PetName);
+        Assert.Equal("Ana Lopez", result[0].OwnerName);
+        Assert.Equal(clientPet2.Id, result[0].ClientPetId);
+
+        Assert.Equal("Zorro", result[1].PetName);
+        Assert.Equal("Carlos Ruiz", result[1].OwnerName);
+        Assert.Equal(clientPet1.Id, result[1].ClientPetId);
+    }
 }
+
+

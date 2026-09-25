@@ -50,6 +50,22 @@ Las cuentas internas inician sesión en `POST /api/auth/login` con correo y cont
 
 Los endpoints administrativos usan permisos dinámicos por módulo (`Clientes`, `Mascotas`, `Citas`, `Usuarios`, `Reportes`, etc.) y las políticas de rol necesarias. Consulte Swagger para el requisito exacto de cada ruta.
 
+### Actualización de permisos
+
+Los permisos efectivos se calculan al iniciar sesión o al renovar el token y se
+incluyen en el access token JWT. Por eso, cuando se agrega o modifica un permiso
+en la matriz de roles, una sesión existente puede continuar usando los permisos
+anteriores.
+
+Para reflejar el cambio inmediatamente, el usuario debe cerrar sesión e iniciar
+sesión nuevamente. Si no realiza un nuevo login, el permiso puede tardar hasta
+15 minutos en aparecer, que corresponde a la vigencia máxima del access token.
+
+El endpoint `GET /api/auth/permissions` devuelve la matriz asociada al token
+vigente. No fuerza la recarga de permisos desde la base de datos.
+
+El cambio de permisos no requiere reiniciar la API.
+
 ### Dueños: sin contraseña ni cuenta de plataforma
 
 Un **cliente** (dueño de mascota) vive solo en `CLIENTS`: nombre, correo, cédula,

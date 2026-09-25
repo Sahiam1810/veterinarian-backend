@@ -30,6 +30,18 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
         return NoContent();
     }
 
+    [HttpPatch("{id:guid}/register-payment")]
+    [RequirePermission("Hospitalización", PermissionAction.Edit)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RegisterPayment(Guid id, CancellationToken cancellationToken)
+    {
+        await sender.Send(new RegisterHospitalizationStayPaymentCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+
     [HttpGet("{id:guid}")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
     [ProducesResponseType(typeof(ApiHospitalizationStayDto), StatusCodes.Status200OK)]
@@ -39,6 +51,18 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
         return Ok(stay);
     }
 
+    [HttpGet("{stayId:guid}/invoice")]
+    [RequirePermission("Hospitalización", PermissionAction.View)]
+    [ProducesResponseType(typeof(HospitalizationStayInvoiceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<HospitalizationStayInvoiceDto>> GetInvoice(Guid stayId, CancellationToken cancellationToken)
+    {
+        var invoice = await sender.Send(new GetHospitalizationStayInvoiceQuery(stayId), cancellationToken);
+        return Ok(invoice);
+    }
+
     [HttpGet("active")]
     [RequirePermission("Hospitalización", PermissionAction.View)]
     [ProducesResponseType(typeof(IReadOnlyCollection<ApiHospitalizationStayDto>), StatusCodes.Status200OK)]
@@ -46,6 +70,15 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
     {
         var stays = await sender.Send(new GetAllActiveHospitalizationStaysQuery(), cancellationToken);
         return Ok(stays);
+    }
+
+    [HttpGet("admission-options")]
+    [RequirePermission("Hospitalización", PermissionAction.View)]
+    [ProducesResponseType(typeof(IReadOnlyCollection<HospitalizationAdmissionOptionDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<HospitalizationAdmissionOptionDto>>> GetAdmissionOptions(CancellationToken cancellationToken)
+    {
+        var options = await sender.Send(new GetHospitalizationAdmissionOptionsQuery(), cancellationToken);
+        return Ok(options);
     }
 
     [HttpGet("pet/{clientPetId:guid}")]
@@ -64,15 +97,6 @@ public sealed class HospitalizationStaysController(ISender sender) : ControllerB
     {
         var staff = await sender.Send(new GetHospitalizationStaffQuery(), cancellationToken);
         return Ok(staff);
-    }
-
-    [HttpGet("admission-options")]
-    [RequirePermission("Hospitalización", PermissionAction.View)]
-    [ProducesResponseType(typeof(IReadOnlyCollection<HospitalizationAdmissionOptionDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<HospitalizationAdmissionOptionDto>>> GetAdmissionOptions(CancellationToken cancellationToken)
-    {
-        var options = await sender.Send(new GetAdmissionOptionsQuery(), cancellationToken);
-        return Ok(options);
     }
 
     [HttpPost("{id:guid}/notes")]

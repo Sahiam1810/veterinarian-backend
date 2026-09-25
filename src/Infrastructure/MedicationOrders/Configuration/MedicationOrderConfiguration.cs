@@ -1,4 +1,5 @@
 using Domain.MedicationOrders.Entities;
+using Domain.HospitalizationStays.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -44,6 +45,19 @@ public class MedicationOrderConfiguration : IEntityTypeConfiguration<MedicationO
                 guid => guid.ToString(),
                 str => Guid.Parse(str))
             .IsRequired();
+
+        builder.Property(x => x.HospitalizationStayId)
+            .HasColumnName("HOSPITALIZATION_STAY_ID")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.HasValue ? guid.Value.ToString() : null,
+                value => string.IsNullOrWhiteSpace(value) ? null : Guid.Parse(value))
+            .IsRequired(false);
+
+        builder.HasOne<HospitalizationStay>()
+            .WithMany()
+            .HasForeignKey(x => x.HospitalizationStayId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.IsInHouse)
             .HasColumnName("IS_IN_HOUSE")

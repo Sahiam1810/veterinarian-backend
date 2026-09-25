@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(VeterinaryDbContext))]
-    partial class VeterinaryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924153137_AddHospitalizationStayPaymentFields")]
+    partial class AddHospitalizationStayPaymentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -801,10 +804,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TIMESTAMP")
                         .HasColumnName("CREATED_AT");
 
-                    b.Property<decimal>("DailyRate")
-                        .HasColumnType("DECIMAL(18,2)")
-                        .HasColumnName("DAILY_RATE");
-
                     b.Property<int>("Estado")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("ESTADO");
@@ -923,10 +922,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("CREATED_AT");
 
-                    b.Property<string>("HospitalizationStayId")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("HOSPITALIZATION_STAY_ID");
-
                     b.Property<int>("IsInHouse")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("IS_IN_HOUSE");
@@ -961,8 +956,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("ClientPetId");
-
-                    b.HasIndex("HospitalizationStayId");
 
                     b.HasIndex("VeterinarianId");
 
@@ -1034,18 +1027,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("VARCHAR2(150)")
                         .HasColumnName("NAME");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("DECIMAL(18,2)")
-                        .HasColumnName("PRICE");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("UPDATED_AT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
 
                     b.ToTable("MEDICATIONS", (string)null);
                 });
@@ -1229,10 +1215,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("CREATED_AT");
 
-                    b.Property<string>("HospitalizationStayId")
-                        .HasColumnType("VARCHAR2(36)")
-                        .HasColumnName("HOSPITALIZATION_STAY_ID");
-
                     b.Property<int>("IsInHouse")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("IS_IN_HOUSE");
@@ -1272,8 +1254,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("ClientPetId");
-
-                    b.HasIndex("HospitalizationStayId");
 
                     b.HasIndex("VeterinarianId");
 
@@ -1344,10 +1324,6 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("VARCHAR2(150)")
                         .HasColumnName("NAME");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("DECIMAL(18,2)")
-                        .HasColumnName("PRICE");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7)")
@@ -2376,11 +2352,6 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.HospitalizationStays.Entities.HospitalizationStay", null)
-                        .WithMany()
-                        .HasForeignKey("HospitalizationStayId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
                         .WithMany()
                         .HasForeignKey("VeterinarianId")
@@ -2468,11 +2439,6 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("ClientPetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.HospitalizationStays.Entities.HospitalizationStay", null)
-                        .WithMany()
-                        .HasForeignKey("HospitalizationStayId")
-                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Domain.Veterinarians.Entities.Veterinarian", "Veterinarian")
                         .WithMany()

@@ -13,6 +13,7 @@ public static class ProcedureMappings
             procedure.Name,
             procedure.Code,
             procedure.IsActive,
+            procedure.Price,
             procedure.CreatedAt,
             procedure.UpdatedAt);
     }
@@ -24,11 +25,11 @@ public static class ProcedureMappings
 
     public static CreateProcedureCommand ToCommand(this CreateProcedureDto dto)
     {
-        return new CreateProcedureCommand(dto.Name, dto.Code, dto.IsActive);
+        return new CreateProcedureCommand(dto.Name, dto.Code, dto.IsActive, dto.Price);
     }
 
     public static UpdateProcedureCommand ToCommand(this UpdateProcedureDto dto, Guid id)
     {
-        return new UpdateProcedureCommand(id, dto.Name, dto.Code, dto.IsActive);
+        return new UpdateProcedureCommand(id, dto.Name, dto.Code, dto.IsActive, dto.Price);
     }
 }

@@ -69,7 +69,9 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         new object?[] { "POST", "/api/hospitalization-stays", "Hospitalización", "Create", "View", new { ClientPetId = TestGuid, AppointmentId = (Guid?)null, Motivo = "Prueba de ingreso" } },
         new object?[] { "PATCH", $"/api/hospitalization-stays/{TestGuid}/discharge", "Hospitalización", "Edit", "View", null },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}", "Hospitalización", "View", "Create", null },
+        new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/invoice", "Hospitalización", "View", "Create", null },
         new object?[] { "GET", "/api/hospitalization-stays/active", "Hospitalización", "View", "Create", null },
+        new object?[] { "GET", "/api/hospitalization-stays/admission-options", "Hospitalización", "View", "Create", null },
         new object?[] { "GET", $"/api/hospitalization-stays/pet/{TestGuid}", "Hospitalización", "View", "Create", null },
         new object?[] { "POST", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "Create", "View", new { Nota = "Nota prueba", EntregadoAUserId = (Guid?)null } },
         new object?[] { "GET", $"/api/hospitalization-stays/{TestGuid}/notes", "Hospitalización", "View", "Create", null },
@@ -179,6 +181,24 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         Assert.Equal(ExpectedSuccess(method), response.StatusCode);
     }
 
+    [Fact]
+    public async Task AdmissionOptions_Returns_only_the_expected_fields_with_hospitalization_view_permission()
+    {
+        using var client = factory.CreateClientWithPermissions("Hospitalización:View");
+
+        using var response = await client.GetAsync("/api/hospitalization-stays/admission-options");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var option = Assert.Single(document.RootElement.EnumerateArray());
+        var properties = option.EnumerateObject().ToList();
+
+        Assert.Equal(3, properties.Count);
+        Assert.Contains(properties, property => property.Name == "clientPetId");
+        Assert.Contains(properties, property => property.Name == "petName");
+        Assert.Contains(properties, property => property.Name == "ownerName");
+    }
+
     private static HttpStatusCode ExpectedSuccess(string httpMethod) => httpMethod switch
     {
         "GET" => HttpStatusCode.OK,
@@ -230,7 +250,7 @@ public sealed class ModulePermissionsHttpTests(ModulePermissionsApiFactory facto
         var dummyId = Guid.NewGuid();
         var sampleOption = new HospitalizationAdmissionOptionDto(dummyId, "Firulais", "Juan Pérez");
 
-        factory.Sender.Send(Arg.Any<GetAdmissionOptionsQuery>(), Arg.Any<CancellationToken>())
+        factory.Sender.Send(Arg.Any<GetHospitalizationAdmissionOptionsQuery>(), Arg.Any<CancellationToken>())
             .Returns((IReadOnlyCollection<HospitalizationAdmissionOptionDto>)new[] { sampleOption });
 
         using var client = factory.CreateClientWithPermissions("Hospitalización:View");
