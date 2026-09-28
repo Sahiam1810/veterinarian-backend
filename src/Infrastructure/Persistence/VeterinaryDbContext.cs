@@ -33,6 +33,8 @@ using Domain.MedicalRecords.Entities;
 using Domain.Vaccinations.Entities;
 using Domain.Notifications.Entities;
 using Domain.HospitalizationStays.Entities;
+using Domain.HospitalizationSettings.Entities;
+using HospitalizationSettingsEntity = Domain.HospitalizationSettings.Entities.HospitalizationSettings;
 using Domain.Modules.Entities;
 using Domain.Supplies.Entities;
 using Domain.SupplyConsumptions.Entities;
@@ -93,6 +95,8 @@ public sealed class VeterinaryDbContext(DbContextOptions<VeterinaryDbContext> op
     public DbSet<HospitalizationStay> HospitalizationStays => Set<HospitalizationStay>();
 
     public DbSet<HospitalizationNote> HospitalizationNotes => Set<HospitalizationNote>();
+
+    public DbSet<HospitalizationSettingsEntity> HospitalizationSettings => Set<HospitalizationSettingsEntity>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
 

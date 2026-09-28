@@ -75,13 +75,19 @@ public sealed class AdmitHospitalizationStayCommandHandler(IUnitOfWork unitOfWor
                 HospitalizationStayErrorCodes.ActiveStayAlreadyExists);
         }
 
-        var availableServices = await unitOfWork.ServicesRepository.GetAvailableAsync(cancellationToken)
-            ?? Array.Empty<Domain.Services.Entities.Service>();
-        var dailyRate = availableServices
-            .FirstOrDefault(service =>
+        var dailyRate = (await unitOfWork.HospitalizationSettingsRepository
+            .GetAsync(cancellationToken))?.DailyRate ?? 0m;
+        /* Legacy service-catalog lookup removed: hospitalization uses its own daily setting. */
+        /*
                 string.Equals(service.Name.Trim(), "Hospitalización", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(service.Name.Trim(), "Hospitalizacion", StringComparison.OrdinalIgnoreCase))
-            ?.Price ?? 0m;
+
+        */
+        if (dailyRate <= 0m)
+        {
+            throw new BadRequestException(
+                HospitalizationStayErrorCodes.RateNotConfiguredMessage,
+                HospitalizationStayErrorCodes.RateNotConfigured);
+        }
 
         var stay = new HospitalizationStay(
             request.ClientPetId,
@@ -308,7 +314,7 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
             foreach (var item in order.Items)
             {
                 var medication = await unitOfWork.MedicationsRepository.GetByIdAsync(item.MedicationId, cancellationToken);
-                var unitPrice = item.UnitPrice ?? medication?.Price ?? 0m;
+                var unitPrice = item.UnitPrice ?? 0m;
                 medList.Add(new BillableItemDto(
                     medication?.Name ?? item.Medication?.Name ?? "Medicamento",
                     1m,
@@ -330,7 +336,7 @@ public sealed class GetHospitalizationStayInvoiceQueryHandler(IUnitOfWork unitOf
             foreach (var item in order.Items)
             {
                 var procedure = await unitOfWork.ProceduresRepository.GetByIdAsync(item.ProcedureId, cancellationToken);
-                var unitPrice = item.UnitPrice ?? procedure?.Price ?? 0m;
+                var unitPrice = item.UnitPrice ?? 0m;
                 procList.Add(new BillableItemDto(
                     procedure?.Name ?? item.Procedure?.Name ?? "Procedimiento",
                     1m,

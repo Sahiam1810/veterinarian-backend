@@ -9,6 +9,7 @@ using Application.ProcedureOrders.Abstraction;
 using Application.Supplies.Abstraction;
 using Application.SupplyConsumptions.Abstraction;
 using Application.HospitalizationStays.Abstraction;
+using Application.HospitalizationSettings.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Clients.Abstraction;
@@ -74,6 +75,7 @@ public sealed class UnitOfWork : IUnitOfWork
         IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository,
         IHospitalizationStayRepository hospitalizationStaysRepository,
         IHospitalizationNoteRepository hospitalizationNotesRepository,
+        IHospitalizationSettingsRepository hospitalizationSettingsRepository,
         IMedicalRecordRepository medicalRecordsRepository,
         INotificationRepository notificationsRepository,
         IDiagnosticRepository diagnosticsRepository,
@@ -113,6 +115,7 @@ public sealed class UnitOfWork : IUnitOfWork
         AppointmentStatusHistoriesRepository = appointmentStatusHistoriesRepository;
         HospitalizationStaysRepository = hospitalizationStaysRepository;
         HospitalizationNotesRepository = hospitalizationNotesRepository;
+        HospitalizationSettingsRepository = hospitalizationSettingsRepository;
         MedicalRecordsRepository = medicalRecordsRepository;
         NotificationsRepository = notificationsRepository;
         DiagnosticsRepository = diagnosticsRepository;
@@ -152,6 +155,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAppointmentStatusHistoryRepository AppointmentStatusHistoriesRepository { get; }
     public IHospitalizationStayRepository HospitalizationStaysRepository { get; }
     public IHospitalizationNoteRepository HospitalizationNotesRepository { get; }
+    public IHospitalizationSettingsRepository HospitalizationSettingsRepository { get; }
     public IMedicalRecordRepository MedicalRecordsRepository { get; }
     public IVaccinationRepository VaccinationsRepository { get; }
     public INotificationRepository NotificationsRepository { get; }

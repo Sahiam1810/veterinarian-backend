@@ -3,12 +3,17 @@ using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Appointments.Abstraction;
 using Application.HospitalizationStays.Abstraction;
+using Application.HospitalizationSettings.Abstraction;
 using Application.HospitalizationStays.Errors;
 using Application.HospitalizationStays.UseCases;
 using Application.Users.Abstraction;
+using Application.Services.Abstraction;
 using Domain.Appointments.Entities;
 using Domain.HospitalizationStays.Entities;
+using Domain.HospitalizationSettings.Entities;
+using HospitalizationSettingsEntity = Domain.HospitalizationSettings.Entities.HospitalizationSettings;
 using Domain.Races.Entities;
+using Domain.Services.Entities;
 using Domain.Species.Entities;
 using NSubstitute;
 using Xunit;
@@ -23,6 +28,8 @@ public sealed class HospitalizationStayCommandHandlerTests
     private readonly IClientPetRepository clientPetsRepository = Substitute.For<IClientPetRepository>();
     private readonly IUsersRepository usersRepository = Substitute.For<IUsersRepository>();
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
+    private readonly IServiceRepository servicesRepository = Substitute.For<IServiceRepository>();
+    private readonly IHospitalizationSettingsRepository hospitalizationSettingsRepository = Substitute.For<IHospitalizationSettingsRepository>();
 
     private readonly AdmitHospitalizationStayCommandHandler admitHandler;
     private readonly DischargeHospitalizationStayCommandHandler dischargeHandler;
@@ -48,7 +55,13 @@ public sealed class HospitalizationStayCommandHandlerTests
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
         unitOfWork.HospitalizationStaysRepository.Returns(staysRepository);
         unitOfWork.HospitalizationNotesRepository.Returns(notesRepository);
+        unitOfWork.HospitalizationSettingsRepository.Returns(hospitalizationSettingsRepository);
+        hospitalizationSettingsRepository.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(new HospitalizationSettingsEntity(50000m));
+        /*
+            .Returns(new[] { new Service(Guid.NewGuid(), "Hospitalización", 1440, 50000m) });
 
+        */
         admitHandler = new AdmitHospitalizationStayCommandHandler(unitOfWork);
         dischargeHandler = new DischargeHospitalizationStayCommandHandler(unitOfWork);
         registerPaymentHandler = new RegisterHospitalizationStayPaymentCommandHandler(unitOfWork);
@@ -350,6 +363,23 @@ public sealed class HospitalizationStayCommandHandlerTests
                     new Domain.Clients.Entities.ClientEntity("Juan Pérez", "juan@vet.com", "12345678", "5551010", null),
                     new Domain.Pets.Entities.PetEntity("Perry", 5, "M", 12.5m, null, DefaultSpecies, DefaultRace),
                 true));
+    }
+
+    [Fact]
+    public async Task HOSPITALIZATION_rejects_admission_when_daily_rate_is_not_configured()
+    {
+        ArrangeAdmittablePet();
+        hospitalizationSettingsRepository.GetAsync(Arg.Any<CancellationToken>())
+            .Returns((HospitalizationSettingsEntity?)null);
+
+        var ex = await Assert.ThrowsAsync<BadRequestException>(() => admitHandler.Handle(
+            new AdmitHospitalizationStayCommand(ClientPetId, null, "Ingreso", AdmittingUserId),
+            CancellationToken.None));
+
+        Assert.Equal(HospitalizationStayErrorCodes.RateNotConfigured, ex.Code);
+        await staysRepository.DidNotReceive().AddAsync(
+            Arg.Any<HospitalizationStay>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
