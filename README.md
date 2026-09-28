@@ -24,6 +24,14 @@ Está construida con ASP.NET Core 10, Oracle y EF Core, y está organizada en Do
 - Swagger en Development, rate limiting, CORS, logging estructurado con Serilog y respuestas de error `application/problem+json`.
 - Recordatorios de citas por Telegram (1 hora antes) con configuración separada de los recordatorios de 24h.
 
+### Funcionalidades clínicas y operativas recientes
+
+- **Agendamiento rápido:** el personal puede crear cliente (si no existe), mascota y cita en una sola operación, sin inventar correo, identificación, raza, edad o peso.
+- **Atención y cobro:** las citas admiten signos vitales, registro de pago y recibo. Las citas y órdenes conservan el precio unitario vigente al crearse.
+- **Órdenes y resultados:** se gestionan órdenes de medicamentos y procedimientos para una cita o una hospitalización, su estado de entrega/completado y resultados clínicos paginados.
+- **Hospitalización:** admisión, estancias activas, notas de entrega, consumos de insumos, alta, pago y factura; la tarifa diaria se configura desde la API.
+- **Inventario clínico:** catálogos de medicamentos, procedimientos e insumos, con precio y existencias de insumos.
+
 ## Arquitectura
 
 | Proyecto | Responsabilidad |
@@ -307,6 +315,8 @@ Swagger. A alto nivel:
 | Operación de staff | `/api/clients`, `/api/pets`, `/api/veterinarians`, `/api/availabilities`, `/api/veterinarian-absences`, `/api/appointments`, `/api/medicalrecords`, `/api/vaccinations`, `/api/reports` |
 | Catálogos y seguridad | `/api/species`, `/api/races`, `/api/services`, `/api/roles`, `/api/role-permissions`, `/api/users`, `PATCH /api/users/{id}/password` |
 | Dueños/bot | `POST /api/owners/bot` → `{ clientId }`, lookups anónimos de clientes, Claim OTP (`request-claim-by-identification` + `bot-link/claim`), rutas `/api/bot/*` |
+| Atención, órdenes e inventario | `POST /api/appointments/quick-booking`, signos vitales, pagos y recibos de citas; `/api/medications`, `/api/procedures`, `/api/medication-orders`, `/api/procedure-orders`, `/api/clinical-results`, `/api/supplies` |
+| Hospitalización | `/api/hospitalization-settings`, `/api/hospitalization-stays` (admisión, notas, alta, pago y factura) y `/api/hospitalization-stays/{stayId}/supply-consumptions` |
 | Integraciones | `POST /api/integrations/telegram/webhook`, `POST /api/integrations/telegram/bot-link`, `POST /api/agent/messages`, `/hubs/notifications` |
 | Administración conversacional | `/api/chat/*` (participantes con `clientId`; sin `/api/chat/user-profiles`) |
 
