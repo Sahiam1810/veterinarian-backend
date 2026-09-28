@@ -81,6 +81,8 @@ using Infrastructure.ChatParticipants.Repository;
 using Application.Security.Abstractions;
 using Infrastructure.Diagnostics.Repositories;
 using Infrastructure.HospitalizationStays.Repositories;
+using Infrastructure.HospitalizationSettings.Repositories;
+using Application.HospitalizationSettings.Abstraction;
 using Infrastructure.Persistence;
 using Infrastructure.Pets.Repositories;
 using Infrastructure.Races.Repositories;
@@ -197,6 +199,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IHospitalizationStayRepository, HospitalizationStayRepository>();
         services.AddScoped<IHospitalizationNoteRepository, HospitalizationNoteRepository>();
+        services.AddScoped<IHospitalizationSettingsRepository, HospitalizationSettingsRepository>();
         services.AddScoped<IReportsReadRepository, ReportsReadRepository>();
         services.AddScoped<IAppointmentBookingSettings, ConfiguredAppointmentBookingSettings>();
         services.AddScoped<IAppointmentStatusHistoryRepository, AppointmentStatusHistoryRepository>();

@@ -267,6 +267,7 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
         var completedOrder = new ProcedureOrder(stay.ClientPetId, VeterinarianId, stay.AppointmentId!.Value, true, null, null,
             new (Guid ProcedureId, string? Notes)[] { (proc1.Id, "Urgente") });
         completedOrder.Complete(); // Status: Completada
+        completedOrder.Items.First().SetUnitPrice(55000m); // Precio histórico congelado.
 
         var itemProp = typeof(ProcedureOrderItem).GetProperty(nameof(ProcedureOrderItem.Procedure))!;
         itemProp.SetValue(completedOrder.Items.First(), proc1);
@@ -285,9 +286,9 @@ public sealed class HospitalizationStayInvoiceQueryHandlerTests
 
         Assert.Single(result.Procedures);
         Assert.Equal("Hemograma completo", result.Procedures[0].Name);
-        Assert.Equal(60000m, result.Procedures[0].UnitPrice);
-        Assert.Equal(60000m, result.Procedures[0].Total);
-        Assert.Equal(60000m, result.ProceduresTotal);
+        Assert.Equal(55000m, result.Procedures[0].UnitPrice);
+        Assert.Equal(55000m, result.Procedures[0].Total);
+        Assert.Equal(55000m, result.ProceduresTotal);
         Assert.Equal("Urgente", result.Procedures[0].Notes);
     }
 }
