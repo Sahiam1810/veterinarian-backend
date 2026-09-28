@@ -31,7 +31,7 @@ public sealed class HospitalizationAdmissionOptionsQueryHandlerTests
         var activeRelationship = CreateRelationship(activeOwner, luna);
         var inactiveRelationship = CreateRelationship(inactiveOwner, max);
 
-        clientPetsRepository.GetAllWithDetailsAsync(Arg.Any<CancellationToken>())
+        clientPetsRepository.GetAllForAdmissionAsync(Arg.Any<CancellationToken>())
             .Returns(new[] { inactiveRelationship, activeRelationship });
 
         var result = await new GetHospitalizationAdmissionOptionsQueryHandler(unitOfWork)
@@ -41,7 +41,7 @@ public sealed class HospitalizationAdmissionOptionsQueryHandlerTests
         Assert.Equal(activeRelationship.Id, option.ClientPetId);
         Assert.Equal("Luna", option.PetName);
         Assert.Equal("Ana Perez", option.OwnerName);
-        await clientPetsRepository.Received(1).GetAllWithDetailsAsync(Arg.Any<CancellationToken>());
+        await clientPetsRepository.Received(1).GetAllForAdmissionAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class HospitalizationAdmissionOptionsQueryHandlerTests
         var bella = new PetEntity("Bella", 2, "F", 8m, null, species, race);
         var luna = new PetEntity("Luna", 2, "F", 8m, null, species, race);
 
-        clientPetsRepository.GetAllWithDetailsAsync(Arg.Any<CancellationToken>())
+        clientPetsRepository.GetAllForAdmissionAsync(Arg.Any<CancellationToken>())
             .Returns(new[]
             {
                 CreateRelationship(ownerZ, luna),

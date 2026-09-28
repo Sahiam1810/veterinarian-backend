@@ -305,7 +305,7 @@ public sealed class HospitalizationStayCommandHandlerTests
     [Fact]
     public async Task HOSPITALIZATION_T16_get_admission_options_returns_empty_when_no_pets()
     {
-        clientPetsRepository.GetAllWithDetailsAsync(Arg.Any<CancellationToken>())
+        clientPetsRepository.GetAllForAdmissionAsync(Arg.Any<CancellationToken>())
             .Returns(Array.Empty<Domain.ClientsPets.Entities.ClientPetEntity>());
 
         var result = await getAdmissionOptionsHandler.Handle(new GetHospitalizationAdmissionOptionsQuery(), CancellationToken.None);
@@ -328,7 +328,7 @@ public sealed class HospitalizationStayCommandHandlerTests
         typeof(Domain.ClientsPets.Entities.ClientPetEntity).GetProperty(nameof(Domain.ClientsPets.Entities.ClientPetEntity.Pet))!.SetValue(clientPet2, pet2);
         typeof(Domain.ClientsPets.Entities.ClientPetEntity).GetProperty(nameof(Domain.ClientsPets.Entities.ClientPetEntity.Client))!.SetValue(clientPet2, client2);
 
-        clientPetsRepository.GetAllWithDetailsAsync(Arg.Any<CancellationToken>())
+        clientPetsRepository.GetAllForAdmissionAsync(Arg.Any<CancellationToken>())
             .Returns(new[] { clientPet1, clientPet2 });
 
         var result = (await getAdmissionOptionsHandler.Handle(new GetHospitalizationAdmissionOptionsQuery(), CancellationToken.None)).ToList();

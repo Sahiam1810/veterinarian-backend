@@ -28,8 +28,6 @@ public sealed class ClientPetRepository(VeterinaryDbContext context) : IClientPe
             .Include(x => x.Pet)
             .Include(x => x.Client)
             .Where(x => x.Pet != null && x.Client != null)
-            .OrderBy(x => x.Client.FullName.Value)
-            .ThenBy(x => x.Pet.Name.Value)
             .ToListAsync(cancellationToken);
 
     public async Task AddAsync(ClientPetEntity clientPet, CancellationToken cancellationToken) => await context.Set<ClientPetEntity>().AddAsync(clientPet, cancellationToken);

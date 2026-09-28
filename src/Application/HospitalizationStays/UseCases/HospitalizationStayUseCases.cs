@@ -374,7 +374,7 @@ public sealed class GetHospitalizationAdmissionOptionsQueryHandler(IUnitOfWork u
         GetHospitalizationAdmissionOptionsQuery request,
         CancellationToken cancellationToken)
     {
-        var relationships = await unitOfWork.ClientPetsRepository.GetAllWithDetailsAsync(cancellationToken);
+        var relationships = await unitOfWork.ClientPetsRepository.GetAllForAdmissionAsync(cancellationToken);
 
         return relationships
             .Where(relationship =>
