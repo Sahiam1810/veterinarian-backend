@@ -1,3 +1,5 @@
+using Application.Agent.Abstractions;
+using Application.ChatEscalations.UseCase;
 using Application.ChatMessages.Events;
 using Application.Telegram.Abstractions;
 using MediatR;
@@ -19,6 +21,8 @@ public sealed class ForwardHumanChatMessageToTelegramHandler(
     ITelegramUserLinkRepository userLinks,
     ITelegramBotClient botClient,
     ITelegramRuntimeSettings settings,
+    IActiveConversationEscalationReader escalationReader,
+    ISender sender,
     ILogger<ForwardHumanChatMessageToTelegramHandler> logger)
     : INotificationHandler<ChatMessageCreatedNotification>
 {
@@ -49,6 +53,21 @@ public sealed class ForwardHumanChatMessageToTelegramHandler(
             }
 
             await botClient.SendTextAsync(userLink.TelegramChatId, message.Content, cancellationToken);
+
+            var isEscalated = await escalationReader.HasActiveAsync(
+                message.ChatConversationId,
+                cancellationToken);
+            if (!isEscalated)
+            {
+                await sender.Send(
+                    new CreateChatEscalationCommand(
+                        message.ChatConversationId,
+                        settings.PendingEscalationStatusId,
+                        FromAi: false,
+                        Reason: "Intervención de asesor humano",
+                        UpdateAt: null),
+                    cancellationToken);
+            }
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

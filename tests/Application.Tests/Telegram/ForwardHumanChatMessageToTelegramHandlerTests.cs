@@ -1,7 +1,10 @@
+using Application.Agent.Abstractions;
+using Application.ChatEscalations.UseCase;
 using Application.ChatMessages.Events;
 using Application.Telegram.Abstractions;
 using Application.Telegram.Notifications;
 using Domain.Telegram.Entities;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -21,15 +24,18 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
         Guid.Parse("82000000-0000-0000-0000-000000000001");
     private static readonly Guid AiAgentSenderTypeId =
         Guid.Parse("82000000-0000-0000-0000-000000000002");
+    private static readonly Guid PendingEscalationStatusId =
+        Guid.Parse("85000000-0000-0000-0000-000000000001");
 
     [Fact]
-    public async Task Human_agent_message_is_forwarded_to_the_linked_telegram_chat()
+    public async Task Human_agent_message_is_forwarded_and_escalates_conversation_if_not_already_escalated()
     {
         var fixture = CreateFixture();
         var message = HumanAgentMessage("Ya puedes traer a tu mascota mañana a las 9am.");
         var userLink = TelegramUserLink.Create(Guid.NewGuid(), 1001, 1001, DateTime.UtcNow);
         userLink.BindConversation(ConversationId);
         fixture.UserLinks.GetByConversationIdAsync(ConversationId, default).Returns(userLink);
+        fixture.EscalationReader.HasActiveAsync(ConversationId, Arg.Any<CancellationToken>()).Returns(false);
 
         await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
 
@@ -37,6 +43,33 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
             1001,
             "Ya puedes traer a tu mascota mañana a las 9am.",
             default);
+        await fixture.Sender.Received(1).Send(
+            Arg.Is<CreateChatEscalationCommand>(c =>
+                c.ChatConversationId == ConversationId &&
+                c.EscalationStatusId == PendingEscalationStatusId &&
+                !c.FromAi),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Human_agent_message_does_not_create_duplicate_escalation_if_already_escalated()
+    {
+        var fixture = CreateFixture();
+        var message = HumanAgentMessage("Ya puedes traer a tu mascota mañana a las 9am.");
+        var userLink = TelegramUserLink.Create(Guid.NewGuid(), 1001, 1001, DateTime.UtcNow);
+        userLink.BindConversation(ConversationId);
+        fixture.UserLinks.GetByConversationIdAsync(ConversationId, default).Returns(userLink);
+        fixture.EscalationReader.HasActiveAsync(ConversationId, Arg.Any<CancellationToken>()).Returns(true);
+
+        await fixture.Handler.Handle(new ChatMessageCreatedNotification(message), default);
+
+        await fixture.Bot.Received(1).SendTextAsync(
+            1001,
+            "Ya puedes traer a tu mascota mañana a las 9am.",
+            default);
+        await fixture.Sender.DidNotReceive().Send(
+            Arg.Any<CreateChatEscalationCommand>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -103,13 +136,19 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
         var bot = Substitute.For<ITelegramBotClient>();
         var settings = Substitute.For<ITelegramRuntimeSettings>();
         settings.HumanAgentSenderTypeId.Returns(HumanAgentSenderTypeId);
+        settings.PendingEscalationStatusId.Returns(PendingEscalationStatusId);
+        var escalationReader = Substitute.For<IActiveConversationEscalationReader>();
+        var sender = Substitute.For<ISender>();
         var logger = new RecordingLogger<ForwardHumanChatMessageToTelegramHandler>();
 
         return new Fixture(
             new ForwardHumanChatMessageToTelegramHandler(
-                userLinks, bot, settings, logger),
+                userLinks, bot, settings, escalationReader, sender, logger),
             userLinks,
             bot,
+            settings,
+            escalationReader,
+            sender,
             logger);
     }
 
@@ -117,6 +156,9 @@ public sealed class ForwardHumanChatMessageToTelegramHandlerTests
         ForwardHumanChatMessageToTelegramHandler Handler,
         ITelegramUserLinkRepository UserLinks,
         ITelegramBotClient Bot,
+        ITelegramRuntimeSettings Settings,
+        IActiveConversationEscalationReader EscalationReader,
+        ISender Sender,
         RecordingLogger<ForwardHumanChatMessageToTelegramHandler> Logger);
 
     private sealed class RecordingLogger<T> : ILogger<T>

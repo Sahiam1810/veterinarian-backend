@@ -492,13 +492,13 @@ public sealed class ProcessTelegramUpdateHandlerTests
             Arg.Any<CancellationToken>());
         await fixture.Bot.Received(1).SendTextAsync(
             1001,
-            "Tu conversación está siendo atendida por un asesor.",
+            "Tu conversación está siendo atendida.",
             default);
         // La confirmación que recibe el cliente también queda en el hilo.
         await fixture.Sender.Received(1).Send(
             Arg.Is<CreateChatMessageCommand>(command =>
                 command.SenderTypesId == AiAgentSenderTypeId &&
-                command.Content == "Tu conversación está siendo atendida por un asesor."),
+                command.Content == "Tu conversación está siendo atendida."),
             Arg.Any<CancellationToken>());
     }
 
@@ -563,7 +563,7 @@ public sealed class ProcessTelegramUpdateHandlerTests
                 Arg.Any<AgentConversationContext>(),
                 "delegated-token",
                 default)
-            .Returns(Result("Tu conversación está siendo atendida por un asesor."));
+            .Returns(Result("Tu conversación está siendo atendida."));
 
         await fixture.Handler.Handle(new ProcessTelegramUpdateCommand(73), default);
 
