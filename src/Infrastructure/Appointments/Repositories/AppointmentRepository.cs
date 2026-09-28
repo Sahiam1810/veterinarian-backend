@@ -230,7 +230,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
         => await _context.Set<Appointment>()
             .Include(x => x.Status)
             .Where(x => x.VeterinarianId == veterinarianId
-                && x.Status!.Name == AppointmentStatusNames.Agendada
+                && x.Status!.Name != AppointmentStatusNames.Cancelada
+                && x.Status!.Name != AppointmentStatusNames.NoAsistio
                 && x.ScheduledStart < toUtc
                 && x.ScheduledEnd > fromUtc)
             .AsNoTracking()
@@ -261,7 +262,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
         DateTime endUtc,
         CancellationToken cancellationToken)
         => _context.Set<Appointment>()
-            .AnyAsync(x => x.Status!.Name == AppointmentStatusNames.Agendada
+            .AnyAsync(x => x.Status!.Name != AppointmentStatusNames.Cancelada
+                && x.Status!.Name != AppointmentStatusNames.NoAsistio
                 && (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
                 && x.ScheduledStart < endUtc
                 && x.ScheduledEnd > startUtc,
@@ -283,7 +285,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
         }
 
         return await query.AnyAsync(
-            x => x.Status!.Name == AppointmentStatusNames.Agendada
+            x => x.Status!.Name != AppointmentStatusNames.Cancelada
+                 && x.Status!.Name != AppointmentStatusNames.NoAsistio
                  && (x.ClientPetId == clientPetId || x.VeterinarianId == veterinarianId)
                  && x.ScheduledStart < end
                  && x.ScheduledEnd > start,
@@ -296,7 +299,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
         CancellationToken cancellationToken)
         => await _context.Set<Appointment>()
             .Include(x => x.Status)
-            .Where(x => x.Status!.Name == AppointmentStatusNames.Agendada
+            .Where(x => x.Status!.Name != AppointmentStatusNames.Cancelada
+                && x.Status!.Name != AppointmentStatusNames.NoAsistio
                 && x.ConsultingRoom != null
                 && x.ScheduledStart < toUtc
                 && x.ScheduledEnd > fromUtc)
@@ -319,7 +323,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
         }
 
         return query.AnyAsync(
-            x => x.Status!.Name == AppointmentStatusNames.Agendada
+            x => x.Status!.Name != AppointmentStatusNames.Cancelada
+                && x.Status!.Name != AppointmentStatusNames.NoAsistio
                 && x.ConsultingRoom != null
                 && x.ConsultingRoom.ToUpper() == room
                 && x.ScheduledStart < end
@@ -342,7 +347,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
 
         return query.CountAsync(
             x => x.VeterinarianId == veterinarianId
-                && x.Status!.Name == AppointmentStatusNames.Agendada
+                && x.Status!.Name != AppointmentStatusNames.Cancelada
+                && x.Status!.Name != AppointmentStatusNames.NoAsistio
                 && x.ScheduledStart < end
                 && x.ScheduledEnd > start,
             cancellationToken);
@@ -363,7 +369,8 @@ public sealed class AppointmentRepository : IAppointmentRepository
 
         return query.AnyAsync(
             x => x.ClientPetId == clientPetId
-                && x.Status!.Name == AppointmentStatusNames.Agendada
+                && x.Status!.Name != AppointmentStatusNames.Cancelada
+                && x.Status!.Name != AppointmentStatusNames.NoAsistio
                 && x.ScheduledStart < end
                 && x.ScheduledEnd > start,
             cancellationToken);

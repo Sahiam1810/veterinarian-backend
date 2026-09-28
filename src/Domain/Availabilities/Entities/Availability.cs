@@ -56,7 +56,7 @@ public sealed class Availability : BaseEntity<Guid>
     // Sala fisica opcional; el JSON publico usa consultingRoom.
     public string? ConsultingRoom { get; private set; }
 
-    // Cuantas citas AGENDADA pueden coincidir en este horario.
+    // Cuantas citas activas pueden coincidir en este horario.
     public int MaxConcurrentAppointments { get; private set; }
 
     public void Update(

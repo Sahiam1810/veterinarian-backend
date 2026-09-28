@@ -73,7 +73,7 @@ public interface IAppointmentRepository
         DateTime toUtc,
         CancellationToken cancellationToken);
 
-    // Citas AGENDADA con consultorio en la ventana (para choques de sala).
+    // Citas no canceladas/no asistidas con consultorio en la ventana (para choques de sala).
     Task<IReadOnlyCollection<Appointment>> GetScheduledRoomOverlapsAsync(
         DateTime fromUtc,
         DateTime toUtc,
@@ -98,7 +98,7 @@ public interface IAppointmentRepository
         Guid? excludeAppointmentId = null,
         CancellationToken cancellationToken = default);
 
-    // Choque de sala AGENDADA, comparacion case-insensitive.
+    // Choque de sala de una cita activa, comparacion case-insensitive.
     Task<bool> HasConsultingRoomOverlapAsync(
         string consultingRoom,
         DateTime start,
