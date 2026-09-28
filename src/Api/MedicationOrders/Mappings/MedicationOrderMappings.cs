@@ -13,7 +13,8 @@ public static class MedicationOrderMappings
             item.MedicationOrderId,
             item.MedicationId,
             item.Medication?.Name,
-            item.Notes);
+            item.Notes,
+            item.UnitPrice);
     }
 
     public static MedicationOrderDto ToResponse(this MedicationOrder order)

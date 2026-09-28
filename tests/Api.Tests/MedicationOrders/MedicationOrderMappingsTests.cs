@@ -40,6 +40,24 @@ public sealed class MedicationOrderMappingsTests
     }
 
     [Fact]
+    public void ToPendingDto_maps_frozen_unit_price()
+    {
+        var order = new MedicationOrder(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Dosis 1") });
+        order.Items.Single().SetUnitPrice(30000m);
+
+        var dto = order.ToPendingDto();
+
+        Assert.Equal(30000m, dto.Items.Single().UnitPrice);
+    }
+
+    [Fact]
     public void ToPendingDto_falls_back_to_placeholder_when_client_pet_is_missing()
     {
         var order = new MedicationOrder(

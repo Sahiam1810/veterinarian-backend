@@ -13,7 +13,8 @@ public static class ProcedureOrderMappings
             item.ProcedureOrderId,
             item.ProcedureId,
             item.Procedure?.Name,
-            item.Notes);
+            item.Notes,
+            item.UnitPrice);
     }
 
     public static ProcedureOrderDto ToResponse(this ProcedureOrder order)

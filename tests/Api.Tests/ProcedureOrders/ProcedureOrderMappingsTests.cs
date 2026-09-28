@@ -40,6 +40,24 @@ public sealed class ProcedureOrderMappingsTests
     }
 
     [Fact]
+    public void ToPendingDto_maps_frozen_unit_price()
+    {
+        var order = new ProcedureOrder(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            isInHouse: true,
+            referredTo: null,
+            referralReason: null,
+            items: new[] { (Guid.NewGuid(), (string?)"Examen 1") });
+        order.Items.Single().SetUnitPrice(45000m);
+
+        var dto = order.ToPendingDto();
+
+        Assert.Equal(45000m, dto.Items.Single().UnitPrice);
+    }
+
+    [Fact]
     public void ToPendingDto_falls_back_to_placeholder_when_client_pet_is_missing()
     {
         var order = new ProcedureOrder(
