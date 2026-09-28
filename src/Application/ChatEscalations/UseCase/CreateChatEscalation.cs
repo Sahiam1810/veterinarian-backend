@@ -45,6 +45,13 @@ public sealed class CreateChatEscalationCommandHandler(
                 $"No se encontró el estado de escalamiento '{request.EscalationStatusId}'.");
         }
 
+        var activeEscalation = await uow.ChatEscalationsRepository
+            .GetActiveByConversationIdAsync(request.ChatConversationId, cancellationToken);
+        if (activeEscalation is not null)
+        {
+            return activeEscalation;
+        }
+
         var escalation = ChatEscalationEntity.Create(
             request.ChatConversationId,
             request.EscalationStatusId,

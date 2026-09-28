@@ -1,7 +1,9 @@
+using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Application.HospitalizationSettings.Dtos;
 using Application.HospitalizationSettings.UseCases;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.HospitalizationSettings.Controllers;
@@ -17,6 +19,7 @@ public sealed class HospitalizationSettingsController(ISender sender) : Controll
         Ok(await sender.Send(new GetHospitalizationSettingsQuery(), cancellationToken));
 
     [HttpPut]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [RequirePermission("Hospitalización", PermissionAction.Edit)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

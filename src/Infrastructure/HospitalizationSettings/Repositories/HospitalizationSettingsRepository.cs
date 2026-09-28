@@ -11,7 +11,8 @@ public sealed class HospitalizationSettingsRepository(VeterinaryDbContext contex
 {
     public Task<HospitalizationSettingsEntity?> GetAsync(CancellationToken cancellationToken) =>
         context.Set<HospitalizationSettingsEntity>()
-            .OrderBy(x => x.CreatedAt)
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
+            .ThenByDescending(x => x.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task AddAsync(
