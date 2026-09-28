@@ -5,8 +5,8 @@ El SuperAdmin es una identidad persistida en Oracle. No se configura mediante va
 ## Requisitos
 
 1. Aplicar las migraciones del backend.
-2. Aplicar los seeds de producción de `database/seeds/apply_all.sql`.
-3. Tener una cuenta interna activa con `USERS`, `USER_ACCOUNTS` y `USER_CREDENTIALS` válidos.
+2. Aplicar los seeds de producción de `database/seeds/extra/apply_all.sql`.
+3. Tener una cuenta interna activa en `USERS` con `PASSWORD_HASH` válido.
 4. Ejecutar el proceso con un usuario Oracle autorizado para actualizar esas tablas.
 
 ## Promover una cuenta existente
@@ -20,7 +20,7 @@ $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
   'correo-de-la-cuenta@dominio.com'
 ```
 
-El script exige que exista exactamente una cuenta activa con credencial, asigna el rol canónico `SuperAdmin` y elimina sus refresh tokens anteriores. No crea usuarios, contraseñas ni datos personales.
+El script exige que exista exactamente un usuario activo con contraseña en `USERS`, asigna el rol canónico `SuperAdmin` y elimina sus refresh tokens anteriores de `USER_TOKENS`. No crea usuarios, contraseñas ni datos personales.
 
 ## Verificación
 

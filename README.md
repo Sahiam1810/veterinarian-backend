@@ -270,10 +270,10 @@ Después, ejecute los seeds idempotentes. Sustituya la ruta y el alias Oracle po
 $env:NLS_LANG = "SPANISH_SPAIN.AL32UTF8"
 & 'C:\ruta\a\sqlplus.exe' `
   'VET_APP@//localhost:1522/FREEPDB1' `
-  '@database\seeds\apply_all.sql'
+  '@database\seeds\extra\apply_all.sql'
 ```
 
-Los seeds crean catálogos, roles, permisos y datos de soporte del chat. No incluyen usuarios, contraseñas, dueños, mascotas, citas ni historias clínicas. No ejecute `database/seeds/cleanup_seeds.sql` como parte de una instalación normal. Más detalle en [database/seeds/README.md](database/seeds/README.md).
+El ejecutor de producción crea catálogos, roles, permisos y datos de soporte del chat. No incluye usuarios, contraseñas, dueños, mascotas, citas ni historias clínicas. No ejecute `database/seeds/limpieza_total.sql` como parte de una instalación normal; ese script vacía datos sin borrar las tablas. Más detalle en [database/seeds/README.md](database/seeds/README.md).
 
 ### Seeds extra y patches
 
@@ -289,7 +289,9 @@ El directorio `database/seeds/extra/` contiene seeds adicionales y parches para 
 El directorio `database/patches/` contiene parches para migraciones específicas:
 
 - `add_pet_photo_url.sql` - Agrega columna PHOTO_URL a la tabla PETS para almacenar URLs de fotos de mascotas.
+- `add_user_photo_url.sql` - Agrega columna PHOTO_URL a la tabla USERS para almacenar URLs de fotos del personal.
 - `grant_auxiliar_citas_create_permission.sql` - Otorga permiso de creación en el módulo Citas al rol Auxiliar.
+- `grant_auxiliar_veterinarios_permission.sql` - Otorga permisos del módulo Veterinarios al rol Auxiliar.
 
 El seed crea el rol protegido `SuperAdmin`, pero no crea una persona ni una contraseña. Promueva una cuenta interna ya existente siguiendo [docs/SUPERADMIN_PROVISIONING.md](docs/SUPERADMIN_PROVISIONING.md).
 

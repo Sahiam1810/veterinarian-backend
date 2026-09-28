@@ -209,6 +209,105 @@ política de respaldo (cualquier JWT válido). La propiedad de la notificación
 se valida dentro del handler contra el claim `sub` (id de usuario), no por un
 permiso de módulo.
 
+## Órdenes médicas e inventario clínico
+
+Los catálogos de medicamentos y procedimientos, así como sus órdenes, usan el
+módulo `Órdenes Médicas`. Las órdenes pueden asociarse a una cita o a una
+estancia de hospitalización.
+
+### Medicamentos y procedimientos
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| GET | `/api/medications` | `Órdenes Médicas.View` |
+| GET | `/api/medications/{id:guid}` | `Órdenes Médicas.View` |
+| POST | `/api/medications` | `Órdenes Médicas.Create` |
+| PUT | `/api/medications/{id:guid}` | `Órdenes Médicas.Edit` |
+| DELETE | `/api/medications/{id:guid}` | `Órdenes Médicas.Delete` |
+| GET | `/api/procedures` | `Órdenes Médicas.View` |
+| GET | `/api/procedures/{id:guid}` | `Órdenes Médicas.View` |
+| POST | `/api/procedures` | `Órdenes Médicas.Create` |
+| PUT | `/api/procedures/{id:guid}` | `Órdenes Médicas.Edit` |
+| DELETE | `/api/procedures/{id:guid}` | `Órdenes Médicas.Delete` |
+
+Los endpoints de catálogo aceptan `onlyActive` cuando corresponde para limitar
+la respuesta a elementos activos.
+
+### Órdenes de medicamentos
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| GET | `/api/medication-orders/{id:guid}` | `Órdenes Médicas.View` |
+| GET | `/api/medication-orders/appointment/{appointmentId:guid}` | `Órdenes Médicas.View` |
+| GET | `/api/medication-orders/hospitalization-stay/{stayId:guid}` | `Órdenes Médicas.View` |
+| POST | `/api/medication-orders` | `Órdenes Médicas.Create` |
+| PATCH | `/api/medication-orders/{id:guid}/complete` | `Órdenes Médicas.Edit` |
+| GET | `/api/medication-orders/pending` | `Órdenes Médicas.View` |
+
+### Órdenes de procedimientos y resultados clínicos
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| GET | `/api/procedure-orders/{id:guid}` | `Órdenes Médicas.View` |
+| GET | `/api/procedure-orders/appointment/{appointmentId:guid}` | `Órdenes Médicas.View` |
+| GET | `/api/procedure-orders/hospitalization-stay/{stayId:guid}` | `Órdenes Médicas.View` |
+| POST | `/api/procedure-orders` | `Órdenes Médicas.Create` |
+| PATCH | `/api/procedure-orders/{id:guid}/complete` | `Órdenes Médicas.Edit` |
+| GET | `/api/procedure-orders/pending` | `Órdenes Médicas.View` |
+| GET | `/api/clinical-results` | `Órdenes Médicas.View` |
+
+`/api/clinical-results` acepta `search`, `veterinarianId`, `from`, `to`,
+`status`, `page` y `pageSize`, y devuelve resultados paginados.
+
+### Insumos y consumos de hospitalización
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| GET | `/api/supplies` | `Insumos.View` |
+| GET | `/api/supplies/{id:guid}` | `Insumos.View` |
+| POST | `/api/supplies` | `Insumos.Create` |
+| PUT | `/api/supplies/{id:guid}` | `Insumos.Edit` |
+| DELETE | `/api/supplies/{id:guid}` | `Insumos.Delete` |
+| POST | `/api/hospitalization-stays/{stayId:guid}/supply-consumptions` | `Insumos.Create` |
+| GET | `/api/hospitalization-stays/{stayId:guid}/supply-consumptions` | `Insumos.View` |
+| GET | `/api/hospitalization-stays/{stayId:guid}/supply-consumptions/total` | `Insumos.View` |
+
+## Hospitalización
+
+Las estancias no se eliminan al dar de alta. Las consultas de `active` y
+`pending-payment` separan la operación clínica de la gestión del cobro,
+mientras que la consulta por mascota conserva el historial completo.
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| GET | `/api/hospitalization-settings` | `Hospitalización.View` |
+| PUT | `/api/hospitalization-settings` | `Hospitalización.Edit` |
+| POST | `/api/hospitalization-stays` | `Hospitalización.Create` |
+| GET | `/api/hospitalization-stays/{id:guid}` | `Hospitalización.View` |
+| GET | `/api/hospitalization-stays/active` | `Hospitalización.View` |
+| GET | `/api/hospitalization-stays/pending-payment` | `Hospitalización.View` |
+| GET | `/api/hospitalization-stays/admission-options` | `Hospitalización.View` |
+| GET | `/api/hospitalization-stays/pet/{clientPetId:guid}` | `Hospitalización.View` |
+| GET | `/api/hospitalization-stays/staff` | `Hospitalización.View` |
+| PATCH | `/api/hospitalization-stays/{id:guid}/discharge` | `Hospitalización.Edit` |
+| PATCH | `/api/hospitalization-stays/{id:guid}/register-payment` | `Hospitalización.Edit` |
+| GET | `/api/hospitalization-stays/{stayId:guid}/invoice` | `Hospitalización.View` |
+| POST | `/api/hospitalization-stays/{id:guid}/notes` | `Hospitalización.Create` |
+| GET | `/api/hospitalization-stays/{id:guid}/notes` | `Hospitalización.View` |
+
+El endpoint `pending-payment` devuelve estancias dadas de alta que todavía no
+han sido pagadas. La factura se consulta con `invoice` y el pago se registra
+con `register-payment`.
+
+## Funcionalidades adicionales de citas
+
+| Método | Ruta | Acceso |
+| --- | --- | --- |
+| POST | `/api/appointments/quick-booking` | `Citas.Create` |
+| PATCH | `/api/appointments/{appointmentId:guid}/vitals` | `Citas.Edit` |
+| PATCH | `/api/appointments/{id:guid}/register-payment` | `Citas.Edit` |
+| GET | `/api/appointments/{id:guid}/receipt` | `Citas.View` |
+
 ## Administración de plataforma
 
 | Método | Ruta | Acceso |
@@ -281,33 +380,18 @@ indica la política real de cada endpoint.
 
 ### Catálogos del chat (lectura granular, escritura `AdminOnly`)
 
-`ConversationStatuses`, `EscalationStatuses`, `MessageTypes` y `SenderTypes`
-comparten el mismo patrón: los `GET` piden `Catálogos del Chat.View`; el
-resto es `AdminOnly`. `Priorities` es la excepción — sus `GET` piden
-`Plataforma.View`, no `Catálogos del Chat.View`.
+Los catálogos vigentes en esta API son `EscalationStatuses` y `SenderTypes`.
+Sus operaciones de lectura piden `Catálogos del Chat.View`; las operaciones de
+escritura piden `AdminOnly`. Los antiguos catálogos de estados de conversación,
+tipos de mensaje y prioridades ya no tienen controladores ni rutas vigentes.
 
 | Método | Ruta | Acceso |
 | --- | --- | --- |
-| GET | `/api/conversationstatuses` | `Catálogos del Chat.View` |
-| GET | `/api/conversationstatuses/{id:guid}` | `Catálogos del Chat.View` |
-| POST | `/api/conversationstatuses` | `AdminOnly` |
-| PUT | `/api/conversationstatuses/{id:guid}` | `AdminOnly` |
-| DELETE | `/api/conversationstatuses/{id:guid}` | `AdminOnly` |
 | GET | `/api/escalationstatuses` | `Catálogos del Chat.View` |
 | GET | `/api/escalationstatuses/{id:guid}` | `Catálogos del Chat.View` |
 | POST | `/api/escalationstatuses` | `AdminOnly` |
 | PUT | `/api/escalationstatuses/{id:guid}` | `AdminOnly` |
 | DELETE | `/api/escalationstatuses/{id:guid}` | `AdminOnly` |
-| GET | `/api/messagetypes` | `Catálogos del Chat.View` |
-| GET | `/api/messagetypes/{id:guid}` | `Catálogos del Chat.View` |
-| POST | `/api/messagetypes` | `AdminOnly` |
-| PUT | `/api/messagetypes/{id:guid}` | `AdminOnly` |
-| DELETE | `/api/messagetypes/{id:guid}` | `AdminOnly` |
-| GET | `/api/priorities` | `Plataforma.View` |
-| GET | `/api/priorities/{id:guid}` | `Plataforma.View` |
-| POST | `/api/priorities` | `AdminOnly` |
-| PUT | `/api/priorities/{id:guid}` | `AdminOnly` |
-| DELETE | `/api/priorities/{id:guid}` | `AdminOnly` |
 | GET | `/api/sendertypes` | `Catálogos del Chat.View` |
 | GET | `/api/sendertypes/{id:guid}` | `Catálogos del Chat.View` |
 | POST | `/api/sendertypes` | `AdminOnly` |
@@ -336,8 +420,6 @@ identifica con `clientId` o `agentHumanId`, nunca con un perfil.
 | POST | `/api/chat/conversations` | `AdminOnly` |
 | GET | `/api/chat/conversations` | `Chat.View` |
 | GET | `/api/chat/conversations/{id:guid}` | `Chat.View` |
-| PATCH | `/api/chat/conversations/{id:guid}/status` | `Chat.Edit` |
-| PATCH | `/api/chat/conversations/{id:guid}/priority` | `Chat.Edit` |
 | PATCH | `/api/chat/conversations/{id:guid}/ai-enabled` | `Chat.Edit` |
 | PATCH | `/api/chat/conversations/{id:guid}/close` | `Chat.Edit` |
 | PATCH | `/api/chat/conversations/{id:guid}/reopen` | `Chat.Edit` |
