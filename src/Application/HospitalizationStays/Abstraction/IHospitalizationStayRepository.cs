@@ -15,6 +15,9 @@ public interface IHospitalizationStayRepository
     Task<IReadOnlyCollection<HospitalizationStay>> GetAllActiveAsync(
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<HospitalizationStay>> GetPendingPaymentAsync(
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<HospitalizationStay>> GetByClientPetIdAsync(
         Guid clientPetId,
         CancellationToken cancellationToken = default);

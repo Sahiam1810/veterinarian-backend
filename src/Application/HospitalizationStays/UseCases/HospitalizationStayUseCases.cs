@@ -28,6 +28,8 @@ public sealed record GetHospitalizationStayByIdQuery(Guid Id) : IRequest<ApiHosp
 
 public sealed record GetAllActiveHospitalizationStaysQuery : IRequest<IReadOnlyCollection<ApiHospitalizationStayDto>>;
 
+public sealed record GetPendingPaymentHospitalizationStaysQuery : IRequest<IReadOnlyCollection<ApiHospitalizationStayDto>>;
+
 public sealed record GetHospitalizationStaysByPetQuery(Guid ClientPetId) : IRequest<IReadOnlyCollection<ApiHospitalizationStayDto>>;
 
 public sealed record GetHospitalizationNotesByStayQuery(Guid StayId) : IRequest<IReadOnlyCollection<ApiHospitalizationNoteDto>>;
@@ -145,6 +147,11 @@ public sealed class RegisterHospitalizationStayPaymentCommandHandler(IUnitOfWork
             throw new ConflictException("La estancia ya está pagada.");
         }
 
+        if (stay.Estado != HospitalizationStayStatus.DadaDeAlta)
+        {
+            throw new ConflictException("La estancia debe estar dada de alta antes de registrar el pago.");
+        }
+
         stay.RegisterPayment();
         await unitOfWork.HospitalizationStaysRepository.UpdateAsync(stay, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -206,6 +213,22 @@ public sealed class GetAllActiveHospitalizationStaysQueryHandler(IUnitOfWork uni
         CancellationToken cancellationToken)
     {
         var stays = await unitOfWork.HospitalizationStaysRepository.GetAllActiveAsync(cancellationToken);
+        var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
+        var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
+        var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);
+
+        return stays.Select(s => s.ToDto(userDict.GetValueOrDefault(s.AdmittedByUserId))).ToList();
+    }
+}
+
+public sealed class GetPendingPaymentHospitalizationStaysQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetPendingPaymentHospitalizationStaysQuery, IReadOnlyCollection<ApiHospitalizationStayDto>>
+{
+    public async Task<IReadOnlyCollection<ApiHospitalizationStayDto>> Handle(
+        GetPendingPaymentHospitalizationStaysQuery request,
+        CancellationToken cancellationToken)
+    {
+        var stays = await unitOfWork.HospitalizationStaysRepository.GetPendingPaymentAsync(cancellationToken);
         var userIds = stays.Select(x => x.AdmittedByUserId).Distinct().ToList();
         var users = await unitOfWork.UsersRepository.GetByIdsAsync(userIds, cancellationToken);
         var userDict = users.GroupBy(u => u.Id).ToDictionary(g => g.Key, g => g.First().FullName);

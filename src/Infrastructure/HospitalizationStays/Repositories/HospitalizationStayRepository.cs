@@ -41,6 +41,17 @@ public sealed class HospitalizationStayRepository : IHospitalizationStayReposito
             .OrderBy(x => x.FechaIngreso)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<HospitalizationStay>> GetPendingPaymentAsync(CancellationToken cancellationToken = default)
+        => await _context.Set<HospitalizationStay>()
+            .AsNoTracking()
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Pet)
+            .Include(x => x.ClientPet!)
+                .ThenInclude(cp => cp.Client)
+            .Where(x => x.Estado == HospitalizationStayStatus.DadaDeAlta)
+            .OrderByDescending(x => x.FechaAlta)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyCollection<HospitalizationStay>> GetByClientPetIdAsync(Guid clientPetId, CancellationToken cancellationToken = default)
         => await _context.Set<HospitalizationStay>()
             .AsNoTracking()
