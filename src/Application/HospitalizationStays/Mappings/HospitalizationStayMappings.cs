@@ -39,7 +39,10 @@ public static class HospitalizationStayMappings
             note.StayId,
             note.AutorUserId,
             authorName,
-            note.FechaHora,
+            // Oracle TIMESTAMP no conserva DateTimeKind al leerlo. Las notas
+            // se almacenan en UTC, por lo que debemos conservar esa semántica
+            // para que el cliente las convierta a la zona horaria local.
+            DateTime.SpecifyKind(note.FechaHora, DateTimeKind.Utc),
             note.Nota,
             note.EntregadoAUserId,
             handedToName);
