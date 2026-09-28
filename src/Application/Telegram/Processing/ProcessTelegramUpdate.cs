@@ -42,12 +42,12 @@ public sealed class ProcessTelegramUpdateHandler(
         Guid.Parse("82000000-0000-0000-0000-000000000002");
 
     private const string EscalationConfirmedReply =
-        "Tu conversación está siendo atendida por un asesor.";
+        "Tu conversación está siendo atendida.";
     // Decisión 1 (Ticket B2): un invitado sin vincular nunca escala directamente.
     // Se le redirige al mismo flujo conversacional de identificación ya existente
     // (Ticket 3, en el chatbot) en vez de recolectar sus datos aquí.
     private const string GuestEscalationRedirectReply =
-        "Para conectarte con un asesor, primero cuéntame qué necesitas — por ejemplo, " +
+        "Para continuar, primero cuéntame qué necesitas — por ejemplo, " +
         "agendar una cita o registrar una mascota — así puedo identificarte.";
 
     // Coincidencia simple por substring, mismo criterio ya usado en el resto del
@@ -295,7 +295,7 @@ public sealed class ProcessTelegramUpdateHandler(
         var resumed = string.IsNullOrWhiteSpace(resumedMessage) ? null : resumedMessage.Trim();
         if (guest is null)
         {
-            return resumed ?? "Tu conversación está siendo atendida por un asesor.";
+            return resumed ?? EscalationConfirmedReply;
         }
 
         if (resumed is null)
@@ -449,7 +449,7 @@ public sealed class ProcessTelegramUpdateHandler(
 
     private static string ResponseText(AgentMessageResult result) =>
         string.IsNullOrWhiteSpace(result.Message)
-            ? "Tu conversación está siendo atendida por un asesor."
+            ? EscalationConfirmedReply
             : result.Message;
 
     private async Task<AgentConversationContext> ResolveConversationAsync(
