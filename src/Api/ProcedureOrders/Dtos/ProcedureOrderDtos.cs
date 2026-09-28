@@ -1,3 +1,5 @@
+using Application.Common.Models;
+
 namespace Api.ProcedureOrders.Dtos;
 
 public record ProcedureOrderItemDto(
@@ -50,3 +52,35 @@ public record PendingProcedureOrderDto(
     DateTime CreatedAt,
     List<ProcedureOrderItemDto> Items,
     Guid? HospitalizationStayId = null);
+
+public record ClinicalResultItemDto(
+    Guid Id,
+    Guid ProcedureId,
+    string? ProcedureName,
+    string? Notes,
+    decimal? UnitPrice);
+
+public record ClinicalResultDto(
+    Guid ProcedureOrderId,
+    Guid ClientPetId,
+    Guid? AppointmentId,
+    Guid? HospitalizationStayId,
+    string PetName,
+    string? Species,
+    string? Breed,
+    string OwnerName,
+    string? OwnerPhone,
+    string? ProcedureName,
+    string? Notes,
+    string Status,
+    DateTime RequestedAt,
+    DateTime? CompletedAt,
+    Guid VeterinarianId,
+    string? VeterinarianName,
+    decimal? UnitPrice,
+    string ResultFileUrl,
+    IReadOnlyCollection<ClinicalResultItemDto> Items);
+
+public record PaginatedClinicalResultResponse(
+    IReadOnlyCollection<ClinicalResultDto> Items,
+    PaginationMetadata Pagination);

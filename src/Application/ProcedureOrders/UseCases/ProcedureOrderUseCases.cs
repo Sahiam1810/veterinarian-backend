@@ -1,5 +1,6 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.Common.Models;
 using Application.MedicalOrders;
 using Application.Notifications.UseCases;
 using Domain.MedicalOrders;
@@ -32,6 +33,15 @@ public sealed record GetProcedureOrdersByAppointmentIdQuery(Guid AppointmentId) 
 public sealed record GetPendingProcedureOrdersQuery() : IRequest<IEnumerable<ProcedureOrder>>;
 
 public sealed record GetProcedureOrdersByHospitalizationStayIdQuery(Guid HospitalizationStayId) : IRequest<IEnumerable<ProcedureOrder>>;
+
+public sealed record GetClinicalResultsQuery(
+    string? Search = null,
+    Guid? VeterinarianId = null,
+    DateTime? From = null,
+    DateTime? To = null,
+    string? Status = null,
+    int Page = 1,
+    int PageSize = 20) : IRequest<PaginatedResult<ProcedureOrder>>;
 
 // Handlers
 public sealed class CreateProcedureOrderCommandHandler(IUnitOfWork unitOfWork)
@@ -176,6 +186,28 @@ public sealed class GetProcedureOrdersByHospitalizationStayIdQueryHandler(IUnitO
         return await unitOfWork.ProcedureOrdersRepository.GetByHospitalizationStayAsync(
             stay.Id,
             stay.AppointmentId,
+            cancellationToken);
+    }
+}
+
+public sealed class GetClinicalResultsQueryHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetClinicalResultsQuery, PaginatedResult<ProcedureOrder>>
+{
+    public async Task<PaginatedResult<ProcedureOrder>> Handle(
+        GetClinicalResultsQuery request,
+        CancellationToken cancellationToken)
+    {
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = request.PageSize < 1 ? 20 : Math.Min(request.PageSize, 100);
+
+        return await unitOfWork.ProcedureOrdersRepository.GetClinicalResultsAsync(
+            request.Search,
+            request.VeterinarianId,
+            request.From,
+            request.To,
+            request.Status,
+            page,
+            pageSize,
             cancellationToken);
     }
 }

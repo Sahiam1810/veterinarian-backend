@@ -1,4 +1,5 @@
 using Api.ProcedureOrders.Dtos;
+using Application.Common.Models;
 using Application.ProcedureOrders.UseCases;
 using Domain.ProcedureOrders.Entities;
 
@@ -72,5 +73,60 @@ public static class ProcedureOrderMappings
             order.CreatedAt,
             order.Items.Select(i => i.ToDto()).ToList(),
             order.HospitalizationStayId);
+    }
+
+    public static ClinicalResultDto ToClinicalResultDto(this ProcedureOrder order)
+    {
+        var firstItem = order.Items.FirstOrDefault();
+
+        return new ClinicalResultDto(
+            order.Id,
+            order.ClientPetId,
+            order.AppointmentId,
+            order.HospitalizationStayId,
+            order.ClientPet?.Pet?.Name?.Value ?? "Desconocida",
+            order.ClientPet?.Pet?.Species?.Name?.Value,
+            order.ClientPet?.Pet?.Race?.Name?.Value,
+            order.ClientPet?.Client?.FullName?.Value ?? "Desconocido",
+            order.ClientPet?.Client?.PhoneNumber?.Value,
+            firstItem?.Procedure?.Name,
+            firstItem?.Notes,
+            GetClinicalResultStatus(order),
+            order.CreatedAt,
+            order.UpdatedAt,
+            order.VeterinarianId,
+            order.Veterinarian?.User?.FullName,
+            firstItem?.UnitPrice,
+            order.ResultFileUrl ?? string.Empty,
+            order.Items.Select(item => new ClinicalResultItemDto(
+                item.Id,
+                item.ProcedureId,
+                item.Procedure?.Name,
+                item.Notes,
+                item.UnitPrice)).ToArray());
+    }
+
+    private static string GetClinicalResultStatus(ProcedureOrder order)
+    {
+        if (string.Equals(order.Status, ProcedureOrder.CompletedStatus, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(order.ResultFileUrl))
+        {
+            return "COMPLETED_WITH_RESULT";
+        }
+
+        if (string.Equals(order.Status, ProcedureOrder.CompletedStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return "COMPLETED_WITHOUT_RESULT";
+        }
+
+        return "PENDING";
+    }
+
+    public static PaginatedClinicalResultResponse ToClinicalResultResponse(
+        this PaginatedResult<ProcedureOrder> result)
+    {
+        return new PaginatedClinicalResultResponse(
+            result.Items.Select(item => item.ToClinicalResultDto()).ToArray(),
+            result.Pagination);
     }
 }

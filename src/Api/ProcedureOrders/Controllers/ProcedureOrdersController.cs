@@ -98,6 +98,27 @@ public sealed class ProcedureOrdersController(ISender sender) : ControllerBase
         return Ok(result.Select(x => x.ToPendingDto()));
     }
 
+    [HttpGet("/api/clinical-results")]
+    [RequirePermission("Órdenes Médicas", PermissionAction.View)]
+    [EndpointSummary("Obtiene los resultados clínicos disponibles de procedimientos")]
+    [ProducesResponseType(typeof(PaginatedClinicalResultResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedClinicalResultResponse>> GetClinicalResults(
+        [FromQuery] string? search,
+        [FromQuery] Guid? veterinarianId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(
+            new GetClinicalResultsQuery(search, veterinarianId, from, to, status, page, pageSize),
+            cancellationToken);
+
+        return Ok(result.ToClinicalResultResponse());
+    }
+
     // Con MapInboundClaims=false el subject queda como "sub".
     private bool TryGetActorUserId(out Guid actorUserId)
     {
