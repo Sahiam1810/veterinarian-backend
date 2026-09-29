@@ -13,6 +13,7 @@ using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
+using Domain.Services.Entities;
 using Domain.Species.Entities;
 using Domain.StatusAppointments.Entities;
 using NSubstitute;
@@ -29,6 +30,7 @@ public sealed class UpdateAppointmentCommandHandlerTests
     private static readonly Guid ClientPetId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid VeterinarianId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid ServiceId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    private static readonly Guid FortyFiveMinuteServiceId = Guid.Parse("66666666-6666-6666-6666-666666666666");
     private static readonly Guid AvailabilityId = Guid.Parse("55555555-5555-5555-5555-555555555555");
     private static readonly DateTime MondaySlotStartUtc =
         new(2026, 9, 7, 14, 0, 0, DateTimeKind.Utc);
@@ -64,6 +66,10 @@ public sealed class UpdateAppointmentCommandHandlerTests
         unitOfWork.ClientPetsRepository.Returns(clientPetsRepository);
         unitOfWork.ClientsRepository.Returns(clientsRepository);
         unitOfWork.StatusAppointmentsRepository.Returns(statusAppointmentsRepository);
+        unitOfWork.ServicesRepository.GetByIdAsync(ServiceId, Arg.Any<CancellationToken>())
+            .Returns(new Service(Guid.NewGuid(), "Consulta extendida", 60, 70000m));
+        unitOfWork.ServicesRepository.GetByIdAsync(FortyFiveMinuteServiceId, Arg.Any<CancellationToken>())
+            .Returns(new Service(Guid.NewGuid(), "Vacunacion", 45, 40000m));
         statusAppointmentsRepository.GetByIdAsync(OriginalStatusId, Arg.Any<CancellationToken>())
             .Returns(CreateStatus("AGENDADA", OriginalStatusId));
         clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>())
@@ -133,6 +139,132 @@ public sealed class UpdateAppointmentCommandHandlerTests
             command.ScheduledEnd,
             AppointmentId,
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_recalculates_end_from_new_service_when_service_changes()
+    {
+        var appointment = new Appointment(
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            OriginalStatusId,
+            AvailabilityId,
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
+            "notas");
+        appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(appointment);
+
+        // El cliente reenvia el fin anterior (60 min); el nuevo servicio dura 45.
+        var command = new UpdateAppointmentCommand(
+            AppointmentId,
+            ClientPetId,
+            VeterinarianId,
+            FortyFiveMinuteServiceId,
+            RequestedStatusId,
+            AvailabilityId,
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
+            "cambio de servicio");
+
+        await sut.Handle(command, CancellationToken.None);
+
+        var expectedEnd = MondaySlotStartUtc.AddMinutes(45);
+        Assert.Equal(FortyFiveMinuteServiceId, appointment.ServiceId);
+        Assert.Equal(expectedEnd, appointment.ScheduledEnd);
+        await appointmentsRepository.Received(1).HasOverlappingAppointmentAsync(
+            ClientPetId,
+            VeterinarianId,
+            MondaySlotStartUtc,
+            expectedEnd,
+            AppointmentId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_recalculates_end_from_service_when_start_or_date_changes()
+    {
+        var appointment = new Appointment(
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            OriginalStatusId,
+            AvailabilityId,
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
+            "notas");
+        appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(appointment);
+
+        // Otro lunes, 30 min mas tarde, con un fin inconsistente de 15 min.
+        var newStart = MondaySlotStartUtc.AddDays(7).AddMinutes(30);
+        var command = new UpdateAppointmentCommand(
+            AppointmentId,
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            RequestedStatusId,
+            AvailabilityId,
+            newStart,
+            newStart.AddMinutes(15),
+            "reprogramada");
+
+        await sut.Handle(command, CancellationToken.None);
+
+        var expectedEnd = newStart.AddMinutes(60);
+        Assert.Equal(newStart, appointment.ScheduledStart);
+        Assert.Equal(expectedEnd, appointment.ScheduledEnd);
+        await appointmentsRepository.Received(1).HasOverlappingAppointmentAsync(
+            ClientPetId,
+            VeterinarianId,
+            newStart,
+            expectedEnd,
+            AppointmentId,
+            Arg.Any<CancellationToken>());
+        await appointmentsRepository.DidNotReceive().HasOverlappingAppointmentAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<DateTime>(),
+            newStart.AddMinutes(15),
+            Arg.Any<Guid?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_service_without_valid_duration()
+    {
+        var invalidServiceId = Guid.NewGuid();
+        unitOfWork.ServicesRepository.GetByIdAsync(invalidServiceId, Arg.Any<CancellationToken>())
+            .Returns(new Service(Guid.NewGuid(), "Mal configurado", 0, 1000m));
+        var appointment = new Appointment(
+            ClientPetId,
+            VeterinarianId,
+            ServiceId,
+            OriginalStatusId,
+            AvailabilityId,
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
+            "notas");
+        appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(appointment);
+        var command = new UpdateAppointmentCommand(
+            AppointmentId,
+            ClientPetId,
+            VeterinarianId,
+            invalidServiceId,
+            RequestedStatusId,
+            AvailabilityId,
+            MondaySlotStartUtc,
+            MondaySlotEndUtc,
+            "servicio invalido");
+
+        var ex = await Assert.ThrowsAsync<BadRequestException>(
+            () => sut.Handle(command, CancellationToken.None));
+
+        Assert.Equal("El servicio no tiene una duración válida configurada.", ex.Message);
+        await appointmentsRepository.DidNotReceive()
+            .UpdateAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

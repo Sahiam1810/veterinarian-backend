@@ -108,6 +108,8 @@ public sealed class AppointmentRequesterPhonePolicyTests
         unitOfWork.ClientPetsRepository.Returns(clientPets);
         unitOfWork.ClientsRepository.Returns(clients);
         unitOfWork.StatusAppointmentsRepository.Returns(statuses);
+        unitOfWork.ServicesRepository.GetByIdAsync(appointment.ServiceId, Arg.Any<CancellationToken>())
+            .Returns(new Domain.Services.Entities.Service(Guid.NewGuid(), "Consulta general", 30, 50000m));
         statuses.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new StatusAppointment("AGENDADA", null));
         appointments.GetByIdAsync(appointment.Id, Arg.Any<CancellationToken>()).Returns(appointment);

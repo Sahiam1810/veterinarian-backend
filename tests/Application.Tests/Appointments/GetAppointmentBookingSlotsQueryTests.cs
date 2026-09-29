@@ -68,6 +68,36 @@ public sealed class GetAppointmentBookingSlotsQueryTests
         Assert.All(result, slot => Assert.Equal(fixture.Availability.Id, slot.AvailabilityId));
     }
 
+    [Fact]
+    public async Task Handle_sizes_slots_by_60_minute_service_not_by_30_minute_availability_slot()
+    {
+        var fixture = ConfigureBookingData();
+        var longService = new Service(Guid.NewGuid(), "Consulta extendida", 60, 70000m);
+        unitOfWork.ServicesRepository.GetByIdAsync(longService.Id, Arg.Any<CancellationToken>())
+            .Returns(longService);
+        // Cita de 30 min a las 15:30: invade el hueco de 60 min que empezaria a las 15:00.
+        var occupied = new Appointment(
+            Guid.NewGuid(), fixture.Veterinarian.Id, fixture.Service.Id, Guid.NewGuid(),
+            fixture.Availability.Id,
+            new DateTime(2026, 9, 3, 15, 30, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 3, 16, 0, 0, DateTimeKind.Utc), null);
+        unitOfWork.AppointmentsRepository.GetScheduledOverlapsAsync(
+                fixture.Veterinarian.Id, Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new[] { occupied });
+
+        var result = await Handler().Handle(
+            new GetAppointmentBookingSlotsQuery(
+                fixture.ClientId, fixture.Veterinarian.Id, longService.Id,
+                new DateOnly(2026, 9, 3)),
+            CancellationToken.None);
+
+        Assert.Equal(30, fixture.Availability.SlotDurationMinutes);
+        var slot = Assert.Single(result);
+        Assert.Equal(new DateTime(2026, 9, 3, 16, 0, 0, DateTimeKind.Utc), slot.ScheduledStartUtc);
+        Assert.Equal(new DateTime(2026, 9, 3, 17, 0, 0, DateTimeKind.Utc), slot.ScheduledEndUtc);
+    }
+
     [Theory]
     [InlineData("2026-09-02")]
     [InlineData("2026-10-04")]

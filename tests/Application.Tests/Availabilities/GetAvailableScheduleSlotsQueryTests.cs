@@ -43,6 +43,80 @@ public sealed class GetAvailableScheduleSlotsQueryTests
         Assert.All(result, slot => Assert.Equal(fixture.Availability.Id, slot.AvailabilityId));
     }
 
+    [Fact]
+    public async Task Handle_uses_60_minute_service_duration_over_30_minute_availability_slot()
+    {
+        var fixture = ConfigureScheduleData();
+        var service = RegisterService(60);
+
+        var result = await Handler().Handle(
+            new GetAvailableScheduleSlotsQuery(fixture.Veterinarian.Id, new DateOnly(2026, 9, 3), service.Id),
+            CancellationToken.None);
+
+        Assert.Equal(30, fixture.Availability.SlotDurationMinutes);
+        Assert.Equal(
+            new[]
+            {
+                new DateTime(2026, 9, 3, 14, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 3, 16, 0, 0, DateTimeKind.Utc),
+            },
+            result.Select(slot => slot.ScheduledStartUtc));
+        Assert.All(result, slot =>
+            Assert.Equal(slot.ScheduledStartUtc.AddMinutes(60), slot.ScheduledEndUtc));
+    }
+
+    [Fact]
+    public async Task Handle_uses_45_minute_service_duration_over_30_minute_availability_slot()
+    {
+        var fixture = ConfigureScheduleData();
+        var service = RegisterService(45);
+
+        var result = await Handler().Handle(
+            new GetAvailableScheduleSlotsQuery(fixture.Veterinarian.Id, new DateOnly(2026, 9, 3), service.Id),
+            CancellationToken.None);
+
+        Assert.Equal(
+            new[]
+            {
+                new DateTime(2026, 9, 3, 14, 0, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 3, 14, 45, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 3, 15, 30, 0, DateTimeKind.Utc),
+                new DateTime(2026, 9, 3, 16, 15, 0, DateTimeKind.Utc),
+            },
+            result.Select(slot => slot.ScheduledStartUtc));
+        Assert.All(result, slot =>
+            Assert.Equal(slot.ScheduledStartUtc.AddMinutes(45), slot.ScheduledEndUtc));
+    }
+
+    [Fact]
+    public async Task Handle_excludes_start_30_minutes_after_an_existing_60_minute_appointment()
+    {
+        var fixture = ConfigureScheduleData();
+        var occupied = new Appointment(
+            Guid.NewGuid(),
+            fixture.Veterinarian.Id,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            fixture.Availability.Id,
+            new DateTime(2026, 9, 3, 14, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc),
+            null);
+        unitOfWork.AppointmentsRepository.GetScheduledOverlapsAsync(
+                fixture.Veterinarian.Id, Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new[] { occupied });
+
+        var result = await Handler().Handle(
+            new GetAvailableScheduleSlotsQuery(fixture.Veterinarian.Id, new DateOnly(2026, 9, 3)),
+            CancellationToken.None);
+
+        var starts = result.Select(slot => slot.ScheduledStartUtc).ToArray();
+        Assert.DoesNotContain(new DateTime(2026, 9, 3, 14, 0, 0, DateTimeKind.Utc), starts);
+        Assert.DoesNotContain(new DateTime(2026, 9, 3, 14, 30, 0, DateTimeKind.Utc), starts);
+        Assert.Equal(new DateTime(2026, 9, 3, 15, 0, 0, DateTimeKind.Utc), starts.First());
+    }
+
     [Theory]
     [InlineData("2026-09-02")]
     [InlineData("2027-09-04")]
@@ -55,6 +129,14 @@ public sealed class GetAvailableScheduleSlotsQueryTests
             CancellationToken.None);
 
         await Assert.ThrowsAnyAsync<Exception>(action);
+    }
+
+    private Service RegisterService(int durationMinutes)
+    {
+        var service = new Service(Guid.NewGuid(), $"Servicio {durationMinutes}", durationMinutes, 50000m);
+        unitOfWork.ServicesRepository.GetByIdAsync(service.Id, Arg.Any<CancellationToken>())
+            .Returns(service);
+        return service;
     }
 
     private GetAvailableScheduleSlotsQueryHandler Handler() =>

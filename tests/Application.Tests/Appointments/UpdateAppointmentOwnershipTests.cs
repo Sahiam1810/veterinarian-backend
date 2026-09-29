@@ -13,6 +13,7 @@ using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
+using Domain.Services.Entities;
 using Domain.Species.Entities;
 using Domain.Common;
 using Domain.Veterinarians.Entities;
@@ -69,6 +70,8 @@ public sealed class UpdateAppointmentOwnershipTests
         unitOfWork.ClientPetsRepository.Returns(clientPetsRepository);
         unitOfWork.ClientsRepository.Returns(clientsRepository);
         unitOfWork.StatusAppointmentsRepository.Returns(statusAppointmentsRepository);
+        unitOfWork.ServicesRepository.GetByIdAsync(ServiceId, Arg.Any<CancellationToken>())
+            .Returns(new Service(Guid.NewGuid(), "Consulta extendida", 60, 70000m));
         statusAppointmentsRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new StatusAppointment("AGENDADA", null));
         clientPetsRepository.GetByIdAsync(ClientPetId, Arg.Any<CancellationToken>()).Returns(clientPet);

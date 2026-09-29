@@ -25,13 +25,6 @@ public sealed class QuickBookingAppointmentCommandValidator : AbstractValidator<
         RuleFor(command => command.ScheduledStart)
             .NotEmpty().WithMessage("La fecha y hora de inicio es obligatoria.");
 
-        When(command => command.ScheduledEnd.HasValue, () =>
-        {
-            RuleFor(command => command.ScheduledEnd)
-                .GreaterThan(command => command.ScheduledStart)
-                .WithMessage("La fecha de finalizacion debe ser posterior al inicio.");
-        });
-
         When(command => !command.ClientId.HasValue || command.ClientId.Value == Guid.Empty, () =>
         {
             RuleFor(command => command.ClientPhoneNumber)

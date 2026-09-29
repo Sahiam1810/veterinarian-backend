@@ -108,6 +108,96 @@ public sealed class QuickBookingAppointmentCommandHandlerTests
     }
 
     [Fact]
+    public async Task QuickBooking_Ignores_Received_ScheduledEnd_And_Uses_Service_Duration()
+    {
+        var serviceId = Guid.NewGuid();
+        var vetId = Guid.NewGuid();
+        var speciesId = Guid.NewGuid();
+
+        _unitOfWork.ServicesRepository.GetByIdAsync(serviceId, Arg.Any<CancellationToken>())
+            .Returns(new Service(Guid.NewGuid(), "Cirugia menor", 60, 90000m, true));
+        _unitOfWork.ClientsRepository.GetByPhoneAsync("3001234567", Arg.Any<CancellationToken>())
+            .Returns((ClientEntity?)null);
+        _unitOfWork.SpeciesRepository.GetByIdAsync(speciesId, Arg.Any<CancellationToken>())
+            .Returns(new SpeciesEntity("Canino"));
+
+        // Franja generica de 30 min: no debe decidir el fin de una cita con servicio.
+        var availability = new Availability(
+            vetId,
+            DayOfWeek.Monday,
+            new TimeOnly(8, 0),
+            new TimeOnly(18, 0),
+            true,
+            slotDurationMinutes: 30);
+        _unitOfWork.AvailabilitiesRepository.LockByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(availability);
+        _unitOfWork.AvailabilitiesRepository.GetAllByVeterinarianIdAsync(vetId, Arg.Any<CancellationToken>())
+            .Returns(new[] { availability });
+        _unitOfWork.StatusAppointmentsRepository.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(new[] { new StatusAppointment("AGENDADA", "Agendada") });
+
+        Appointment? capturedAppointment = null;
+        await _unitOfWork.AppointmentsRepository.AddAsync(Arg.Do<Appointment>(a => capturedAppointment = a), Arg.Any<CancellationToken>());
+
+        var handler = new QuickBookingAppointmentCommandHandler(_unitOfWork, _absences, _timeProvider);
+
+        var start = DateTime.UtcNow.Date.AddDays(((int)DayOfWeek.Monday - (int)DateTime.UtcNow.DayOfWeek + 7) % 7 + 7).AddHours(15);
+        var command = new QuickBookingAppointmentCommand(
+            ClientId: null,
+            ClientPhoneNumber: "3001234567",
+            ClientFullName: "Carlos Pérez",
+            PetName: "Fido",
+            SpeciesId: speciesId,
+            ServiceId: serviceId,
+            VeterinarianId: vetId,
+            ScheduledStart: start,
+            ScheduledEnd: start.AddMinutes(30));
+
+        await handler.Handle(command, CancellationToken.None);
+
+        var expectedEnd = start.AddMinutes(60);
+        Assert.NotNull(capturedAppointment);
+        Assert.Equal(start, capturedAppointment!.ScheduledStart);
+        Assert.Equal(expectedEnd, capturedAppointment.ScheduledEnd);
+        await _unitOfWork.AppointmentsRepository.Received(1).HasOverlappingAppointmentAsync(
+            Arg.Any<Guid>(),
+            vetId,
+            start,
+            expectedEnd,
+            null,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-30)]
+    public async Task QuickBooking_Rejects_Service_Without_Valid_Duration(int durationMinutes)
+    {
+        var serviceId = Guid.NewGuid();
+        _unitOfWork.ServicesRepository.GetByIdAsync(serviceId, Arg.Any<CancellationToken>())
+            .Returns(new Service(Guid.NewGuid(), "Mal configurado", durationMinutes, 1000m, true));
+        var handler = new QuickBookingAppointmentCommandHandler(_unitOfWork, _absences, _timeProvider);
+        var start = DateTime.UtcNow.Date.AddDays(7).AddHours(15);
+        var command = new QuickBookingAppointmentCommand(
+            ClientId: null,
+            ClientPhoneNumber: "3001234567",
+            ClientFullName: "Carlos Pérez",
+            PetName: "Fido",
+            SpeciesId: Guid.NewGuid(),
+            ServiceId: serviceId,
+            VeterinarianId: Guid.NewGuid(),
+            ScheduledStart: start,
+            ScheduledEnd: start.AddMinutes(30));
+
+        var ex = await Assert.ThrowsAsync<BadRequestException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        Assert.Equal("El servicio no tiene una duración válida configurada.", ex.Message);
+        await _unitOfWork.DidNotReceive().ExecuteInTransactionAsync(
+            Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task RequestClaimEmailByIdentification_Throws_EmailMissing_When_Client_Has_No_Email()
     {
         // Arrange
@@ -127,7 +217,7 @@ public sealed class QuickBookingAppointmentCommandHandlerTests
     }
 
     [Fact]
-    public void Validator_Rejects_Client_Source_Mixing_And_Invalid_End_Time()
+    public void Validator_Rejects_Client_Source_Mixing_But_Not_Received_End_Time()
     {
         var validator = new QuickBookingAppointmentCommandValidator();
         var command = new QuickBookingAppointmentCommand(
@@ -145,6 +235,6 @@ public sealed class QuickBookingAppointmentCommandHandlerTests
 
         Assert.Contains(result.Errors, error => error.PropertyName == nameof(command.ClientPhoneNumber));
         Assert.Contains(result.Errors, error => error.PropertyName == nameof(command.ClientFullName));
-        Assert.Contains(result.Errors, error => error.PropertyName == nameof(command.ScheduledEnd));
+        Assert.DoesNotContain(result.Errors, error => error.PropertyName == nameof(command.ScheduledEnd));
     }
 }

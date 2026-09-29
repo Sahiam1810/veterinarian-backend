@@ -45,19 +45,26 @@ public sealed class UpdateAppointmentCommandHandler(
                 "No se puede reprogramar una cita que ya fue atendida, cancelada o marcada como no asistida.");
         }
 
+        var service = await unitOfWork.ServicesRepository.GetByIdAsync(
+            request.ServiceId,
+            cancellationToken)
+            ?? throw new NotFoundException("Servicio no encontrado.");
+
         // No reasignar a un servicio inactivo (las citas que ya lo tenían se conservan).
-        if (request.ServiceId != appointment.ServiceId)
+        if (request.ServiceId != appointment.ServiceId && !service.IsActive)
         {
-            var service = await unitOfWork.ServicesRepository.GetByIdAsync(
-                request.ServiceId,
-                cancellationToken)
-                ?? throw new NotFoundException("Servicio no encontrado.");
-            if (!service.IsActive)
-            {
-                throw new BadRequestException(
-                    "El servicio no está disponible para citas nuevas.");
-            }
+            throw new BadRequestException(
+                "El servicio no está disponible para citas nuevas.");
         }
+
+        if (service.DurationMinutes <= 0)
+        {
+            throw new BadRequestException(
+                "El servicio no tiene una duración válida configurada.");
+        }
+
+        // La duracion del servicio manda: el ScheduledEnd recibido se ignora.
+        var expectedEnd = request.ScheduledStart.AddMinutes(service.DurationMinutes);
 
         // Sin campo phone en el comando: si el dueño tiene telefono en perfil, realinear.
         var requesterPhone = await AppointmentRequesterPhonePolicy.ResolveAsync(
@@ -76,7 +83,7 @@ public sealed class UpdateAppointmentCommandHandler(
                 request.ClientPetId,
                 request.VeterinarianId,
                 request.ScheduledStart,
-                request.ScheduledEnd,
+                expectedEnd,
                 request.Id,
                 request.ConsultingRoom,
                 transactionCancellationToken);
@@ -88,7 +95,7 @@ public sealed class UpdateAppointmentCommandHandler(
                 appointment.StatusId,
                 request.AvailabilityId,
                 request.ScheduledStart,
-                request.ScheduledEnd,
+                expectedEnd,
                 request.Notes,
                 request.ConsultingRoom ?? locked.ConsultingRoom);
 

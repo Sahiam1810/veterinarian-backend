@@ -35,7 +35,13 @@ public sealed class QuickBookingAppointmentCommandHandler(
             throw new BadRequestException("El servicio no está disponible para citas nuevas.");
         }
 
-        var scheduledEnd = request.ScheduledEnd ?? request.ScheduledStart.AddMinutes(service.DurationMinutes);
+        if (service.DurationMinutes <= 0)
+        {
+            throw new BadRequestException("El servicio no tiene una duración válida configurada.");
+        }
+
+        // La duracion del servicio manda: el ScheduledEnd recibido se ignora.
+        var scheduledEnd = request.ScheduledStart.AddMinutes(service.DurationMinutes);
 
         Guid appointmentId = default;
 

@@ -38,6 +38,15 @@ public sealed class CreateAppointmentCommandHandler(
                 "El servicio no está disponible para citas nuevas.");
         }
 
+        if (service.DurationMinutes <= 0)
+        {
+            throw new BadRequestException(
+                "El servicio no tiene una duración válida configurada.");
+        }
+
+        // La duracion del servicio manda: el ScheduledEnd recibido se ignora.
+        var expectedEnd = request.ScheduledStart.AddMinutes(service.DurationMinutes);
+
         Guid appointmentId = default;
         await unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
@@ -48,7 +57,7 @@ public sealed class CreateAppointmentCommandHandler(
                 request.ClientPetId,
                 request.VeterinarianId,
                 request.ScheduledStart,
-                request.ScheduledEnd,
+                expectedEnd,
                 excludeAppointmentId: null,
                 request.ConsultingRoom,
                 transactionCancellationToken);
@@ -60,7 +69,7 @@ public sealed class CreateAppointmentCommandHandler(
                 request.StatusId,
                 request.AvailabilityId,
                 request.ScheduledStart,
-                request.ScheduledEnd,
+                expectedEnd,
                 request.Notes,
                 requesterPhone,
                 consultingRoom: request.ConsultingRoom ?? locked.ConsultingRoom);

@@ -29,11 +29,6 @@ public sealed class UpdateAppointmentCommandValidator : AbstractValidator<Update
         RuleFor(x => x.ScheduledStart)
             .NotEmpty().WithMessage("La fecha de inicio es requerida.");
 
-        RuleFor(x => x.ScheduledEnd)
-            .NotEmpty().WithMessage("La fecha de fin es requerida.")
-            .GreaterThan(x => x.ScheduledStart)
-            .WithMessage("La fecha de fin debe ser posterior a la fecha de inicio.");
-
         RuleFor(x => x.Notes)
             .MaximumLength(500).WithMessage("Las notas no pueden exceder 500 caracteres.");
 
@@ -43,13 +38,24 @@ public sealed class UpdateAppointmentCommandValidator : AbstractValidator<Update
 
         RuleFor(x => x)
             .MustAsync(async (command, cancellationToken) =>
-                !await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
+            {
+                // Sin servicio o sin duración válida no hay fin calculable; el handler lo rechaza.
+                var service = await unitOfWork.ServicesRepository.GetByIdAsync(
+                    command.ServiceId,
+                    cancellationToken);
+                if (service is null || service.DurationMinutes <= 0)
+                {
+                    return true;
+                }
+
+                return !await unitOfWork.AppointmentsRepository.HasOverlappingAppointmentAsync(
                     command.ClientPetId,
                     command.VeterinarianId,
                     command.ScheduledStart,
-                    command.ScheduledEnd,
+                    command.ScheduledStart.AddMinutes(service.DurationMinutes),
                     excludeAppointmentId: command.Id,
-                    cancellationToken: cancellationToken))
+                    cancellationToken: cancellationToken);
+            })
             .WithMessage("Ya existe otra cita agendada para la mascota o el veterinario en el horario seleccionado.");
     }
 }
