@@ -1,8 +1,11 @@
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
+using Application.Pets.Abstraction;
 using Application.Races.Abstraction;
 using Application.Races.UseCases;
 using Application.Species.Abstraction;
+using Application.Species.UseCases;
+using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
 using NSubstitute;
@@ -76,6 +79,66 @@ public sealed class RaceUseCaseTests
 
         Assert.Equal(cat.Id, race.SpeciesId);
         await races.Received(1).UpdateAsync(race, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Delete_rejects_a_race_assigned_to_pets_without_deleting_anything()
+    {
+        var race = new RaceEntity("Mestizo", new SpeciesEntity("Perro"));
+        var uow = CreateUnitOfWork(out var races, out _);
+        var pets = UsePets(uow);
+        races.GetByIdAsync(race.Id, Arg.Any<CancellationToken>()).Returns(race);
+        pets.ExistsByRaceIdAsync(race.Id, Arg.Any<CancellationToken>()).Returns(true);
+
+        var error = await Assert.ThrowsAsync<ConflictException>(() => new DeleteRaceCommandHandler(uow)
+            .Handle(new DeleteRaceCommand(race.Id), CancellationToken.None));
+
+        Assert.Equal("La raza está asignada a mascotas y no puede eliminarse.", error.Message);
+        await races.DidNotReceive().DeleteAsync(Arg.Any<RaceEntity>(), Arg.Any<CancellationToken>());
+        await uow.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await pets.DidNotReceive().UpdateAsync(Arg.Any<PetEntity>(), Arg.Any<CancellationToken>());
+        await pets.DidNotReceive().DeleteAsync(Arg.Any<PetEntity>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Delete_removes_a_race_without_pets()
+    {
+        var race = new RaceEntity("Mestizo", new SpeciesEntity("Perro"));
+        var uow = CreateUnitOfWork(out var races, out _);
+        var pets = UsePets(uow);
+        races.GetByIdAsync(race.Id, Arg.Any<CancellationToken>()).Returns(race);
+        pets.ExistsByRaceIdAsync(race.Id, Arg.Any<CancellationToken>()).Returns(false);
+
+        await new DeleteRaceCommandHandler(uow)
+            .Handle(new DeleteRaceCommand(race.Id), CancellationToken.None);
+
+        await races.Received(1).DeleteAsync(race, Arg.Any<CancellationToken>());
+        await uow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await pets.DidNotReceive().UpdateAsync(Arg.Any<PetEntity>(), Arg.Any<CancellationToken>());
+        await pets.DidNotReceive().DeleteAsync(Arg.Any<PetEntity>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Delete_species_with_races_keeps_its_conflict_message()
+    {
+        var dog = new SpeciesEntity("Perro");
+        var uow = CreateUnitOfWork(out var races, out var species);
+        species.GetByIdAsync(dog.Id, Arg.Any<CancellationToken>()).Returns(dog);
+        races.GetAllAsync(dog.Id, Arg.Any<CancellationToken>())
+            .Returns(new[] { new RaceEntity("Mestizo", dog) });
+
+        var error = await Assert.ThrowsAsync<ConflictException>(() => new DeleteSpeciesCommandHandler(uow)
+            .Handle(new DeleteSpeciesCommand(dog.Id), CancellationToken.None));
+
+        Assert.Equal("La especie tiene razas asociadas. Elimina las razas primero.", error.Message);
+        await species.DidNotReceive().DeleteAsync(Arg.Any<SpeciesEntity>(), Arg.Any<CancellationToken>());
+    }
+
+    private static IPetRepository UsePets(IUnitOfWork uow)
+    {
+        var pets = Substitute.For<IPetRepository>();
+        uow.PetsRepository.Returns(pets);
+        return pets;
     }
 
     private static IUnitOfWork CreateUnitOfWork(
