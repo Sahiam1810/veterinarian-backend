@@ -33,6 +33,12 @@ public sealed class CreateUserCommandHandler
                 "El rol SuperAdmin solo se asigna mediante el flujo seguro de aprovisionamiento.");
         }
 
+        if (request.RoleId == SystemRoles.ClientRoleId)
+        {
+            throw new BadRequestException(
+                "El rol Cliente no se puede asignar desde Usuarios.");
+        }
+
         var role = await _uow.RolesRepository.GetByIdAsync(
             request.RoleId,
             cancellationToken);

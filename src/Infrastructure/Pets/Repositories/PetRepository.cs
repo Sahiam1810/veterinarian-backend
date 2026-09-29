@@ -37,6 +37,13 @@ public sealed class PetRepository : IPetRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<bool> ExistsByRaceIdAsync(Guid raceId, CancellationToken cancellationToken)
+    {
+        return await _context.Set<PetEntity>()
+            .AsNoTracking()
+            .AnyAsync(p => p.RaceId == raceId, cancellationToken);
+    }
+
     public async Task AddAsync(PetEntity pet, CancellationToken cancellationToken)
     {
         await _context.Set<PetEntity>().AddAsync(pet, cancellationToken);

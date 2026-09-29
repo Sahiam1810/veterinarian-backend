@@ -15,6 +15,10 @@ public interface IPetRepository
         IReadOnlyCollection<Guid> ids,
         CancellationToken cancellationToken);
 
+    Task<bool> ExistsByRaceIdAsync(
+        Guid raceId,
+        CancellationToken cancellationToken);
+
     Task AddAsync(
         PetEntity pet,
         CancellationToken cancellationToken);

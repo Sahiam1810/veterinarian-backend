@@ -24,6 +24,11 @@ public sealed class DeleteRaceCommandHandler : IRequestHandler<DeleteRaceCommand
             throw new NotFoundException("Raza no encontrada.");
         }
 
+        if (await _uow.PetsRepository.ExistsByRaceIdAsync(race.Id, cancellationToken))
+        {
+            throw new ConflictException("La raza está asignada a mascotas y no puede eliminarse.");
+        }
+
         await _uow.RacesRepository.DeleteAsync(race, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
     }
