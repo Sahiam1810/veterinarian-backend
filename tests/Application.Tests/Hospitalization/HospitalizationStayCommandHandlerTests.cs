@@ -256,6 +256,7 @@ public sealed class HospitalizationStayCommandHandlerTests
     public async Task HOSPITALIZATION_T11_register_payment_success()
     {
         var stay = new HospitalizationStay(ClientPetId, null, AdmittingUserId, "Observación");
+        stay.Discharge();
         staysRepository.GetByIdAsync(stay.Id, Arg.Any<CancellationToken>())
             .Returns(stay);
 
