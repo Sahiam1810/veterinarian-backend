@@ -14,10 +14,12 @@ public sealed class ChatParticipantConfiguration : IEntityTypeConfiguration<Chat
     {
         builder.ToTable("CHAT_PARTICIPANTS", table =>
         {
-            // Exactamente una identidad: cliente o agente humano.
+            // Exactamente una identidad: cliente, agente humano o invitado Telegram.
             table.HasCheckConstraint(
                 "CK_CHAT_PARTICIPANTS_ONE_IDENTITY",
-                "(\"CLIENT_ID\" IS NOT NULL AND \"AGENT_HUMAN_ID\" IS NULL) OR (\"CLIENT_ID\" IS NULL AND \"AGENT_HUMAN_ID\" IS NOT NULL)");
+                "(\"CLIENT_ID\" IS NOT NULL AND \"AGENT_HUMAN_ID\" IS NULL AND \"TELEGRAM_USER_ID\" IS NULL) OR " +
+                "(\"CLIENT_ID\" IS NULL AND \"AGENT_HUMAN_ID\" IS NOT NULL AND \"TELEGRAM_USER_ID\" IS NULL) OR " +
+                "(\"CLIENT_ID\" IS NULL AND \"AGENT_HUMAN_ID\" IS NULL AND \"TELEGRAM_USER_ID\" IS NOT NULL)");
         });
 
         builder.HasKey(participant => participant.Id);
@@ -101,6 +103,14 @@ public sealed class ChatParticipantConfiguration : IEntityTypeConfiguration<Chat
             .HasForeignKey(participant => participant.AgentHumanId)
             .HasConstraintName("FK_CHAT_PARTICIPANTS_AGENT_HUMANS_AGENT_HUMAN_ID")
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(participant => participant.TelegramUserId)
+            .HasColumnName("TELEGRAM_USER_ID")
+            .HasColumnType("NUMBER(19)")
+            .IsRequired(false);
+
+        builder.HasIndex(participant => participant.TelegramUserId)
+            .HasDatabaseName("IX_CHAT_PARTICIPANTS_TELEGRAM_USER_ID");
 
         builder.Property(participant => participant.CreatedAt)
             .HasColumnName("CREATED_AT")

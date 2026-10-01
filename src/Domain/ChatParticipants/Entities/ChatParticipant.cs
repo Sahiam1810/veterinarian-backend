@@ -19,6 +19,8 @@ public sealed class ChatParticipant : BaseEntity<Guid>
 
     public Guid? AgentHumanId { get; private set; }
 
+    public long? TelegramUserId { get; private set; }
+
     /// <summary>
     /// Crea un participante con exactamente una identidad válida.
     /// </summary>
@@ -26,11 +28,12 @@ public sealed class ChatParticipant : BaseEntity<Guid>
         Guid chatConversationId,
         Guid participantTypeId,
         Guid? clientId = null,
-        Guid? agentHumanId = null)
+        Guid? agentHumanId = null,
+        long? telegramUserId = null)
     {
         EnsureChatConversationId(chatConversationId);
         EnsureParticipantTypeId(participantTypeId);
-        EnsureExactlyOneIdentity(clientId, agentHumanId);
+        EnsureExactlyOneIdentity(clientId, agentHumanId, telegramUserId);
 
         return new ChatParticipant
         {
@@ -38,7 +41,8 @@ public sealed class ChatParticipant : BaseEntity<Guid>
             ChatConversationId = chatConversationId,
             ParticipantTypeId = participantTypeId,
             ClientId = clientId,
-            AgentHumanId = agentHumanId
+            AgentHumanId = agentHumanId,
+            TelegramUserId = telegramUserId
         };
     }
 
@@ -47,12 +51,14 @@ public sealed class ChatParticipant : BaseEntity<Guid>
     /// </summary>
     public void ChangeIdentity(
         Guid? clientId = null,
-        Guid? agentHumanId = null)
+        Guid? agentHumanId = null,
+        long? telegramUserId = null)
     {
-        EnsureExactlyOneIdentity(clientId, agentHumanId);
+        EnsureExactlyOneIdentity(clientId, agentHumanId, telegramUserId);
 
         ClientId = clientId;
         AgentHumanId = agentHumanId;
+        TelegramUserId = telegramUserId;
         Touch();
     }
 
@@ -81,7 +87,10 @@ public sealed class ChatParticipant : BaseEntity<Guid>
         }
     }
 
-    private static void EnsureExactlyOneIdentity(Guid? clientId, Guid? agentHumanId)
+    private static void EnsureExactlyOneIdentity(
+        Guid? clientId,
+        Guid? agentHumanId,
+        long? telegramUserId)
     {
         if (clientId == Guid.Empty)
         {
@@ -97,10 +106,19 @@ public sealed class ChatParticipant : BaseEntity<Guid>
                 nameof(agentHumanId));
         }
 
-        if (clientId.HasValue == agentHumanId.HasValue)
+        if (telegramUserId is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(telegramUserId),
+                "El identificador de Telegram debe ser positivo.");
+        }
+
+        if ((clientId.HasValue ? 1 : 0) +
+            (agentHumanId.HasValue ? 1 : 0) +
+            (telegramUserId.HasValue ? 1 : 0) != 1)
         {
             throw new ArgumentException(
-                "El participante debe tener exactamente una identidad (cliente o agente humano).",
+                "El participante debe tener exactamente una identidad.",
                 nameof(clientId));
         }
     }

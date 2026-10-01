@@ -18,8 +18,9 @@ public sealed class CreateChatParticipantCommandValidator
         RuleFor(command => command)
             .Must(command => ChatParticipantIdentityValidation.HasExactlyOneIdentity(
                 command.ClientId,
-                command.AgentHumanId))
-            .WithMessage("El participante debe tener exactamente una identidad (cliente o agente humano).");
+                command.AgentHumanId,
+                command.TelegramUserId))
+            .WithMessage("El participante debe tener exactamente una identidad.");
 
         RuleFor(command => command.ClientId)
             .Must(clientId => !clientId.HasValue || clientId.Value != Guid.Empty)
@@ -28,6 +29,10 @@ public sealed class CreateChatParticipantCommandValidator
         RuleFor(command => command.AgentHumanId)
             .Must(agentId => !agentId.HasValue || agentId.Value != Guid.Empty)
             .WithMessage("El identificador del agente humano no puede ser vacío.");
+
+        RuleFor(command => command.TelegramUserId)
+            .Must(telegramUserId => !telegramUserId.HasValue || telegramUserId.Value > 0)
+            .WithMessage("El identificador de Telegram debe ser positivo.");
 
     }
 }
@@ -66,8 +71,9 @@ public sealed class ChangeChatParticipantIdentityCommandValidator
         RuleFor(command => command)
             .Must(command => ChatParticipantIdentityValidation.HasExactlyOneIdentity(
                 command.ClientId,
-                command.AgentHumanId))
-            .WithMessage("El participante debe tener exactamente una identidad (cliente o agente humano).");
+                command.AgentHumanId,
+                command.TelegramUserId))
+            .WithMessage("El participante debe tener exactamente una identidad.");
 
         RuleFor(command => command.ClientId)
             .Must(clientId => !clientId.HasValue || clientId.Value != Guid.Empty)
@@ -77,11 +83,20 @@ public sealed class ChangeChatParticipantIdentityCommandValidator
             .Must(agentId => !agentId.HasValue || agentId.Value != Guid.Empty)
             .WithMessage("El identificador del agente humano no puede ser vacío.");
 
+        RuleFor(command => command.TelegramUserId)
+            .Must(telegramUserId => !telegramUserId.HasValue || telegramUserId.Value > 0)
+            .WithMessage("El identificador de Telegram debe ser positivo.");
+
     }
 }
 
 internal static class ChatParticipantIdentityValidation
 {
-    internal static bool HasExactlyOneIdentity(Guid? clientId, Guid? agentHumanId) =>
-        clientId.HasValue != agentHumanId.HasValue;
+    internal static bool HasExactlyOneIdentity(
+        Guid? clientId,
+        Guid? agentHumanId,
+        long? telegramUserId) =>
+        (clientId.HasValue ? 1 : 0) +
+        (agentHumanId.HasValue ? 1 : 0) +
+        (telegramUserId.HasValue ? 1 : 0) == 1;
 }

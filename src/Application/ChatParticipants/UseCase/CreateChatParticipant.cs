@@ -9,7 +9,8 @@ public sealed record CreateChatParticipantCommand(
     Guid ChatConversationId,
     Guid ParticipantTypeId,
     Guid? ClientId,
-    Guid? AgentHumanId) : IRequest<ChatParticipantEntity>;
+    Guid? AgentHumanId,
+    long? TelegramUserId = null) : IRequest<ChatParticipantEntity>;
 
 public sealed class CreateChatParticipantCommandHandler
     : IRequestHandler<CreateChatParticipantCommand, ChatParticipantEntity>
@@ -71,7 +72,8 @@ public sealed class CreateChatParticipantCommandHandler
             request.ChatConversationId,
             request.ParticipantTypeId,
             request.ClientId,
-            request.AgentHumanId);
+            request.AgentHumanId,
+            request.TelegramUserId);
 
         await _uow.ChatParticipantsRepository.AddAsync(participant, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

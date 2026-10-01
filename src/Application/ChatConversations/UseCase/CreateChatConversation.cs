@@ -7,7 +7,8 @@ namespace Application.ChatConversations.UseCase;
 
 public sealed record CreateChatConversationCommand(
     bool AiEnabled = true,
-    string Channel = "Web") : IRequest<ChatConversationEntity>;
+    string Channel = "Web",
+    Guid? Id = null) : IRequest<ChatConversationEntity>;
 
 public sealed class CreateChatConversationCommandHandler
     : IRequestHandler<CreateChatConversationCommand, ChatConversationEntity>
@@ -25,7 +26,8 @@ public sealed class CreateChatConversationCommandHandler
     {
         var conversation = ChatConversationEntity.Create(
             request.AiEnabled,
-            request.Channel);
+            request.Channel,
+            request.Id);
 
         await _uow.ChatConversationsRepository.AddAsync(conversation, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
