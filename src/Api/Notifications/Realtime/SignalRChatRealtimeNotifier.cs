@@ -27,5 +27,5 @@ public sealed class SignalRChatRealtimeNotifier(
         Group().SendAsync(EscalationResolvedMethod, payload, cancellationToken);
 
     private IClientProxy Group() =>
-        hubContext.Clients.Group(NotificationsHubGroups.ReceptionistRole);
+        hubContext.Clients.Groups(NotificationsHubGroups.AdvisorRoles);
 }
