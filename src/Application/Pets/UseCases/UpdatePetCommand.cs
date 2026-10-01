@@ -9,7 +9,7 @@ public sealed record UpdatePetCommand(
     string Name,
     int Age,
     string Gender,
-    decimal Weight,
+    decimal? Weight,
     string? Observations,
     Guid SpeciesId,
     Guid RaceId,

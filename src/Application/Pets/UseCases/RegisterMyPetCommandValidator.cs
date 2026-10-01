@@ -19,7 +19,8 @@ public sealed class RegisterMyPetCommandValidator : AbstractValidator<RegisterMy
                 || string.Equals(gender, PetGender.Female, StringComparison.OrdinalIgnoreCase))
             .WithMessage($"El género debe ser '{PetGender.Male}' o '{PetGender.Female}'.");
         RuleFor(command => command.Weight)
-            .InclusiveBetween(PetWeight.Min, PetWeight.Max);
+            .InclusiveBetween(PetWeight.Min, PetWeight.Max)
+            .When(command => command.Weight.HasValue);
         RuleFor(command => command.Observations)
             .MaximumLength(PetObservations.MaxLength)
             .When(command => command.Observations is not null);

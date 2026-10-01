@@ -15,7 +15,7 @@ public record CreatePetDto(
     string Gender,
 
     [Range(0.01, 500, ErrorMessage = "El peso debe estar entre 0.01 y 500 kg.")]
-    decimal Weight,
+    decimal? Weight,
 
     [MaxLength(500, ErrorMessage = "Las observaciones no pueden superar los 500 caracteres.")]
     string? Observations,
@@ -44,7 +44,7 @@ public sealed record CreateOwnedPetDto(
     string Gender,
 
     [Range(0.01, 500, ErrorMessage = "El peso debe estar entre 0.01 y 500 kg.")]
-    decimal Weight,
+    decimal? Weight,
 
     [MaxLength(500, ErrorMessage = "Las observaciones no pueden superar los 500 caracteres.")]
     string? Observations,
@@ -71,7 +71,7 @@ public record UpdatePetDto(
     string Gender,
 
     [Range(0.01, 500, ErrorMessage = "El peso debe estar entre 0.01 y 500 kg.")]
-    decimal Weight,
+    decimal? Weight,
 
     [MaxLength(500, ErrorMessage = "Las observaciones no pueden superar los 500 caracteres.")]
     string? Observations,
