@@ -1,20 +1,19 @@
 using Api.ChatMessages.Dtos;
 using Api.ChatMessages.Mappings;
-using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatMessages.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.ChatMessages.Controllers;
 
 [ApiController]
 [Route("api/chat/messages")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatMessageController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Chat", PermissionAction.Create)]
     [EndpointSummary("Crear un mensaje de chat")]
     [EndpointDescription("Registra un mensaje en una conversación y actualiza la fecha del último mensaje.")]
     [ProducesResponseType(typeof(ChatMessageResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +40,7 @@ public sealed class ChatMessageController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Obtener un mensaje de chat por su identificador")]
     [EndpointDescription("Devuelve el mensaje de chat indicado.")]
     [ProducesResponseType(typeof(ChatMessageResponseDto), StatusCodes.Status200OK)]
@@ -56,6 +56,7 @@ public sealed class ChatMessageController(ISender sender) : ControllerBase
     }
 
     [HttpGet("conversation/{chatConversationId:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Listar mensajes por conversación")]
     [EndpointDescription("Devuelve todos los mensajes asociados a la conversación indicada.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatMessageResponseDto>), StatusCodes.Status200OK)]

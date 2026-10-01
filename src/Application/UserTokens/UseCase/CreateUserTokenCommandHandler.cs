@@ -19,21 +19,22 @@ public sealed class CreateUserTokenCommandHandler
         CreateUserTokenCommand request,
         CancellationToken cancellationToken)
     {
-        var account = await _uow.UserAccountsRepository.GetByIdAsync(
-            request.AccountId,
+        var user = await _uow.UsersRepository.GetByIdAsync(
+            request.UserId,
             cancellationToken);
 
-        if (account is null)
+        if (user is null)
         {
             throw new NotFoundException(
-                "La cuenta especificada no existe.");
+                "El usuario especificado no existe.");
         }
 
         var token = new UserTokenEntity(
-            request.AccountId,
+            request.UserId,
             request.TokenValue,
             request.TokenType,
-            request.ExpiresAt);
+            request.ExpiresAt,
+            DateTime.UtcNow);
 
         await _uow.UserTokensRepository.AddAsync(
             token,

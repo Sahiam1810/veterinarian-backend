@@ -13,7 +13,9 @@ public static class UsersMappings
             request.FullName,
             request.Email,
             request.Password,
-            request.RoleId);
+            request.RoleId,
+            request.SpecialtyId,
+            request.LicenseNumber);
     }
 
     public static UpdateUserCommand ToCommand(
@@ -25,6 +27,13 @@ public static class UsersMappings
             request.FullName,
             request.Email,
             request.RoleId);
+    }
+
+    public static ResetUserPasswordCommand ToCommand(
+        this ResetUserPasswordRequest request,
+        Guid id)
+    {
+        return new ResetUserPasswordCommand(id, request.NewPassword);
     }
 
     public static UserResponse ToResponse(this UserEntity user)

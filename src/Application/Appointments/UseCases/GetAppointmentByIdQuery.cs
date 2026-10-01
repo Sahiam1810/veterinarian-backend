@@ -5,6 +5,6 @@ namespace Application.Appointments.UseCases;
 
 public sealed record GetAppointmentByIdQuery(
     Guid Id,
-    Guid ActorUserAccountId = default,
+    Guid ActorUserId = default,
     bool EnforceVeterinarianOwnership = false)
     : IRequest<Appointment>;

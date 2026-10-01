@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Races.UseCases;
 
-public sealed record CreateRaceCommand(string Name) : IRequest<Guid>;
+public sealed record CreateRaceCommand(string Name, Guid SpeciesId) : IRequest<Guid>;
 
 public sealed class CreateRaceCommandHandler : IRequestHandler<CreateRaceCommand, Guid>
 {
@@ -18,13 +18,19 @@ public sealed class CreateRaceCommandHandler : IRequestHandler<CreateRaceCommand
 
     public async Task<Guid> Handle(CreateRaceCommand request, CancellationToken cancellationToken)
     {
-        var exists = await _uow.RacesRepository.ExistsByNameAsync(request.Name, cancellationToken);
+        var species = await _uow.SpeciesRepository.GetByIdAsync(request.SpeciesId, cancellationToken)
+            ?? throw new NotFoundException("Especie no encontrada.");
+
+        var exists = await _uow.RacesRepository.ExistsByNameAsync(
+            request.Name,
+            request.SpeciesId,
+            cancellationToken);
         if (exists)
         {
             throw new ConflictException("Ya existe una raza con ese nombre.");
         }
 
-        var race = new RaceEntity(request.Name);
+        var race = new RaceEntity(request.Name, species);
 
         await _uow.RacesRepository.AddAsync(race, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

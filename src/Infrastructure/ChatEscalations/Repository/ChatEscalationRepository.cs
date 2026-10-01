@@ -36,6 +36,16 @@ public sealed class ChatEscalationRepository : IChatEscalationRepository
             .OrderBy(escalation => escalation.CreatedAt)
             .ToListAsync(cancellationToken);
 
+    public Task<ChatEscalationEntity?> GetActiveByConversationIdAsync(
+        Guid chatConversationId,
+        CancellationToken cancellationToken = default) =>
+        _context.Set<ChatEscalationEntity>()
+            .Where(escalation =>
+                escalation.ChatConversationId == chatConversationId &&
+                escalation.ResolvedAt == null)
+            .OrderByDescending(escalation => escalation.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public async Task AddAsync(
         ChatEscalationEntity escalation,
         CancellationToken cancellationToken = default)

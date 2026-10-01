@@ -1,0 +1,7377 @@
+﻿DECLARE
+V_COUNT INTEGER;
+BEGIN
+SELECT COUNT(TABLE_NAME) INTO V_COUNT from USER_TABLES where TABLE_NAME = '__EFMigrationsHistory';
+IF V_COUNT = 0 THEN
+Begin
+BEGIN 
+EXECUTE IMMEDIATE 'CREATE TABLE 
+"__EFMigrationsHistory" (
+    "MigrationId" NVARCHAR2(150) NOT NULL,
+    "ProductVersion" NVARCHAR2(32) NOT NULL,
+    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+)';
+END;
+
+End;
+
+END IF;
+EXCEPTION
+WHEN OTHERS THEN
+    IF(SQLCODE != -942)THEN
+        RAISE;
+    END IF;
+END;
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825192242_InitialCreate';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "DIAGNOSTICS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "CODE" NVARCHAR2(15) NOT NULL,
+        "NAME" NVARCHAR2(150) NOT NULL,
+        "DESCRIPTION" NVARCHAR2(500),
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_DIAGNOSTICS" PRIMARY KEY ("ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825192242_InitialCreate';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "RACES" (
+        "RACE_ID" VARCHAR2(36) NOT NULL,
+        "NAME" NVARCHAR2(20) NOT NULL,
+        CONSTRAINT "PK_RACES" PRIMARY KEY ("RACE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825192242_InitialCreate';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "SPECIES" (
+        "SPECIES_ID" VARCHAR2(36) NOT NULL,
+        "NAME" NVARCHAR2(20) NOT NULL,
+        CONSTRAINT "PK_SPECIES" PRIMARY KEY ("SPECIES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825192242_InitialCreate';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_DIAGNOSTICS_CODE" ON "DIAGNOSTICS" ("CODE")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825192242_InitialCreate';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260825192242_InitialCreate'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825201249_RolesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "ROLES" (
+        "ROLE_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(50) NOT NULL,
+        "DESCRIPTION" CLOB,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        CONSTRAINT "PK_ROLES" PRIMARY KEY ("ROLE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825201249_RolesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN
+    INSERT INTO "ROLES" ("ROLE_ID", "CREATED_AT", "DESCRIPTION", "NAME")
+    VALUES ('11111111-1111-1111-1111-111111111111', TO_TIMESTAMP('2026-08-13 00:00:00.0000000', 'YYYY-MM-DD HH24:MI:SS.FF'), TO_CLOB('System administrator'), 'Administrator');
+    INSERT INTO "ROLES" ("ROLE_ID", "CREATED_AT", "DESCRIPTION", "NAME")
+    VALUES ('22222222-2222-2222-2222-222222222222', TO_TIMESTAMP('2026-08-13 00:00:00.0000000', 'YYYY-MM-DD HH24:MI:SS.FF'), TO_CLOB('Help desk support agent'), 'Agent');
+    INSERT INTO "ROLES" ("ROLE_ID", "CREATED_AT", "DESCRIPTION", "NAME")
+    VALUES ('33333333-3333-3333-3333-333333333333', TO_TIMESTAMP('2026-08-13 00:00:00.0000000', 'YYYY-MM-DD HH24:MI:SS.FF'), TO_CLOB('Help desk client'), 'Client');
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825201249_RolesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_ROLES_NAME" ON "ROLES" ("NAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825201249_RolesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260825201249_RolesMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825210000_RemoveRolesCodeSeed';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DELETE FROM "ROLES"
+    WHERE "ROLE_ID" = ''11111111-1111-1111-1111-111111111111'''
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825210000_RemoveRolesCodeSeed';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DELETE FROM "ROLES"
+    WHERE "ROLE_ID" = ''22222222-2222-2222-2222-222222222222'''
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825210000_RemoveRolesCodeSeed';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DELETE FROM "ROLES"
+    WHERE "ROLE_ID" = ''33333333-3333-3333-3333-333333333333'''
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260825210000_RemoveRolesCodeSeed';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260825210000_RemoveRolesCodeSeed'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826122355_UsersAndUsersAccountsMigrations';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "USERS" (
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "FULL_NAME" VARCHAR2(150) NOT NULL,
+        "EMAIL" VARCHAR2(150) NOT NULL,
+        "PASSWORD_HASH" VARCHAR2(255) NOT NULL,
+        "ROLE_ID" VARCHAR2(36) NOT NULL,
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_USERS" PRIMARY KEY ("USER_ID"),
+        CONSTRAINT "FK_USERS_ROLES_ROLE_ID" FOREIGN KEY ("ROLE_ID") REFERENCES "ROLES" ("ROLE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826122355_UsersAndUsersAccountsMigrations';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "USER_ACCOUNTS" (
+        "ACCOUNT_ID" VARCHAR2(36) NOT NULL,
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "USERNAME" VARCHAR2(30) NOT NULL,
+        "MAIL" VARCHAR2(150) NOT NULL,
+        "STATUS" VARCHAR2(40) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_USER_ACCOUNTS" PRIMARY KEY ("ACCOUNT_ID"),
+        CONSTRAINT "FK_USER_ACCOUNTS_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826122355_UsersAndUsersAccountsMigrations';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_USER_ACCOUNTS_USER_ID" ON "USER_ACCOUNTS" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826122355_UsersAndUsersAccountsMigrations';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_USER_ACCOUNTS_USERNAME" ON "USER_ACCOUNTS" ("USERNAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826122355_UsersAndUsersAccountsMigrations';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_USERS_EMAIL" ON "USERS" ("EMAIL")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826122355_UsersAndUsersAccountsMigrations';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_USERS_ROLE_ID" ON "USERS" ("ROLE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826122355_UsersAndUsersAccountsMigrations';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826122355_UsersAndUsersAccountsMigrations'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826125113_UsersCredentials';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "USER_CREDENTIALS" (
+        "CREDENTIAL_ID" VARCHAR2(36) NOT NULL,
+        "ACCOUNT_ID" VARCHAR2(36) NOT NULL,
+        "PASSWORD_HASH" VARCHAR2(255) NOT NULL,
+        "LAST_CHANGED" TIMESTAMP NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_USER_CREDENTIALS" PRIMARY KEY ("CREDENTIAL_ID"),
+        CONSTRAINT "FK_USER_CREDENTIALS_USER_ACCOUNTS_ACCOUNT_ID" FOREIGN KEY ("ACCOUNT_ID") REFERENCES "USER_ACCOUNTS" ("ACCOUNT_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826125113_UsersCredentials';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_USER_CREDENTIALS_ACCOUNT_ID" ON "USER_CREDENTIALS" ("ACCOUNT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826125113_UsersCredentials';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826125113_UsersCredentials'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826130346_PetsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "PETS" (
+        "PET_ID" VARCHAR2(36) NOT NULL,
+        "NAME" NVARCHAR2(50) NOT NULL,
+        "AGE" NUMBER(10) NOT NULL,
+        "GENDER" NVARCHAR2(1) NOT NULL,
+        "WEIGHT" NUMBER(6,3) NOT NULL,
+        "OBSERVATIONS" NVARCHAR2(500),
+        "SPECIES_ID" VARCHAR2(36) NOT NULL,
+        "RACE_ID" VARCHAR2(36) NOT NULL,
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_PETS" PRIMARY KEY ("PET_ID"),
+        CONSTRAINT "FK_PETS_RACES_RACE_ID" FOREIGN KEY ("RACE_ID") REFERENCES "RACES" ("RACE_ID"),
+        CONSTRAINT "FK_PETS_SPECIES_SPECIES_ID" FOREIGN KEY ("SPECIES_ID") REFERENCES "SPECIES" ("SPECIES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826130346_PetsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PETS_RACE_ID" ON "PETS" ("RACE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826130346_PetsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PETS_SPECIES_ID" ON "PETS" ("SPECIES_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826130346_PetsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826130346_PetsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826131945_StatusAppoinmentMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "STATUS_APPOINTMENTS" (
+        "STATUS_APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(50) NOT NULL,
+        "DESCRIPTION" VARCHAR2(200),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_STATUS_APPOINTMENTS" PRIMARY KEY ("STATUS_APPOINTMENT_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826131945_StatusAppoinmentMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_STATUS_APPOINTMENTS_NAME" ON "STATUS_APPOINTMENTS" ("NAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826131945_StatusAppoinmentMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826131945_StatusAppoinmentMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826132630_UserTokenMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "USER_TOKENS" (
+        "TOKEN_ID" VARCHAR2(36) NOT NULL,
+        "ACCOUNT_ID" VARCHAR2(36) NOT NULL,
+        "TOKEN_VALUE" VARCHAR2(500) NOT NULL,
+        "TOKEN_TYPE" VARCHAR2(20) NOT NULL,
+        "EXPIRES_AT" TIMESTAMP NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_USER_TOKENS" PRIMARY KEY ("TOKEN_ID"),
+        CONSTRAINT "FK_USER_TOKENS_USER_ACCOUNTS_ACCOUNT_ID" FOREIGN KEY ("ACCOUNT_ID") REFERENCES "USER_ACCOUNTS" ("ACCOUNT_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826132630_UserTokenMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_USER_TOKENS_ACCOUNT_ID" ON "USER_TOKENS" ("ACCOUNT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826132630_UserTokenMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_USER_TOKENS_TOKEN_VALUE" ON "USER_TOKENS" ("TOKEN_VALUE")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826132630_UserTokenMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826132630_UserTokenMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "SPECIES" ADD "CREATED_AT" TIMESTAMP(7) DEFAULT TO_TIMESTAMP(''0001-01-01 00:00:00.0000000'', ''YYYY-MM-DD HH24:MI:SS.FF'') NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "SPECIES" ADD "UPDATED_AT" TIMESTAMP(7)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "RACES" ADD "CREATED_AT" TIMESTAMP(7) DEFAULT TO_TIMESTAMP(''0001-01-01 00:00:00.0000000'', ''YYYY-MM-DD HH24:MI:SS.FF'') NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "RACES" ADD "UPDATED_AT" TIMESTAMP(7)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CLIENTS" (
+        "CLIENT_ID" VARCHAR2(36) NOT NULL,
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "IDENTIFICATION_NUMBER" NVARCHAR2(20) NOT NULL,
+        "ADDRESS" NVARCHAR2(20),
+        "REGISTRATION_DATE" TIMESTAMP(7) NOT NULL,
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATE_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_CLIENTS" PRIMARY KEY ("CLIENT_ID"),
+        CONSTRAINT "FK_CLIENTS_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_CLIENTS_IDENTIFICATION_NUMBER" ON "CLIENTS" ("IDENTIFICATION_NUMBER")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CLIENTS_USER_ID" ON "CLIENTS" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826140236_ClientsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826140236_ClientsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826143908_TypeServicesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TYPE_SERVICES" (
+        "TYPE_SERVICE_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(50) NOT NULL,
+        "DESCRIPTION" VARCHAR2(200),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TYPE_SERVICES" PRIMARY KEY ("TYPE_SERVICE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826143908_TypeServicesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_TYPE_SERVICES_NAME" ON "TYPE_SERVICES" ("NAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826143908_TypeServicesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826143908_TypeServicesMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826152935_AddSpecialtiesAndClientsPets';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CLIENTS_PETS" (
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_ID" VARCHAR2(36) NOT NULL,
+        "PET_ID" VARCHAR2(36) NOT NULL,
+        "IS_PRIMARY_OWNER" CHAR(1) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CLIENTS_PETS" PRIMARY KEY ("CLIENT_PET_ID"),
+        CONSTRAINT "FK_CLIENTS_PETS_CLIENTS_CLIENT_ID" FOREIGN KEY ("CLIENT_ID") REFERENCES "CLIENTS" ("CLIENT_ID"),
+        CONSTRAINT "FK_CLIENTS_PETS_PETS_PET_ID" FOREIGN KEY ("PET_ID") REFERENCES "PETS" ("PET_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826152935_AddSpecialtiesAndClientsPets';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "SPECIALTIES" (
+        "SPECIALTY_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(30) NOT NULL,
+        "DESCRIPTION" VARCHAR2(30),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_SPECIALTIES" PRIMARY KEY ("SPECIALTY_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826152935_AddSpecialtiesAndClientsPets';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_CLIENTS_PETS_CLIENT_ID_PET_ID" ON "CLIENTS_PETS" ("CLIENT_ID", "PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826152935_AddSpecialtiesAndClientsPets';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CLIENTS_PETS_PET_ID" ON "CLIENTS_PETS" ("PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826152935_AddSpecialtiesAndClientsPets';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_SPECIALTIES_NAME" ON "SPECIALTIES" ("NAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826152935_AddSpecialtiesAndClientsPets';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826152935_AddSpecialtiesAndClientsPets'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826160559_ClientsPetsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826160559_ClientsPetsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826170546_IAMigracion';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "PROVIDER_MODELS_AI" (
+        "PROVIDER_MODEL_AI_ID" VARCHAR2(36) NOT NULL,
+        "NAME_PROVIDER_AI" VARCHAR2(150) NOT NULL,
+        "BUSINESS_NAME" VARCHAR2(200),
+        "WEBSITE" VARCHAR2(500),
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_PROVIDER_MODELS_AI" PRIMARY KEY ("PROVIDER_MODEL_AI_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826170546_IAMigracion';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "AI_MODELS" (
+        "AI_MODEL_ID" VARCHAR2(36) NOT NULL,
+        "PROVIDER_MODEL_AI_ID" VARCHAR2(36) NOT NULL,
+        "NAME_MODEL" VARCHAR2(150) NOT NULL,
+        "MODEL_KEY" VARCHAR2(150) NOT NULL,
+        "INPUT_TOKEN_PRICE" NUMBER(18,6) NOT NULL,
+        "OUTPUT_TOKEN_PRICE" NUMBER(18,6) NOT NULL,
+        "MAX_TOKENS" NUMBER(10) NOT NULL,
+        "CONTEXT_WINDOW" NUMBER(10) NOT NULL,
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_AI_MODELS" PRIMARY KEY ("AI_MODEL_ID"),
+        CONSTRAINT "FK_AI_MODELS_PROVIDER_MODELS_AI_PROVIDER_MODEL_AI_ID" FOREIGN KEY ("PROVIDER_MODEL_AI_ID") REFERENCES "PROVIDER_MODELS_AI" ("PROVIDER_MODEL_AI_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826170546_IAMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_AI_MODELS_PROVIDER_MODEL_AI_ID" ON "AI_MODELS" ("PROVIDER_MODEL_AI_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826170546_IAMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826170546_IAMigracion'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826172020_ServicesMigracion';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "SERVICES" (
+        "SERVICE_ID" VARCHAR2(36) NOT NULL,
+        "TYPE_SERVICE_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(50) NOT NULL,
+        "DURATION_MINUTES" NUMBER NOT NULL,
+        "PRICE" NUMBER NOT NULL,
+        "IS_ACTIVE" CHAR(1) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_SERVICES" PRIMARY KEY ("SERVICE_ID"),
+        CONSTRAINT "FK_SERVICES_TYPE_SERVICES_TYPE_SERVICE_ID" FOREIGN KEY ("TYPE_SERVICE_ID") REFERENCES "TYPE_SERVICES" ("TYPE_SERVICE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826172020_ServicesMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_SERVICES_NAME" ON "SERVICES" ("NAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826172020_ServicesMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_SERVICES_TYPE_SERVICE_ID" ON "SERVICES" ("TYPE_SERVICE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826172020_ServicesMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826172020_ServicesMigracion'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826193440_SenderTypesMigracion';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "SENDER_TYPES" (
+        "SENDER_TYPES_ID" VARCHAR2(36) NOT NULL,
+        "NAME_TYPE" VARCHAR2(50) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_SENDER_TYPES" PRIMARY KEY ("SENDER_TYPES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826193440_SenderTypesMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826193440_SenderTypesMigracion'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826201504_VeterinariansMigracion';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "VETERINARIANS" (
+        "VETERINARIAN_ID" VARCHAR2(36) NOT NULL,
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "SPECIALTY_ID" VARCHAR2(36) NOT NULL,
+        "LICENSE_NUMBER" VARCHAR2(20) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_VETERINARIANS" PRIMARY KEY ("VETERINARIAN_ID"),
+        CONSTRAINT "FK_VETERINARIANS_SPECIALTIES_SPECIALTY_ID" FOREIGN KEY ("SPECIALTY_ID") REFERENCES "SPECIALTIES" ("SPECIALTY_ID"),
+        CONSTRAINT "FK_VETERINARIANS_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826201504_VeterinariansMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_VETERINARIANS_LICENSE_NUMBER" ON "VETERINARIANS" ("LICENSE_NUMBER")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826201504_VeterinariansMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_VETERINARIANS_SPECIALTY_ID" ON "VETERINARIANS" ("SPECIALTY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826201504_VeterinariansMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_VETERINARIANS_USER_ID" ON "VETERINARIANS" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826201504_VeterinariansMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826201504_VeterinariansMigracion'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826205638_PriorityMigracion';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "PRIORITY" (
+        "PRIORITY_ID" VARCHAR2(36) NOT NULL,
+        "NAME_PRIORITY" VARCHAR2(50) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_PRIORITY" PRIMARY KEY ("PRIORITY_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826205638_PriorityMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826205638_PriorityMigracion'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826210134_ConversationSstatusesMigracion';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CONVERSATIONS_STATUSES" (
+        "CONVERSATIONS_STATUSES_ID" VARCHAR2(36) NOT NULL,
+        "NAME_STATUS" VARCHAR2(50) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CONVERSATIONS_STATUSES" PRIMARY KEY ("CONVERSATIONS_STATUSES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260826210134_ConversationSstatusesMigracion';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260826210134_ConversationSstatusesMigracion'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827034927_AIrunStatutesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "AI_RUNS_STATUSES" (
+        "AI_RUNS_STATUSES_ID" VARCHAR2(36) NOT NULL,
+        "NAME_STATUS" VARCHAR2(50) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_AI_RUNS_STATUSES" PRIMARY KEY ("AI_RUNS_STATUSES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827034927_AIrunStatutesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827034927_AIrunStatutesMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827135123_EscalationStatusesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "ESCALATIONS_STATUSES" (
+        "ESCALATIONS_ID" VARCHAR2(36) NOT NULL,
+        "NAME_STATUS" VARCHAR2(50) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_ESCALATIONS_STATUSES" PRIMARY KEY ("ESCALATIONS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827135123_EscalationStatusesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827135123_EscalationStatusesMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827142300_AddAccountStatementsTable';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "ACCOUNT_STATEMENTS" (
+        "STATEMENT_ID" VARCHAR2(36) NOT NULL,
+        "ACCOUNT_ID" VARCHAR2(36) NOT NULL,
+        "ISSUE_DATE" DATE NOT NULL,
+        "STATUS" VARCHAR2(30) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_ACCOUNT_STATEMENTS" PRIMARY KEY ("STATEMENT_ID"),
+        CONSTRAINT "FK_ACCOUNT_STATEMENTS_USER_ACCOUNTS_ACCOUNT_ID" FOREIGN KEY ("ACCOUNT_ID") REFERENCES "USER_ACCOUNTS" ("ACCOUNT_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827142300_AddAccountStatementsTable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_ACCOUNT_STATEMENTS_ACCOUNT_ID" ON "ACCOUNT_STATEMENTS" ("ACCOUNT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827142300_AddAccountStatementsTable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827142300_AddAccountStatementsTable'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827143808_AddAgentHumansMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "AGENT_HUMANS" (
+        "AGENT_HUMAN_ID" VARCHAR2(36) NOT NULL,
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_AGENT_HUMANS" PRIMARY KEY ("AGENT_HUMAN_ID"),
+        CONSTRAINT "FK_AGENT_HUMANS_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827143808_AddAgentHumansMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_USER_PROFILES" (
+        "CHAT_USER_PROFILE_ID" VARCHAR2(36) NOT NULL,
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "DISPLAY_NAME" VARCHAR2(150),
+        "AVATAR_URL" VARCHAR2(500),
+        "BIO" VARCHAR2(500),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_USER_PROFILES" PRIMARY KEY ("CHAT_USER_PROFILE_ID"),
+        CONSTRAINT "FK_CHAT_USER_PROFILES_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827143808_AddAgentHumansMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_AGENT_HUMANS_USER_ID" ON "AGENT_HUMANS" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827143808_AddAgentHumansMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_USER_PROFILES_USER_ID" ON "CHAT_USER_PROFILES" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827143808_AddAgentHumansMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827143808_AddAgentHumansMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827144425_AddAvailabilitiesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "AVAILABILITIES" (
+        "AVAILABILITY_ID" VARCHAR2(36) NOT NULL,
+        "VETERINARIAN_ID" VARCHAR2(36) NOT NULL,
+        "DAY_OF_WEEK" NUMBER NOT NULL,
+        "START_TIME" VARCHAR2(30) NOT NULL,
+        "END_TIME" VARCHAR2(30) NOT NULL,
+        "IS_ACTIVE" CHAR(1) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_AVAILABILITIES" PRIMARY KEY ("AVAILABILITY_ID"),
+        CONSTRAINT "FK_AVAILABILITIES_VETERINARIANS_VETERINARIAN_ID" FOREIGN KEY ("VETERINARIAN_ID") REFERENCES "VETERINARIANS" ("VETERINARIAN_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827144425_AddAvailabilitiesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_AVAILABILITIES_VETERINARIAN_ID" ON "AVAILABILITIES" ("VETERINARIAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827144425_AddAvailabilitiesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827144425_AddAvailabilitiesMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827151136_AddMessageTypesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "MESSAGE_TYPES" (
+        "MESSAGE_TYPES_ID" VARCHAR2(36) NOT NULL,
+        "NAME_TYPE" VARCHAR2(50) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_MESSAGE_TYPES" PRIMARY KEY ("MESSAGE_TYPES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827151136_AddMessageTypesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827151136_AddMessageTypesMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827153654_AppoimentsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "APPOINTMENTS" (
+        "APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "VETERINARIAN_ID" VARCHAR2(36) NOT NULL,
+        "SERVICE_ID" VARCHAR2(36) NOT NULL,
+        "STATUS_ID" VARCHAR2(36) NOT NULL,
+        "AVAILABILITY_ID" VARCHAR2(36) NOT NULL,
+        "SCHEDULED_START" TIMESTAMP NOT NULL,
+        "SCHEDULED_END" TIMESTAMP NOT NULL,
+        "NOTES" VARCHAR2(100),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_APPOINTMENTS" PRIMARY KEY ("APPOINTMENT_ID"),
+        CONSTRAINT "FK_APPOINTMENTS_AVAILABILITIES_AVAILABILITY_ID" FOREIGN KEY ("AVAILABILITY_ID") REFERENCES "AVAILABILITIES" ("AVAILABILITY_ID"),
+        CONSTRAINT "FK_APPOINTMENTS_CLIENTS_PETS_CLIENT_PET_ID" FOREIGN KEY ("CLIENT_PET_ID") REFERENCES "CLIENTS_PETS" ("CLIENT_PET_ID"),
+        CONSTRAINT "FK_APPOINTMENTS_SERVICES_SERVICE_ID" FOREIGN KEY ("SERVICE_ID") REFERENCES "SERVICES" ("SERVICE_ID"),
+        CONSTRAINT "FK_APPOINTMENTS_STATUS_APPOINTMENTS_STATUS_ID" FOREIGN KEY ("STATUS_ID") REFERENCES "STATUS_APPOINTMENTS" ("STATUS_APPOINTMENT_ID"),
+        CONSTRAINT "FK_APPOINTMENTS_VETERINARIANS_VETERINARIAN_ID" FOREIGN KEY ("VETERINARIAN_ID") REFERENCES "VETERINARIANS" ("VETERINARIAN_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827153654_AppoimentsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENTS_AVAILABILITY_ID" ON "APPOINTMENTS" ("AVAILABILITY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827153654_AppoimentsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENTS_CLIENT_PET_ID" ON "APPOINTMENTS" ("CLIENT_PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827153654_AppoimentsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENTS_SERVICE_ID" ON "APPOINTMENTS" ("SERVICE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827153654_AppoimentsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENTS_STATUS_ID" ON "APPOINTMENTS" ("STATUS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827153654_AppoimentsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENTS_VETERINARIAN_ID" ON "APPOINTMENTS" ("VETERINARIAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827153654_AppoimentsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827153654_AppoimentsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827160054_AppoimentsStatusHistoryMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "APPOINTMENT_STATUS_HISTORIES" (
+        "APPOINTMENT_STATUS_ID" VARCHAR2(36) NOT NULL,
+        "APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "STATUS_ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "COMMENT" VARCHAR2(100),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_APPOINTMENT_STATUS_HISTORIES" PRIMARY KEY ("APPOINTMENT_STATUS_ID"),
+        CONSTRAINT "FK_APPOINTMENT_STATUS_HISTORIES_APPOINTMENTS_APPOINTMENT_ID" FOREIGN KEY ("APPOINTMENT_ID") REFERENCES "APPOINTMENTS" ("APPOINTMENT_ID"),
+        CONSTRAINT "FK_APPOINTMENT_STATUS_HISTORIES_CLIENTS_PETS_CLIENT_PET_ID" FOREIGN KEY ("CLIENT_PET_ID") REFERENCES "CLIENTS_PETS" ("CLIENT_PET_ID"),
+        CONSTRAINT "FK_APPOINTMENT_STATUS_HISTORIES_STATUS_APPOINTMENTS_STATUS_ID" FOREIGN KEY ("STATUS_ID") REFERENCES "STATUS_APPOINTMENTS" ("STATUS_APPOINTMENT_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827160054_AppoimentsStatusHistoryMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENT_STATUS_HISTORIES_APPOINTMENT_ID" ON "APPOINTMENT_STATUS_HISTORIES" ("APPOINTMENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827160054_AppoimentsStatusHistoryMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENT_STATUS_HISTORIES_CLIENT_PET_ID" ON "APPOINTMENT_STATUS_HISTORIES" ("CLIENT_PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827160054_AppoimentsStatusHistoryMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPOINTMENT_STATUS_HISTORIES_STATUS_ID" ON "APPOINTMENT_STATUS_HISTORIES" ("STATUS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827160054_AppoimentsStatusHistoryMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827160054_AppoimentsStatusHistoryMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827190119_MedicalRecordsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "MEDICAL_RECORDS" (
+        "RECORD_ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "DIAGNOSTIC_ID" VARCHAR2(36) NOT NULL,
+        "SYMPTOMS" VARCHAR2(30),
+        "TREATMENT" VARCHAR2(30),
+        "WEIGHT_AT_VISIT" NUMBER,
+        "TEMPERATURE" NUMBER,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_MEDICAL_RECORDS" PRIMARY KEY ("RECORD_ID"),
+        CONSTRAINT "FK_MEDICAL_RECORDS_APPOINTMENTS_APPOINTMENT_ID" FOREIGN KEY ("APPOINTMENT_ID") REFERENCES "APPOINTMENTS" ("APPOINTMENT_ID"),
+        CONSTRAINT "FK_MEDICAL_RECORDS_CLIENTS_PETS_CLIENT_PET_ID" FOREIGN KEY ("CLIENT_PET_ID") REFERENCES "CLIENTS_PETS" ("CLIENT_PET_ID"),
+        CONSTRAINT "FK_MEDICAL_RECORDS_DIAGNOSTICS_DIAGNOSTIC_ID" FOREIGN KEY ("DIAGNOSTIC_ID") REFERENCES "DIAGNOSTICS" ("ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827190119_MedicalRecordsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICAL_RECORDS_APPOINTMENT_ID" ON "MEDICAL_RECORDS" ("APPOINTMENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827190119_MedicalRecordsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICAL_RECORDS_CLIENT_PET_ID" ON "MEDICAL_RECORDS" ("CLIENT_PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827190119_MedicalRecordsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICAL_RECORDS_DIAGNOSTIC_ID" ON "MEDICAL_RECORDS" ("DIAGNOSTIC_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827190119_MedicalRecordsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827190119_MedicalRecordsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827193459_NotificationsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "NOTIFICATIONS" (
+        "NOTIFICATION_ID" VARCHAR2(36) NOT NULL,
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "MESSAGE" VARCHAR2(1000) NOT NULL,
+        "SENT_AT" TIMESTAMP NOT NULL,
+        "STATUS" VARCHAR2(20) NOT NULL,
+        "TYPE" VARCHAR2(20) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_NOTIFICATIONS" PRIMARY KEY ("NOTIFICATION_ID"),
+        CONSTRAINT "FK_NOTIFICATIONS_APPOINTMENTS_APPOINTMENT_ID" FOREIGN KEY ("APPOINTMENT_ID") REFERENCES "APPOINTMENTS" ("APPOINTMENT_ID"),
+        CONSTRAINT "FK_NOTIFICATIONS_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827193459_NotificationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_NOTIFICATIONS_APPOINTMENT_ID" ON "NOTIFICATIONS" ("APPOINTMENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827193459_NotificationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_NOTIFICATIONS_USER_ID" ON "NOTIFICATIONS" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827193459_NotificationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827193459_NotificationsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827204101_VaccinationsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "VACCINATIONS" (
+        "VACCINATION_ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "RECORD_ID" VARCHAR2(36) NOT NULL,
+        "VACCINE_NAME" VARCHAR2(30) NOT NULL,
+        "DOSE_NUMBER" NUMBER NOT NULL,
+        "APPLICATION_DATE" DATE NOT NULL,
+        "NEXT_DOSE_DATE" DATE,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_VACCINATIONS" PRIMARY KEY ("VACCINATION_ID"),
+        CONSTRAINT "FK_VACCINATIONS_CLIENTS_PETS_CLIENT_PET_ID" FOREIGN KEY ("CLIENT_PET_ID") REFERENCES "CLIENTS_PETS" ("CLIENT_PET_ID"),
+        CONSTRAINT "FK_VACCINATIONS_MEDICAL_RECORDS_RECORD_ID" FOREIGN KEY ("RECORD_ID") REFERENCES "MEDICAL_RECORDS" ("RECORD_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827204101_VaccinationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_VACCINATIONS_CLIENT_PET_ID" ON "VACCINATIONS" ("CLIENT_PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827204101_VaccinationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_VACCINATIONS_RECORD_ID" ON "VACCINATIONS" ("RECORD_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260827204101_VaccinationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260827204101_VaccinationsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828201844_ChatConversationsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_CONVERSATIONS" (
+        "CHAT_CONVERSATIONS_ID" VARCHAR2(36) NOT NULL,
+        "CONVERSATION_STATUS_ID" VARCHAR2(36) NOT NULL,
+        "PRIORITY_ID" VARCHAR2(36),
+        "AI_ENABLED" NUMBER(10) DEFAULT 1 NOT NULL,
+        "LAST_MESSAGE_AT" TIMESTAMP,
+        "CLOSED" NUMBER(10) DEFAULT 0 NOT NULL,
+        "CLOSED_AT" TIMESTAMP,
+        "CLOSED_BY" VARCHAR2(36),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_CONVERSATIONS" PRIMARY KEY ("CHAT_CONVERSATIONS_ID"),
+        CONSTRAINT "FK_CHAT_CONVERSATIONS_CONVERSATIONS_STATUSES_CONVERSATION_STATUS_ID" FOREIGN KEY ("CONVERSATION_STATUS_ID") REFERENCES "CONVERSATIONS_STATUSES" ("CONVERSATIONS_STATUSES_ID"),
+        CONSTRAINT "FK_CHAT_CONVERSATIONS_PRIORITY_PRIORITY_ID" FOREIGN KEY ("PRIORITY_ID") REFERENCES "PRIORITY" ("PRIORITY_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828201844_ChatConversationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_CONVERSATIONS_CONVERSATION_STATUS_ID" ON "CHAT_CONVERSATIONS" ("CONVERSATION_STATUS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828201844_ChatConversationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_CONVERSATIONS_PRIORITY_ID" ON "CHAT_CONVERSATIONS" ("PRIORITY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828201844_ChatConversationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260828201844_ChatConversationsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828204228_ChatConversationAssignmentsAndAiSettingsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_CONVERSATION_AI_SETTINGS" (
+        "CHAT_CONVERSATION_AI_SETTING_ID" VARCHAR2(36) NOT NULL,
+        "CONVERSATION_ID" VARCHAR2(36) NOT NULL,
+        "AI_ENABLED" NUMBER(10) DEFAULT 1 NOT NULL,
+        "DEFAULT_MODEL_ID" VARCHAR2(36),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_CONVERSATION_AI_SETTINGS" PRIMARY KEY ("CHAT_CONVERSATION_AI_SETTING_ID"),
+        CONSTRAINT "FK_CHAT_CONVERSATION_AI_SETTINGS_AI_MODELS_DEFAULT_MODEL_ID" FOREIGN KEY ("DEFAULT_MODEL_ID") REFERENCES "AI_MODELS" ("AI_MODEL_ID"),
+        CONSTRAINT "FK_CHAT_CONVERSATION_AI_SETTINGS_CHAT_CONVERSATIONS_CONVERSATION_ID" FOREIGN KEY ("CONVERSATION_ID") REFERENCES "CHAT_CONVERSATIONS" ("CHAT_CONVERSATIONS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828204228_ChatConversationAssignmentsAndAiSettingsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_CONVERSATION_ASSIGNMENTS" (
+        "CHAT_CONVERSATIONS_ID" VARCHAR2(36) NOT NULL,
+        "AGENT_HUMAN_ID" VARCHAR2(36),
+        "ASSIGNED_AT" TIMESTAMP,
+        "UNASSIGNED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_CONVERSATION_ASSIGNMENTS" PRIMARY KEY ("CHAT_CONVERSATIONS_ID"),
+        CONSTRAINT "FK_CHAT_CONVERSATION_ASSIGNMENTS_AGENT_HUMANS_AGENT_HUMAN_ID" FOREIGN KEY ("AGENT_HUMAN_ID") REFERENCES "AGENT_HUMANS" ("AGENT_HUMAN_ID"),
+        CONSTRAINT "FK_CHAT_CONVERSATION_ASSIGNMENTS_CHAT_CONVERSATIONS_CHAT_CONVERSATIONS_ID" FOREIGN KEY ("CHAT_CONVERSATIONS_ID") REFERENCES "CHAT_CONVERSATIONS" ("CHAT_CONVERSATIONS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828204228_ChatConversationAssignmentsAndAiSettingsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_CONVERSATION_AI_SETTINGS_CONVERSATION_ID" ON "CHAT_CONVERSATION_AI_SETTINGS" ("CONVERSATION_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828204228_ChatConversationAssignmentsAndAiSettingsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_CONVERSATION_AI_SETTINGS_DEFAULT_MODEL_ID" ON "CHAT_CONVERSATION_AI_SETTINGS" ("DEFAULT_MODEL_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828204228_ChatConversationAssignmentsAndAiSettingsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_CONVERSATION_ASSIGNMENTS_AGENT_HUMAN_ID" ON "CHAT_CONVERSATION_ASSIGNMENTS" ("AGENT_HUMAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828204228_ChatConversationAssignmentsAndAiSettingsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260828204228_ChatConversationAssignmentsAndAiSettingsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260828210330_ChatConversations-ai-settings-and-assigmentsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260828210330_ChatConversations-ai-settings-and-assigmentsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831124442_ChatParticipantsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_PARTICIPANTS" (
+        "CHAT_PARTICIPANTS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_CONVERSATIONS_ID" VARCHAR2(36) NOT NULL,
+        "PARTICIPANT_TYPE_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_USER_PROFILE_ID" VARCHAR2(36),
+        "AGENT_HUMAN_ID" VARCHAR2(36),
+        "AI_MODEL_ID" VARCHAR2(36),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_PARTICIPANTS" PRIMARY KEY ("CHAT_PARTICIPANTS_ID"),
+        CONSTRAINT "FK_CHAT_PARTICIPANTS_AGENT_HUMANS_AGENT_HUMAN_ID" FOREIGN KEY ("AGENT_HUMAN_ID") REFERENCES "AGENT_HUMANS" ("AGENT_HUMAN_ID"),
+        CONSTRAINT "FK_CHAT_PARTICIPANTS_CHAT_CONVERSATIONS_CHAT_CONVERSATIONS_ID" FOREIGN KEY ("CHAT_CONVERSATIONS_ID") REFERENCES "CHAT_CONVERSATIONS" ("CHAT_CONVERSATIONS_ID"),
+        CONSTRAINT "FK_CHAT_PARTICIPANTS_CHAT_USER_PROFILES_CHAT_USER_PROFILE_ID" FOREIGN KEY ("CHAT_USER_PROFILE_ID") REFERENCES "CHAT_USER_PROFILES" ("CHAT_USER_PROFILE_ID"),
+        CONSTRAINT "FK_CHAT_PARTICIPANTS_SENDER_TYPES_PARTICIPANT_TYPE_ID" FOREIGN KEY ("PARTICIPANT_TYPE_ID") REFERENCES "SENDER_TYPES" ("SENDER_TYPES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831124442_ChatParticipantsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_PARTICIPANTS_AGENT_HUMAN_ID" ON "CHAT_PARTICIPANTS" ("AGENT_HUMAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831124442_ChatParticipantsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_PARTICIPANTS_CHAT_CONVERSATIONS_ID" ON "CHAT_PARTICIPANTS" ("CHAT_CONVERSATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831124442_ChatParticipantsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_PARTICIPANTS_CHAT_USER_PROFILE_ID" ON "CHAT_PARTICIPANTS" ("CHAT_USER_PROFILE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831124442_ChatParticipantsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_PARTICIPANTS_PARTICIPANT_TYPE_ID" ON "CHAT_PARTICIPANTS" ("PARTICIPANT_TYPE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831124442_ChatParticipantsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831124442_ChatParticipantsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_MESSAGES" (
+        "CHAT_MESSAGES_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_CONVERSATIONS_ID" VARCHAR2(36) NOT NULL,
+        "SENDER_TYPES_ID" VARCHAR2(36) NOT NULL,
+        "MESSAGE_TYPE_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_PARTICIPANTS_ID" VARCHAR2(36) NOT NULL,
+        "CONTENT" CLOB NOT NULL,
+        "METADATA" CLOB,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        CONSTRAINT "PK_CHAT_MESSAGES" PRIMARY KEY ("CHAT_MESSAGES_ID"),
+        CONSTRAINT "FK_CHAT_MESSAGES_CHAT_CONVERSATIONS_CHAT_CONVERSATIONS_ID" FOREIGN KEY ("CHAT_CONVERSATIONS_ID") REFERENCES "CHAT_CONVERSATIONS" ("CHAT_CONVERSATIONS_ID"),
+        CONSTRAINT "FK_CHAT_MESSAGES_CHAT_PARTICIPANTS_CHAT_PARTICIPANTS_ID" FOREIGN KEY ("CHAT_PARTICIPANTS_ID") REFERENCES "CHAT_PARTICIPANTS" ("CHAT_PARTICIPANTS_ID"),
+        CONSTRAINT "FK_CHAT_MESSAGES_MESSAGE_TYPES_MESSAGE_TYPE_ID" FOREIGN KEY ("MESSAGE_TYPE_ID") REFERENCES "MESSAGE_TYPES" ("MESSAGE_TYPES_ID"),
+        CONSTRAINT "FK_CHAT_MESSAGES_SENDER_TYPES_SENDER_TYPES_ID" FOREIGN KEY ("SENDER_TYPES_ID") REFERENCES "SENDER_TYPES" ("SENDER_TYPES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_ATTACHMENTS" (
+        "CHAT_ATTACHMENTS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_MESSAGES_ID" VARCHAR2(36) NOT NULL,
+        "FILE_URL" VARCHAR2(1000) NOT NULL,
+        "FILE_TYPE" VARCHAR2(100) NOT NULL,
+        "FILE_NAME" VARCHAR2(255) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        CONSTRAINT "PK_CHAT_ATTACHMENTS" PRIMARY KEY ("CHAT_ATTACHMENTS_ID"),
+        CONSTRAINT "FK_CHAT_ATTACHMENTS_CHAT_MESSAGES_CHAT_MESSAGES_ID" FOREIGN KEY ("CHAT_MESSAGES_ID") REFERENCES "CHAT_MESSAGES" ("CHAT_MESSAGES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ATTACHMENTS_CHAT_MESSAGES_ID" ON "CHAT_ATTACHMENTS" ("CHAT_MESSAGES_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_MESSAGES_CHAT_CONVERSATIONS_ID" ON "CHAT_MESSAGES" ("CHAT_CONVERSATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_MESSAGES_CHAT_PARTICIPANTS_ID" ON "CHAT_MESSAGES" ("CHAT_PARTICIPANTS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_MESSAGES_MESSAGE_TYPE_ID" ON "CHAT_MESSAGES" ("MESSAGE_TYPE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_MESSAGES_SENDER_TYPES_ID" ON "CHAT_MESSAGES" ("SENDER_TYPES_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831134517_ChatMessagesMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831134517_ChatMessagesMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_ESCALATIONS" (
+        "CHAT_ESCALATIONS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_CONVERSATIONS_ID" VARCHAR2(36) NOT NULL,
+        "ESCALATIONS_ID" VARCHAR2(36) NOT NULL,
+        "FROM_AI" NUMBER(10) NOT NULL,
+        "REASON" CLOB,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" VARCHAR2(36),
+        CONSTRAINT "PK_CHAT_ESCALATIONS" PRIMARY KEY ("CHAT_ESCALATIONS_ID"),
+        CONSTRAINT "FK_CHAT_ESC_CONV_ID" FOREIGN KEY ("CHAT_CONVERSATIONS_ID") REFERENCES "CHAT_CONVERSATIONS" ("CHAT_CONVERSATIONS_ID"),
+        CONSTRAINT "FK_CHAT_ESC_STAT_ID" FOREIGN KEY ("ESCALATIONS_ID") REFERENCES "ESCALATIONS_STATUSES" ("ESCALATIONS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_ESCALATION_ASSIGNMENTS" (
+        "CHAT_ESCALATION_ASSIGNMENTS_ID" VARCHAR2(36) NOT NULL,
+        "AGENT_HUMAN_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_ESCALATIONS_ID" VARCHAR2(36) NOT NULL,
+        "ASSIGNED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_ESCALATION_ASSIGNMENTS" PRIMARY KEY ("CHAT_ESCALATION_ASSIGNMENTS_ID"),
+        CONSTRAINT "FK_CHAT_ESC_ASG_AGT" FOREIGN KEY ("AGENT_HUMAN_ID") REFERENCES "AGENT_HUMANS" ("AGENT_HUMAN_ID"),
+        CONSTRAINT "FK_CHAT_ESC_ASG_ESC" FOREIGN KEY ("CHAT_ESCALATIONS_ID") REFERENCES "CHAT_ESCALATIONS" ("CHAT_ESCALATIONS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_ESCALATION_RESOLUTION" (
+        "CHAT_ESCALATION_RESOLUTION_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_ESCALATIONS_ID" VARCHAR2(36) NOT NULL,
+        "RESOLVED_BY" VARCHAR2(36),
+        "RESOLUTION_NOTE" CLOB,
+        "RESOLVED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_ESCALATION_RESOLUTION" PRIMARY KEY ("CHAT_ESCALATION_RESOLUTION_ID"),
+        CONSTRAINT "FK_CHAT_ESC_RES_ESC" FOREIGN KEY ("CHAT_ESCALATIONS_ID") REFERENCES "CHAT_ESCALATIONS" ("CHAT_ESCALATIONS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_ESCALATION_STATUS_HISTORY" (
+        "CHAT_ESCALATION_STATUS_ID" VARCHAR2(36) NOT NULL,
+        "ESCALATIONS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_ESCALATIONS_ID" VARCHAR2(36) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CHAT_ESC_STAT_HIST" PRIMARY KEY ("CHAT_ESCALATION_STATUS_ID"),
+        CONSTRAINT "FK_CHAT_ESC_HIST_ESC" FOREIGN KEY ("CHAT_ESCALATIONS_ID") REFERENCES "CHAT_ESCALATIONS" ("CHAT_ESCALATIONS_ID"),
+        CONSTRAINT "FK_CHAT_ESC_HIST_STA" FOREIGN KEY ("ESCALATIONS_ID") REFERENCES "ESCALATIONS_STATUSES" ("ESCALATIONS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ESC_ASG_AGT" ON "CHAT_ESCALATION_ASSIGNMENTS" ("AGENT_HUMAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ESC_ASG_ESC" ON "CHAT_ESCALATION_ASSIGNMENTS" ("CHAT_ESCALATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ESC_RES_ESC" ON "CHAT_ESCALATION_RESOLUTION" ("CHAT_ESCALATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ESC_HIST_ESC" ON "CHAT_ESCALATION_STATUS_HISTORY" ("CHAT_ESCALATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ESC_HIST_STA" ON "CHAT_ESCALATION_STATUS_HISTORY" ("ESCALATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ESC_CONV_ID" ON "CHAT_ESCALATIONS" ("CHAT_CONVERSATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_ESC_STAT_ID" ON "CHAT_ESCALATIONS" ("ESCALATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831142732_ChatEscalationsMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831142732_ChatEscalationsMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831150033_ChatEscalationsStatusMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831150033_ChatEscalationsStatusMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153506_ExpandWidthDescriptionSpecialities';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'SPECIALTIES' 
+      and column_name = 'NAME' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "SPECIALTIES" MODIFY "NAME" VARCHAR2(120) ';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "SPECIALTIES" MODIFY "NAME" VARCHAR2(120) NOT NULL';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153506_ExpandWidthDescriptionSpecialities';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'SPECIALTIES' 
+      and column_name = 'DESCRIPTION' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "SPECIALTIES" MODIFY "DESCRIPTION" VARCHAR2(120) NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "SPECIALTIES" MODIFY "DESCRIPTION" VARCHAR2(120)';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153506_ExpandWidthDescriptionSpecialities';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831153506_ExpandWidthDescriptionSpecialities'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_AI_RUNS" (
+        "CHAT_AI_RUNS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_CONVERSATIONS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_MESSAGES_ID" VARCHAR2(36) NOT NULL,
+        "AI_MODEL_ID" VARCHAR2(36) NOT NULL,
+        "AI_RUNS_STATUSES_ID" VARCHAR2(36) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP NOT NULL,
+        CONSTRAINT "PK_CHAT_AI_RUNS" PRIMARY KEY ("CHAT_AI_RUNS_ID"),
+        CONSTRAINT "FK_CHAT_AI_RUNS_AI_MODELS_AI_MODEL_ID" FOREIGN KEY ("AI_MODEL_ID") REFERENCES "AI_MODELS" ("AI_MODEL_ID"),
+        CONSTRAINT "FK_CHAT_AI_RUNS_AI_RUNS_STATUSES_AI_RUNS_STATUSES_ID" FOREIGN KEY ("AI_RUNS_STATUSES_ID") REFERENCES "AI_RUNS_STATUSES" ("AI_RUNS_STATUSES_ID"),
+        CONSTRAINT "FK_CHAT_AI_RUNS_CHAT_CONVERSATIONS_CHAT_CONVERSATIONS_ID" FOREIGN KEY ("CHAT_CONVERSATIONS_ID") REFERENCES "CHAT_CONVERSATIONS" ("CHAT_CONVERSATIONS_ID"),
+        CONSTRAINT "FK_CHAT_AI_RUNS_CHAT_MESSAGES_CHAT_MESSAGES_ID" FOREIGN KEY ("CHAT_MESSAGES_ID") REFERENCES "CHAT_MESSAGES" ("CHAT_MESSAGES_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_AI_RUN_ERRORS" (
+        "CHAT_AI_RUN_ERRORS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_AI_RUNS_ID" VARCHAR2(36) NOT NULL,
+        "ERROR_MESSAGE" CLOB NOT NULL,
+        "ERROR_CODE" VARCHAR2(80),
+        "PROVIDER_ERROR_ID" VARCHAR2(120),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        CONSTRAINT "PK_CHAT_AI_RUN_ERRORS" PRIMARY KEY ("CHAT_AI_RUN_ERRORS_ID"),
+        CONSTRAINT "FK_CHAT_AI_RUN_ERRORS_CHAT_AI_RUNS_CHAT_AI_RUNS_ID" FOREIGN KEY ("CHAT_AI_RUNS_ID") REFERENCES "CHAT_AI_RUNS" ("CHAT_AI_RUNS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CHAT_AI_RUN_METRICS" (
+        "CHAT_AI_RUN_METRICS_ID" VARCHAR2(36) NOT NULL,
+        "CHAT_AI_RUNS_ID" VARCHAR2(36) NOT NULL,
+        "PROMPT_TOKENS" NUMBER(10) DEFAULT 0 NOT NULL,
+        "COMPLETION_TOKENS" NUMBER(10) DEFAULT 0 NOT NULL,
+        "TOTAL_TOKENS" NUMBER(10) DEFAULT 0 NOT NULL,
+        "COST" NUMBER(18,6) DEFAULT 0.0 NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        CONSTRAINT "PK_CHAT_AI_RUN_METRICS" PRIMARY KEY ("CHAT_AI_RUN_METRICS_ID"),
+        CONSTRAINT "FK_CHAT_AI_RUN_METRICS_CHAT_AI_RUNS_CHAT_AI_RUNS_ID" FOREIGN KEY ("CHAT_AI_RUNS_ID") REFERENCES "CHAT_AI_RUNS" ("CHAT_AI_RUNS_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_AI_RUN_ERRORS_CHAT_AI_RUNS_ID" ON "CHAT_AI_RUN_ERRORS" ("CHAT_AI_RUNS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_CHAT_AI_RUN_METRICS_CHAT_AI_RUNS_ID" ON "CHAT_AI_RUN_METRICS" ("CHAT_AI_RUNS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_AI_RUNS_AI_MODELS_ID" ON "CHAT_AI_RUNS" ("AI_MODEL_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_AI_RUNS_AI_RUN_STATUSES_ID" ON "CHAT_AI_RUNS" ("AI_RUNS_STATUSES_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_AI_RUNS_CHAT_CONVERSATIONS_ID" ON "CHAT_AI_RUNS" ("CHAT_CONVERSATIONS_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_AI_RUNS_CHAT_CONVERSATIONS_ID_CREATED_AT" ON "CHAT_AI_RUNS" ("CHAT_CONVERSATIONS_ID", "CREATED_AT")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CHAT_AI_RUNS_CHAT_MESSAGES_ID" ON "CHAT_AI_RUNS" ("CHAT_MESSAGES_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831153941_ChatAiRunsAndMetricsAndErrorMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831153941_ChatAiRunsAndMetricsAndErrorMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831170011_ModulesAndRolePermissionMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "MODULES" (
+        "MODULE_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(50) NOT NULL,
+        "DESCRIPTION" CLOB,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_MODULES" PRIMARY KEY ("MODULE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831170011_ModulesAndRolePermissionMigration';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "ROLE_PERMISSIONS" (
+        "ROLE_PERMISSION_ID" VARCHAR2(36) NOT NULL,
+        "ROLE_ID" VARCHAR2(36) NOT NULL,
+        "MODULE_ID" VARCHAR2(36) NOT NULL,
+        "CAN_VIEW" NUMBER(10) NOT NULL,
+        "CAN_CREATE" NUMBER(10) NOT NULL,
+        "CAN_EDIT" NUMBER(10) NOT NULL,
+        "CAN_DELETE" NUMBER(10) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_ROLE_PERMISSIONS" PRIMARY KEY ("ROLE_PERMISSION_ID"),
+        CONSTRAINT "FK_ROLE_PERMISSIONS_MODULES_MODULE_ID" FOREIGN KEY ("MODULE_ID") REFERENCES "MODULES" ("MODULE_ID") ON DELETE CASCADE,
+        CONSTRAINT "FK_ROLE_PERMISSIONS_ROLES_ROLE_ID" FOREIGN KEY ("ROLE_ID") REFERENCES "ROLES" ("ROLE_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831170011_ModulesAndRolePermissionMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_MODULES_NAME" ON "MODULES" ("NAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831170011_ModulesAndRolePermissionMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_ROLE_PERMISSIONS_MODULE_ID" ON "ROLE_PERMISSIONS" ("MODULE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831170011_ModulesAndRolePermissionMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_ROLE_PERMISSIONS_ROLE_ID_MODULE_ID" ON "ROLE_PERMISSIONS" ("ROLE_ID", "MODULE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831170011_ModulesAndRolePermissionMigration';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831170011_ModulesAndRolePermissionMigration'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TELEGRAM_INBOUND_UPDATES" (
+        "UPDATE_ID" NUMBER(19) NOT NULL,
+        "TELEGRAM_USER_ID" NUMBER(19) NOT NULL,
+        "TELEGRAM_CHAT_ID" NUMBER(19) NOT NULL,
+        "TELEGRAM_MESSAGE_ID" NUMBER(19) NOT NULL,
+        "CHAT_TYPE" VARCHAR2(30) NOT NULL,
+        "MESSAGE_TEXT" CLOB,
+        "RESPONSE_TEXT" CLOB,
+        "STATUS" VARCHAR2(20) NOT NULL,
+        "ATTEMPTS" NUMBER(10) NOT NULL,
+        "NEXT_ATTEMPT_AT" TIMESTAMP NOT NULL,
+        "LAST_SENT_CHUNK_INDEX" NUMBER(10) NOT NULL,
+        "LAST_ERROR_CODE" VARCHAR2(120),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TELEGRAM_INBOUND_UPDATES" PRIMARY KEY ("UPDATE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TELEGRAM_LINK_CODES" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "PERSON_ID" VARCHAR2(36) NOT NULL,
+        "CODE_HASH" VARCHAR2(64) NOT NULL,
+        "EXPIRES_AT" TIMESTAMP NOT NULL,
+        "CONSUMED_AT" TIMESTAMP,
+        "INVALIDATED_AT" TIMESTAMP,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TELEGRAM_LINK_CODES" PRIMARY KEY ("ID"),
+        CONSTRAINT "FK_TELEGRAM_LINK_CODES_USERS" FOREIGN KEY ("PERSON_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TELEGRAM_USER_LINKS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "PERSON_ID" VARCHAR2(36) NOT NULL,
+        "TELEGRAM_USER_ID" NUMBER(19) NOT NULL,
+        "TELEGRAM_CHAT_ID" NUMBER(19) NOT NULL,
+        "LINKED_AT" TIMESTAMP NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TELEGRAM_USER_LINKS" PRIMARY KEY ("ID"),
+        CONSTRAINT "FK_TELEGRAM_USER_LINKS_USERS" FOREIGN KEY ("PERSON_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TELEGRAM_CONVERSATION_LINKS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "TELEGRAM_USER_LINK_ID" VARCHAR2(36) NOT NULL,
+        "CONVERSATION_ID" VARCHAR2(36) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TELEGRAM_CONVERSATION_LINKS" PRIMARY KEY ("ID"),
+        CONSTRAINT "FK_TELEGRAM_CONVERSATION_LINKS_CONVERSATION" FOREIGN KEY ("CONVERSATION_ID") REFERENCES "CHAT_CONVERSATIONS" ("CHAT_CONVERSATIONS_ID"),
+        CONSTRAINT "FK_TELEGRAM_CONVERSATION_LINKS_USER_LINK" FOREIGN KEY ("TELEGRAM_USER_LINK_ID") REFERENCES "TELEGRAM_USER_LINKS" ("ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_CONVERSATION_LINKS_CONVERSATION" ON "TELEGRAM_CONVERSATION_LINKS" ("CONVERSATION_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_CONVERSATION_LINKS_USER" ON "TELEGRAM_CONVERSATION_LINKS" ("TELEGRAM_USER_LINK_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_INBOUND_UPDATES_PENDING" ON "TELEGRAM_INBOUND_UPDATES" ("STATUS", "NEXT_ATTEMPT_AT")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_LINK_CODES_PERSON" ON "TELEGRAM_LINK_CODES" ("PERSON_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_LINK_CODES_HASH" ON "TELEGRAM_LINK_CODES" ("CODE_HASH")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_USER_LINKS_CHAT" ON "TELEGRAM_USER_LINKS" ("TELEGRAM_CHAT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_USER_LINKS_PERSON" ON "TELEGRAM_USER_LINKS" ("PERSON_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_USER_LINKS_USER" ON "TELEGRAM_USER_LINKS" ("TELEGRAM_USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831172933_TelegramChannelFoundation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831172933_TelegramChannelFoundation'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831203135_TelegramEmailOtpLinking';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TELEGRAM_LINKING_SESSIONS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "TELEGRAM_USER_ID" NUMBER(19) NOT NULL,
+        "TELEGRAM_CHAT_ID" NUMBER(19) NOT NULL,
+        "PERSON_ID" VARCHAR2(36),
+        "EMAIL_HASH" VARCHAR2(64),
+        "OTP_HASH" VARCHAR2(64),
+        "STATUS" VARCHAR2(20) NOT NULL,
+        "ATTEMPTS" NUMBER(10) NOT NULL,
+        "EXPIRES_AT" TIMESTAMP,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TELEGRAM_LINKING_SESSIONS" PRIMARY KEY ("ID"),
+        CONSTRAINT "FK_TELEGRAM_LINKING_SESSIONS_USERS" FOREIGN KEY ("PERSON_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831203135_TelegramEmailOtpLinking';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_LINKING_SESSIONS_ACTIVE" ON "TELEGRAM_LINKING_SESSIONS" ("TELEGRAM_USER_ID", "STATUS")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831203135_TelegramEmailOtpLinking';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_LINKING_SESSIONS_EMAIL" ON "TELEGRAM_LINKING_SESSIONS" ("EMAIL_HASH")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831203135_TelegramEmailOtpLinking';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_LINKING_SESSIONS_PERSON_ID" ON "TELEGRAM_LINKING_SESSIONS" ("PERSON_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831203135_TelegramEmailOtpLinking';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831203135_TelegramEmailOtpLinking'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831204314_TelegramUserLinkRevocation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "TELEGRAM_USER_LINKS" ADD "UNLINKED_AT" TIMESTAMP'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831204314_TelegramUserLinkRevocation';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831204314_TelegramUserLinkRevocation'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "UX_TELEGRAM_USER_LINKS_CHAT"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "UX_TELEGRAM_USER_LINKS_PERSON"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "UX_TELEGRAM_USER_LINKS_USER"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_USER_LINKS_PERSON_ID" ON "TELEGRAM_USER_LINKS" ("PERSON_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_USER_LINKS_PERSON"
+    ON "TELEGRAM_USER_LINKS"
+    (CASE WHEN "UNLINKED_AT" IS NULL THEN "PERSON_ID" END)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_USER_LINKS_USER"
+    ON "TELEGRAM_USER_LINKS"
+    (CASE WHEN "UNLINKED_AT" IS NULL THEN "TELEGRAM_USER_ID" END)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TELEGRAM_USER_LINKS_CHAT"
+    ON "TELEGRAM_USER_LINKS"
+    (CASE WHEN "UNLINKED_AT" IS NULL THEN "TELEGRAM_CHAT_ID" END)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260831220124_TelegramActiveUserLinkIndexes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260831220124_TelegramActiveUserLinkIndexes'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260901015850_AddUserPermissions';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "USER_PERMISSIONS" (
+        "USER_PERMISSION_ID" VARCHAR2(36) NOT NULL,
+        "USER_ID" VARCHAR2(36) NOT NULL,
+        "MODULE_ID" VARCHAR2(36) NOT NULL,
+        "CAN_VIEW" NUMBER(10) NOT NULL,
+        "CAN_CREATE" NUMBER(10) NOT NULL,
+        "CAN_EDIT" NUMBER(10) NOT NULL,
+        "CAN_DELETE" NUMBER(10) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_USER_PERMISSIONS" PRIMARY KEY ("USER_PERMISSION_ID"),
+        CONSTRAINT "FK_USER_PERMISSIONS_MODULES_MODULE_ID" FOREIGN KEY ("MODULE_ID") REFERENCES "MODULES" ("MODULE_ID") ON DELETE CASCADE,
+        CONSTRAINT "FK_USER_PERMISSIONS_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260901015850_AddUserPermissions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_USER_PERMISSIONS_MODULE_ID" ON "USER_PERMISSIONS" ("MODULE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260901015850_AddUserPermissions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_USER_PERMISSIONS_USER_ID_MODULE_ID" ON "USER_PERMISSIONS" ("USER_ID", "MODULE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260901015850_AddUserPermissions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260901015850_AddUserPermissions'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260901205730_AddUserAccountsMailUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_USER_ACCOUNTS_MAIL" ON "USER_ACCOUNTS" ("MAIL")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260901205730_AddUserAccountsMailUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260901205730_AddUserAccountsMailUniqueIndex'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902151948_AlignChatUserProfileUserId';
+IF v_Count = 0 THEN
+
+    DECLARE
+        existing_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO existing_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CHAT_USER_PROFILES'
+          AND COLUMN_NAME = 'PERSON_ID';
+
+        IF existing_count > 0 THEN
+            EXECUTE IMMEDIATE
+                'ALTER TABLE CHAT_USER_PROFILES RENAME COLUMN PERSON_ID TO USER_ID';
+        END IF;
+
+        SELECT COUNT(*) INTO existing_count
+        FROM USER_CONSTRAINTS
+        WHERE CONSTRAINT_NAME = 'FK_CHAT_USER_PROFILES_USERS_PERSON_ID';
+
+        IF existing_count > 0 THEN
+            EXECUTE IMMEDIATE
+                'ALTER TABLE CHAT_USER_PROFILES RENAME CONSTRAINT FK_CHAT_USER_PROFILES_USERS_PERSON_ID TO FK_CHAT_USER_PROFILES_USERS_USER_ID';
+        END IF;
+
+        SELECT COUNT(*) INTO existing_count
+        FROM USER_INDEXES
+        WHERE INDEX_NAME = 'IX_CHAT_USER_PROFILES_PERSON_ID';
+
+        IF existing_count > 0 THEN
+            EXECUTE IMMEDIATE
+                'ALTER INDEX IX_CHAT_USER_PROFILES_PERSON_ID RENAME TO IX_CHAT_USER_PROFILES_USER_ID';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902151948_AlignChatUserProfileUserId';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260902151948_AlignChatUserProfileUserId'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902162256_AddTelegramRegistrationSessions';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TELEGRAM_REGISTRATION_SESSIONS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "TELEGRAM_USER_ID" NUMBER(19) NOT NULL,
+        "TELEGRAM_CHAT_ID" NUMBER(19) NOT NULL,
+        "PERSON_ID" VARCHAR2(36),
+        "PROTECTED_EMAIL" VARCHAR2(2048),
+        "EMAIL_HASH" VARCHAR2(64),
+        "OTP_HASH" VARCHAR2(64),
+        "COMPLETION_TOKEN_HASH" VARCHAR2(64),
+        "ACCOUNT_KIND" VARCHAR2(24) NOT NULL,
+        "STATUS" VARCHAR2(24) NOT NULL,
+        "ATTEMPTS" NUMBER(10) NOT NULL,
+        "OTP_EXPIRES_AT" TIMESTAMP,
+        "COMPLETION_EXPIRES_AT" TIMESTAMP,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TELEGRAM_REGISTRATION_SESSIONS" PRIMARY KEY ("ID"),
+        CONSTRAINT "FK_TG_REG_SESSIONS_USERS" FOREIGN KEY ("PERSON_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902162256_AddTelegramRegistrationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_REGISTRATION_SESSIONS_PERSON_ID" ON "TELEGRAM_REGISTRATION_SESSIONS" ("PERSON_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902162256_AddTelegramRegistrationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TG_REG_SESSIONS_ACTIVE" ON "TELEGRAM_REGISTRATION_SESSIONS" ("TELEGRAM_USER_ID", "STATUS")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902162256_AddTelegramRegistrationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TG_REG_SESSIONS_EMAIL" ON "TELEGRAM_REGISTRATION_SESSIONS" ("EMAIL_HASH")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902162256_AddTelegramRegistrationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TG_REG_SESSIONS_TOKEN" ON "TELEGRAM_REGISTRATION_SESSIONS" ("COMPLETION_TOKEN_HASH")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260902162256_AddTelegramRegistrationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260902162256_AddTelegramRegistrationSessions'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903030852_AddAppointmentClientOtpSelfService';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CLIENTS" ADD "PHONE_NUMBER" NVARCHAR2(20)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903030852_AddAppointmentClientOtpSelfService';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "REQUESTER_PHONE_NUMBER" VARCHAR2(20)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903030852_AddAppointmentClientOtpSelfService';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "APPOINTMENT_ACTION_VERIFICATION_SESSIONS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "ACTION" VARCHAR2(20) NOT NULL,
+        "CHANNEL" VARCHAR2(20) NOT NULL,
+        "DESTINATION_HASH" VARCHAR2(64) NOT NULL,
+        "OTP_HASH" VARCHAR2(64),
+        "STATUS" VARCHAR2(20) NOT NULL,
+        "ATTEMPTS" NUMBER(10) NOT NULL,
+        "EXPIRES_AT" TIMESTAMP,
+        "ACTION_PAYLOAD" VARCHAR2(1000),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_APPOINTMENT_ACTION_VERIFICATION_SESSIONS" PRIMARY KEY ("ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903030852_AddAppointmentClientOtpSelfService';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPT_ACTION_VERIF_ACTIVE" ON "APPOINTMENT_ACTION_VERIFICATION_SESSIONS" ("APPOINTMENT_ID", "ACTION", "STATUS")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903030852_AddAppointmentClientOtpSelfService';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_APPT_ACTION_VERIF_DEST" ON "APPOINTMENT_ACTION_VERIFICATION_SESSIONS" ("DESTINATION_HASH")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903030852_AddAppointmentClientOtpSelfService';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260903030852_AddAppointmentClientOtpSelfService'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903132203_AlignAppointmentProfileAndVerificationSchema';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260903132203_AlignAppointmentProfileAndVerificationSchema'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903132226_AddAppointmentBookingIdempotency';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "BOOKING_REQUEST_KEY_HASH" VARCHAR2(64)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903132226_AddAppointmentBookingIdempotency';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_APPTS_BOOKING_REQ_HASH" ON "APPOINTMENTS" ("BOOKING_REQUEST_KEY_HASH")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903132226_AddAppointmentBookingIdempotency';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260903132226_AddAppointmentBookingIdempotency'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903142849_AddClientsAndVeterinariansUserIdUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "IX_VETERINARIANS_USER_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903142849_AddClientsAndVeterinariansUserIdUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "IX_CLIENTS_USER_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903142849_AddClientsAndVeterinariansUserIdUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_VETERINARIANS_USER_ID" ON "VETERINARIANS" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903142849_AddClientsAndVeterinariansUserIdUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_CLIENTS_USER_ID" ON "CLIENTS" ("USER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903142849_AddClientsAndVeterinariansUserIdUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260903142849_AddClientsAndVeterinariansUserIdUniqueIndex'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903205210_MakeUsersPasswordHashNullable';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'USERS' 
+      and column_name = 'PASSWORD_HASH' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "USERS" MODIFY "PASSWORD_HASH"  NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "USERS" MODIFY "PASSWORD_HASH" ';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260903205210_MakeUsersPasswordHashNullable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260903205210_MakeUsersPasswordHashNullable'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904134447_AddTelegramIdentitySessions';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "TELEGRAM_IDENTITY_SESSIONS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "TELEGRAM_USER_ID" NUMBER(19) NOT NULL,
+        "TELEGRAM_CHAT_ID" NUMBER(19) NOT NULL,
+        "PERSON_ID" VARCHAR2(36),
+        "PROTECTED_IDENTIFICATION" VARCHAR2(512),
+        "PROTECTED_FULL_NAME" VARCHAR2(1024),
+        "PROTECTED_EMAIL" VARCHAR2(1024),
+        "PROTECTED_PENDING_MESSAGE" CLOB,
+        "OTP_HASH" VARCHAR2(64),
+        "STATUS" VARCHAR2(40) NOT NULL,
+        "OTP_ATTEMPTS" NUMBER(10) NOT NULL,
+        "OTP_EXPIRES_AT" TIMESTAMP,
+        "ABSOLUTE_EXPIRES_AT" TIMESTAMP,
+        "IDLE_EXPIRES_AT" TIMESTAMP,
+        "PENDING_INBOUND_UPDATE_ID" NUMBER(19),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_TELEGRAM_IDENTITY_SESSIONS" PRIMARY KEY ("ID"),
+        CONSTRAINT "FK_TG_ID_SESSIONS_USERS" FOREIGN KEY ("PERSON_ID") REFERENCES "USERS" ("USER_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904134447_AddTelegramIdentitySessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TELEGRAM_IDENTITY_SESSIONS_PERSON_ID" ON "TELEGRAM_IDENTITY_SESSIONS" ("PERSON_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904134447_AddTelegramIdentitySessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TG_ID_SESSIONS_CHAT" ON "TELEGRAM_IDENTITY_SESSIONS" ("TELEGRAM_CHAT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904134447_AddTelegramIdentitySessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_TG_ID_SESSIONS_USER_STATUS" ON "TELEGRAM_IDENTITY_SESSIONS" ("TELEGRAM_USER_ID", "STATUS")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904134447_AddTelegramIdentitySessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_TG_ID_SESSIONS_PENDING" ON "TELEGRAM_IDENTITY_SESSIONS" ("PENDING_INBOUND_UPDATE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904134447_AddTelegramIdentitySessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260904134447_AddTelegramIdentitySessions'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904205328_AddClientsPhoneNumberUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_CLIENTS_PHONE_NUMBER" ON "CLIENTS" ("PHONE_NUMBER")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260904205328_AddClientsPhoneNumberUniqueIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260904205328_AddClientsPhoneNumberUniqueIndex'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907143315_AddContactVerificationSessions';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "CONTACT_VERIFICATION_SESSIONS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "PURPOSE" VARCHAR2(20) NOT NULL,
+        "CHANNEL" VARCHAR2(20) NOT NULL,
+        "DESTINATION_HASH" VARCHAR2(64) NOT NULL,
+        "SUBJECT_USER_ID" VARCHAR2(36),
+        "OTP_HASH" VARCHAR2(64),
+        "PROOF_HASH" VARCHAR2(64),
+        "STATUS" VARCHAR2(20) NOT NULL,
+        "ATTEMPTS" NUMBER(10) NOT NULL,
+        "EXPIRES_AT" TIMESTAMP,
+        "PROOF_EXPIRES_AT" TIMESTAMP,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_CONTACT_VERIFICATION_SESSIONS" PRIMARY KEY ("ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907143315_AddContactVerificationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CONTACT_VERIF_ACTIVE" ON "CONTACT_VERIFICATION_SESSIONS" ("PURPOSE", "DESTINATION_HASH", "STATUS")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907143315_AddContactVerificationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_CONTACT_VERIF_PROOF" ON "CONTACT_VERIFICATION_SESSIONS" ("PROOF_HASH")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907143315_AddContactVerificationSessions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260907143315_AddContactVerificationSessions'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "AVAILABILITIES" ADD "CONSULTING_ROOM" VARCHAR2(50)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "AVAILABILITIES" ADD "MAX_CONCURRENT_APPOINTMENTS" NUMBER(10) DEFAULT 1 NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "AVAILABILITIES" ADD "SHIFT_NAME" VARCHAR2(30)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "AVAILABILITIES" ADD "SLOT_DURATION_MINUTES" NUMBER(10) DEFAULT 30 NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "CONSULTING_ROOM" VARCHAR2(50)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "VETERINARIAN_ABSENCES" (
+        "ABSENCE_ID" VARCHAR2(36) NOT NULL,
+        "VETERINARIAN_ID" VARCHAR2(36) NOT NULL,
+        "START_AT" TIMESTAMP NOT NULL,
+        "END_AT" TIMESTAMP NOT NULL,
+        "REASON" VARCHAR2(200),
+        "IS_FULL_DAY" CHAR(1) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATED_AT" TIMESTAMP,
+        CONSTRAINT "PK_VETERINARIAN_ABSENCES" PRIMARY KEY ("ABSENCE_ID"),
+        CONSTRAINT "FK_VETERINARIAN_ABSENCES_VETERINARIANS_VETERINARIAN_ID" FOREIGN KEY ("VETERINARIAN_ID") REFERENCES "VETERINARIANS" ("VETERINARIAN_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_VETERINARIAN_ABSENCES_VETERINARIAN_ID" ON "VETERINARIAN_ABSENCES" ("VETERINARIAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_VETERINARIAN_ABSENCES_VETERINARIAN_ID_START_AT_END_AT" ON "VETERINARIAN_ABSENCES" ("VETERINARIAN_ID", "START_AT", "END_AT")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260907175743_AddScheduleConsultingRoomAndAbsences';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260907175743_AddScheduleConsultingRoomAndAbsences'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "RACES" ADD "SPECIES_ID" VARCHAR2(36)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'MERGE INTO "SPECIES" target
+    USING (
+        SELECT ''88000000-0000-0000-0000-000000000001'' AS "SPECIES_ID",
+               ''Perro'' AS "NAME" FROM DUAL UNION ALL
+        SELECT ''88000000-0000-0000-0000-000000000002'',
+               ''Gato'' FROM DUAL UNION ALL
+        SELECT ''88000000-0000-0000-0000-000000000003'',
+               ''Otro'' FROM DUAL
+    ) source
+    ON (UPPER(target."NAME") = UPPER(source."NAME"))
+    WHEN NOT MATCHED THEN
+        INSERT ("SPECIES_ID", "NAME", "CREATED_AT")
+        VALUES (source."SPECIES_ID", source."NAME", SYSTIMESTAMP)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE "RACES"
+    SET "SPECIES_ID" = (
+        SELECT MIN("SPECIES_ID")
+        FROM "SPECIES"
+        WHERE UPPER("NAME") = ''OTRO''
+    )
+    WHERE "SPECIES_ID" IS NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE "RACES"
+    SET "SPECIES_ID" = (
+        SELECT MIN("SPECIES_ID")
+        FROM "SPECIES"
+        WHERE UPPER("NAME") = ''PERRO''
+    )
+    WHERE LOWER("RACE_ID") IN (
+        ''8a000000-0000-0000-0000-000000000001'',
+        ''8a000000-0000-0000-0000-000000000002'',
+        ''8a000000-0000-0000-0000-000000000003'',
+        ''8a000000-0000-0000-0000-000000000004'',
+        ''8a000000-0000-0000-0000-000000000005''
+    )'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE "RACES"
+    SET "SPECIES_ID" = (
+        SELECT MIN("SPECIES_ID")
+        FROM "SPECIES"
+        WHERE UPPER("NAME") = ''GATO''
+    )
+    WHERE LOWER("RACE_ID") IN (
+        ''8a000000-0000-0000-0000-000000000006'',
+        ''8a000000-0000-0000-0000-000000000007'',
+        ''8a000000-0000-0000-0000-000000000008'',
+        ''8a000000-0000-0000-0000-000000000009''
+    )'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'MERGE INTO "RACES" target
+    USING (
+        SELECT "RACE_ID",
+               SUBSTR("NAME", 1, 10) || ''-'' ||
+               SUBSTR(REPLACE("RACE_ID", ''-'', ''''), 1, 8) AS "UNIQUE_NAME"
+        FROM (
+            SELECT "RACE_ID", "NAME", "SPECIES_ID",
+                   ROW_NUMBER() OVER (
+                       PARTITION BY "SPECIES_ID", UPPER("NAME")
+                       ORDER BY "RACE_ID"
+                   ) AS duplicate_number
+            FROM "RACES"
+        )
+        WHERE duplicate_number > 1
+    ) duplicate
+    ON (target."RACE_ID" = duplicate."RACE_ID")
+    WHEN MATCHED THEN UPDATE SET target."NAME" = duplicate."UNIQUE_NAME"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'RACES' 
+      and column_name = 'SPECIES_ID' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "RACES" MODIFY "SPECIES_ID"  ';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "RACES" MODIFY "SPECIES_ID"  NOT NULL';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_RACES_SPECIES_ID_NAME" ON "RACES" ("SPECIES_ID", "NAME")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "RACES" ADD CONSTRAINT "FK_RACES_SPECIES_SPECIES_ID" FOREIGN KEY ("SPECIES_ID") REFERENCES "SPECIES" ("SPECIES_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908133448_AddRaceSpeciesRelationship';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260908133448_AddRaceSpeciesRelationship'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908150000_AddPetPhotoUrl';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'PETS' AND COLUMN_NAME = 'PHOTO_URL';
+
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE PETS ADD (PHOTO_URL NVARCHAR2(500))';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260908150000_AddPetPhotoUrl';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260908150000_AddPetPhotoUrl'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260909213735_WidenMedicalRecordAndAppointmentNotesColumns';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'MEDICAL_RECORDS' 
+      and column_name = 'TREATMENT' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "MEDICAL_RECORDS" MODIFY "TREATMENT" VARCHAR2(1000) NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "MEDICAL_RECORDS" MODIFY "TREATMENT" VARCHAR2(1000)';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260909213735_WidenMedicalRecordAndAppointmentNotesColumns';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'MEDICAL_RECORDS' 
+      and column_name = 'SYMPTOMS' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "MEDICAL_RECORDS" MODIFY "SYMPTOMS" VARCHAR2(1000) NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "MEDICAL_RECORDS" MODIFY "SYMPTOMS" VARCHAR2(1000)';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260909213735_WidenMedicalRecordAndAppointmentNotesColumns';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'APPOINTMENTS' 
+      and column_name = 'NOTES' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "APPOINTMENTS" MODIFY "NOTES" VARCHAR2(500) NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "APPOINTMENTS" MODIFY "NOTES" VARCHAR2(500)';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260909213735_WidenMedicalRecordAndAppointmentNotesColumns';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260909213735_WidenMedicalRecordAndAppointmentNotesColumns'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260911145302_WidenClientAddress';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'CLIENTS' 
+      and column_name = 'ADDRESS' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "CLIENTS" MODIFY "ADDRESS" NVARCHAR2(150) NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "CLIENTS" MODIFY "ADDRESS" NVARCHAR2(150)';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260911145302_WidenClientAddress';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260911145302_WidenClientAddress'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260911191728_AddUserTokensSessionStartedAt';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "USER_TOKENS" ADD "SESSION_STARTED_AT" TIMESTAMP'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260911191728_AddUserTokensSessionStartedAt';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE "USER_TOKENS"
+    SET "SESSION_STARTED_AT" = "CREATED_AT" - NUMTODSINTERVAL(25, ''HOUR'')
+    WHERE "SESSION_STARTED_AT" IS NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260911191728_AddUserTokensSessionStartedAt';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'USER_TOKENS' 
+      and column_name = 'SESSION_STARTED_AT' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "USER_TOKENS" MODIFY "SESSION_STARTED_AT"  ';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "USER_TOKENS" MODIFY "SESSION_STARTED_AT"  NOT NULL';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260911191728_AddUserTokensSessionStartedAt';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260911191728_AddUserTokensSessionStartedAt'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260914215928_AddChatConversationsChanel';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "TELEGRAM_IDENTITY_SESSIONS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260914215928_AddChatConversationsChanel';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_CONVERSATIONS" ADD "CHANNEL" VARCHAR2(20) DEFAULT ''Web'' NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260914215928_AddChatConversationsChanel';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260914215928_AddChatConversationsChanel'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260915180000_AddUserPhotoUrl';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'USERS' AND COLUMN_NAME = 'PHOTO_URL';
+
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE USERS ADD (PHOTO_URL NVARCHAR2(500))';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260915180000_AddUserPhotoUrl';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260915180000_AddUserPhotoUrl'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921140000_AddClientProfileColumns';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CLIENTS' AND COLUMN_NAME = 'FULL_NAME';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE CLIENTS ADD (FULL_NAME VARCHAR2(150))';
+        END IF;
+
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CLIENTS' AND COLUMN_NAME = 'EMAIL';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE CLIENTS ADD (EMAIL VARCHAR2(150))';
+        END IF;
+
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CLIENTS' AND COLUMN_NAME = 'IS_ACTIVE';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE CLIENTS ADD (IS_ACTIVE NUMBER(1) DEFAULT 1 NOT NULL)';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921140000_AddClientProfileColumns';
+IF v_Count = 0 THEN
+
+    BEGIN
+        UPDATE CLIENTS c
+        SET
+            FULL_NAME = (
+                SELECT u.FULL_NAME FROM USERS u WHERE u.USER_ID = c.USER_ID
+            ),
+            EMAIL = LOWER((
+                SELECT u.EMAIL FROM USERS u WHERE u.USER_ID = c.USER_ID
+            )),
+            IS_ACTIVE = NVL(IS_ACTIVE, 1)
+        WHERE FULL_NAME IS NULL OR EMAIL IS NULL;
+
+        UPDATE CLIENTS
+        SET FULL_NAME = 'Cliente pendiente',
+            EMAIL = LOWER('pending-' || CLIENT_ID || '@huellitas.local')
+        WHERE FULL_NAME IS NULL OR EMAIL IS NULL;
+
+        UPDATE CLIENTS
+        SET PHONE_NUMBER = '3000000000'
+        WHERE PHONE_NUMBER IS NULL;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921140000_AddClientProfileColumns';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CLIENTS'
+          AND COLUMN_NAME = 'FULL_NAME'
+          AND NULLABLE = 'Y';
+        IF v_count = 1 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE CLIENTS MODIFY (FULL_NAME VARCHAR2(150) NOT NULL)';
+        END IF;
+
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CLIENTS'
+          AND COLUMN_NAME = 'EMAIL'
+          AND NULLABLE = 'Y';
+        IF v_count = 1 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE CLIENTS MODIFY (EMAIL VARCHAR2(150) NOT NULL)';
+        END IF;
+
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CLIENTS'
+          AND COLUMN_NAME = 'PHONE_NUMBER'
+          AND NULLABLE = 'Y';
+        IF v_count = 1 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE CLIENTS MODIFY (PHONE_NUMBER NVARCHAR2(20) NOT NULL)';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921140000_AddClientProfileColumns';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_INDEXES
+        WHERE INDEX_NAME = 'UX_CLIENTS_PHONE_NUMBER';
+        IF v_count = 1 THEN
+            EXECUTE IMMEDIATE 'DROP INDEX UX_CLIENTS_PHONE_NUMBER';
+        END IF;
+
+        EXECUTE IMMEDIATE
+            'CREATE UNIQUE INDEX UX_CLIENTS_PHONE_NUMBER ON CLIENTS (PHONE_NUMBER)';
+
+        SELECT COUNT(*) INTO v_count
+        FROM USER_INDEXES
+        WHERE INDEX_NAME = 'UX_CLIENTS_EMAIL';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE
+                'CREATE UNIQUE INDEX UX_CLIENTS_EMAIL ON CLIENTS (EMAIL)';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921140000_AddClientProfileColumns';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'CLIENTS' AND COLUMN_NAME = 'REGISTRATION_DATE';
+        IF v_count = 1 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE CLIENTS DROP COLUMN REGISTRATION_DATE';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921140000_AddClientProfileColumns';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260921140000_AddClientProfileColumns'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_PARTICIPANTS" DROP CONSTRAINT "FK_CHAT_PARTICIPANTS_CHAT_USER_PROFILES_CHAT_USER_PROFILE_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CLIENTS" DROP CONSTRAINT "FK_CLIENTS_USERS_USER_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "TELEGRAM_USER_LINKS" DROP CONSTRAINT "FK_TELEGRAM_USER_LINKS_USERS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_USER_PROFILES"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "IX_CLIENTS_USER_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CLIENTS" DROP COLUMN "USER_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_PARTICIPANTS" DROP COLUMN "AI_MODEL_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "TELEGRAM_USER_LINKS" RENAME COLUMN "PERSON_ID" TO "CLIENT_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER INDEX "IX_TELEGRAM_USER_LINKS_PERSON_ID" RENAME TO "IX_TELEGRAM_USER_LINKS_CLIENT_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_PARTICIPANTS" RENAME COLUMN "CHAT_USER_PROFILE_ID" TO "CLIENT_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER INDEX "IX_CHAT_PARTICIPANTS_CHAT_USER_PROFILE_ID" RENAME TO "IX_CHAT_PARTICIPANTS_CLIENT_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'NOTIFICATIONS' 
+      and column_name = 'USER_ID' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "NOTIFICATIONS" MODIFY "USER_ID"  NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "NOTIFICATIONS" MODIFY "USER_ID" ';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "NOTIFICATIONS" ADD "CLIENT_ID" VARCHAR2(36)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_NOTIFICATIONS_CLIENT_ID" ON "NOTIFICATIONS" ("CLIENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "NOTIFICATIONS" ADD CONSTRAINT "CK_NOTIFICATIONS_ONE_RECIPIENT" CHECK (("USER_ID" IS NOT NULL AND "CLIENT_ID" IS NULL) OR ("USER_ID" IS NULL AND "CLIENT_ID" IS NOT NULL))'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_PARTICIPANTS" ADD CONSTRAINT "CK_CHAT_PARTICIPANTS_ONE_IDENTITY" CHECK (("CLIENT_ID" IS NOT NULL AND "AGENT_HUMAN_ID" IS NULL) OR ("CLIENT_ID" IS NULL AND "AGENT_HUMAN_ID" IS NOT NULL))'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_PARTICIPANTS" ADD CONSTRAINT "FK_CHAT_PARTICIPANTS_CLIENTS_CLIENT_ID" FOREIGN KEY ("CLIENT_ID") REFERENCES "CLIENTS" ("CLIENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "NOTIFICATIONS" ADD CONSTRAINT "FK_NOTIFICATIONS_CLIENTS_CLIENT_ID" FOREIGN KEY ("CLIENT_ID") REFERENCES "CLIENTS" ("CLIENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "TELEGRAM_USER_LINKS" ADD CONSTRAINT "FK_TELEGRAM_USER_LINKS_CLIENTS" FOREIGN KEY ("CLIENT_ID") REFERENCES "CLIENTS" ("CLIENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260921205044_SeparateClientsFromUsers';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260921205044_SeparateClientsFromUsers'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "USER_TOKENS" DROP CONSTRAINT "FK_USER_TOKENS_USER_ACCOUNTS_ACCOUNT_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "USERS" ADD "PASSWORD_CHANGED_AT" TIMESTAMP'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE USERS u
+                    SET PASSWORD_HASH = (
+                            SELECT c.PASSWORD_HASH
+                            FROM USER_CREDENTIALS c
+                            JOIN USER_ACCOUNTS a ON a.ACCOUNT_ID = c.ACCOUNT_ID
+                            WHERE a.USER_ID = u.USER_ID),
+                        PASSWORD_CHANGED_AT = (
+                            SELECT c.LAST_CHANGED
+                            FROM USER_CREDENTIALS c
+                            JOIN USER_ACCOUNTS a ON a.ACCOUNT_ID = c.ACCOUNT_ID
+                            WHERE a.USER_ID = u.USER_ID)
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM USER_ACCOUNTS a
+                        JOIN USER_CREDENTIALS c ON c.ACCOUNT_ID = a.ACCOUNT_ID
+                        WHERE a.USER_ID = u.USER_ID)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE USERS SET PASSWORD_HASH = '''' WHERE PASSWORD_HASH IS NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE USER_TOKENS t
+                    SET ACCOUNT_ID = (
+                        SELECT a.USER_ID FROM USER_ACCOUNTS a WHERE a.ACCOUNT_ID = t.ACCOUNT_ID)
+                    WHERE EXISTS (
+                        SELECT 1 FROM USER_ACCOUNTS a WHERE a.ACCOUNT_ID = t.ACCOUNT_ID)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "ACCOUNT_STATEMENTS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "APPOINTMENT_ACTION_VERIFICATION_SESSIONS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_AI_RUN_ERRORS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_AI_RUN_METRICS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_ATTACHMENTS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_CONVERSATION_AI_SETTINGS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_CONVERSATION_ASSIGNMENTS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_ESCALATION_ASSIGNMENTS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_ESCALATION_STATUS_HISTORY"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "TELEGRAM_LINK_CODES"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "TELEGRAM_LINKING_SESSIONS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "TELEGRAM_REGISTRATION_SESSIONS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "USER_CREDENTIALS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "USER_PERMISSIONS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_AI_RUNS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "USER_ACCOUNTS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "AI_MODELS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "AI_RUNS_STATUSES"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "PROVIDER_MODELS_AI"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "USER_TOKENS" RENAME COLUMN "ACCOUNT_ID" TO "USER_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER INDEX "IX_USER_TOKENS_ACCOUNT_ID" RENAME TO "IX_USER_TOKENS_USER_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'USERS' 
+      and column_name = 'PASSWORD_HASH' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "USERS" MODIFY "PASSWORD_HASH"  ';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "USERS" MODIFY "PASSWORD_HASH"  NOT NULL';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "USER_TOKENS" ADD CONSTRAINT "FK_USER_TOKENS_USERS_USER_ID" FOREIGN KEY ("USER_ID") REFERENCES "USERS" ("USER_ID") ON DELETE CASCADE'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922101954_MergeUsersAndAccounts';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260922101954_MergeUsersAndAccounts'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922161748_AddAppointmentVitals';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "HEART_RATE" NUMBER(5)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922161748_AddAppointmentVitals';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "RESPIRATORY_RATE" NUMBER(5)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922161748_AddAppointmentVitals';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "TEMPERATURE" NUMBER(5,2)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922161748_AddAppointmentVitals';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "WEIGHT" NUMBER(8,2)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922161748_AddAppointmentVitals';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260922161748_AddAppointmentVitals'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "TELEGRAM_USER_LINKS" ADD "CHAT_CONVERSATION_ID" VARCHAR2(36)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_ESCALATIONS" ADD "RESOLUTION_NOTE" CLOB'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_ESCALATIONS" ADD "RESOLVED_AT" TIMESTAMP'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_ESCALATIONS" ADD "RESOLVED_BY" VARCHAR2(36)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE CHAT_ESCALATIONS e
+                    SET (RESOLVED_AT, RESOLVED_BY, RESOLUTION_NOTE) = (
+                        SELECT r.RESOLVED_AT, r.RESOLVED_BY, r.RESOLUTION_NOTE
+                        FROM CHAT_ESCALATION_RESOLUTION r
+                        WHERE r.CHAT_ESCALATIONS_ID = e.CHAT_ESCALATIONS_ID
+                    )
+                    WHERE EXISTS (
+                        SELECT 1 FROM CHAT_ESCALATION_RESOLUTION r
+                        WHERE r.CHAT_ESCALATIONS_ID = e.CHAT_ESCALATIONS_ID
+                    )'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE TELEGRAM_USER_LINKS u
+                    SET CHAT_CONVERSATION_ID = (
+                        SELECT l.CONVERSATION_ID
+                        FROM TELEGRAM_CONVERSATION_LINKS l
+                        WHERE l.TELEGRAM_USER_LINK_ID = u.ID
+                    )
+                    WHERE EXISTS (
+                        SELECT 1 FROM TELEGRAM_CONVERSATION_LINKS l
+                        WHERE l.TELEGRAM_USER_LINK_ID = u.ID
+                    )'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_CONVERSATIONS" DROP CONSTRAINT "FK_CHAT_CONVERSATIONS_CONVERSATIONS_STATUSES_CONVERSATION_STATUS_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_CONVERSATIONS" DROP CONSTRAINT "FK_CHAT_CONVERSATIONS_PRIORITY_PRIORITY_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_MESSAGES" DROP CONSTRAINT "FK_CHAT_MESSAGES_MESSAGE_TYPES_MESSAGE_TYPE_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "IX_CHAT_MESSAGES_MESSAGE_TYPE_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "IX_CHAT_CONVERSATIONS_CONVERSATION_STATUS_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "IX_CHAT_CONVERSATIONS_PRIORITY_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_MESSAGES" DROP COLUMN "MESSAGE_TYPE_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_CONVERSATIONS" DROP COLUMN "CONVERSATION_STATUS_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "CHAT_CONVERSATIONS" DROP COLUMN "PRIORITY_ID"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CHAT_ESCALATION_RESOLUTION"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "CONVERSATIONS_STATUSES"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "MESSAGE_TYPES"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "PRIORITY"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP TABLE "TELEGRAM_CONVERSATION_LINKS"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260922194258_ReduceTo33Tables';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260922194258_ReduceTo33Tables'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923133259_AddHospitalizationStaysAndNotes';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "HOSPITALIZATION_STAYS" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "APPOINTMENT_ID" VARCHAR2(36),
+        "ADMITTED_BY_USER_ID" VARCHAR2(36) NOT NULL,
+        "FECHA_INGRESO" TIMESTAMP NOT NULL,
+        "FECHA_ALTA" TIMESTAMP,
+        "ESTADO" NUMBER(10) NOT NULL,
+        "MOTIVO" VARCHAR2(500) NOT NULL,
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_HOSPITALIZATION_STAYS" PRIMARY KEY ("ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923133259_AddHospitalizationStaysAndNotes';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "HOSPITALIZATION_NOTES" (
+        "ID" VARCHAR2(36) NOT NULL,
+        "STAY_ID" VARCHAR2(36) NOT NULL,
+        "AUTOR_USER_ID" VARCHAR2(36) NOT NULL,
+        "FECHA_HORA" TIMESTAMP NOT NULL,
+        "NOTA" VARCHAR2(2000) NOT NULL,
+        "ENTREGADO_A_USER_ID" VARCHAR2(36),
+        "CREATED_AT" TIMESTAMP NOT NULL,
+        "UPDATE_AT" TIMESTAMP,
+        CONSTRAINT "PK_HOSPITALIZATION_NOTES" PRIMARY KEY ("ID"),
+        CONSTRAINT "FK_HOSPITALIZATION_NOTES_STAY" FOREIGN KEY ("STAY_ID") REFERENCES "HOSPITALIZATION_STAYS" ("ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923133259_AddHospitalizationStaysAndNotes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_HOSP_NOTE_STAY_ID" ON "HOSPITALIZATION_NOTES" ("STAY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923133259_AddHospitalizationStaysAndNotes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_HOSP_STAY_ACTIVE_PER_PET" ON "HOSPITALIZATION_STAYS" ("CLIENT_PET_ID", "ESTADO")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923133259_AddHospitalizationStaysAndNotes';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260923133259_AddHospitalizationStaysAndNotes'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "IS_PAID" NUMBER(10) DEFAULT 0 NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "APPOINTMENTS" ADD "PAID_AT" TIMESTAMP'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "MEDICATION_ORDERS" (
+        "MEDICATION_ORDER_ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "VETERINARIAN_ID" VARCHAR2(36) NOT NULL,
+        "APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "IS_IN_HOUSE" NUMBER(10) NOT NULL,
+        "REFERRED_TO" VARCHAR2(200),
+        "REFERRAL_REASON" VARCHAR2(500),
+        "STATUS" VARCHAR2(30) NOT NULL,
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_MEDICATION_ORDERS" PRIMARY KEY ("MEDICATION_ORDER_ID"),
+        CONSTRAINT "FK_MEDICATION_ORDERS_APPOINTMENTS_APPOINTMENT_ID" FOREIGN KEY ("APPOINTMENT_ID") REFERENCES "APPOINTMENTS" ("APPOINTMENT_ID") ON DELETE CASCADE,
+        CONSTRAINT "FK_MEDICATION_ORDERS_CLIENTS_PETS_CLIENT_PET_ID" FOREIGN KEY ("CLIENT_PET_ID") REFERENCES "CLIENTS_PETS" ("CLIENT_PET_ID") ON DELETE CASCADE,
+        CONSTRAINT "FK_MEDICATION_ORDERS_VETERINARIANS_VETERINARIAN_ID" FOREIGN KEY ("VETERINARIAN_ID") REFERENCES "VETERINARIANS" ("VETERINARIAN_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "MEDICATIONS" (
+        "MEDICATION_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(150) NOT NULL,
+        "CODE" VARCHAR2(50),
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_MEDICATIONS" PRIMARY KEY ("MEDICATION_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "PROCEDURE_ORDERS" (
+        "PROCEDURE_ORDER_ID" VARCHAR2(36) NOT NULL,
+        "CLIENT_PET_ID" VARCHAR2(36) NOT NULL,
+        "VETERINARIAN_ID" VARCHAR2(36) NOT NULL,
+        "APPOINTMENT_ID" VARCHAR2(36) NOT NULL,
+        "IS_IN_HOUSE" NUMBER(10) NOT NULL,
+        "REFERRED_TO" VARCHAR2(200),
+        "REFERRAL_REASON" VARCHAR2(500),
+        "STATUS" VARCHAR2(30) NOT NULL,
+        "RESULT_FILE_URL" VARCHAR2(1000),
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_PROCEDURE_ORDERS" PRIMARY KEY ("PROCEDURE_ORDER_ID"),
+        CONSTRAINT "FK_PROCEDURE_ORDERS_APPOINTMENTS_APPOINTMENT_ID" FOREIGN KEY ("APPOINTMENT_ID") REFERENCES "APPOINTMENTS" ("APPOINTMENT_ID") ON DELETE CASCADE,
+        CONSTRAINT "FK_PROCEDURE_ORDERS_CLIENTS_PETS_CLIENT_PET_ID" FOREIGN KEY ("CLIENT_PET_ID") REFERENCES "CLIENTS_PETS" ("CLIENT_PET_ID") ON DELETE CASCADE,
+        CONSTRAINT "FK_PROCEDURE_ORDERS_VETERINARIANS_VETERINARIAN_ID" FOREIGN KEY ("VETERINARIAN_ID") REFERENCES "VETERINARIANS" ("VETERINARIAN_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "PROCEDURES" (
+        "PROCEDURE_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(150) NOT NULL,
+        "CODE" VARCHAR2(50),
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_PROCEDURES" PRIMARY KEY ("PROCEDURE_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "SUPPLIES" (
+        "SUPPLY_ID" VARCHAR2(36) NOT NULL,
+        "NAME" VARCHAR2(150) NOT NULL,
+        "UNIT" VARCHAR2(50) NOT NULL,
+        "UNIT_PRICE" NUMBER NOT NULL,
+        "STOCK" NUMBER NOT NULL,
+        "IS_ACTIVE" NUMBER(10) DEFAULT 1 NOT NULL,
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_SUPPLIES" PRIMARY KEY ("SUPPLY_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "MEDICATION_ORDER_ITEMS" (
+        "MEDICATION_ORDER_ITEM_ID" VARCHAR2(36) NOT NULL,
+        "MEDICATION_ORDER_ID" VARCHAR2(36) NOT NULL,
+        "MEDICATION_ID" VARCHAR2(36) NOT NULL,
+        "NOTES" VARCHAR2(500),
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_MEDICATION_ORDER_ITEMS" PRIMARY KEY ("MEDICATION_ORDER_ITEM_ID"),
+        CONSTRAINT "FK_MEDICATION_ORDER_ITEMS_MEDICATIONS_MEDICATION_ID" FOREIGN KEY ("MEDICATION_ID") REFERENCES "MEDICATIONS" ("MEDICATION_ID"),
+        CONSTRAINT "FK_MEDICATION_ORDER_ITEMS_MEDICATION_ORDERS_MEDICATION_ORDER_ID" FOREIGN KEY ("MEDICATION_ORDER_ID") REFERENCES "MEDICATION_ORDERS" ("MEDICATION_ORDER_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "PROCEDURE_ORDER_ITEMS" (
+        "PROCEDURE_ORDER_ITEM_ID" VARCHAR2(36) NOT NULL,
+        "PROCEDURE_ORDER_ID" VARCHAR2(36) NOT NULL,
+        "PROCEDURE_ID" VARCHAR2(36) NOT NULL,
+        "NOTES" VARCHAR2(500),
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_PROCEDURE_ORDER_ITEMS" PRIMARY KEY ("PROCEDURE_ORDER_ITEM_ID"),
+        CONSTRAINT "FK_PROCEDURE_ORDER_ITEMS_PROCEDURES_PROCEDURE_ID" FOREIGN KEY ("PROCEDURE_ID") REFERENCES "PROCEDURES" ("PROCEDURE_ID"),
+        CONSTRAINT "FK_PROCEDURE_ORDER_ITEMS_PROCEDURE_ORDERS_PROCEDURE_ORDER_ID" FOREIGN KEY ("PROCEDURE_ORDER_ID") REFERENCES "PROCEDURE_ORDERS" ("PROCEDURE_ORDER_ID") ON DELETE CASCADE
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    BEGIN 
+    EXECUTE IMMEDIATE 'CREATE TABLE 
+    "SUPPLY_CONSUMPTIONS" (
+        "SUPPLY_CONSUMPTION_ID" VARCHAR2(36) NOT NULL,
+        "HOSPITALIZATION_STAY_ID" VARCHAR2(36) NOT NULL,
+        "SUPPLY_ID" VARCHAR2(36) NOT NULL,
+        "QUANTITY" NUMBER NOT NULL,
+        "UNIT_PRICE" NUMBER NOT NULL,
+        "TOTAL" NUMBER NOT NULL,
+        "REGISTERED_BY_USER_ID" VARCHAR2(36) NOT NULL,
+        "NOTES" VARCHAR2(500),
+        "CREATED_AT" TIMESTAMP(7) NOT NULL,
+        "UPDATED_AT" TIMESTAMP(7),
+        CONSTRAINT "PK_SUPPLY_CONSUMPTIONS" PRIMARY KEY ("SUPPLY_CONSUMPTION_ID"),
+        CONSTRAINT "FK_SUPPLY_CONSUMPTIONS_STAY" FOREIGN KEY ("HOSPITALIZATION_STAY_ID") REFERENCES "HOSPITALIZATION_STAYS" ("ID"),
+        CONSTRAINT "FK_SUPPLY_CONSUMPTIONS_SUPPLY" FOREIGN KEY ("SUPPLY_ID") REFERENCES "SUPPLIES" ("SUPPLY_ID")
+    )';
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICATION_ORDER_ITEMS_MEDICATION_ID" ON "MEDICATION_ORDER_ITEMS" ("MEDICATION_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICATION_ORDER_ITEMS_MEDICATION_ORDER_ID" ON "MEDICATION_ORDER_ITEMS" ("MEDICATION_ORDER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICATION_ORDERS_APPOINTMENT_ID" ON "MEDICATION_ORDERS" ("APPOINTMENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICATION_ORDERS_CLIENT_PET_ID" ON "MEDICATION_ORDERS" ("CLIENT_PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICATION_ORDERS_VETERINARIAN_ID" ON "MEDICATION_ORDERS" ("VETERINARIAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PROCEDURE_ORDER_ITEMS_PROCEDURE_ID" ON "PROCEDURE_ORDER_ITEMS" ("PROCEDURE_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PROCEDURE_ORDER_ITEMS_PROCEDURE_ORDER_ID" ON "PROCEDURE_ORDER_ITEMS" ("PROCEDURE_ORDER_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PROCEDURE_ORDERS_APPOINTMENT_ID" ON "PROCEDURE_ORDERS" ("APPOINTMENT_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PROCEDURE_ORDERS_CLIENT_PET_ID" ON "PROCEDURE_ORDERS" ("CLIENT_PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PROCEDURE_ORDERS_VETERINARIAN_ID" ON "PROCEDURE_ORDERS" ("VETERINARIAN_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_SUPPLY_CONSUMPTIONS_HOSPITALIZATION_STAY_ID" ON "SUPPLY_CONSUMPTIONS" ("HOSPITALIZATION_STAY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_SUPPLY_CONSUMPTIONS_SUPPLY_ID" ON "SUPPLY_CONSUMPTIONS" ("SUPPLY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260923164638_AddAppointmentPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260923164638_AddAppointmentPaymentFields'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924003317_AddHospitalizationStayClientPetFk';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "HOSPITALIZATION_STAYS" ADD CONSTRAINT "FK_HOSPITALIZATION_STAYS_CLIENT_PET" FOREIGN KEY ("CLIENT_PET_ID") REFERENCES "CLIENTS_PETS" ("CLIENT_PET_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924003317_AddHospitalizationStayClientPetFk';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260924003317_AddHospitalizationStayClientPetFk'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924153137_AddHospitalizationStayPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "HOSPITALIZATION_STAYS" ADD "IS_PAID" NUMBER(10) DEFAULT 0 NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924153137_AddHospitalizationStayPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "HOSPITALIZATION_STAYS" ADD "PAID_AT" TIMESTAMP'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924153137_AddHospitalizationStayPaymentFields';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260924153137_AddHospitalizationStayPaymentFields'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924172344_AddUniqueMedicationCodeIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'UPDATE MEDICATIONS
+    SET CODE = UPPER(TRIM(CODE))
+    WHERE CODE IS NOT NULL
+      AND TRIM(CODE) IS NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924172344_AddUniqueMedicationCodeIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_MEDICATIONS_CODE" ON "MEDICATIONS" ("CODE")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924172344_AddUniqueMedicationCodeIndex';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260924172344_AddUniqueMedicationCodeIndex'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "PROCEDURES" ADD "PRICE" DECIMAL(18,2) DEFAULT 0.0 NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "PROCEDURE_ORDERS" ADD "HOSPITALIZATION_STAY_ID" VARCHAR2(36)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "MEDICATIONS" ADD "PRICE" DECIMAL(18,2) DEFAULT 0.0 NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "MEDICATION_ORDERS" ADD "HOSPITALIZATION_STAY_ID" VARCHAR2(36)'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "HOSPITALIZATION_STAYS" ADD "DAILY_RATE" DECIMAL(18,2) DEFAULT 0.0 NOT NULL'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_PROCEDURE_ORDERS_HOSPITALIZATION_STAY_ID" ON "PROCEDURE_ORDERS" ("HOSPITALIZATION_STAY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE INDEX "IX_MEDICATION_ORDERS_HOSPITALIZATION_STAY_ID" ON "MEDICATION_ORDERS" ("HOSPITALIZATION_STAY_ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "MEDICATION_ORDERS" ADD CONSTRAINT "FK_MEDICATION_ORDERS_HOSPITALIZATION_STAYS_HOSPITALIZATION_STAY_ID" FOREIGN KEY ("HOSPITALIZATION_STAY_ID") REFERENCES "HOSPITALIZATION_STAYS" ("ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'ALTER TABLE "PROCEDURE_ORDERS" ADD CONSTRAINT "FK_PROCEDURE_ORDERS_HOSPITALIZATION_STAYS_HOSPITALIZATION_STAY_ID" FOREIGN KEY ("HOSPITALIZATION_STAY_ID") REFERENCES "HOSPITALIZATION_STAYS" ("ID")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260924192110_AddHospitalizationInvoicePricing';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260924192110_AddHospitalizationInvoicePricing'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_nullable VARCHAR2(1);
+    BEGIN
+        SELECT NULLABLE INTO v_nullable
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'PROCEDURE_ORDERS' AND COLUMN_NAME = 'APPOINTMENT_ID';
+        IF v_nullable = 'N' THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE PROCEDURE_ORDERS MODIFY (APPOINTMENT_ID NULL)';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_CONSTRAINTS
+        WHERE TABLE_NAME = 'PROCEDURE_ORDERS' AND CONSTRAINT_NAME = 'CK_PROCEDURE_ORDERS_ORIGIN';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE PROCEDURE_ORDERS ADD CONSTRAINT CK_PROCEDURE_ORDERS_ORIGIN CHECK ((APPOINTMENT_ID IS NOT NULL AND HOSPITALIZATION_STAY_ID IS NULL) OR (APPOINTMENT_ID IS NULL AND HOSPITALIZATION_STAY_ID IS NOT NULL))';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        FOR c IN (
+            SELECT uc.CONSTRAINT_NAME, uc.DELETE_RULE
+            FROM USER_CONSTRAINTS uc
+            JOIN USER_CONS_COLUMNS cc ON cc.CONSTRAINT_NAME = uc.CONSTRAINT_NAME
+            WHERE uc.TABLE_NAME = 'PROCEDURE_ORDERS'
+              AND uc.CONSTRAINT_TYPE = 'R'
+              AND cc.COLUMN_NAME = 'APPOINTMENT_ID')
+        LOOP
+            IF c.DELETE_RULE <> 'CASCADE'
+                OR c.CONSTRAINT_NAME <> 'FK_PROCEDURE_ORDERS_APPOINTMENTS_APPOINTMENT_ID' THEN
+                EXECUTE IMMEDIATE 'ALTER TABLE PROCEDURE_ORDERS DROP CONSTRAINT ' || c.CONSTRAINT_NAME;
+            END IF;
+        END LOOP;
+
+        SELECT COUNT(*) INTO v_count
+        FROM USER_CONSTRAINTS
+        WHERE TABLE_NAME = 'PROCEDURE_ORDERS'
+          AND CONSTRAINT_NAME = 'FK_PROCEDURE_ORDERS_APPOINTMENTS_APPOINTMENT_ID';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE PROCEDURE_ORDERS ADD CONSTRAINT FK_PROCEDURE_ORDERS_APPOINTMENTS_APPOINTMENT_ID '
+                || 'FOREIGN KEY (APPOINTMENT_ID) REFERENCES APPOINTMENTS (APPOINTMENT_ID) ON DELETE CASCADE';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_nullable VARCHAR2(1);
+    BEGIN
+        SELECT NULLABLE INTO v_nullable
+        FROM USER_TAB_COLUMNS
+        WHERE TABLE_NAME = 'MEDICATION_ORDERS' AND COLUMN_NAME = 'APPOINTMENT_ID';
+        IF v_nullable = 'N' THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE MEDICATION_ORDERS MODIFY (APPOINTMENT_ID NULL)';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_CONSTRAINTS
+        WHERE TABLE_NAME = 'MEDICATION_ORDERS' AND CONSTRAINT_NAME = 'CK_MEDICATION_ORDERS_ORIGIN';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE MEDICATION_ORDERS ADD CONSTRAINT CK_MEDICATION_ORDERS_ORIGIN CHECK ((APPOINTMENT_ID IS NOT NULL AND HOSPITALIZATION_STAY_ID IS NULL) OR (APPOINTMENT_ID IS NULL AND HOSPITALIZATION_STAY_ID IS NOT NULL))';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+    BEGIN
+        FOR c IN (
+            SELECT uc.CONSTRAINT_NAME, uc.DELETE_RULE
+            FROM USER_CONSTRAINTS uc
+            JOIN USER_CONS_COLUMNS cc ON cc.CONSTRAINT_NAME = uc.CONSTRAINT_NAME
+            WHERE uc.TABLE_NAME = 'MEDICATION_ORDERS'
+              AND uc.CONSTRAINT_TYPE = 'R'
+              AND cc.COLUMN_NAME = 'APPOINTMENT_ID')
+        LOOP
+            IF c.DELETE_RULE <> 'CASCADE'
+                OR c.CONSTRAINT_NAME <> 'FK_MEDICATION_ORDERS_APPOINTMENTS_APPOINTMENT_ID' THEN
+                EXECUTE IMMEDIATE 'ALTER TABLE MEDICATION_ORDERS DROP CONSTRAINT ' || c.CONSTRAINT_NAME;
+            END IF;
+        END LOOP;
+
+        SELECT COUNT(*) INTO v_count
+        FROM USER_CONSTRAINTS
+        WHERE TABLE_NAME = 'MEDICATION_ORDERS'
+          AND CONSTRAINT_NAME = 'FK_MEDICATION_ORDERS_APPOINTMENTS_APPOINTMENT_ID';
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'ALTER TABLE MEDICATION_ORDERS ADD CONSTRAINT FK_MEDICATION_ORDERS_APPOINTMENTS_APPOINTMENT_ID '
+                || 'FOREIGN KEY (APPOINTMENT_ID) REFERENCES APPOINTMENTS (APPOINTMENT_ID) ON DELETE CASCADE';
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    DECLARE
+        v_count NUMBER;
+        v_expr VARCHAR2(4000);
+        v_existing VARCHAR2(128);
+        v_uniqueness VARCHAR2(9);
+    BEGIN
+        SELECT COUNT(*) INTO v_count
+        FROM USER_INDEXES
+        WHERE INDEX_NAME = 'UX_HOSP_STAY_ACTIVE_PER_PET';
+
+        IF v_count = 0 THEN
+            FOR r IN (
+                SELECT e.INDEX_NAME, e.COLUMN_EXPRESSION, i.UNIQUENESS
+                FROM USER_IND_EXPRESSIONS e
+                JOIN USER_INDEXES i ON i.INDEX_NAME = e.INDEX_NAME
+                WHERE e.TABLE_NAME = 'HOSPITALIZATION_STAYS')
+            LOOP
+                -- Oracle puede guardar la expresión como CASE WHEN ESTADO=0 ... o
+                -- como CASE "ESTADO" WHEN 0 ... (así la dejó la rama anterior).
+                v_expr := r.COLUMN_EXPRESSION; -- LONG: primero a VARCHAR2
+                v_expr := UPPER(REPLACE(REPLACE(v_expr, '"', ''), ' ', ''));
+                IF v_expr IN (
+                    'CASEWHENESTADO=0THENCLIENT_PET_IDEND',
+                    'CASEESTADOWHEN0THENCLIENT_PET_IDEND') THEN
+                    v_existing := r.INDEX_NAME;
+                    v_uniqueness := r.UNIQUENESS;
+                END IF;
+            END LOOP;
+
+            IF v_existing IS NOT NULL AND v_uniqueness = 'UNIQUE' THEN
+                EXECUTE IMMEDIATE
+                    'ALTER INDEX ' || v_existing || ' RENAME TO UX_HOSP_STAY_ACTIVE_PER_PET';
+            ELSE
+                IF v_existing IS NOT NULL THEN
+                    EXECUTE IMMEDIATE 'DROP INDEX ' || v_existing;
+                END IF;
+                EXECUTE IMMEDIATE
+                    'CREATE UNIQUE INDEX UX_HOSP_STAY_ACTIVE_PER_PET ON HOSPITALIZATION_STAYS '
+                    || '(CASE WHEN ESTADO = 0 THEN CLIENT_PET_ID END)';
+            END IF;
+        END IF;
+
+        -- El modelo espera además el índice no único IX_HOSP_STAY_ACTIVE_PER_PET
+        -- (CLIENT_PET_ID, ESTADO) que acelera GetActiveByPetIdAsync; se repone si falta.
+        SELECT COUNT(*) INTO v_count
+        FROM USER_INDEXES
+        WHERE INDEX_NAME = 'IX_HOSP_STAY_ACTIVE_PER_PET';
+        IF v_count = 0 THEN
+            BEGIN
+                EXECUTE IMMEDIATE
+                    'CREATE INDEX IX_HOSP_STAY_ACTIVE_PER_PET ON HOSPITALIZATION_STAYS (CLIENT_PET_ID, ESTADO)';
+            EXCEPTION
+                WHEN OTHERS THEN
+                    -- ORA-01408: otro índice ya cubre esas columnas; sirve igual.
+                    IF SQLCODE != -1408 THEN
+                        RAISE;
+                    END IF;
+            END;
+        END IF;
+    END;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925144029_ValidateHospitalizationTransitions';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260925144029_ValidateHospitalizationTransitions'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "IX_CLIENTS_IDENTIFICATION_NUMBER"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'DROP INDEX "UX_CLIENTS_EMAIL"'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'PETS' 
+      and column_name = 'WEIGHT' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "PETS" MODIFY "WEIGHT"  NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "PETS" MODIFY "WEIGHT" ';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'PETS' 
+      and column_name = 'RACE_ID' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "PETS" MODIFY "RACE_ID"  NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "PETS" MODIFY "RACE_ID" ';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'PETS' 
+      and column_name = 'AGE' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "PETS" MODIFY "AGE"  NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "PETS" MODIFY "AGE" ';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'CLIENTS' 
+      and column_name = 'IDENTIFICATION_NUMBER' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "CLIENTS" MODIFY "IDENTIFICATION_NUMBER"  NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "CLIENTS" MODIFY "IDENTIFICATION_NUMBER" ';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    declare
+       l_nullable user_tab_columns.nullable % type;
+    begin 
+       select nullable into l_nullable 
+       from user_tab_columns 
+      where table_name = 'CLIENTS' 
+      and column_name = 'EMAIL' 
+    ;
+       if l_nullable = 'N' then 
+            EXECUTE IMMEDIATE 'ALTER TABLE "CLIENTS" MODIFY "EMAIL"  NULL';
+     else 
+            EXECUTE IMMEDIATE 'ALTER TABLE "CLIENTS" MODIFY "EMAIL" ';
+     end if;
+    end;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "IX_CLIENTS_IDENTIFICATION_NUMBER" ON "CLIENTS" ("IDENTIFICATION_NUMBER")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'CREATE UNIQUE INDEX "UX_CLIENTS_EMAIL" ON "CLIENTS" ("EMAIL")'
+    ;
+ END IF;
+END;
+
+/
+
+DECLARE
+    v_Count INTEGER;
+BEGIN
+SELECT COUNT(*) INTO v_Count FROM "__EFMigrationsHistory" WHERE "MigrationId" = N'20260925153010_MakeClientAndPetFieldsNullable';
+IF v_Count = 0 THEN
+
+    EXECUTE IMMEDIATE 
+    'INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES (N''20260925153010_MakeClientAndPetFieldsNullable'', N''10.0.11'')'
+    ;
+ END IF;
+END;
+
+/
+

@@ -4,8 +4,13 @@ namespace Application.Telegram.Abstractions;
 
 public interface ITelegramUserLinkRepository
 {
-    Task<TelegramUserLink?> GetByPersonIdAsync(
-        Guid personId,
+    // Ticket B4: segundo salto de la búsqueda inversa hacia el chat de Telegram.
+    Task<TelegramUserLink?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken);
+
+    Task<TelegramUserLink?> GetByClientIdAsync(
+        Guid clientId,
         CancellationToken cancellationToken);
 
     Task<TelegramUserLink?> GetByTelegramUserIdAsync(
@@ -14,6 +19,10 @@ public interface ITelegramUserLinkRepository
 
     Task<TelegramUserLink?> GetByTelegramChatIdAsync(
         long telegramChatId,
+        CancellationToken cancellationToken);
+
+    Task<TelegramUserLink?> GetByConversationIdAsync(
+        Guid conversationId,
         CancellationToken cancellationToken);
 
     Task AddAsync(TelegramUserLink link, CancellationToken cancellationToken);

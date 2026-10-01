@@ -5,5 +5,5 @@ public sealed class GetCurrentProfileQueryValidator
     : AbstractValidator<GetCurrentProfileQuery>
 {
     public GetCurrentProfileQueryValidator() =>
-        RuleFor(query => query.UserAccountId).NotEmpty();
+        RuleFor(query => query.UserId).NotEmpty();
 }

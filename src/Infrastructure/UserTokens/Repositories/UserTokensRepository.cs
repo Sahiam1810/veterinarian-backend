@@ -30,12 +30,12 @@ public sealed class UserTokensRepository : IUserTokensRepository
                 token => token.TokenValue == tokenValue,
                 cancellationToken);
 
-    public async Task<IReadOnlyCollection<UserTokenEntity>> GetAllByAccountIdAsync(
-        Guid accountId,
+    public async Task<IReadOnlyCollection<UserTokenEntity>> GetAllByUserIdAsync(
+        Guid userId,
         CancellationToken cancellationToken = default)
         => await _context.Set<UserTokenEntity>()
             .AsNoTracking()
-            .Where(token => token.AccountId == accountId)
+            .Where(token => token.UserId == userId)
             .ToListAsync(cancellationToken);
 
     public async Task AddAsync(

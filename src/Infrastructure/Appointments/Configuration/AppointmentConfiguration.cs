@@ -73,8 +73,34 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
 
         builder.Property(x => x.Notes)
             .HasColumnName("NOTES")
-            .HasColumnType("VARCHAR2(100)")
-            .HasMaxLength(100);
+            .HasColumnType("VARCHAR2(500)")
+            .HasMaxLength(500);
+
+        builder.Property(x => x.Weight)
+            .HasColumnName("WEIGHT")
+            .HasColumnType("NUMBER(8,2)")
+            .IsRequired(false);
+
+        builder.Property(x => x.Temperature)
+            .HasColumnName("TEMPERATURE")
+            .HasColumnType("NUMBER(5,2)")
+            .IsRequired(false);
+
+        // NUMBER(3) sin conversión explícita hace que el proveedor de Oracle
+        // infiera un conversor int->byte (rango 0-255) para esta columna, aunque
+        // NUMBER(3) admite hasta 999 -- un valor real de FC (ej. 300 en un
+        // cachorro/gato) se trunca silenciosamente a 44. NUMBER(5) evita el
+        // conversor angosto: la misma heurística del proveedor lo mapea a
+        // short (hasta 32767), con margen de sobra.
+        builder.Property(x => x.HeartRate)
+            .HasColumnName("HEART_RATE")
+            .HasColumnType("NUMBER(5)")
+            .IsRequired(false);
+
+        builder.Property(x => x.RespiratoryRate)
+            .HasColumnName("RESPIRATORY_RATE")
+            .HasColumnType("NUMBER(5)")
+            .IsRequired(false);
 
         builder.Property(x => x.RequesterPhoneNumber)
             .HasColumnName("REQUESTER_PHONE_NUMBER")
@@ -101,6 +127,26 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.HasIndex(x => x.BookingRequestKeyHash)
             .IsUnique()
             .HasDatabaseName("UX_APPTS_BOOKING_REQ_HASH");
+
+        builder.Property(x => x.ConsultingRoom)
+            .HasColumnName("CONSULTING_ROOM")
+            .HasColumnType("VARCHAR2(50)")
+            .HasMaxLength(50);
+
+        builder.Property(x => x.IsPaid)
+            .HasColumnName("IS_PAID")
+            .HasConversion<int>()
+            .IsRequired();
+
+        builder.Property(x => x.PaidAt)
+            .HasColumnName("PAID_AT")
+            .HasColumnType("TIMESTAMP")
+            .IsRequired(false);
+
+        builder.Property(x => x.PaidAmount)
+            .HasColumnName("PAID_AMOUNT")
+            .HasColumnType("NUMBER(12,2)")
+            .IsRequired(false);
 
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")

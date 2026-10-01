@@ -20,7 +20,7 @@ public sealed class UpdateAppointmentStatusCommandHandler(IUnitOfWork unitOfWork
         await AppointmentVeterinarianOwnership.EnsureAsync(
             unitOfWork,
             appointment,
-            request.ActorUserAccountId,
+            request.ActorUserId,
             request.EnforceVeterinarianOwnership,
             cancellationToken);
 

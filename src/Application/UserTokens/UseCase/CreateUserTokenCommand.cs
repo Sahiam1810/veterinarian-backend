@@ -3,7 +3,7 @@ using MediatR;
 namespace Application.UserTokens.UseCase;
 
 public sealed record CreateUserTokenCommand(
-    Guid AccountId,
+    Guid UserId,
     string TokenValue,
     string TokenType,
     DateTime ExpiresAt) : IRequest<Guid>;

@@ -19,10 +19,6 @@ public sealed class CreateChatMessageCommandValidator
             .NotEmpty()
             .WithMessage("El identificador del tipo de remitente es obligatorio.");
 
-        RuleFor(command => command.MessageTypeId)
-            .NotEmpty()
-            .WithMessage("El identificador del tipo de mensaje es obligatorio.");
-
         RuleFor(command => command.Content)
             .NotEmpty()
             .WithMessage("El contenido del mensaje es obligatorio.");

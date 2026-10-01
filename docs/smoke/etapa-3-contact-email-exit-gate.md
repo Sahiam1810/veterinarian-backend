@@ -1,0 +1,50 @@
+# Smoke — puerta de salida Etapa 3 (contacto Email / Gmail)
+
+## Objetivo
+
+Homogeneizar options de contacto y dejar red de regresión **Email → confirm → proof → resend/429** con fakes (sin Gmail real ni RegisterOwner).
+
+Canal v1: **solo Email**. Fuera de alcance: WhatsApp/SMS/Twilio de contacto, RegisterOwner, Etapa 4 Telegram.
+
+## Config (`ContactVerification`)
+
+Distinta de `AppointmentVerification` y `Telegram`. Bind en `appsettings` + `.env.example`:
+
+| Clave | Rol |
+|-------|-----|
+| `ContactVerification__OtpTtlMinutes` | TTL del OTP |
+| `ContactVerification__OtpMaximumAttempts` | Tope de intentos → `Blocked` |
+| `ContactVerification__OtpResendSeconds` | Ventana de resend → `ResendTooSoon` |
+| `ContactVerification__ProofTtlMinutes` | TTL del proof single-use |
+| `ContactVerification__OtpPepperBase64` | Pepper propio; vacío reutiliza Appointment/Telegram |
+
+Rate limit HTTP (429): `RateLimiting__ContactEmailRequestPermitLimit` / `ContactEmailConfirmPermitLimit`.
+
+## Matriz de aceptación (solo Email)
+
+| ID | Caso | Code / HTTP | Contrato |
+|----|------|-------------|----------|
+| A | Request → Confirm → Proof → Consume | OK | `ContactEmailVerificationAcceptanceTests` / `ContactEmailVerificationRequestHandlerTests` |
+| B | OTP inválido / bloqueo | `ContactVerification.InvalidCode` / `Blocked` | `Acceptance_InvalidOtp_Then_Blocked_UsesCatalogCodes` |
+| C | Resend prematuro | `ContactVerification.ResendTooSoon` | `Acceptance_ResendTooSoon_ReturnsCatalogCode` |
+| D | OTP expirado | `ContactVerification.Expired` | `Acceptance_ExpiredOtp_ReturnsExpiredCode` |
+| E | Proof 2.º consume | `ContactVerification.ProofAlreadyConsumed` | `Acceptance_SecondProofConsume_ReturnsAlreadyConsumed` |
+| F | Rate limit request | HTTP 429 + `RateLimit.Exceeded` | `RequestEmail_ExceedsRateLimit_Returns429_WithProblemJson` |
+| F2 | Rate limit confirm | HTTP 429 + `RateLimit.Exceeded` | `ConfirmEmail_ExceedsRateLimit_Returns429_WithProblemJson` |
+| G | Options positivas / inválidas | bind validator | `ContactVerificationOptionsValidatorTests` |
+| H | Request HTTP metadatos sin OTP | 202 + channel Email | `RequestEmail_ValidRegister_Returns202_WithSafeMetadata_WithoutOtp` |
+
+API HTTP anónima (tarea 3.3): ver también `docs/smoke/etapa-3-contact-http-api-gate.md`.
+
+## Comando
+
+```bash
+dotnet test --filter "FullyQualifiedName~ContactEmailVerificationAcceptanceTests|FullyQualifiedName~ContactEmailVerificationRequestHandlerTests|FullyQualifiedName~ContactVerificationHttpTests|FullyQualifiedName~ContactVerificationOptionsValidatorTests|FullyQualifiedName~ConfirmAndConsumeContactEmailVerificationTests"
+```
+
+## Criterio de puerta
+
+- Comando anterior en **verde** (0 fallos).
+- Sin SMTP/Gmail real en CI (dispatcher/request mockeados en tests).
+- Sin RegisterOwner ni canal WhatsApp/SMS de contacto.
+- Request 3.1 implementado (no stub 501).

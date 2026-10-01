@@ -3,5 +3,4 @@ using MediatR;
 
 namespace Application.MedicalRecords.UseCases;
 
-public sealed record GetAllMedicalRecordsQuery(Guid UserAccountId)
-    : IRequest<IReadOnlyCollection<MedicalRecord>>;
+public sealed record GetAllMedicalRecordsQuery : IRequest<IReadOnlyCollection<MedicalRecord>>;

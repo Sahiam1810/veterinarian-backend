@@ -15,7 +15,7 @@ public record CreatePetDto(
     string Gender,
 
     [Range(0.01, 500, ErrorMessage = "El peso debe estar entre 0.01 y 500 kg.")]
-    decimal Weight,
+    decimal? Weight,
 
     [MaxLength(500, ErrorMessage = "Las observaciones no pueden superar los 500 caracteres.")]
     string? Observations,
@@ -24,7 +24,11 @@ public record CreatePetDto(
     Guid SpeciesId,
 
     [Required(ErrorMessage = "El ID de la raza es obligatorio.")]
-    Guid RaceId
+    Guid RaceId,
+
+    // URL http(s) opcional de la foto; se persiste en PETS.PHOTO_URL
+    [MaxLength(500, ErrorMessage = "La URL de la foto no puede superar los 500 caracteres.")]
+    string? PhotoUrl = null
 );
 
 public sealed record CreateOwnedPetDto(
@@ -40,7 +44,7 @@ public sealed record CreateOwnedPetDto(
     string Gender,
 
     [Range(0.01, 500, ErrorMessage = "El peso debe estar entre 0.01 y 500 kg.")]
-    decimal Weight,
+    decimal? Weight,
 
     [MaxLength(500, ErrorMessage = "Las observaciones no pueden superar los 500 caracteres.")]
     string? Observations,
@@ -49,7 +53,10 @@ public sealed record CreateOwnedPetDto(
     Guid SpeciesId,
 
     [Required(ErrorMessage = "El ID de la raza es obligatorio.")]
-    Guid RaceId);
+    Guid RaceId,
+
+    [MaxLength(500, ErrorMessage = "La URL de la foto no puede superar los 500 caracteres.")]
+    string? PhotoUrl = null);
 
 public record UpdatePetDto(
     [Required(ErrorMessage = "El nombre de la mascota es obligatorio.")]
@@ -64,7 +71,7 @@ public record UpdatePetDto(
     string Gender,
 
     [Range(0.01, 500, ErrorMessage = "El peso debe estar entre 0.01 y 500 kg.")]
-    decimal Weight,
+    decimal? Weight,
 
     [MaxLength(500, ErrorMessage = "Las observaciones no pueden superar los 500 caracteres.")]
     string? Observations,
@@ -73,32 +80,39 @@ public record UpdatePetDto(
     Guid SpeciesId,
 
     [Required(ErrorMessage = "El ID de la raza es obligatorio.")]
-    Guid RaceId
+    Guid RaceId,
+
+    [MaxLength(500, ErrorMessage = "La URL de la foto no puede superar los 500 caracteres.")]
+    string? PhotoUrl = null
 );
 
 public record PetResponseDto(
     Guid Id,
     string Name,
-    int Age,
+    int? Age,
     string Gender,
-    decimal Weight,
+    decimal? Weight,
     string? Observations,
     Guid SpeciesId,
-    Guid RaceId
+    Guid? RaceId,
+    string? PhotoUrl
 );
 
 public sealed record OwnedPetProfileResponseDto(
     Guid Id,
     string Name,
-    int Age,
+    int? Age,
     string Gender,
-    decimal Weight,
+    decimal? Weight,
     string? Observations,
     Guid SpeciesId,
     string SpeciesName,
-    Guid RaceId,
-    string RaceName,
-    DateTime UpdatedAt);
+    Guid? RaceId,
+    string? RaceName,
+    DateTime UpdatedAt,
+    string? PhotoUrl);
+
+public sealed record QueryPetsByClaimProofRequest(Guid SessionId, string Proof);
 
 public sealed record UpdateOwnedPetProfileDto(
     string? Name,
@@ -109,4 +123,6 @@ public sealed record UpdateOwnedPetProfileDto(
     bool ChangeObservations,
     Guid? SpeciesId,
     Guid? RaceId,
-    DateTime ExpectedUpdatedAt);
+    DateTime ExpectedUpdatedAt,
+    string? PhotoUrl = null,
+    bool ChangePhotoUrl = false);

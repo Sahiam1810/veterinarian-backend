@@ -1,69 +1,58 @@
 using System.Reflection;
-using System.Security.Claims;
-using Api.Common.Security;
 using Api.Common.Security.Permissions;
 using Api.Vaccinations.Controllers;
-using Application.Vaccinations.UseCases;
-using MediatR;
+using Application.Permissions.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using NSubstitute;
 using Xunit;
 
 namespace Api.Tests.Vaccinations;
 
 public sealed class VaccinationsAuthorizationTests
 {
-    [Fact]
-    public void Mine_requires_client_policy_and_clinical_history_view_permission()
-    {
-        var method = typeof(VaccinationsController).GetMethod(nameof(VaccinationsController.GetMine));
-
-        Assert.NotNull(method);
-        AssertPolicy(method, AuthorizationPolicies.ClientOnly);
-        AssertPolicy(method, $"perm:Historiales Clínicos:{PermissionAction.View}");
-    }
-
     [Theory]
     [InlineData(nameof(VaccinationsController.GetAll))]
     [InlineData(nameof(VaccinationsController.GetById))]
-    public void General_reads_require_clinical_staff_and_view_permission(string methodName)
+    public void General_reads_require_only_HistorialesClinicos_View_permission(string methodName)
     {
         var method = typeof(VaccinationsController).GetMethod(methodName);
 
         Assert.NotNull(method);
-        AssertPolicy(method, AuthorizationPolicies.ClinicalStaffOnly);
-        AssertPolicy(method, $"perm:Historiales Clínicos:{PermissionAction.View}");
+        var authorizeAttributes = method.GetCustomAttributes<AuthorizeAttribute>().ToArray();
+        var authorizeAttribute = Assert.Single(authorizeAttributes);
+        Assert.IsType<RequirePermissionAttribute>(authorizeAttribute);
+        Assert.Equal($"perm:Historiales Clínicos:{PermissionAction.View}", authorizeAttribute.Policy);
     }
 
     [Fact]
-    public async Task Mine_returns_unauthorized_when_authenticated_subject_is_missing()
+    public async Task Custom_role_with_HistorialesClinicos_View_permission_succeeds_without_being_ClinicalStaff()
     {
-        var sender = Substitute.For<ISender>();
-        var controller = new VaccinationsController(sender)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"))
-                }
-            }
-        };
+        var handler = new PermissionAuthorizationHandler();
+        var requirement = new PermissionRequirement("Historiales Clínicos", PermissionAction.View);
+        var identity = new System.Security.Claims.ClaimsIdentity(
+            [
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "AuditorClinicoExterno"),
+                new System.Security.Claims.Claim(PermissionClaimValue.ClaimType, "perm:Historiales Clínicos:View")
+            ],
+            authenticationType: "TestAuth");
 
-        var response = await controller.GetMine(CancellationToken.None);
+        var context = new AuthorizationHandlerContext([requirement], new System.Security.Claims.ClaimsPrincipal(identity), null);
+        await handler.HandleAsync(context);
 
-        Assert.IsType<UnauthorizedResult>(response.Result);
-        await sender.DidNotReceive().Send(
-            Arg.Any<GetMyVaccinationsQuery>(),
-            Arg.Any<CancellationToken>());
+        Assert.True(context.HasSucceeded);
     }
 
-    private static void AssertPolicy(MethodInfo method, string expectedPolicy)
+    [Fact]
+    public async Task Custom_role_without_HistorialesClinicos_View_permission_fails()
     {
-        var policies = method.GetCustomAttributes<AuthorizeAttribute>(inherit: true)
-            .Select(attribute => attribute.Policy);
-        Assert.Contains(expectedPolicy, policies);
+        var handler = new PermissionAuthorizationHandler();
+        var requirement = new PermissionRequirement("Historiales Clínicos", PermissionAction.View);
+        var identity = new System.Security.Claims.ClaimsIdentity(
+            [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "RolSinClinica")],
+            authenticationType: "TestAuth");
+
+        var context = new AuthorizationHandlerContext([requirement], new System.Security.Claims.ClaimsPrincipal(identity), null);
+        await handler.HandleAsync(context);
+
+        Assert.False(context.HasSucceeded);
     }
 }

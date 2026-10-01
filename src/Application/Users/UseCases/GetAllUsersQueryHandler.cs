@@ -1,4 +1,5 @@
 using Application.Common.Abstractions;
+using Domain.Roles;
 using MediatR;
 using UserEntity = Domain.Users.Entities.Users;
 
@@ -20,7 +21,11 @@ public sealed class GetAllUsersQueryHandler
         GetAllUsersQuery request,
         CancellationToken cancellationToken)
     {
-        return await _uow.UsersRepository.GetAllAsync(
+        var users = await _uow.UsersRepository.GetAllAsync(
             cancellationToken);
+
+        return users
+            .Where(user => user.RoleId != SystemRoles.ClientRoleId)
+            .ToArray();
     }
 }

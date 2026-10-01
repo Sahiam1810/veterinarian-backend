@@ -12,27 +12,7 @@ public sealed class GetMedicalRecordByIdQueryHandler(IUnitOfWork unitOfWork)
         GetMedicalRecordByIdQuery request,
         CancellationToken cancellationToken)
     {
-        var record = await unitOfWork.MedicalRecordsRepository.GetByIdAsync(request.Id, cancellationToken)
+        return await unitOfWork.MedicalRecordsRepository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException("Historia médica no encontrada.");
-
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-
-        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(account.UserId, cancellationToken);
-
-        // Sin perfil de Cliente (personal): ve el registro sin restricción.
-        if (client is null)
-        {
-            return record;
-        }
-
-        // Con perfil de Cliente: solo si el registro pertenece a una de sus
-        // mascotas. Si no, se trata como inexistente (404), no como ajeno.
-        var clientPets = await unitOfWork.ClientPetsRepository.GetByClientIdAsync(client.Id, cancellationToken);
-        var ownsRecord = clientPets.Any(cp => cp.Id == record.ClientPetId);
-
-        return ownsRecord
-            ? record
-            : throw new NotFoundException("Historia médica no encontrada.");
     }
 }

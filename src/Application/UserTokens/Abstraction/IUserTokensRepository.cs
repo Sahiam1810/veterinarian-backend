@@ -12,8 +12,8 @@ public interface IUserTokensRepository
         string tokenValue,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyCollection<UserTokenEntity>> GetAllByAccountIdAsync(
-        Guid accountId,
+    Task<IReadOnlyCollection<UserTokenEntity>> GetAllByUserIdAsync(
+        Guid userId,
         CancellationToken cancellationToken);
 
     Task AddAsync(

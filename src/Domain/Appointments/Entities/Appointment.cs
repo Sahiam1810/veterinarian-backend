@@ -24,7 +24,8 @@ public sealed class Appointment : BaseEntity<Guid>
         DateTime scheduledEnd,
         string? notes,
         string? requesterPhoneNumber = null,
-        string? bookingRequestKeyHash = null)
+        string? bookingRequestKeyHash = null,
+        string? consultingRoom = null)
     {
         Id = Guid.NewGuid();
         ClientPetId = clientPetId;
@@ -35,7 +36,7 @@ public sealed class Appointment : BaseEntity<Guid>
         ScheduledStart = scheduledStart;
         ScheduledEnd = scheduledEnd;
         Notes = notes;
-        // Se fija al crear; no se altera en Update (auditoría de origen).
+        // Se fija al crear; no se altera en Update (auditoria de origen).
         // Nullable solo para citas legacy anteriores a la columna.
         RequesterPhoneNumber = string.IsNullOrWhiteSpace(requesterPhoneNumber)
             ? null
@@ -43,6 +44,7 @@ public sealed class Appointment : BaseEntity<Guid>
         BookingRequestKeyHash = string.IsNullOrWhiteSpace(bookingRequestKeyHash)
             ? null
             : BookingRequestKeyHash.Create(bookingRequestKeyHash);
+        ConsultingRoom = Domain.Availabilities.ValueObjects.ConsultingRoom.CreateOptional(consultingRoom)?.Value;
     }
 
     public Guid ClientPetId { get; private set; }
@@ -63,10 +65,34 @@ public sealed class Appointment : BaseEntity<Guid>
     public DateTime ScheduledStart { get; private set; }
     public DateTime ScheduledEnd { get; private set; }
     public string? Notes { get; private set; }
+    public decimal? Weight { get; private set; }
+    public decimal? Temperature { get; private set; }
+    public int? HeartRate { get; private set; }
+    public int? RespiratoryRate { get; private set; }
 
     public RequesterPhoneNumber? RequesterPhoneNumber { get; private set; }
 
     public BookingRequestKeyHash? BookingRequestKeyHash { get; private set; }
+
+    // Sala fisica opcional copiada de la disponibilidad o del request.
+    public string? ConsultingRoom { get; private set; }
+
+    public bool IsPaid { get; private set; } = false;
+    public DateTime? PaidAt { get; private set; }
+    public decimal? PaidAmount { get; private set; }
+
+    public void RegisterPayment(decimal? paidAmount = null)
+    {
+        if (IsPaid)
+        {
+            throw new InvalidOperationException("La cita ya está pagada.");
+        }
+
+        IsPaid = true;
+        PaidAt = DateTime.UtcNow;
+        PaidAmount = paidAmount;
+        UpdatedAt = DateTime.UtcNow;
+    }
 
     public void Update(
         Guid clientPetId,
@@ -76,7 +102,8 @@ public sealed class Appointment : BaseEntity<Guid>
         Guid availabilityId,
         DateTime scheduledStart,
         DateTime scheduledEnd,
-        string? notes)
+        string? notes,
+        string? consultingRoom = null)
     {
         ClientPetId = clientPetId;
         VeterinarianId = veterinarianId;
@@ -86,6 +113,11 @@ public sealed class Appointment : BaseEntity<Guid>
         ScheduledStart = scheduledStart;
         ScheduledEnd = scheduledEnd;
         Notes = notes;
+        if (consultingRoom is not null)
+        {
+            ConsultingRoom = Domain.Availabilities.ValueObjects.ConsultingRoom.CreateOptional(consultingRoom)?.Value;
+        }
+
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -94,7 +126,8 @@ public sealed class Appointment : BaseEntity<Guid>
         Guid availabilityId,
         DateTime scheduledStart,
         DateTime scheduledEnd,
-        string? notes)
+        string? notes,
+        string? consultingRoom = null)
     {
         AvailabilityId = availabilityId;
         ScheduledStart = scheduledStart;
@@ -104,6 +137,27 @@ public sealed class Appointment : BaseEntity<Guid>
             Notes = notes;
         }
 
+        ConsultingRoom = Domain.Availabilities.ValueObjects.ConsultingRoom.CreateOptional(consultingRoom)?.Value;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    // Alinea el telefono de la cita al del dueño (o request) tras Create/Update.
+    public void ApplyRequesterPhone(string requesterPhoneNumber)
+    {
+        RequesterPhoneNumber = RequesterPhoneNumber.Create(requesterPhoneNumber);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void RecordVitals(
+        decimal? weight,
+        decimal? temperature,
+        int? heartRate,
+        int? respiratoryRate)
+    {
+        Weight = weight;
+        Temperature = temperature;
+        HeartRate = heartRate;
+        RespiratoryRate = respiratoryRate;
         UpdatedAt = DateTime.UtcNow;
     }
 }

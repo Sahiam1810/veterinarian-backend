@@ -19,6 +19,12 @@ public sealed class ChatEscalation
 
     public DateTime CreatedAt { get; private set; }
 
+    public DateTime? ResolvedAt { get; private set; }
+
+    public Guid? ResolvedBy { get; private set; }
+
+    public string? ResolutionNote { get; private set; }
+
     // Campo literal VARCHAR2(36) según el diagrama Oracle.
     public string? UpdateAt { get; private set; }
 
@@ -42,6 +48,32 @@ public sealed class ChatEscalation
             CreatedAt = DateTime.UtcNow,
             UpdateAt = updateAt
         };
+    }
+
+    public void Resolve(Guid escalationStatusId, Guid resolvedBy, string? resolutionNote)
+    {
+        EnsureEscalationStatusId(escalationStatusId);
+        if (resolvedBy == Guid.Empty)
+        {
+            throw new ArgumentException("El identificador de quien resuelve no puede ser vacío.", nameof(resolvedBy));
+        }
+
+        EscalationStatusId = escalationStatusId;
+        ResolvedBy = resolvedBy;
+        ResolutionNote = resolutionNote;
+        ResolvedAt = DateTime.UtcNow;
+    }
+
+    public void Resolve(Guid resolvedBy, string? resolutionNote)
+    {
+        if (resolvedBy == Guid.Empty)
+        {
+            throw new ArgumentException("El identificador de quien resuelve no puede ser vacío.", nameof(resolvedBy));
+        }
+
+        ResolvedBy = resolvedBy;
+        ResolutionNote = resolutionNote;
+        ResolvedAt = DateTime.UtcNow;
     }
 
     public void Update(

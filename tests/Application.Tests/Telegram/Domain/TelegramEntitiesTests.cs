@@ -14,52 +14,9 @@ public sealed class TelegramEntitiesTests
         Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid ConversationId =
         Guid.Parse("33333333-3333-3333-3333-333333333333");
-    private const string CodeHash =
-        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
-    [Fact]
-    public void Link_code_can_only_be_consumed_once()
-    {
-        var code = TelegramLinkCode.Create(
-            PersonId,
-            CodeHash,
-            Now.AddMinutes(10),
-            Now);
 
-        code.Consume(Now.AddMinutes(1));
 
-        Assert.Equal(Now.AddMinutes(1), code.ConsumedAt);
-        Assert.Throws<InvalidOperationException>(
-            () => code.Consume(Now.AddMinutes(2)));
-    }
-
-    [Fact]
-    public void Expired_link_code_cannot_be_consumed()
-    {
-        var code = TelegramLinkCode.Create(
-            PersonId,
-            CodeHash,
-            Now.AddMinutes(10),
-            Now);
-
-        Assert.Throws<InvalidOperationException>(
-            () => code.Consume(Now.AddMinutes(10)));
-    }
-
-    [Fact]
-    public void Invalidated_link_code_is_no_longer_active()
-    {
-        var code = TelegramLinkCode.Create(
-            PersonId,
-            CodeHash,
-            Now.AddMinutes(10),
-            Now);
-
-        code.Invalidate(Now.AddMinutes(1));
-
-        Assert.False(code.IsActiveAt(Now.AddMinutes(2)));
-        Assert.Equal(Now.AddMinutes(1), code.InvalidatedAt);
-    }
 
     [Fact]
     public void User_link_can_be_relinked_to_another_private_chat()
@@ -90,19 +47,18 @@ public sealed class TelegramEntitiesTests
     }
 
     [Fact]
-    public void Conversation_link_can_move_to_a_new_internal_conversation()
+    public void User_link_can_bind_and_unbind_conversation()
     {
-        var link = TelegramConversationLink.Create(
-            UserLinkId,
-            ConversationId,
-            Now);
-        var nextConversationId =
-            Guid.Parse("44444444-4444-4444-4444-444444444444");
+        var link = TelegramUserLink.Create(PersonId, 1001, 1001, Now);
 
-        link.BindConversation(nextConversationId, Now.AddMinutes(1));
+        link.BindConversation(ConversationId);
 
-        Assert.Equal(nextConversationId, link.ConversationId);
-        Assert.Equal(Now.AddMinutes(1), link.UpdatedAt);
+        Assert.Equal(ConversationId, link.ChatConversationId);
+        Assert.NotNull(link.UpdatedAt);
+
+        link.UnbindConversation();
+
+        Assert.Null(link.ChatConversationId);
     }
 
     [Fact]
@@ -130,6 +86,31 @@ public sealed class TelegramEntitiesTests
         Assert.Null(update.MessageText);
         Assert.Null(update.ResponseText);
         Assert.Null(update.LastErrorCode);
+    }
+
+    [Fact]
+    public void Processing_update_can_complete_without_a_response()
+    {
+        var update = CreateUpdate();
+        update.Claim(Now);
+        var completedAt = Now.AddSeconds(1);
+
+        update.CompleteWithoutResponse(completedAt);
+
+        Assert.Equal(TelegramInboundUpdateStatus.Completed, update.Status);
+        Assert.Null(update.MessageText);
+        Assert.Null(update.ResponseText);
+        Assert.Null(update.LastErrorCode);
+        Assert.Equal(completedAt, update.UpdatedAt);
+    }
+
+    [Fact]
+    public void Pending_update_cannot_complete_without_a_response()
+    {
+        var update = CreateUpdate();
+
+        Assert.Throws<InvalidOperationException>(
+            () => update.CompleteWithoutResponse(Now.AddSeconds(1)));
     }
 
     [Fact]
@@ -180,73 +161,9 @@ public sealed class TelegramEntitiesTests
         Assert.Equal("agent_unavailable", update.LastErrorCode);
     }
 
-    [Fact]
-    public void Linking_session_starts_waiting_for_email()
-    {
-        var session = TelegramLinkingSession.Start(1001, 1001, Now);
 
-        Assert.Equal(TelegramLinkingSessionStatus.AwaitingEmail, session.Status);
-        Assert.Equal(1001, session.TelegramUserId);
-        Assert.Equal(1001, session.TelegramChatId);
-        Assert.Equal(0, session.Attempts);
-        Assert.Null(session.PersonId);
-    }
 
-    [Fact]
-    public void Linking_session_blocks_after_fifth_invalid_otp()
-    {
-        var session = TelegramLinkingSession.Start(1001, 1001, Now);
-        session.ResolveAccount(
-            PersonId,
-            CodeHash,
-            CodeHash,
-            Now.AddMinutes(5),
-            Now);
 
-        for (var attempt = 0; attempt < 5; attempt++)
-        {
-            session.RegisterFailedAttempt(5, Now.AddSeconds(attempt + 1));
-        }
-
-        Assert.Equal(TelegramLinkingSessionStatus.Blocked, session.Status);
-        Assert.Equal(5, session.Attempts);
-    }
-
-    [Fact]
-    public void Linking_session_completes_only_once()
-    {
-        var session = TelegramLinkingSession.Start(1001, 1001, Now);
-        session.ResolveAccount(
-            PersonId,
-            CodeHash,
-            CodeHash,
-            Now.AddMinutes(5),
-            Now);
-
-        session.Complete(Now.AddMinutes(1));
-
-        Assert.Equal(TelegramLinkingSessionStatus.Linked, session.Status);
-        Assert.Throws<InvalidOperationException>(
-            () => session.Complete(Now.AddMinutes(2)));
-    }
-
-    [Fact]
-    public void Expired_otp_session_cannot_be_completed()
-    {
-        var session = TelegramLinkingSession.Start(1001, 1001, Now);
-        session.ResolveAccount(
-            PersonId,
-            CodeHash,
-            CodeHash,
-            Now.AddMinutes(5),
-            Now);
-
-        session.Expire(Now.AddMinutes(5));
-
-        Assert.Equal(TelegramLinkingSessionStatus.Expired, session.Status);
-        Assert.Throws<InvalidOperationException>(
-            () => session.Complete(Now.AddMinutes(5)));
-    }
 
     [Fact]
     public void Processing_update_can_redact_sensitive_message_text()

@@ -6,7 +6,7 @@ using MediatR;
 namespace Application.Pets.UseCases;
 
 public sealed record UpdateMyPetProfileCommand(
-    Guid UserAccountId,
+    Guid ClientId,
     Guid PetId,
     string? Name,
     int? Age,
@@ -16,7 +16,9 @@ public sealed record UpdateMyPetProfileCommand(
     bool ChangeObservations,
     Guid? SpeciesId,
     Guid? RaceId,
-    DateTime ExpectedUpdatedAt) : IRequest<OwnedPetProfile>;
+    DateTime ExpectedUpdatedAt,
+    string? PhotoUrl = null,
+    bool ChangePhotoUrl = false) : IRequest<OwnedPetProfile>;
 
 public sealed class UpdateMyPetProfileCommandHandler
     : IRequestHandler<UpdateMyPetProfileCommand, OwnedPetProfile>
@@ -29,15 +31,9 @@ public sealed class UpdateMyPetProfileCommandHandler
         UpdateMyPetProfileCommand request,
         CancellationToken cancellationToken)
     {
-        var account = await _uow.UserAccountsRepository.GetByIdAsync(
-            request.UserAccountId, cancellationToken);
-        if (account is null)
-            throw new NotFoundException("Cuenta de usuario no encontrada.");
-
-        var client = await _uow.ClientsRepository.GetByUserIdAsync(
-            account.UserId, cancellationToken);
-        if (client is null)
-            throw new NotFoundException("El usuario autenticado no tiene un perfil de cliente asociado.");
+        var client = await _uow.ClientsRepository.GetByIdAsync(
+            request.ClientId, cancellationToken)
+            ?? throw new NotFoundException("Cliente no encontrado.");
 
         var ownsPet = await _uow.ClientPetsRepository.ExistsByClientAndPetAsync(
             client.Id, request.PetId, cancellationToken);
@@ -58,26 +54,32 @@ public sealed class UpdateMyPetProfileCommandHandler
             throw new NotFoundException("Especie no encontrada.");
 
         var raceId = request.RaceId ?? pet.RaceId;
-        var race = await _uow.RacesRepository.GetByIdAsync(raceId, cancellationToken);
-        if (race is null)
-            throw new NotFoundException("Raza no encontrada.");
+        Domain.Races.Entities.RaceEntity? race = null;
+        if (raceId.HasValue)
+        {
+            race = await _uow.RacesRepository.GetByIdAsync(raceId.Value, cancellationToken);
+            if (race is null)
+                throw new NotFoundException("Raza no encontrada.");
+        }
 
         pet.Update(
             request.Name ?? pet.Name.Value,
             request.Age ?? pet.Age,
             request.Gender ?? pet.Gender.Value,
-            request.Weight ?? pet.Weight.Value,
-            request.ChangeObservations ? request.Observations : pet.Observations.Value,
+            request.Weight ?? pet.Weight?.Value,
+            request.ChangeObservations ? request.Observations : pet.Observations?.Value,
             species,
-            race);
+            race,
+            request.ChangePhotoUrl ? request.PhotoUrl : pet.PhotoUrl.Value);
 
         await _uow.PetsRepository.UpdateAsync(pet, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
         return new OwnedPetProfile(
-            pet.Id, pet.Name.Value, pet.Age, pet.Gender.Value, pet.Weight.Value,
-            pet.Observations.Value, pet.SpeciesId, pet.Species.Name.Value,
-            pet.RaceId, pet.Race.Name.Value, pet.UpdatedAt ?? pet.CreatedAt);
+            pet.Id, pet.Name.Value, pet.Age, pet.Gender.Value, pet.Weight?.Value,
+            pet.Observations?.Value, pet.SpeciesId, pet.Species.Name.Value,
+            pet.RaceId, pet.Race?.Name.Value, pet.UpdatedAt ?? pet.CreatedAt,
+            pet.PhotoUrl.Value);
     }
 
     private static DateTime AsUtc(DateTime value) => value.Kind switch

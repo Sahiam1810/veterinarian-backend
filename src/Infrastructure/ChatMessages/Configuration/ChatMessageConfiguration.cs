@@ -1,6 +1,5 @@
 using Domain.ChatConversations.Entities;
 using Domain.ChatParticipants.Entities;
-using Domain.MessageTypes.Entities;
 using Domain.SenderTypes.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -57,23 +56,6 @@ public sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMess
             .WithMany()
             .HasForeignKey(message => message.SenderTypesId)
             .HasConstraintName("FK_CHAT_MESSAGES_SENDER_TYPES_SENDER_TYPES_ID")
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Property(message => message.MessageTypeId)
-            .HasColumnName("MESSAGE_TYPE_ID")
-            .HasColumnType("VARCHAR2(36)")
-            .HasConversion(
-                guid => guid.ToString(),
-                value => Guid.Parse(value))
-            .IsRequired();
-
-        builder.HasIndex(message => message.MessageTypeId)
-            .HasDatabaseName("IX_CHAT_MESSAGES_MESSAGE_TYPE_ID");
-
-        builder.HasOne<MessageTypeEntity>()
-            .WithMany()
-            .HasForeignKey(message => message.MessageTypeId)
-            .HasConstraintName("FK_CHAT_MESSAGES_MESSAGE_TYPES_MESSAGE_TYPE_ID")
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(message => message.ChatParticipantId)

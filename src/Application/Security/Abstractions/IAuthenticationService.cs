@@ -20,6 +20,6 @@ public interface IAuthenticationService
         CancellationToken cancellationToken);
 
     Task<Result<CurrentProfile>> GetCurrentProfileAsync(
-        Guid userAccountId,
+        Guid userId,
         CancellationToken cancellationToken);
 }

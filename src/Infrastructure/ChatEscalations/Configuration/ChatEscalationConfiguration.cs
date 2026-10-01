@@ -68,6 +68,24 @@ public sealed class ChatEscalationConfiguration : IEntityTypeConfiguration<ChatE
             .HasColumnType("CLOB")
             .IsRequired(false);
 
+        builder.Property(escalation => escalation.ResolvedAt)
+            .HasColumnName("RESOLVED_AT")
+            .HasColumnType("TIMESTAMP")
+            .IsRequired(false);
+
+        builder.Property(escalation => escalation.ResolvedBy)
+            .HasColumnName("RESOLVED_BY")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.HasValue ? guid.Value.ToString() : null,
+                value => !string.IsNullOrEmpty(value) ? Guid.Parse(value) : null)
+            .IsRequired(false);
+
+        builder.Property(escalation => escalation.ResolutionNote)
+            .HasColumnName("RESOLUTION_NOTE")
+            .HasColumnType("CLOB")
+            .IsRequired(false);
+
         builder.Property(escalation => escalation.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

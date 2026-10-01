@@ -21,7 +21,9 @@ public sealed record AppointmentBookingOptionsResponse(
 public sealed record AppointmentBookingSlotResponse(
     Guid AvailabilityId,
     DateTime ScheduledStartUtc,
-    DateTime ScheduledEndUtc);
+    DateTime ScheduledEndUtc,
+    string? ConsultingRoom = null,
+    string? ShiftName = null);
 
 public sealed record CreateMyAppointmentRequest(
     Guid PetId,

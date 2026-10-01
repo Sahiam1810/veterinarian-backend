@@ -8,22 +8,34 @@ public sealed class UserTokens : BaseEntity<Guid>
     {
     }
 
-    public UserTokens(Guid accountId, string tokenValue, string tokenType, DateTime expiresAt)
+    public UserTokens(
+        Guid userId,
+        string tokenValue,
+        string tokenType,
+        DateTime expiresAt,
+        DateTime sessionStartedAt)
     {
         Id = Guid.NewGuid();
-        AccountId = accountId;
+        UserId = userId;
         TokenValue = tokenValue;
         TokenType = tokenType;
         ExpiresAt = expiresAt;
+        SessionStartedAt = sessionStartedAt;
     }
 
-    public Guid AccountId { get; private set; }
+    public Guid UserId { get; private set; }
 
     public string TokenValue { get; private set; } = null!;
 
     public string TokenType { get; private set; } = null!;
 
     public DateTime ExpiresAt { get; private set; }
+
+    /// <summary>
+    /// UTC instant of the original login that started this refresh-token chain.
+    /// Preserved across rotations; never reset on refresh.
+    /// </summary>
+    public DateTime SessionStartedAt { get; private set; }
 
     public bool IsExpired => IsExpiredAsOf(TimeProvider.System);
 

@@ -9,10 +9,11 @@ public sealed record UpdatePetCommand(
     string Name,
     int Age,
     string Gender,
-    decimal Weight,
+    decimal? Weight,
     string? Observations,
     Guid SpeciesId,
-    Guid RaceId) : IRequest;
+    Guid RaceId,
+    string? PhotoUrl = null) : IRequest;
 
 public sealed class UpdatePetCommandHandler : IRequestHandler<UpdatePetCommand>
 {
@@ -44,7 +45,8 @@ public sealed class UpdatePetCommandHandler : IRequestHandler<UpdatePetCommand>
             request.Weight,
             request.Observations,
             species,
-            race);
+            race,
+            request.PhotoUrl);
 
         await _uow.PetsRepository.UpdateAsync(pet, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

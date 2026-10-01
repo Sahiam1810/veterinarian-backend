@@ -1,4 +1,6 @@
 using Application.Common.Abstractions;
+using Domain.Availabilities.Entities;
+using Domain.Availabilities.ValueObjects;
 using FluentValidation;
 
 namespace Application.Availabilities.UseCase;
@@ -14,11 +16,27 @@ public sealed class UpdateAvailabilityCommandValidator : AbstractValidator<Updat
             .NotEmpty().WithMessage("El veterinario es requerido.");
 
         RuleFor(x => x.DayOfWeek)
-            .IsInEnum().WithMessage("El día de la semana no es válido.");
+            .IsInEnum().WithMessage("El dia de la semana no es valido.");
 
         RuleFor(x => x.EndTime)
             .GreaterThan(x => x.StartTime)
             .WithMessage("La hora de fin debe ser posterior a la hora de inicio.");
+
+        RuleFor(x => x.SlotDurationMinutes)
+            .InclusiveBetween(Availability.MinSlotDurationMinutes, Availability.MaxSlotDurationMinutes)
+            .WithMessage($"La duracion del hueco debe estar entre {Availability.MinSlotDurationMinutes} y {Availability.MaxSlotDurationMinutes} minutos.");
+
+        RuleFor(x => x.MaxConcurrentAppointments)
+            .InclusiveBetween(Availability.MinConcurrentAppointments, Availability.MaxConcurrentAppointmentsLimit)
+            .WithMessage($"El maximo de citas concurrentes debe estar entre {Availability.MinConcurrentAppointments} y {Availability.MaxConcurrentAppointmentsLimit}.");
+
+        RuleFor(x => x.ShiftName)
+            .MaximumLength(ShiftName.MaxLength)
+            .WithMessage($"El nombre de turno no puede superar los {ShiftName.MaxLength} caracteres.");
+
+        RuleFor(x => x.ConsultingRoom)
+            .MaximumLength(ConsultingRoom.MaxLength)
+            .WithMessage($"El consultorio no puede superar los {ConsultingRoom.MaxLength} caracteres.");
 
         RuleFor(x => x)
             .MustAsync(async (command, cancellationToken) =>

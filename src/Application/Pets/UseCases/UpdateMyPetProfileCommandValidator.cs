@@ -7,7 +7,7 @@ public sealed class UpdateMyPetProfileCommandValidator : AbstractValidator<Updat
 {
     public UpdateMyPetProfileCommandValidator()
     {
-        RuleFor(x => x.UserAccountId).NotEmpty();
+        RuleFor(x => x.ClientId).NotEmpty();
         RuleFor(x => x.PetId).NotEmpty();
         RuleFor(x => x.ExpectedUpdatedAt).NotEmpty();
         RuleFor(x => x).Must(HasChanges).WithMessage("Debe indicar al menos un cambio.");

@@ -1,6 +1,7 @@
 using Api.AgentHumans.Dtos;
 using Api.AgentHumans.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.AgentHumans.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.AgentHumans.Controllers;
 
 [ApiController]
 [Route("api/chat/agent-humans")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class AgentHumanController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission("Chat", PermissionAction.Create)]
     [EndpointSummary("Crear un agente humano")]
     [EndpointDescription("Registra un agente humano para un usuario existente. Un usuario puede tener varios registros de agente. Queda activo por defecto.")]
     [ProducesResponseType(typeof(AgentHumanResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +42,7 @@ public sealed class AgentHumanController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Listar agentes humanos")]
     [EndpointDescription("Devuelve todos los agentes humanos registrados.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AgentHumanResponseDto>), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class AgentHumanController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Obtener un agente humano por su identificador")]
     [EndpointDescription("Devuelve el agente humano indicado.")]
     [ProducesResponseType(typeof(AgentHumanResponseDto), StatusCodes.Status200OK)]
@@ -67,6 +70,7 @@ public sealed class AgentHumanController(ISender sender) : ControllerBase
     }
 
     [HttpGet("by-user/{userId:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Consultar agentes humanos por usuario")]
     [EndpointDescription("Devuelve todos los agentes humanos asociados al usuario indicado. Si no hay registros, responde con una lista vacía.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AgentHumanResponseDto>), StatusCodes.Status200OK)]
@@ -79,6 +83,7 @@ public sealed class AgentHumanController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Actualizar un agente humano")]
     [EndpointDescription("Verifica que el agente exista. El usuario asociado no se modifica; el estado se cambia con activar o desactivar.")]
     [ProducesResponseType(typeof(AgentHumanResponseDto), StatusCodes.Status200OK)]
@@ -99,6 +104,7 @@ public sealed class AgentHumanController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/activate")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Activar un agente humano")]
     [EndpointDescription("Marca el agente humano como activo.")]
     [ProducesResponseType(typeof(AgentHumanResponseDto), StatusCodes.Status200OK)]
@@ -119,6 +125,7 @@ public sealed class AgentHumanController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/deactivate")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Desactivar un agente humano")]
     [EndpointDescription("Marca el agente humano como inactivo.")]
     [ProducesResponseType(typeof(AgentHumanResponseDto), StatusCodes.Status200OK)]

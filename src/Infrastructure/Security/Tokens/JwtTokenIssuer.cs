@@ -1,4 +1,7 @@
+using Application.Permissions.Claims;
+using Application.Security.Claims;
 using Application.Security.Models;
+using Domain.Roles;
 using Infrastructure.Security.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -15,9 +18,55 @@ public sealed class JwtTokenIssuer(
     private readonly JwtOptions jwtOptions = options.Value;
 
     public IssuedAccessToken Issue(AuthenticatedIdentity identity) =>
-        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), []);
 
-    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime)
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        IReadOnlyCollection<string> permissions) =>
+        Issue(identity, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes), permissions);
+
+    public IssuedAccessToken Issue(AuthenticatedIdentity identity, TimeSpan lifetime) =>
+        Issue(identity, lifetime, []);
+
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
+    {
+        return Issue(identity, lifetime, permissions, tokenUse: null, extraClaims: []);
+    }
+
+    // Punto de extensión genérico para claims adicionales que no forman parte del
+    // conjunto fijo de AuthenticatedIdentity (p. ej. telegram_user_id en tokens de invitado).
+    public IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        IReadOnlyCollection<Claim> extraClaims)
+    {
+        return Issue(identity, lifetime, permissions, tokenUse: null, extraClaims);
+    }
+
+    public IssuedAccessToken IssueDelegated(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        string tokenUse)
+    {
+        if (string.IsNullOrWhiteSpace(tokenUse))
+        {
+            throw new ArgumentException("Delegated token use is required.", nameof(tokenUse));
+        }
+
+        return Issue(identity, lifetime, permissions, tokenUse, extraClaims: []);
+    }
+
+    private IssuedAccessToken Issue(
+        AuthenticatedIdentity identity,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions,
+        string? tokenUse,
+        IReadOnlyCollection<Claim> extraClaims)
     {
         if (lifetime <= TimeSpan.Zero)
         {
@@ -26,13 +75,11 @@ public sealed class JwtTokenIssuer(
 
         var claims = new List<Claim>
         {
+            // U4: sub es el id del usuario (USERS.USER_ID). U6: person_id
+            // retirado -- era el mismo valor que sub, ya redundante.
             new(
                 JwtRegisteredClaimNames.Sub,
-                identity.UserAccountId.ToString()),
-
-            new(
-                "person_id",
-                identity.PersonId.ToString()),
+                identity.UserId.ToString()),
 
             new(
                 "role_id",
@@ -44,40 +91,35 @@ public sealed class JwtTokenIssuer(
 
             new(
                 "preferred_username",
-                identity.UserName),
+                identity.Email),
 
             new(
                 JwtRegisteredClaimNames.Email,
                 identity.Email)
         };
 
-        return BuildToken(claims, lifetime);
-    }
-
-    // El SuperAdmin no es un usuario ni un rol de la tabla ROLES: no lleva
-    // "role_id" ni "role", solo el claim "super_admin" que PermissionAuthorizationHandler
-    // usa para saltarse toda verificación de permisos.
-    public IssuedAccessToken IssueForSuperAdmin(Guid id, string email)
-    {
-        var claims = new List<Claim>
+        if (tokenUse is not null)
         {
-            new(
-                JwtRegisteredClaimNames.Sub,
-                id.ToString()),
+            claims.Add(new Claim(DelegatedTokenClaims.ClaimType, tokenUse));
+        }
 
-            new(
-                "super_admin",
-                "true"),
+        claims.AddRange(extraClaims);
 
-            new(
-                JwtRegisteredClaimNames.Email,
-                email)
-        };
+        string[] normalizedPermissions = SystemRoles.IsSuperAdmin(identity.RoleId)
+            ? []
+            : permissions
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray();
 
-        return BuildToken(claims, TimeSpan.FromMinutes(jwtOptions.AccessTokenMinutes));
+        return BuildToken(claims, lifetime, normalizedPermissions);
     }
 
-    private IssuedAccessToken BuildToken(List<Claim> claims, TimeSpan lifetime)
+    private IssuedAccessToken BuildToken(
+        List<Claim> claims,
+        TimeSpan lifetime,
+        IReadOnlyCollection<string> permissions)
     {
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.Add(lifetime);
@@ -100,6 +142,11 @@ public sealed class JwtTokenIssuer(
                 new SigningCredentials(
                     keyMaterial.SigningKey,
                     SecurityAlgorithms.RsaSha256));
+
+        if (permissions.Count > 0)
+        {
+            token.Payload[PermissionClaimValue.ClaimType] = permissions.ToArray();
+        }
 
         return new IssuedAccessToken(
             new JwtSecurityTokenHandler().WriteToken(token),

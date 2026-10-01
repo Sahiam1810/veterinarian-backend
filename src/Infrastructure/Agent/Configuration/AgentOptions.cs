@@ -9,6 +9,5 @@ public sealed class AgentOptions
     public string MessagesPath { get; init; } = "/api/v1/messages";
     public int RequestTimeoutSeconds { get; init; } = 30;
     public int MaxResponseBytes { get; init; } = 1_048_576;
-    public string InitialConversationStatusId { get; init; } = string.Empty;
     public string ClientParticipantTypeId { get; init; } = string.Empty;
 }

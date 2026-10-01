@@ -15,22 +15,43 @@ namespace Api.Tests.Telegram;
 public sealed class TelegramControllersTests
 {
     [Fact]
-    public async Task Link_code_uses_authenticated_person_claim()
+    public async Task Bot_link_uses_the_telegram_user_id_claim_from_the_guest_token()
     {
-        var personId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var personId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var linkId = Guid.NewGuid();
         var sender = Substitute.For<ISender>();
-        sender.Send(Arg.Any<CreateTelegramLinkCodeCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new TelegramLinkCodeResult("code", "https://t.me/bot?start=code", DateTimeOffset.UtcNow));
-        var controller = new TelegramLinkCodesController(sender)
+        sender.Send(Arg.Any<LinkTelegramBotAccountCommand>(), Arg.Any<CancellationToken>())
+            .Returns(linkId);
+        var controller = new TelegramBotLinkController(sender)
         {
-            ControllerContext = ContextWithClaim("person_id", personId.ToString())
+            ControllerContext = ContextWithClaim("telegram_user_id", "555")
         };
 
-        var result = await controller.Create(default);
+        var result = await controller.Link(
+            new LinkTelegramBotAccountRequest(personId),
+            default);
 
-        Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(linkId, Assert.IsType<OkObjectResult>(result.Result).Value is
+            LinkTelegramBotAccountResponse response ? response.LinkId : Guid.Empty);
         await sender.Received(1).Send(
-            Arg.Is<CreateTelegramLinkCodeCommand>(command => command.PersonId == personId),
+            Arg.Is<LinkTelegramBotAccountCommand>(command =>
+                command.ClientId == personId && command.TelegramUserId == 555),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Bot_link_rejects_a_missing_or_invalid_telegram_user_id_claim()
+    {
+        var sender = Substitute.For<ISender>();
+        var controller = new TelegramBotLinkController(sender)
+        {
+            ControllerContext = ContextWithClaim("telegram_user_id", "not-a-number")
+        };
+
+        await Assert.ThrowsAsync<Application.Common.Exceptions.UnauthorizedException>(() =>
+            controller.Link(new LinkTelegramBotAccountRequest(Guid.NewGuid()), default));
+        await sender.DidNotReceive().Send(
+            Arg.Any<LinkTelegramBotAccountCommand>(),
             Arg.Any<CancellationToken>());
     }
 

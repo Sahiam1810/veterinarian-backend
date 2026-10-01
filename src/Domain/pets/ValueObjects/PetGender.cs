@@ -4,8 +4,9 @@ public sealed record PetGender
 {
     public static readonly string Male = "M";
     public static readonly string Female = "F";
+    public static readonly string Unspecified = "U";
 
-    private static readonly HashSet<string> ValidValues = [Male, Female];
+    private static readonly HashSet<string> ValidValues = [Male, Female, Unspecified];
 
     private PetGender(string value)
     {
@@ -22,7 +23,7 @@ public sealed record PetGender
         var gender = value.Trim().ToUpperInvariant();
 
         if (!ValidValues.Contains(gender))
-            throw new ArgumentException($"El género debe ser '{Male}' (macho) o '{Female}' (hembra).", nameof(value));
+            throw new ArgumentException($"El género debe ser '{Male}' (macho), '{Female}' (hembra) o '{Unspecified}' (desconocido).", nameof(value));
 
         return new PetGender(gender);
     }

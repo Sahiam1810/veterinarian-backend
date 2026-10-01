@@ -57,4 +57,25 @@ public sealed class MedicalRecordRepository : IMedicalRecordRepository
         => _context.Set<MedicalRecord>()
             .AsNoTracking()
             .AnyAsync(x => x.AppointmentId == appointmentId, cancellationToken);
+
+    public async Task DeleteByClientPetIdsAsync(
+        IReadOnlyCollection<Guid> clientPetIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (clientPetIds.Count == 0)
+        {
+            return;
+        }
+
+        var records = await _context.Set<MedicalRecord>()
+            .Where(x => clientPetIds.Contains(x.ClientPetId))
+            .ToListAsync(cancellationToken);
+
+        if (records.Count == 0)
+        {
+            return;
+        }
+
+        _context.Set<MedicalRecord>().RemoveRange(records);
+    }
 }

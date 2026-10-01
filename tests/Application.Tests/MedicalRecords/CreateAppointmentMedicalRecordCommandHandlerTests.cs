@@ -1,53 +1,73 @@
 using Application.Appointments.Abstraction;
+using Application.AppointmentStatusHistories.Abstraction;
 using Application.Common.Abstractions;
 using Application.Common.Exceptions;
 using Application.Diagnostics.Abstraction;
 using Application.MedicalRecords.Abstraction;
 using Application.MedicalRecords.UseCases;
-using Application.UserAccounts.Abstraction;
+using Application.StatusAppointments.Abstraction;
 using Application.Vaccinations.Abstraction;
 using Application.Veterinarians.Abstraction;
 using Domain.Appointments.Entities;
+using Domain.AppointmentStatusHistories.Entities;
 using Domain.Common;
 using Domain.Diagnostics.Entities;
 using Domain.MedicalRecords.Entities;
+using Domain.StatusAppointments.Entities;
 using Domain.Vaccinations.Entities;
 using Domain.Veterinarians.Entities;
 using FluentValidation.TestHelper;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
 
 namespace Application.Tests.MedicalRecords;
 
+// U4: el ownership ya resuelve el veterinario directamente por el UserId del
+// actor (el sub del JWT), sin pasar por UserAccounts.
 public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
 {
-    private static readonly Guid ActorUserAccountId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid UserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid ActorUserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static readonly Guid ClientPetId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid AppointmentId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid OwnVeterinarianId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid ForeignVeterinarianId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid DiagnosticId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid AppointmentStatusId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+    // Estado destino que aplica el handler al cerrar la cita con historia clínica.
+    private static readonly Guid AtendidaStatusId = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
     private readonly IAppointmentRepository appointmentsRepository = Substitute.For<IAppointmentRepository>();
-    private readonly IUserAccountsRepository userAccountsRepository = Substitute.For<IUserAccountsRepository>();
     private readonly IVeterinarianRepository veterinariansRepository = Substitute.For<IVeterinarianRepository>();
     private readonly IDiagnosticRepository diagnosticsRepository = Substitute.For<IDiagnosticRepository>();
     private readonly IMedicalRecordRepository medicalRecordsRepository = Substitute.For<IMedicalRecordRepository>();
     private readonly IVaccinationRepository vaccinationsRepository = Substitute.For<IVaccinationRepository>();
+    private readonly IStatusAppointmentRepository statusAppointmentsRepository
+        = Substitute.For<IStatusAppointmentRepository>();
+    private readonly IAppointmentStatusHistoryRepository appointmentStatusHistoriesRepository
+        = Substitute.For<IAppointmentStatusHistoryRepository>();
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateAppointmentMedicalRecordCommandHandler sut;
     private readonly CreateAppointmentMedicalRecordCommandValidator validator = new();
+    private Appointment? arrangedAppointment;
 
     public CreateAppointmentMedicalRecordCommandHandlerTests()
     {
         unitOfWork.AppointmentsRepository.Returns(appointmentsRepository);
-        unitOfWork.UserAccountsRepository.Returns(userAccountsRepository);
         unitOfWork.VeterinariansRepository.Returns(veterinariansRepository);
         unitOfWork.DiagnosticsRepository.Returns(diagnosticsRepository);
         unitOfWork.MedicalRecordsRepository.Returns(medicalRecordsRepository);
         unitOfWork.VaccinationsRepository.Returns(vaccinationsRepository);
+        unitOfWork.StatusAppointmentsRepository.Returns(statusAppointmentsRepository);
+        unitOfWork.AppointmentStatusHistoriesRepository.Returns(appointmentStatusHistoriesRepository);
+        statusAppointmentsRepository.GetByIdAsync(AppointmentStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus("AGENDADA", AppointmentStatusId));
+        // El handler busca ATENDIDA en GetAllAsync para cerrar la cita.
+        statusAppointmentsRepository.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                CreateStatus("AGENDADA", AppointmentStatusId),
+                CreateStatus("ATENDIDA", AtendidaStatusId)
+            ]);
         sut = new CreateAppointmentMedicalRecordCommandHandler(unitOfWork);
     }
 
@@ -75,6 +95,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
         Assert.Empty(result.VaccinationIds);
         await vaccinationsRepository.DidNotReceive()
             .AddAsync(Arg.Any<Vaccination>(), Arg.Any<CancellationToken>());
+        await AssertMovedToAtendidaAsync();
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
@@ -113,6 +134,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
             Assert.Equal(addedRecord!.Id, v.RecordId);
         });
         Assert.Equal(capturedVaccinations.Select(v => v.Id).ToArray(), result.VaccinationIds);
+        await AssertMovedToAtendidaAsync();
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
@@ -132,10 +154,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     public async Task MR_T04_throws_NotFoundException_when_veterinarian_profile_is_missing()
     {
         ArrangeAppointment(OwnVeterinarianId);
-        var account = WithId(new UserAccountEntity(UserId, "vet", "vet@test.com", "Active"), ActorUserAccountId);
-        userAccountsRepository.GetByIdAsync(ActorUserAccountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        veterinariansRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+        veterinariansRepository.GetByUserIdAsync(ActorUserId, Arg.Any<CancellationToken>())
             .Returns((Veterinarian?)null);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
@@ -229,6 +248,7 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
             .AddAsync(Arg.Any<Vaccination>(), Arg.Any<CancellationToken>());
         await medicalRecordsRepository.Received(1)
             .AddAsync(Arg.Any<MedicalRecord>(), Arg.Any<CancellationToken>());
+        await AssertMovedToAtendidaAsync();
         await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
@@ -279,6 +299,9 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
         await diagnosticsRepository.Received(1).GetByIdAsync(DiagnosticId, token);
         await medicalRecordsRepository.Received(1).AddAsync(Arg.Any<MedicalRecord>(), token);
         await vaccinationsRepository.Received(1).AddAsync(Arg.Any<Vaccination>(), token);
+        await appointmentStatusHistoriesRepository.Received(1)
+            .AddAsync(Arg.Any<AppointmentStatusHistory>(), token);
+        await appointmentsRepository.Received(1).UpdateAsync(Arg.Any<Appointment>(), token);
         await unitOfWork.Received(1).SaveChangesAsync(token);
     }
 
@@ -295,6 +318,81 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
         await medicalRecordsRepository.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
         await vaccinationsRepository.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
         await appointmentsRepository.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
+        await AssertMovedToAtendidaAsync();
+    }
+
+    [Theory]
+    [InlineData("NO_ASISTIO")]
+    [InlineData("CANCELADA")]
+    public async Task MR_T13_throws_ConflictException_when_appointment_status_is_not_AGENDADA(
+        string currentStatusName)
+    {
+        ArrangeOwnedAppointment();
+        statusAppointmentsRepository.GetByIdAsync(AppointmentStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus(currentStatusName, AppointmentStatusId));
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            sut.Handle(CreateCommand(), CancellationToken.None));
+
+        await AssertNoPersistenceAsync();
+        await medicalRecordsRepository.DidNotReceive()
+            .ExistsByAppointmentIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task MR_T14_creates_medical_record_when_appointment_status_is_AGENDADA()
+    {
+        ArrangeOwnedAppointment();
+        ArrangeActiveDiagnostic();
+        medicalRecordsRepository.ExistsByAppointmentIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var result = await sut.Handle(CreateCommand(), CancellationToken.None);
+
+        Assert.Equal(AppointmentId, result.AppointmentId);
+        await medicalRecordsRepository.Received(1)
+            .AddAsync(Arg.Any<MedicalRecord>(), Arg.Any<CancellationToken>());
+        await AssertMovedToAtendidaAsync();
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    // Check-in de recepción: el paciente ya hizo "check-in" (CONFIRMADA) antes
+    // de pasar a manos del veterinario; debe poder registrarse la historia
+    // clínica igual que si estuviera en AGENDADA.
+    [Fact]
+    public async Task MR_T14B_creates_medical_record_when_appointment_status_is_CONFIRMADA()
+    {
+        ArrangeOwnedAppointment();
+        ArrangeActiveDiagnostic();
+        statusAppointmentsRepository.GetByIdAsync(AppointmentStatusId, Arg.Any<CancellationToken>())
+            .Returns(CreateStatus("CONFIRMADA", AppointmentStatusId));
+        medicalRecordsRepository.ExistsByAppointmentIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var result = await sut.Handle(CreateCommand(), CancellationToken.None);
+
+        Assert.Equal(AppointmentId, result.AppointmentId);
+        await medicalRecordsRepository.Received(1)
+            .AddAsync(Arg.Any<MedicalRecord>(), Arg.Any<CancellationToken>());
+        await AssertMovedToAtendidaAsync();
+        await unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task MR_T15_throws_ConflictException_when_ATENDIDA_status_is_not_configured()
+    {
+        ArrangeOwnedAppointment();
+        medicalRecordsRepository.ExistsByAppointmentIdAsync(AppointmentId, Arg.Any<CancellationToken>())
+            .Returns(false);
+        // Solo estados actuales; falta ATENDIDA en el catálogo.
+        statusAppointmentsRepository.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns([CreateStatus("AGENDADA", AppointmentStatusId)]);
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            sut.Handle(CreateCommand(), CancellationToken.None));
+
+        Assert.Equal("No está configurado el estado ATENDIDA.", exception.Message);
+        await AssertNoPersistenceAsync();
     }
 
     private void ArrangeOwnedAppointment()
@@ -305,12 +403,12 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
 
     private void ArrangeAppointment(Guid veterinarianId)
     {
-        var appointment = WithId(
+        arrangedAppointment = WithId(
             new Appointment(
                 ClientPetId,
                 veterinarianId,
                 Guid.NewGuid(),
-                Guid.NewGuid(),
+                AppointmentStatusId,
                 Guid.NewGuid(),
                 DateTime.UtcNow,
                 DateTime.UtcNow.AddHours(1),
@@ -318,16 +416,13 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
             AppointmentId);
 
         appointmentsRepository.GetByIdAsync(AppointmentId, Arg.Any<CancellationToken>())
-            .Returns(appointment);
+            .Returns(arrangedAppointment);
     }
 
     private void ArrangeOwnedVeterinarian()
     {
-        var account = WithId(new UserAccountEntity(UserId, "vet", "vet@test.com", "Active"), ActorUserAccountId);
-        var veterinarian = WithId(new Veterinarian(UserId, Guid.NewGuid(), "LIC-001"), OwnVeterinarianId);
-        userAccountsRepository.GetByIdAsync(ActorUserAccountId, Arg.Any<CancellationToken>())
-            .Returns(account);
-        veterinariansRepository.GetByUserIdAsync(UserId, Arg.Any<CancellationToken>())
+        var veterinarian = WithId(new Veterinarian(ActorUserId, Guid.NewGuid(), "LIC-001"), OwnVeterinarianId);
+        veterinariansRepository.GetByUserIdAsync(ActorUserId, Arg.Any<CancellationToken>())
             .Returns(veterinarian);
     }
 
@@ -355,8 +450,26 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
             10m,
             38.5m,
             vaccinations,
-            ActorUserAccountId,
+            ActorUserId,
             enforce);
+    }
+
+    // Verifica que la cita quedó en ATENDIDA y se persistió el historial de estado.
+    private async Task AssertMovedToAtendidaAsync()
+    {
+        Assert.NotNull(arrangedAppointment);
+        Assert.Equal(AtendidaStatusId, arrangedAppointment!.StatusId);
+        await appointmentStatusHistoriesRepository.Received(1).AddAsync(
+            Arg.Is<AppointmentStatusHistory>(history =>
+                history.AppointmentId == AppointmentId &&
+                history.StatusId == AtendidaStatusId &&
+                history.ClientPetId == ClientPetId),
+            Arg.Any<CancellationToken>());
+        await appointmentsRepository.Received(1).UpdateAsync(
+            Arg.Is<Appointment>(appointment =>
+                appointment.Id == AppointmentId &&
+                appointment.StatusId == AtendidaStatusId),
+            Arg.Any<CancellationToken>());
     }
 
     private async Task AssertNoPersistenceAsync()
@@ -365,6 +478,10 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
             .AddAsync(Arg.Any<MedicalRecord>(), Arg.Any<CancellationToken>());
         await vaccinationsRepository.DidNotReceive()
             .AddAsync(Arg.Any<Vaccination>(), Arg.Any<CancellationToken>());
+        await appointmentStatusHistoriesRepository.DidNotReceive()
+            .AddAsync(Arg.Any<AppointmentStatusHistory>(), Arg.Any<CancellationToken>());
+        await appointmentsRepository.DidNotReceive()
+            .UpdateAsync(Arg.Any<Appointment>(), Arg.Any<CancellationToken>());
         await unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
@@ -373,5 +490,14 @@ public sealed class CreateAppointmentMedicalRecordCommandHandlerTests
     {
         typeof(BaseEntity<TId>).GetProperty(nameof(BaseEntity<TId>.Id))!.SetValue(entity, id);
         return entity;
+    }
+
+    private static StatusAppointment CreateStatus(string name, Guid id)
+    {
+        var status = new StatusAppointment(name, null);
+        typeof(StatusAppointment)
+            .GetProperty(nameof(StatusAppointment.Id))!
+            .SetValue(status, id);
+        return status;
     }
 }

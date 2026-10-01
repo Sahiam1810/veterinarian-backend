@@ -10,10 +10,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.UserTokens.Controllers;
 
 // SEC-04: manipular tokens de sesión (crearlos a mano, verlos, borrarlos de
-// cualquier cuenta) es tan sensible como resetear la contraseña de otro
-// (SEC-02) -- mismo criterio, exclusivo de SuperAdmin. La creación manual,
-// además, rechaza los tipos "refresh"/"access" en el validator: esos solo
-// pueden originarse del flujo real de login/refresh.
+// cualquier usuario) es una operación sensible -- exclusivo de SuperAdmin.
+// La creación manual, además, rechaza los tipos "refresh"/"access" en el
+// validator: esos solo pueden originarse del flujo real de login/refresh.
 [ApiController]
 [Route("api/[controller]")]
 public sealed class UserTokensController(ISender sender) : ControllerBase
@@ -21,7 +20,7 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
     [EndpointSummary("Registra un nuevo token de sesión")]
-    [EndpointDescription("Exclusivo de SuperAdmin. Registra un token no autenticante (ej. reset_password) asociado a una cuenta, con su fecha de expiración. No permite crear tokens de tipo 'refresh' ni 'access': esos solo pueden originarse del flujo real de login/refresh.")]
+    [EndpointDescription("Exclusivo de SuperAdmin. Registra un token no autenticante (ej. reset_password) asociado a un usuario, con su fecha de expiración. No permite crear tokens de tipo 'refresh' ni 'access': esos solo pueden originarse del flujo real de login/refresh.")]
     [ProducesResponseType(typeof(CreateUserTokenResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -55,17 +54,17 @@ public sealed class UserTokensController(ISender sender) : ControllerBase
         return Ok(token.ToResponse());
     }
 
-    [HttpGet("by-account/{accountId:guid}")]
+    [HttpGet("by-user/{userId:guid}")]
     [Authorize(Policy = AuthorizationPolicies.SuperAdminOnly)]
-    [EndpointSummary("Obtiene los tokens de una cuenta")]
-    [EndpointDescription("Exclusivo de SuperAdmin. Retorna todos los tokens activos e inactivos asociados a una cuenta de usuario.")]
+    [EndpointSummary("Obtiene los tokens de un usuario")]
+    [EndpointDescription("Exclusivo de SuperAdmin. Retorna todos los tokens activos e inactivos asociados a un usuario.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<UserTokenResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<UserTokenResponse>>> GetByAccountId(
-        Guid accountId,
+    public async Task<ActionResult<IReadOnlyCollection<UserTokenResponse>>> GetByUserId(
+        Guid userId,
         CancellationToken cancellationToken)
     {
         var tokens = await sender.Send(
-            new GetUserTokensByAccountIdQuery(accountId),
+            new GetUserTokensByUserIdQuery(userId),
             cancellationToken);
 
         return Ok(tokens.ToResponse());

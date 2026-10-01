@@ -13,12 +13,13 @@ public sealed class ChangeMyPasswordCommandHandler(
         ChangeMyPasswordCommand request,
         CancellationToken cancellationToken)
     {
-        var credentials = await unitOfWork.UserCredentialsRepository.GetByAccountIdAsync(
-            request.UserAccountId,
+        // U5: la contraseña vive directamente en USERS.
+        var user = await unitOfWork.UsersRepository.GetByIdAsync(
+            request.UserId,
             cancellationToken)
-            ?? throw new NotFoundException("Credenciales no encontradas.");
+            ?? throw new NotFoundException("Usuario no encontrado.");
 
-        if (!passwordHasher.Verify(request.CurrentPassword, credentials.PasswordHash))
+        if (!passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
         {
             throw new UnauthorizedException(
                 "La contraseña actual no es correcta.");
@@ -26,10 +27,10 @@ public sealed class ChangeMyPasswordCommandHandler(
 
         var newPasswordHash = passwordHasher.Hash(request.NewPassword);
 
-        credentials.ChangePassword(newPasswordHash);
+        user.ChangePassword(newPasswordHash);
 
-        await unitOfWork.UserCredentialsRepository.UpdateAsync(
-            credentials,
+        await unitOfWork.UsersRepository.UpdateAsync(
+            user,
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

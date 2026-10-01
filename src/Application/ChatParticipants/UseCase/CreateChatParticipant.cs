@@ -8,9 +8,9 @@ namespace Application.ChatParticipants.UseCase;
 public sealed record CreateChatParticipantCommand(
     Guid ChatConversationId,
     Guid ParticipantTypeId,
-    Guid? ChatUserProfileId,
+    Guid? ClientId,
     Guid? AgentHumanId,
-    Guid? AiModelId) : IRequest<ChatParticipantEntity>;
+    long? TelegramUserId = null) : IRequest<ChatParticipantEntity>;
 
 public sealed class CreateChatParticipantCommandHandler
     : IRequestHandler<CreateChatParticipantCommand, ChatParticipantEntity>
@@ -44,15 +44,15 @@ public sealed class CreateChatParticipantCommandHandler
                 $"No se encontró el tipo de participante '{request.ParticipantTypeId}'.");
         }
 
-        if (request.ChatUserProfileId.HasValue)
+        if (request.ClientId.HasValue)
         {
-            var profile = await _uow.ChatUserProfilesRepository.GetByIdAsync(
-                request.ChatUserProfileId.Value,
+            var client = await _uow.ClientsRepository.GetByIdAsync(
+                request.ClientId.Value,
                 cancellationToken);
-            if (profile is null)
+            if (client is null)
             {
                 throw new NotFoundException(
-                    $"No se encontró el perfil de chat '{request.ChatUserProfileId.Value}'.");
+                    $"No se encontró el cliente '{request.ClientId.Value}'.");
             }
         }
 
@@ -71,9 +71,9 @@ public sealed class CreateChatParticipantCommandHandler
         var participant = ChatParticipantEntity.Create(
             request.ChatConversationId,
             request.ParticipantTypeId,
-            request.ChatUserProfileId,
+            request.ClientId,
             request.AgentHumanId,
-            request.AiModelId);
+            request.TelegramUserId);
 
         await _uow.ChatParticipantsRepository.AddAsync(participant, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);

@@ -7,7 +7,7 @@ using MediatR;
 namespace Application.Appointments.UseCases;
 
 public sealed record GetMyAppointmentsAsVeterinarianQuery(
-    Guid UserAccountId,
+    Guid UserId,
     DateTime? From = null,
     DateTime? To = null,
     int Page = 1,
@@ -27,13 +27,8 @@ public sealed class GetMyAppointmentsAsVeterinarianQueryHandler
         GetMyAppointmentsAsVeterinarianQuery request,
         CancellationToken cancellationToken)
     {
-        var account = await _uow.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken);
-        if (account is null)
-        {
-            throw new NotFoundException("Cuenta de usuario no encontrada.");
-        }
-
-        var veterinarian = await _uow.VeterinariansRepository.GetByUserIdAsync(account.UserId, cancellationToken);
+        // U4: el sub ya es el id del usuario; ya no hace falta pasar por UserAccounts.
+        var veterinarian = await _uow.VeterinariansRepository.GetByUserIdAsync(request.UserId, cancellationToken);
         if (veterinarian is null)
         {
             throw new NotFoundException("El usuario autenticado no tiene un perfil de veterinario asociado.");

@@ -1,20 +1,20 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Api.Auth.Dtos;
-using Api.UserCredentials.Dtos;
 using Microsoft.AspNetCore.Http;
 using Application.Security.Models;
 using Application.Security.Login;
 using Application.Security.Refresh;
 using Application.Security.Revoke;
 using Application.Security.ChangePassword;
+using Application.Security.Errors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Api.Common.Security;
 using MediatR;
 using Application.Security.Profile;
-using Application.Permissions.UseCases;
+using Application.Permissions.Claims;
 using Application.Modules.UseCases;
 
 
@@ -40,15 +40,13 @@ public sealed class AuthController(ISender sender) : ControllerBase
     };
 
     // Registro público eliminado: el Cliente nunca se loguea (solo
-    // interactúa vía chatbot), así que no existe un flujo de auto-registro
-    // con contraseña. La vinculación por Telegram sigue su propio flujo
-    // (TelegramRegistrationController), que no depende de este endpoint.
+    // interactúa vía chatbot). El alta/vinculación va por owners/bot + bot-link.
 
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.Login)]
     [HttpPost("login")]
     [EndpointSummary("Inicia sesión de usuario")]
-    [EndpointDescription("Valida las credenciales (nombre de usuario o correo y contraseña) y genera tokens de acceso AccessToken y RefreshToken.")]
+    [EndpointDescription("Valida correo y contraseña y genera AccessToken/RefreshToken. Fallo 401: application/problem+json con code fijo Authentication.InvalidCredentials (el front traduce por code).")]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(
@@ -61,6 +59,18 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
+            // PlatformAccessDenied (rol no admitido) y UserInactive (cuenta
+            // desactivada) son 403, no 401 de credenciales — el front distingue
+            // el mensaje por code, no por status.
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code ||
+                result.Error.Code == AuthenticationErrors.UserInactive.Code)
+            {
+                return AuthProblem(
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden",
+                    result.Error.Code);
+            }
+
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
@@ -71,7 +81,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Refresh)]
     [HttpPost("refresh")]
     [EndpointSummary("Renueva los tokens JWT vencidos usando el Refresh Token")]
-    [EndpointDescription("Genera un nuevo AccessToken y RefreshToken rotado para mantener la sesión activa sin solicitar credenciales nuevamente.")]
+    [EndpointDescription("Genera AccessToken y RefreshToken rotado. Fallo 401: application/problem+json con code fijo Authentication.InvalidRefreshToken.")]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Refresh(
@@ -84,6 +94,15 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         if (result.IsFailure)
         {
+            if (result.Error.Code == AuthenticationErrors.PlatformAccessDenied.Code ||
+                result.Error.Code == AuthenticationErrors.UserInactive.Code)
+            {
+                return AuthProblem(
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden",
+                    result.Error.Code);
+            }
+
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);
         }
 
@@ -101,15 +120,23 @@ public sealed class AuthController(ISender sender) : ControllerBase
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(subject, out var userAccountId))
+        if (!Guid.TryParse(subject, out var userId))
         {
-            return Unauthorized();
+            return AuthProblem(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized",
+                AuthenticationErrors.Unauthorized.Code);
         }
 
         var result = await sender.Send(
-            new GetCurrentProfileQuery(userAccountId), cancellationToken);
+            new GetCurrentProfileQuery(userId), cancellationToken);
 
-        return result.IsSuccess ? Ok(result.Value) : Unauthorized();
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : AuthProblem(
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized",
+                AuthenticationErrors.Unauthorized.Code);
     }
 
     [Authorize]
@@ -120,45 +147,54 @@ public sealed class AuthController(ISender sender) : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Permissions(CancellationToken cancellationToken)
     {
-        if (User.HasClaim(claim => claim.Type == "super_admin" && claim.Value == "true"))
-        {
-            var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
-
-            return Ok(new UserPermissionsResponseDto(
-                modules.ToDictionary(
-                    module => module.Name.Value,
-                    _ => new ModulePermissionDto(true, true, true, true))));
-        }
-
-        var roleIdClaim = User.FindFirstValue("role_id");
-
-        if (!Guid.TryParse(roleIdClaim, out var roleId))
+        var isSuperAdmin = User.IsSuperAdmin();
+        if (!isSuperAdmin && !Guid.TryParse(User.FindFirstValue("role_id"), out _))
         {
             return Unauthorized();
         }
 
-        Guid.TryParse(User.FindFirstValue("person_id"), out var userId);
+        var modules = await sender.Send(new GetAllModulesQuery(), cancellationToken);
 
-        var permissions = await sender.Send(
-            new GetUserEffectivePermissionsQuery(roleId, userId),
-            cancellationToken);
+        if (isSuperAdmin)
+        {
+            return Ok(new UserPermissionsResponseDto(
+                modules.GroupBy(m => m.Name.Value).ToDictionary(
+                    g => g.Key,
+                    _ => new ModulePermissionDto(true, true, true, true))));
+        }
 
-        var dto = new UserPermissionsResponseDto(
-            permissions.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new ModulePermissionDto(
-                    kvp.Value.CanView,
-                    kvp.Value.CanCreate,
-                    kvp.Value.CanEdit,
-                    kvp.Value.CanDelete)));
+        var permissions = modules.GroupBy(m => m.Name.Value).ToDictionary(
+            g => g.Key,
+            _ => new ModulePermissionDto(false, false, false, false));
 
-        return Ok(dto);
+        foreach (var claim in User.FindAll(PermissionClaimValue.ClaimType))
+        {
+            if (!PermissionClaimValue.TryParse(
+                    claim.Value,
+                    out var moduleName,
+                    out var action) ||
+                !permissions.TryGetValue(moduleName, out var current))
+            {
+                continue;
+            }
+
+            permissions[moduleName] = action switch
+            {
+                "View" => current with { CanView = true },
+                "Create" => current with { CanCreate = true },
+                "Edit" => current with { CanEdit = true },
+                "Delete" => current with { CanDelete = true },
+                _ => current
+            };
+        }
+
+        return Ok(new UserPermissionsResponseDto(permissions));
     }
 
     [Authorize]
     [HttpPatch("me/password")]
     [EndpointSummary("Cambia la contraseña propia del usuario autenticado")]
-    [EndpointDescription("Autoservicio de cambio de contraseña: valida la contraseña actual del usuario autenticado y, si es correcta, la reemplaza por la nueva. Cualquier rol puede usarlo para su propia cuenta; para restablecer la contraseña de otra persona, ver el endpoint exclusivo de SuperAdmin en UserCredentials.")]
+    [EndpointDescription("Autoservicio de cambio de contraseña: valida la contraseña actual del usuario autenticado y, si es correcta, la reemplaza por la nueva. Cualquier rol puede usarlo para su propia cuenta.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -170,14 +206,14 @@ public sealed class AuthController(ISender sender) : ControllerBase
         var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(subject, out var userAccountId))
+        if (!Guid.TryParse(subject, out var userId))
         {
             return Unauthorized();
         }
 
         await sender.Send(
             new ChangeMyPasswordCommand(
-                userAccountId,
+                userId,
                 request.CurrentPassword,
                 request.NewPassword),
             cancellationToken);
@@ -186,9 +222,36 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [Authorize]
+    [HttpPatch("me/photo")]
+    [EndpointSummary("Actualiza la foto de perfil del usuario autenticado")]
+    [EndpointDescription("Guarda un enlace http o https en USERS.PHOTO_URL. Enviar vacío o nulo quita la foto. No genera imágenes automáticas.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateMyPhoto(
+        [FromBody] UpdateMyPhotoRequest request,
+        CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        if (!Guid.TryParse(subject, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        await sender.Send(
+            new UpdateMyPhotoCommand(userId, request.PhotoUrl),
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [Authorize]
     [HttpPost("revoke")]
     [EndpointSummary("Revoca un Refresh Token y cierra la sesión")]
-    [EndpointDescription("Invalida el Refresh Token proporcionado para evitar su reutilización futura.")]
+    [EndpointDescription("Invalida el Refresh Token. Fallo 401: application/problem+json con code fijo Authentication.InvalidRefreshToken.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Revoke(
@@ -210,7 +273,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
         if (result.IsFailure)
         {
             // RevokeAsync busca el token solo entre los del usuario autenticado
-            // (GetAllByAccountIdAsync(userId)): "no existe" y "es de otro
+            // (GetAllByUserIdAsync(userId)): "no existe" y "es de otro
             // usuario" son indistinguibles y ambos caen en InvalidRefreshToken
             // a propósito, para no filtrar si el token pertenece a alguien más.
             return AuthProblem(StatusCodes.Status401Unauthorized, "Unauthorized", result.Error.Code);

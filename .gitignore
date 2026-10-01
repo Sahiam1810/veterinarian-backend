@@ -5,6 +5,14 @@
 
 # dotenv files
 .env
+.env.bak* 
+.env*
+# Versioned production environment template; contains placeholders only.
+!deploy/.env.prod.example
+
+# Local-only Telegram tunnel helpers
+/scripts/start-telegram-cloudflare-tunnel.ps1
+/tests/scripts/StartTelegramCloudflareTunnel.Tests.ps1
 
 # User-specific files
 *.rsuser

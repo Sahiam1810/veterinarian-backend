@@ -15,6 +15,10 @@ public interface IChatEscalationRepository
         Guid chatConversationId,
         CancellationToken cancellationToken = default);
 
+    Task<ChatEscalationEntity?> GetActiveByConversationIdAsync(
+        Guid chatConversationId,
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(
         ChatEscalationEntity escalation,
         CancellationToken cancellationToken = default);

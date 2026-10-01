@@ -16,6 +16,7 @@ public sealed class JwtOptionsValidator : IValidateOptions<JwtOptions>
         if (string.IsNullOrWhiteSpace(options.KeyId)) failures.Add("Jwt:KeyId is required.");
         if (options.AccessTokenMinutes <= 0) failures.Add("Jwt:AccessTokenMinutes must be positive.");
         if (options.RefreshTokenDays <= 0) failures.Add("Jwt:RefreshTokenDays must be positive.");
+        if (options.MaxSessionHours <= 0) failures.Add("Jwt:MaxSessionHours must be positive.");
         if (options.ClockSkewSeconds is < 0 or > 300) failures.Add("Jwt:ClockSkewSeconds must be between 0 and 300.");
 
         if (failures.Count == 0)

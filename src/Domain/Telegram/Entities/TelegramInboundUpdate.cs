@@ -143,6 +143,21 @@ public sealed class TelegramInboundUpdate : BaseEntity<long>
         UpdatedAt = completedAt;
     }
 
+    public void CompleteWithoutResponse(DateTime completedAt)
+    {
+        if (Status != TelegramInboundUpdateStatus.Processing)
+        {
+            throw new InvalidOperationException(
+                "Solo una actualización en procesamiento puede completarse sin respuesta.");
+        }
+
+        Status = TelegramInboundUpdateStatus.Completed;
+        MessageText = null;
+        ResponseText = null;
+        LastErrorCode = null;
+        UpdatedAt = completedAt;
+    }
+
     public void ScheduleRetry(
         DateTime nextAttemptAt,
         string errorCode,

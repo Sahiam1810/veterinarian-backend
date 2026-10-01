@@ -5,6 +5,7 @@ namespace Application.Races.Abstraction;
 public interface IRaceRepository
 {
     Task<IReadOnlyCollection<RaceEntity>> GetAllAsync(
+        Guid? speciesId,
         CancellationToken cancellationToken);
 
     Task<RaceEntity?> GetByIdAsync(
@@ -13,6 +14,7 @@ public interface IRaceRepository
 
     Task<bool> ExistsByNameAsync(
         string name,
+        Guid speciesId,
         CancellationToken cancellationToken,
         Guid? excludedId = null);
 

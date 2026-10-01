@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using UserEntity = Domain.Users.Entities.Users;
 using UserTokenEntity = Domain.UserTokens.Entities.UserTokens;
 
 namespace Infrastructure.UserTokens.Configuration;
@@ -23,8 +23,8 @@ public sealed class UserTokensConfiguration
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Property(token => token.AccountId)
-            .HasColumnName("ACCOUNT_ID")
+        builder.Property(token => token.UserId)
+            .HasColumnName("USER_ID")
             .HasColumnType("VARCHAR2(36)")
             .HasConversion(
                 guid  => guid.ToString(),
@@ -48,6 +48,11 @@ public sealed class UserTokensConfiguration
             .HasColumnType("TIMESTAMP")
             .IsRequired();
 
+        builder.Property(token => token.SessionStartedAt)
+            .HasColumnName("SESSION_STARTED_AT")
+            .HasColumnType("TIMESTAMP")
+            .IsRequired();
+
         builder.Property(token => token.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")
@@ -60,11 +65,11 @@ public sealed class UserTokensConfiguration
         builder.HasIndex(token => token.TokenValue)
             .IsUnique();
 
-        builder.HasIndex(token => token.AccountId);
+        builder.HasIndex(token => token.UserId);
 
-        builder.HasOne<UserAccountEntity>()
+        builder.HasOne<UserEntity>()
             .WithMany()
-            .HasForeignKey(token => token.AccountId)
+            .HasForeignKey(token => token.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

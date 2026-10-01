@@ -6,16 +6,14 @@ using Application.Pets.Abstraction;
 using Application.Pets.UseCases;
 using Application.Races.Abstraction;
 using Application.Species.Abstraction;
-using Application.UserAccounts.Abstraction;
 using Domain.Clients.Entities;
 using Domain.ClientsPets.Entities;
 using Domain.Pets.Entities;
 using Domain.Races.Entities;
 using Domain.Species.Entities;
-using Domain.UserAccounts.Entities;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
+using Application.Tests.Common;
 
 namespace Application.Tests.Pets;
 
@@ -31,8 +29,9 @@ public sealed class RegisterMyPetCommandHandlerTests
         Assert.Equal("Luna", result.Name);
         Assert.Equal("Canino", result.SpeciesName);
         Assert.Equal("Mestizo", result.RaceName);
+        Assert.Equal("F", result.Gender);
         await fixture.Pets.Received(1).AddAsync(
-            Arg.Is<PetEntity>(pet => pet.Name.Value == "Luna"),
+            Arg.Is<PetEntity>(pet => pet.Name.Value == "Luna" && pet.Gender.Value == "F"),
             Arg.Any<CancellationToken>());
         await fixture.ClientPets.Received(1).AddAsync(
             Arg.Is<ClientPetEntity>(relation =>
@@ -46,7 +45,21 @@ public sealed class RegisterMyPetCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_rejects_account_without_client_profile_before_creating_pet()
+    public async Task Handle_creates_male_pet_and_persists_gender_M()
+    {
+        var fixture = new Fixture(gender: "M");
+
+        var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
+
+        Assert.Equal("Thor", result.Name);
+        Assert.Equal("M", result.Gender);
+        await fixture.Pets.Received(1).AddAsync(
+            Arg.Is<PetEntity>(pet => pet.Name.Value == "Thor" && pet.Gender.Value == "M"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_rejects_unknown_client_before_creating_pet()
     {
         var fixture = new Fixture(hasClient: false);
 
@@ -69,9 +82,38 @@ public sealed class RegisterMyPetCommandHandlerTests
             Arg.Any<PetEntity>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Handle_creates_pet_with_null_weight()
+    {
+        var fixture = new Fixture(weight: null);
+
+        var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
+
+        Assert.Equal("Luna", result.Name);
+        Assert.Null(result.Weight);
+        await fixture.Pets.Received(1).AddAsync(
+            Arg.Is<PetEntity>(pet => pet.Name.Value == "Luna" && pet.Weight == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void Validator_allows_null_weight_and_valid_weight_but_rejects_out_of_range()
+    {
+        var validator = new RegisterMyPetCommandValidator();
+
+        var validNull = new RegisterMyPetCommand(Guid.NewGuid(), "Luna", 3, "F", null, null, Guid.NewGuid(), Guid.NewGuid());
+        var validWeight = new RegisterMyPetCommand(Guid.NewGuid(), "Luna", 3, "F", 10.5m, null, Guid.NewGuid(), Guid.NewGuid());
+        var invalidLow = new RegisterMyPetCommand(Guid.NewGuid(), "Luna", 3, "F", 0.001m, null, Guid.NewGuid(), Guid.NewGuid());
+        var invalidHigh = new RegisterMyPetCommand(Guid.NewGuid(), "Luna", 3, "F", 600m, null, Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.True(validator.Validate(validNull).IsValid);
+        Assert.True(validator.Validate(validWeight).IsValid);
+        Assert.False(validator.Validate(invalidLow).IsValid);
+        Assert.False(validator.Validate(invalidHigh).IsValid);
+    }
+
     private sealed class Fixture
     {
-        public Guid AccountId { get; } = Guid.NewGuid();
         public ClientEntity Client { get; }
         public IUnitOfWork UnitOfWork { get; } = Substitute.For<IUnitOfWork>();
         public IPetRepository Pets { get; } = Substitute.For<IPetRepository>();
@@ -79,19 +121,19 @@ public sealed class RegisterMyPetCommandHandlerTests
         public RegisterMyPetCommand Command { get; }
         public RegisterMyPetCommandHandler Sut { get; }
 
-        public Fixture(bool hasClient = true, bool hasSpecies = true)
+        public Fixture(
+            bool hasClient = true,
+            bool hasSpecies = true,
+            string gender = "F",
+            decimal? weight = 12.5m)
         {
-            var userId = Guid.NewGuid();
-            var account = new UserAccountEntity(userId, "cliente", "cliente@test.com", "Active");
-            Client = new ClientEntity(userId, "1234567890", null);
+            Client = TestClients.Create("1234567890", null);
             var species = new SpeciesEntity("Canino");
-            var race = new RaceEntity("Mestizo");
+            var race = new RaceEntity("Mestizo", species);
 
-            var accounts = Substitute.For<IUserAccountsRepository>();
             var clients = Substitute.For<IClientRepository>();
             var speciesRepository = Substitute.For<ISpeciesRepository>();
             var racesRepository = Substitute.For<IRaceRepository>();
-            UnitOfWork.UserAccountsRepository.Returns(accounts);
             UnitOfWork.ClientsRepository.Returns(clients);
             UnitOfWork.SpeciesRepository.Returns(speciesRepository);
             UnitOfWork.RacesRepository.Returns(racesRepository);
@@ -103,15 +145,21 @@ public sealed class RegisterMyPetCommandHandlerTests
                 .Returns(call => call.ArgAt<Func<CancellationToken, Task>>(0)(
                     call.ArgAt<CancellationToken>(1)));
 
-            accounts.GetByIdAsync(AccountId, Arg.Any<CancellationToken>()).Returns(account);
-            clients.GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            clients.GetByIdAsync(Client.Id, Arg.Any<CancellationToken>())
                 .Returns(hasClient ? Client : null);
             speciesRepository.GetByIdAsync(species.Id, Arg.Any<CancellationToken>())
                 .Returns(hasSpecies ? species : null);
             racesRepository.GetByIdAsync(race.Id, Arg.Any<CancellationToken>()).Returns(race);
 
             Command = new RegisterMyPetCommand(
-                AccountId, "Luna", 4, "F", 12.5m, "Sana", species.Id, race.Id);
+                Client.Id,
+                gender == "M" ? "Thor" : "Luna",
+                4,
+                gender,
+                weight,
+                "Sana",
+                species.Id,
+                race.Id);
             Sut = new RegisterMyPetCommandHandler(UnitOfWork);
         }
     }

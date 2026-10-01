@@ -1,4 +1,5 @@
 using Application.Common.Abstractions;
+using Domain.Roles;
 using MediatR;
 using RoleEntity = Domain.Roles.Entities.Roles;
 
@@ -20,7 +21,12 @@ public sealed class GetAllRolesQueryHandler
         GetAllRolesQuery request,
         CancellationToken cancellationToken)
     {
-        return await _uow.RolesRepository.GetAllAsync(
+        var roles = await _uow.RolesRepository.GetAllAsync(
             cancellationToken);
+
+        // Cliente es el rol técnico del bot/portal; no se administra desde Usuarios/Roles.
+        return roles
+            .Where(role => role.Id != SystemRoles.ClientRoleId)
+            .ToArray();
     }
 }

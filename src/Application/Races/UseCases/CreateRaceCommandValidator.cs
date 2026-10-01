@@ -7,6 +7,10 @@ public sealed class CreateRaceCommandValidator : AbstractValidator<CreateRaceCom
 {
     public CreateRaceCommandValidator()
     {
+        RuleFor(command => command.SpeciesId)
+            .NotEmpty()
+            .WithMessage("La especie de la raza es obligatoria.");
+
         RuleFor(command => command.Name)
             .NotEmpty()
             .WithMessage("El nombre de la raza es obligatorio.")

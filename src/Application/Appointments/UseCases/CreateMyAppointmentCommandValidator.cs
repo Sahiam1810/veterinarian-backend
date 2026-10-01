@@ -7,14 +7,14 @@ public sealed class CreateMyAppointmentCommandValidator
 {
     public CreateMyAppointmentCommandValidator()
     {
-        RuleFor(command => command.UserAccountId).NotEmpty();
+        RuleFor(command => command.ClientId).NotEmpty();
         RuleFor(command => command.PetId).NotEmpty();
         RuleFor(command => command.VeterinarianId).NotEmpty();
         RuleFor(command => command.ServiceId).NotEmpty();
         RuleFor(command => command.ScheduledStartUtc)
             .Must(value => value.Kind == DateTimeKind.Utc)
             .WithMessage("La fecha de inicio debe estar expresada en UTC.");
-        RuleFor(command => command.Notes).MaximumLength(100);
+        RuleFor(command => command.Notes).MaximumLength(500);
         RuleFor(command => command.RequesterPhoneNumber)
             .Must(phone =>
                 string.IsNullOrWhiteSpace(phone)

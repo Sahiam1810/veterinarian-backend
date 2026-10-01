@@ -61,6 +61,28 @@ public sealed class AvailabilityConfiguration : IEntityTypeConfiguration<Availab
                 c => c == 'Y')
             .IsRequired();
 
+        builder.Property(x => x.SlotDurationMinutes)
+            .HasColumnName("SLOT_DURATION_MINUTES")
+            .HasColumnType("NUMBER(10)")
+            .HasDefaultValue(Availability.DefaultSlotDurationMinutes)
+            .IsRequired();
+
+        builder.Property(x => x.ShiftName)
+            .HasColumnName("SHIFT_NAME")
+            .HasColumnType("VARCHAR2(30)")
+            .HasMaxLength(30);
+
+        builder.Property(x => x.ConsultingRoom)
+            .HasColumnName("CONSULTING_ROOM")
+            .HasColumnType("VARCHAR2(50)")
+            .HasMaxLength(50);
+
+        builder.Property(x => x.MaxConcurrentAppointments)
+            .HasColumnName("MAX_CONCURRENT_APPOINTMENTS")
+            .HasColumnType("NUMBER(10)")
+            .HasDefaultValue(Availability.DefaultMaxConcurrentAppointments)
+            .IsRequired();
+
         builder.Property(x => x.CreatedAt)
             .HasColumnName("CREATED_AT")
             .HasColumnType("TIMESTAMP")

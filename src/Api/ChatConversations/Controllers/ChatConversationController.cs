@@ -1,6 +1,7 @@
 using Api.ChatConversations.Dtos;
 using Api.ChatConversations.Mappings;
 using Api.Common.Security;
+using Api.Common.Security.Permissions;
 using Application.ChatConversations.UseCase;
 using Application.Common.Exceptions;
 using MediatR;
@@ -11,10 +12,10 @@ namespace Api.ChatConversations.Controllers;
 
 [ApiController]
 [Route("api/chat/conversations")]
-[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class ChatConversationController(ISender sender) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [EndpointSummary("Crear una conversación de chat")]
     [EndpointDescription("Registra una conversación abierta con estado obligatorio y prioridad opcional. La IA queda habilitada por defecto.")]
     [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status201Created)]
@@ -41,6 +42,7 @@ public sealed class ChatConversationController(ISender sender) : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Listar conversaciones de chat")]
     [EndpointDescription("Devuelve todas las conversaciones registradas.")]
     [ProducesResponseType(typeof(IReadOnlyCollection<ChatConversationResponseDto>), StatusCodes.Status200OK)]
@@ -52,6 +54,7 @@ public sealed class ChatConversationController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("Chat", PermissionAction.View)]
     [EndpointSummary("Obtener una conversación por su identificador")]
     [EndpointDescription("Devuelve la conversación indicada.")]
     [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]
@@ -66,49 +69,8 @@ public sealed class ChatConversationController(ISender sender) : ControllerBase
             : Ok(conversation.ToResponse());
     }
 
-    [HttpPatch("{id:guid}/status")]
-    [EndpointSummary("Cambiar el estado de una conversación")]
-    [EndpointDescription("Actualiza el estado de la conversación validando que el catálogo exista.")]
-    [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ChatConversationResponseDto>> UpdateStatus(
-        Guid id,
-        [FromBody] UpdateChatConversationStatusDto dto,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var conversation = await sender.Send(dto.ToCommand(id), cancellationToken);
-            return Ok(conversation.ToResponse());
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { Message = ex.Message });
-        }
-    }
-
-    [HttpPatch("{id:guid}/priority")]
-    [EndpointSummary("Cambiar la prioridad de una conversación")]
-    [EndpointDescription("Establece o retira la prioridad de la conversación.")]
-    [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ChatConversationResponseDto>> UpdatePriority(
-        Guid id,
-        [FromBody] UpdateChatConversationPriorityDto dto,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var conversation = await sender.Send(dto.ToCommand(id), cancellationToken);
-            return Ok(conversation.ToResponse());
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { Message = ex.Message });
-        }
-    }
-
     [HttpPatch("{id:guid}/ai-enabled")]
+    [RequirePermission("Chat", PermissionAction.Edit)]
     [EndpointSummary("Activar o desactivar IA en una conversación")]
     [EndpointDescription("Habilita o deshabilita el procesamiento de IA para la conversación.")]
     [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]
@@ -130,6 +92,7 @@ public sealed class ChatConversationController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/close")]
+    [RequirePermission("Chat", PermissionAction.Edit)]
     [EndpointSummary("Cerrar una conversación")]
     [EndpointDescription("Marca la conversación como cerrada con fecha UTC y un identificador técnico opcional.")]
     [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]
@@ -159,6 +122,7 @@ public sealed class ChatConversationController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reopen")]
+    [RequirePermission("Chat", PermissionAction.Edit)]
     [EndpointSummary("Reabrir una conversación")]
     [EndpointDescription("Marca la conversación como abierta y limpia los datos de cierre.")]
     [ProducesResponseType(typeof(ChatConversationResponseDto), StatusCodes.Status200OK)]

@@ -14,6 +14,11 @@ public static class ChatEscalationMappings
         Guid id)
         => new(id, dto.EscalationStatusId, dto.FromAi, dto.Reason, dto.UpdateAt);
 
+    public static ResolveChatEscalationCommand ToCommand(
+        this ResolveChatEscalationDto dto,
+        Guid id)
+        => new(id, dto.EscalationStatusId, dto.ResolvedBy, dto.ResolutionNote);
+
     public static ChatEscalationResponseDto ToResponse(this ChatEscalationEntity escalation)
         => new(
             escalation.Id,
@@ -22,7 +27,10 @@ public static class ChatEscalationMappings
             escalation.FromAi,
             escalation.Reason,
             escalation.CreatedAt,
-            escalation.UpdateAt);
+            escalation.UpdateAt,
+            escalation.ResolvedAt,
+            escalation.ResolvedBy,
+            escalation.ResolutionNote);
 
     public static IReadOnlyCollection<ChatEscalationResponseDto> ToResponse(
         this IReadOnlyCollection<ChatEscalationEntity> escalations)

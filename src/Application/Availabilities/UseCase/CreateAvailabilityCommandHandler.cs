@@ -16,7 +16,11 @@ public sealed class CreateAvailabilityCommandHandler(IUnitOfWork unitOfWork)
             request.DayOfWeek,
             request.StartTime,
             request.EndTime,
-            request.IsActive);
+            request.IsActive,
+            request.SlotDurationMinutes,
+            request.ShiftName,
+            request.ConsultingRoom,
+            request.MaxConcurrentAppointments);
 
         await unitOfWork.AvailabilitiesRepository.AddAsync(
             availability,

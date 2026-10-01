@@ -9,6 +9,8 @@ namespace Infrastructure.Telegram.Repositories;
 public sealed class TelegramInboundUpdateRepository(VeterinaryDbContext context)
     : ITelegramInboundUpdateRepository
 {
+    private const int MaxClaimAttempts = 5;
+
     public Task<bool> ExistsAsync(long updateId, CancellationToken cancellationToken) =>
         context.Set<TelegramInboundUpdate>().AnyAsync(update => update.Id == updateId, cancellationToken);
 
@@ -20,35 +22,55 @@ public sealed class TelegramInboundUpdateRepository(VeterinaryDbContext context)
         DateTime staleBefore,
         CancellationToken cancellationToken)
     {
-        var candidateId = await context.Set<TelegramInboundUpdate>()
-            .AsNoTracking()
-            .Where(update =>
-                (update.Status == TelegramInboundUpdateStatus.Pending && update.NextAttemptAt <= now) ||
-                ((update.Status == TelegramInboundUpdateStatus.Processing ||
-                  update.Status == TelegramInboundUpdateStatus.Prepared) &&
-                 update.UpdatedAt <= staleBefore))
-            .OrderBy(update => update.NextAttemptAt)
-            .ThenBy(update => update.Id)
-            .Select(update => (long?)update.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (candidateId is null)
+        var sets = context.Set<TelegramInboundUpdate>();
+        for (var attempt = 0; attempt < MaxClaimAttempts; attempt++)
         {
-            return null;
+            var candidateId = await sets
+                .AsNoTracking()
+                .Where(update =>
+                    ((update.Status == TelegramInboundUpdateStatus.Pending && update.NextAttemptAt <= now) ||
+                     ((update.Status == TelegramInboundUpdateStatus.Processing ||
+                       update.Status == TelegramInboundUpdateStatus.Prepared) &&
+                      update.UpdatedAt <= staleBefore)) &&
+                    !sets.Any(other =>
+                        other.TelegramChatId == update.TelegramChatId &&
+                        other.Id != update.Id &&
+                        (other.Status == TelegramInboundUpdateStatus.Processing ||
+                         other.Status == TelegramInboundUpdateStatus.Prepared) &&
+                        other.UpdatedAt > staleBefore))
+                .OrderBy(update => update.NextAttemptAt)
+                .ThenBy(update => update.Id)
+                .Select(update => (long?)update.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (candidateId is null)
+            {
+                return null;
+            }
+
+            var affected = await sets
+                .Where(update => update.Id == candidateId &&
+                    ((update.Status == TelegramInboundUpdateStatus.Pending && update.NextAttemptAt <= now) ||
+                     ((update.Status == TelegramInboundUpdateStatus.Processing ||
+                       update.Status == TelegramInboundUpdateStatus.Prepared) &&
+                      update.UpdatedAt <= staleBefore)) &&
+                    !sets.Any(other =>
+                        other.TelegramChatId == update.TelegramChatId &&
+                        other.Id != update.Id &&
+                        (other.Status == TelegramInboundUpdateStatus.Processing ||
+                         other.Status == TelegramInboundUpdateStatus.Prepared) &&
+                        other.UpdatedAt > staleBefore))
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(update => update.Status, TelegramInboundUpdateStatus.Processing)
+                    .SetProperty(update => update.Attempts, update => update.Attempts + 1)
+                    .SetProperty(update => update.UpdatedAt, now), cancellationToken);
+            if (affected == 1)
+            {
+                context.ChangeTracker.Clear();
+                return await sets.FirstAsync(update => update.Id == candidateId, cancellationToken);
+            }
         }
 
-        var affected = await context.Set<TelegramInboundUpdate>()
-            .Where(update => update.Id == candidateId &&
-                ((update.Status == TelegramInboundUpdateStatus.Pending && update.NextAttemptAt <= now) ||
-                 ((update.Status == TelegramInboundUpdateStatus.Processing ||
-                   update.Status == TelegramInboundUpdateStatus.Prepared) &&
-                  update.UpdatedAt <= staleBefore)))
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(update => update.Status, TelegramInboundUpdateStatus.Processing)
-                .SetProperty(update => update.Attempts, update => update.Attempts + 1)
-                .SetProperty(update => update.UpdatedAt, now), cancellationToken);
-        return affected == 1
-            ? await context.Set<TelegramInboundUpdate>().FirstAsync(update => update.Id == candidateId, cancellationToken)
-            : null;
+        return null;
     }
 
     public async Task AddAsync(TelegramInboundUpdate update, CancellationToken cancellationToken) =>

@@ -29,6 +29,23 @@ public sealed class RacesConfiguration : IEntityTypeConfiguration<RaceEntity>
                 str => RaceName.Create(str))
             .IsRequired();
 
+        builder.Property(race => race.SpeciesId)
+            .HasColumnName("SPECIES_ID")
+            .HasColumnType("VARCHAR2(36)")
+            .HasConversion(
+                guid => guid.ToString(),
+                str => Guid.Parse(str))
+            .IsRequired();
+
+        builder.HasOne(race => race.Species)
+            .WithMany()
+            .HasForeignKey(race => race.SpeciesId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
+
+        builder.HasIndex(race => new { race.SpeciesId, race.Name })
+            .IsUnique();
+
         builder.Property(race => race.CreatedAt)
             .HasColumnName("CREATED_AT")
             .IsRequired();

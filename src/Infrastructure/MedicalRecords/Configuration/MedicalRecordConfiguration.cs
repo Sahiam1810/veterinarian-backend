@@ -47,13 +47,13 @@ public sealed class MedicalRecordConfiguration : IEntityTypeConfiguration<Medica
 
         builder.Property(x => x.Symptoms)
             .HasColumnName("SYMPTOMS")
-            .HasColumnType("VARCHAR2(30)")
-            .HasMaxLength(30);
+            .HasColumnType("VARCHAR2(1000)")
+            .HasMaxLength(1000);
 
         builder.Property(x => x.Treatment)
             .HasColumnName("TREATMENT")
-            .HasColumnType("VARCHAR2(30)")
-            .HasMaxLength(30);
+            .HasColumnType("VARCHAR2(1000)")
+            .HasMaxLength(1000);
 
         builder.Property(x => x.WeightAtVisit)
             .HasColumnName("WEIGHT_AT_VISIT")

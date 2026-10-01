@@ -8,26 +8,21 @@ namespace Application.Appointments.UseCases;
 // Autoservicio autenticado: cancela la propia cita por cambio de estado (soft-cancel).
 public sealed record CancelMyAppointmentCommand(
     Guid AppointmentId,
-    Guid UserAccountId,
+    Guid ClientId,
     string? Comment) : IRequest;
 
 public sealed class CancelMyAppointmentCommandHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<CancelMyAppointmentCommand>
 {
-    private const string Agendada = "AGENDADA";
+    private const string Agendada = AppointmentStatusNames.Agendada;
     private const string Cancelada = "CANCELADA";
 
     public async Task Handle(
         CancelMyAppointmentCommand request,
         CancellationToken cancellationToken)
     {
-        var account = await unitOfWork.UserAccountsRepository.GetByIdAsync(
-            request.UserAccountId,
-            cancellationToken)
-            ?? throw new NotFoundException("Cuenta de usuario no encontrada.");
-
-        var client = await unitOfWork.ClientsRepository.GetByUserIdAsync(
-            account.UserId,
+        var client = await unitOfWork.ClientsRepository.GetByIdAsync(
+            request.ClientId,
             cancellationToken)
             ?? throw new NotFoundException("Cliente no encontrado.");
 
@@ -48,6 +43,11 @@ public sealed class CancelMyAppointmentCommandHandler(IUnitOfWork unitOfWork)
             appointment.StatusId,
             cancellationToken)
             ?? throw new ConflictException("El estado actual de la cita no es válido.");
+
+        if (string.Equals(currentStatus.Name, Cancelada, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
 
         if (!string.Equals(currentStatus.Name, Agendada, StringComparison.OrdinalIgnoreCase))
         {

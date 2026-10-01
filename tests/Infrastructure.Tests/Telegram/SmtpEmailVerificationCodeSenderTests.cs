@@ -1,14 +1,9 @@
-using Application.UserAccounts.Abstraction;
-using Application.Users.Abstraction;
 using Domain.Verification.Enums;
 using Infrastructure.Email;
 using Infrastructure.Email.Configuration;
-using Infrastructure.Telegram.Identity;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
-using UserAccountEntity = Domain.UserAccounts.Entities.UserAccounts;
-using UserEntity = Domain.Users.Entities.Users;
 
 namespace Infrastructure.Tests.Telegram;
 
@@ -45,34 +40,6 @@ public sealed class SmtpEmailVerificationCodeSenderTests
         Assert.Contains(result.Failures!, failure => failure.Contains("Host"));
         Assert.Contains(result.Failures!, failure => failure.Contains("Password"));
         Assert.Contains(result.Failures!, failure => failure.Contains("FromAddress"));
-    }
-
-    [Fact]
-    public async Task Account_lookup_returns_only_an_active_identity()
-    {
-        var accounts = Substitute.For<IUserAccountsRepository>();
-        var users = Substitute.For<IUsersRepository>();
-        var user = new UserEntity(
-            "Cliente Huellitas",
-            "cliente@huellitas.test",
-            "unused-hash",
-            Guid.NewGuid());
-        var account = new UserAccountEntity(
-            user.Id,
-            "cliente",
-            "cliente@huellitas.test",
-            "Activo");
-        accounts.GetByMailAsync("cliente@huellitas.test", default).Returns(account);
-        users.GetByIdAsync(user.Id, default).Returns(user);
-        var lookup = new TelegramAccountLookup(accounts, users);
-
-        var result = await lookup.FindActiveByEmailAsync(
-            " Cliente@Huellitas.Test ",
-            default);
-
-        Assert.NotNull(result);
-        Assert.Equal(user.Id, result.PersonId);
-        Assert.Equal("cliente@huellitas.test", result.Email);
     }
 
     private static EmailOptions ValidOptions() => new()

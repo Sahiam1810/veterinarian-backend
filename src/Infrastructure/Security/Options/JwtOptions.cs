@@ -17,5 +17,7 @@ public sealed class JwtOptions
 
     public int RefreshTokenDays { get; init; }
 
+    public int MaxSessionHours { get; init; } = 24;
+
     public int ClockSkewSeconds { get; init; }
 }

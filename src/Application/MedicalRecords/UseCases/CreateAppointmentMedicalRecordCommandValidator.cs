@@ -13,14 +13,14 @@ public sealed class CreateAppointmentMedicalRecordCommandValidator
         RuleFor(x => x.DiagnosticId)
             .NotEmpty().WithMessage("El diagnóstico es requerido.");
 
-        RuleFor(x => x.ActorUserAccountId)
-            .NotEmpty().WithMessage("La cuenta de usuario es requerida.");
+        RuleFor(x => x.ActorUserId)
+            .NotEmpty().WithMessage("El usuario es requerido.");
 
         RuleFor(x => x.Symptoms)
-            .MaximumLength(30).WithMessage("Los síntomas no pueden exceder 30 caracteres.");
+            .MaximumLength(1000).WithMessage("Los síntomas no pueden exceder 1000 caracteres.");
 
         RuleFor(x => x.Treatment)
-            .MaximumLength(30).WithMessage("El tratamiento no puede exceder 30 caracteres.");
+            .MaximumLength(1000).WithMessage("El tratamiento no puede exceder 1000 caracteres.");
 
         RuleFor(x => x.WeightAtVisit)
             .GreaterThan(0).When(x => x.WeightAtVisit.HasValue)

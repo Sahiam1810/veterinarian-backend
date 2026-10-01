@@ -10,6 +10,10 @@ public sealed class UpdateRaceCommandValidator : AbstractValidator<UpdateRaceCom
         RuleFor(command => command.Id)
             .NotEmpty();
 
+        RuleFor(command => command.SpeciesId)
+            .NotEmpty()
+            .WithMessage("La especie de la raza es obligatoria.");
+
         RuleFor(command => command.Name)
             .NotEmpty()
             .WithMessage("El nombre de la raza es obligatorio.")

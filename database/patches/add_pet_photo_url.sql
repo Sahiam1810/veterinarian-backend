@@ -1,0 +1,58 @@
+SET DEFINE OFF
+SET SERVEROUTPUT ON
+WHENEVER SQLERROR EXIT SQL.SQLCODE ROLLBACK
+
+DECLARE
+  v_user    VARCHAR2(128);
+  v_schema  VARCHAR2(128);
+  v_pdb     VARCHAR2(128);
+BEGIN
+  SELECT SYS_CONTEXT('USERENV', 'SESSION_USER'),
+         SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA'),
+         SYS_CONTEXT('USERENV', 'CON_NAME')
+    INTO v_user, v_schema, v_pdb
+    FROM DUAL;
+
+  IF v_user <> 'VET_APP' OR v_schema <> 'VET_APP' OR v_pdb <> 'FREEPDB1' THEN
+    RAISE_APPLICATION_ERROR(
+      -20001,
+      'Target must be VET_APP@FREEPDB1. Current target: '
+      || v_user || '/' || v_schema || '@' || v_pdb);
+  END IF;
+END;
+/
+
+DECLARE
+  v_count NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_count FROM USER_TAB_COLUMNS
+   WHERE TABLE_NAME = 'PETS' AND COLUMN_NAME = 'PHOTO_URL';
+  IF v_count = 0 THEN
+    EXECUTE IMMEDIATE 'ALTER TABLE PETS ADD (PHOTO_URL NVARCHAR2(500))';
+    DBMS_OUTPUT.PUT_LINE('OK: PHOTO_URL creada');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('OK: PHOTO_URL ya existia');
+  END IF;
+END;
+/
+
+DECLARE
+  v_count NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO v_count
+    FROM "__EFMigrationsHistory"
+   WHERE "MigrationId" = '20260908150000_AddPetPhotoUrl';
+  IF v_count = 0 THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260908150000_AddPetPhotoUrl', '10.0.11');
+    DBMS_OUTPUT.PUT_LINE('OK: migration history');
+  END IF;
+END;
+/
+
+COMMIT;
+SELECT 'TARGET=' || SYS_CONTEXT('USERENV', 'SESSION_USER')
+       || '@' || SYS_CONTEXT('USERENV', 'CON_NAME') FROM DUAL;
+SELECT 'HAS_PHOTO_URL=' || COUNT(*) FROM USER_TAB_COLUMNS
+ WHERE TABLE_NAME='PETS' AND COLUMN_NAME='PHOTO_URL';
+EXIT

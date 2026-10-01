@@ -1,6 +1,5 @@
 using Domain.Common;
 using Domain.Clients.ValueObjects;
-using UserEntity = Domain.Users.Entities.Users;
 
 namespace Domain.Clients.Entities;
 
@@ -11,49 +10,59 @@ public sealed class ClientEntity : BaseEntity<Guid>
     }
 
     public ClientEntity(
-        Guid userId,
-        string identificationNumber,
-        string? address,
-        DateTime? registrationDate = null,
-        string? phoneNumber = null)
+        string fullName,
+        string? email,
+        string? identificationNumber,
+        string phoneNumber,
+        string? address)
     {
         Id = Guid.NewGuid();
-        UserId = userId;
-        IdentificationNumber = ClientIdentificationNumber.Create(identificationNumber);
+        FullName = ClientFullName.Create(fullName);
+        Email = string.IsNullOrWhiteSpace(email) ? null : ClientEmail.Create(email);
+        IdentificationNumber = string.IsNullOrWhiteSpace(identificationNumber) ? null : ClientIdentificationNumber.Create(identificationNumber);
         Address = ClientAddress.Create(address);
-        PhoneNumber = ClientPhoneNumber.CreateOptional(phoneNumber);
-        RegistrationDate = registrationDate ?? DateTime.UtcNow;
+        PhoneNumber = ClientPhoneNumber.Create(phoneNumber);
+        IsActive = true;
     }
 
-    public Guid UserId { get; private set; }
+    public ClientFullName FullName { get; private set; } = null!;
 
-    public ClientIdentificationNumber IdentificationNumber { get; private set; } = null!;
+    public ClientEmail? Email { get; private set; }
+
+    public ClientIdentificationNumber? IdentificationNumber { get; private set; }
 
     public ClientAddress Address { get; private set; } = null!;
 
     // Contacto general del cliente; no sustituye RequesterPhoneNumber de la cita.
+    // Nullable solo para lectura: histórico inválido en BD se materializa como null.
     public ClientPhoneNumber? PhoneNumber { get; private set; }
 
-    public DateTime RegistrationDate { get; private set; }
-
-    // Navigation property
-    public UserEntity? User { get; private set; }
+    public bool IsActive { get; private set; }
 
     public void Update(
-        Guid userId,
-        string identificationNumber,
-        string? address,
-        DateTime? registrationDate = null,
-        string? phoneNumber = null)
+        string fullName,
+        string? email,
+        string? identificationNumber,
+        string phoneNumber,
+        string? address)
     {
-        UserId = userId;
-        IdentificationNumber = ClientIdentificationNumber.Create(identificationNumber);
+        FullName = ClientFullName.Create(fullName);
+        Email = string.IsNullOrWhiteSpace(email) ? null : ClientEmail.Create(email);
+        IdentificationNumber = string.IsNullOrWhiteSpace(identificationNumber) ? null : ClientIdentificationNumber.Create(identificationNumber);
         Address = ClientAddress.Create(address);
-        PhoneNumber = ClientPhoneNumber.CreateOptional(phoneNumber);
-        if (registrationDate.HasValue)
-        {
-            RegistrationDate = registrationDate.Value;
-        }
+        PhoneNumber = ClientPhoneNumber.Create(phoneNumber);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }
 }

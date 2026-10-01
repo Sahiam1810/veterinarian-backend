@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Veterinarians.UseCases;
 
-public sealed record GetMyVeterinarianQuery(Guid UserAccountId) : IRequest<Veterinarian>;
+public sealed record GetMyVeterinarianQuery(Guid UserId) : IRequest<Veterinarian>;
 
 public sealed class GetMyVeterinarianQueryHandler : IRequestHandler<GetMyVeterinarianQuery, Veterinarian>
 {
@@ -18,13 +18,8 @@ public sealed class GetMyVeterinarianQueryHandler : IRequestHandler<GetMyVeterin
 
     public async Task<Veterinarian> Handle(GetMyVeterinarianQuery request, CancellationToken cancellationToken)
     {
-        var account = await _uow.UserAccountsRepository.GetByIdAsync(request.UserAccountId, cancellationToken);
-        if (account is null)
-        {
-            throw new NotFoundException("Cuenta de usuario no encontrada.");
-        }
-
-        var veterinarian = await _uow.VeterinariansRepository.GetByUserIdAsync(account.UserId, cancellationToken);
+        // U4: el sub ya es el id del usuario; ya no hace falta pasar por UserAccounts.
+        var veterinarian = await _uow.VeterinariansRepository.GetByUserIdAsync(request.UserId, cancellationToken);
         if (veterinarian is null)
         {
             throw new NotFoundException("El usuario autenticado no tiene un perfil de veterinario asociado.");

@@ -13,6 +13,11 @@ public sealed record UpdateChatEscalationDto(
     string? Reason,
     string? UpdateAt);
 
+public sealed record ResolveChatEscalationDto(
+    Guid EscalationStatusId,
+    Guid ResolvedBy,
+    string? ResolutionNote);
+
 public sealed record ChatEscalationResponseDto(
     Guid Id,
     Guid ChatConversationId,
@@ -20,4 +25,7 @@ public sealed record ChatEscalationResponseDto(
     bool FromAi,
     string? Reason,
     DateTime CreatedAt,
-    string? UpdateAt);
+    string? UpdateAt,
+    DateTime? ResolvedAt = null,
+    Guid? ResolvedBy = null,
+    string? ResolutionNote = null);
