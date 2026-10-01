@@ -6,13 +6,11 @@ namespace Api.Notifications.Hubs;
 public static class NotificationsHubGroups
 {
     public const string ReceptionistRole = "role:Recepcionista";
-    public const string AdministratorRole = "role:Administrador";
     public const string SuperAdminRole = "role:SuperAdmin";
 
     public static readonly IReadOnlyList<string> AdvisorRoles =
     [
         ReceptionistRole,
-        AdministratorRole,
         SuperAdminRole,
     ];
 
