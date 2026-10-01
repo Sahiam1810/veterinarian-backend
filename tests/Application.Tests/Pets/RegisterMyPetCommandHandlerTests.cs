@@ -29,8 +29,9 @@ public sealed class RegisterMyPetCommandHandlerTests
         Assert.Equal("Luna", result.Name);
         Assert.Equal("Canino", result.SpeciesName);
         Assert.Equal("Mestizo", result.RaceName);
+        Assert.Equal("F", result.Gender);
         await fixture.Pets.Received(1).AddAsync(
-            Arg.Is<PetEntity>(pet => pet.Name.Value == "Luna"),
+            Arg.Is<PetEntity>(pet => pet.Name.Value == "Luna" && pet.Gender.Value == "F"),
             Arg.Any<CancellationToken>());
         await fixture.ClientPets.Received(1).AddAsync(
             Arg.Is<ClientPetEntity>(relation =>
@@ -40,6 +41,20 @@ public sealed class RegisterMyPetCommandHandlerTests
             Arg.Any<CancellationToken>());
         await fixture.UnitOfWork.Received(1).ExecuteInTransactionAsync(
             Arg.Any<Func<CancellationToken, Task>>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_creates_male_pet_and_persists_gender_M()
+    {
+        var fixture = new Fixture(gender: "M");
+
+        var result = await fixture.Sut.Handle(fixture.Command, CancellationToken.None);
+
+        Assert.Equal("Thor", result.Name);
+        Assert.Equal("M", result.Gender);
+        await fixture.Pets.Received(1).AddAsync(
+            Arg.Is<PetEntity>(pet => pet.Name.Value == "Thor" && pet.Gender.Value == "M"),
             Arg.Any<CancellationToken>());
     }
 
@@ -106,7 +121,11 @@ public sealed class RegisterMyPetCommandHandlerTests
         public RegisterMyPetCommand Command { get; }
         public RegisterMyPetCommandHandler Sut { get; }
 
-        public Fixture(bool hasClient = true, bool hasSpecies = true, decimal? weight = 12.5m)
+        public Fixture(
+            bool hasClient = true,
+            bool hasSpecies = true,
+            string gender = "F",
+            decimal? weight = 12.5m)
         {
             Client = TestClients.Create("1234567890", null);
             var species = new SpeciesEntity("Canino");
@@ -133,7 +152,14 @@ public sealed class RegisterMyPetCommandHandlerTests
             racesRepository.GetByIdAsync(race.Id, Arg.Any<CancellationToken>()).Returns(race);
 
             Command = new RegisterMyPetCommand(
-                Client.Id, "Luna", 4, "F", weight, "Sana", species.Id, race.Id);
+                Client.Id,
+                gender == "M" ? "Thor" : "Luna",
+                4,
+                gender,
+                weight,
+                "Sana",
+                species.Id,
+                race.Id);
             Sut = new RegisterMyPetCommandHandler(UnitOfWork);
         }
     }
