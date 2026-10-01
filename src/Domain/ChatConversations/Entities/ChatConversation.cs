@@ -28,13 +28,15 @@ public sealed class ChatConversation : BaseEntity<Guid>
     /// </summary>
     public static ChatConversation Create(
         bool aiEnabled = true,
-        string channel = "Web")
+        string channel = "Web",
+        Guid? id = null)
     {
         EnsureChannel(channel);
+        EnsureId(id);
 
         return new ChatConversation
         {
-            Id = Guid.NewGuid(),
+            Id = id ?? Guid.NewGuid(),
             AiEnabled = aiEnabled,
             Closed = false,
             ClosedAt = null,
@@ -112,6 +114,16 @@ public sealed class ChatConversation : BaseEntity<Guid>
             throw new ArgumentException(
                 "El canal de la conversación es obligatorio.",
                 nameof(channel));
+        }
+    }
+
+    private static void EnsureId(Guid? id)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "El identificador de la conversación no puede estar vacío.",
+                nameof(id));
         }
     }
 }

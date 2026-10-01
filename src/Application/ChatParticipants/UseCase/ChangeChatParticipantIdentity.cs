@@ -8,7 +8,8 @@ namespace Application.ChatParticipants.UseCase;
 public sealed record ChangeChatParticipantIdentityCommand(
     Guid Id,
     Guid? ClientId,
-    Guid? AgentHumanId) : IRequest<ChatParticipantEntity>;
+    Guid? AgentHumanId,
+    long? TelegramUserId = null) : IRequest<ChatParticipantEntity>;
 
 public sealed class ChangeChatParticipantIdentityCommandHandler
     : IRequestHandler<ChangeChatParticipantIdentityCommand, ChatParticipantEntity>
@@ -59,7 +60,8 @@ public sealed class ChangeChatParticipantIdentityCommandHandler
 
         participant.ChangeIdentity(
             request.ClientId,
-            request.AgentHumanId);
+            request.AgentHumanId,
+            request.TelegramUserId);
 
         await _uow.ChatParticipantsRepository.UpdateAsync(participant, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
