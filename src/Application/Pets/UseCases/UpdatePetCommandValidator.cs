@@ -30,6 +30,7 @@ public sealed class UpdatePetCommandValidator : AbstractValidator<UpdatePetComma
 
         RuleFor(command => command.Weight)
             .InclusiveBetween(PetWeight.Min, PetWeight.Max)
+            .When(command => command.Weight.HasValue)
             .WithMessage($"El peso debe estar entre {PetWeight.Min} y {PetWeight.Max} kg.");
 
         RuleFor(command => command.Observations)
