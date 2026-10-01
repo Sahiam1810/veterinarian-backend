@@ -59,6 +59,7 @@ public sealed class BotPetsApiTests(TelegramAgentApiFactory factory)
         factory.Sender.Send(
                 Arg.Is<RegisterMyPetCommand>(command =>
                     command.ClientId == TelegramAgentApiFactory.ClientId &&
+                    command.Gender == "F" &&
                     command.SpeciesId == speciesId &&
                     command.RaceId == raceId),
                 Arg.Any<CancellationToken>())
@@ -72,6 +73,63 @@ public sealed class BotPetsApiTests(TelegramAgentApiFactory factory)
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<OwnedPetProfileResponseDto>();
         Assert.Equal(profile.Id, body?.Id);
+        Assert.Equal("F", body?.Gender);
+    }
+
+    [Fact]
+    public async Task Delegated_token_registers_female_pet_persisting_and_returning_gender_F()
+    {
+        var speciesId = Guid.NewGuid();
+        var raceId = Guid.NewGuid();
+        var profile = Profile(speciesId, raceId, "Luna", "F");
+        factory.Sender.Send(
+                Arg.Is<RegisterMyPetCommand>(command =>
+                    command.ClientId == TelegramAgentApiFactory.ClientId &&
+                    command.Name == "Luna" &&
+                    command.Gender == "F" &&
+                    command.SpeciesId == speciesId &&
+                    command.RaceId == raceId),
+                Arg.Any<CancellationToken>())
+            .Returns(profile);
+        using var client = factory.CreateJwtClient("telegram_agent");
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/bot/pets",
+            new CreateOwnedPetDto("Luna", 4, "F", 12.5m, null, speciesId, raceId));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<OwnedPetProfileResponseDto>();
+        Assert.NotNull(body);
+        Assert.Equal(profile.Id, body.Id);
+        Assert.Equal("F", body.Gender);
+    }
+
+    [Fact]
+    public async Task Delegated_token_registers_male_pet_persisting_and_returning_gender_M()
+    {
+        var speciesId = Guid.NewGuid();
+        var raceId = Guid.NewGuid();
+        var profile = Profile(speciesId, raceId, "Thor", "M");
+        factory.Sender.Send(
+                Arg.Is<RegisterMyPetCommand>(command =>
+                    command.ClientId == TelegramAgentApiFactory.ClientId &&
+                    command.Name == "Thor" &&
+                    command.Gender == "M" &&
+                    command.SpeciesId == speciesId &&
+                    command.RaceId == raceId),
+                Arg.Any<CancellationToken>())
+            .Returns(profile);
+        using var client = factory.CreateJwtClient("telegram_agent");
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/bot/pets",
+            new CreateOwnedPetDto("Thor", 3, "M", 15m, null, speciesId, raceId));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<OwnedPetProfileResponseDto>();
+        Assert.NotNull(body);
+        Assert.Equal(profile.Id, body.Id);
+        Assert.Equal("M", body.Gender);
     }
 
     [Fact]
@@ -119,11 +177,15 @@ public sealed class BotPetsApiTests(TelegramAgentApiFactory factory)
         Assert.Equal(profile.Id, body?.Id);
     }
 
-    private static OwnedPetProfile Profile(Guid speciesId, Guid raceId) => new(
+    private static OwnedPetProfile Profile(
+        Guid speciesId,
+        Guid raceId,
+        string name = "Luna",
+        string gender = "F") => new(
         Guid.NewGuid(),
-        "Luna",
+        name,
         4,
-        "F",
+        gender,
         12.5m,
         null,
         speciesId,
