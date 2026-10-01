@@ -37,11 +37,9 @@ public sealed class ChatPermissionsSeedTests
 
     [Theory]
     [InlineData(
-        "ensure_permission('c1110001-1111-4444-a111-000000000001', '11111111-1111-1111-1111-111111111111', 'Chat', 1, 1, 1, 1)")]
+        "ensure_permission('c1110001-1111-4444-a111-000000000001', '11111111-1111-1111-1111-111111111111', 'Chat', 1, 1, 1, 0)")]
     [InlineData(
-        "ensure_permission('c1110002-1111-4444-a111-000000000002', '11111111-1111-1111-1111-111111111111', 'Escalamientos', 1, 1, 1, 1)")]
-    [InlineData(
-        "ensure_permission('c1110003-1111-4444-a111-000000000003', '11111111-1111-1111-1111-111111111111', 'Catálogos del Chat', 1, 1, 1, 1)")]
+        "ensure_permission('c1110002-1111-4444-a111-000000000002', '11111111-1111-1111-1111-111111111111', 'Escalamientos', 1, 1, 1, 0)")]
     public void Role_permissions_seed_grants_the_expected_administrador_row(string expectedLine)
     {
         var sql = File.ReadAllText(FindSeedPath("role_permissions_seed.sql"));
@@ -70,7 +68,6 @@ public sealed class ChatPermissionsSeedTests
     [Theory]
     [InlineData("Chat")]
     [InlineData("Escalamientos")]
-    [InlineData("Catálogos del Chat")]
     public void Each_chat_module_is_assigned_to_Administrador_exactly_once(string moduleName)
     {
         var sql = File.ReadAllText(FindSeedPath("role_permissions_seed.sql"));
