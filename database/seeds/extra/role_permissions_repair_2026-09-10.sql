@@ -70,6 +70,16 @@ DECLARE
         END IF;
     END;
 BEGIN
+    -- Administrador no participa en la bandeja Asesor: retirar filas creadas por
+    -- versiones anteriores de estos seeds.
+    DELETE FROM ROLE_PERMISSIONS
+    WHERE ROLE_ID = '11111111-1111-1111-1111-111111111111'
+      AND MODULE_ID IN (
+          SELECT MODULE_ID
+          FROM MODULES
+          WHERE UPPER(NAME) IN (UPPER('Chat'), UPPER('Escalamientos'))
+      );
+
     -- Administrador (mismos valores que role_permissions_seed.sql)
     sync_permission('a4b4bb3e-3516-4b6c-a577-3ec4d65c3a7b', '11111111-1111-1111-1111-111111111111', 'Clientes', 1, 1, 1, 1);
     sync_permission('7f3fdc4f-b845-4403-aa3c-209fb0d14968', '11111111-1111-1111-1111-111111111111', 'Mascotas', 1, 1, 1, 1);
@@ -91,8 +101,6 @@ BEGIN
     sync_permission('7f81bb4a-a2b8-4f4e-b0d0-9fef7b20a496', '11111111-1111-1111-1111-111111111111', 'Órdenes Médicas', 1, 1, 1, 1);
     sync_permission('8862ffc5-954e-4669-b392-3ea1ac6f930a', '11111111-1111-1111-1111-111111111111', 'Hospitalización', 1, 1, 1, 1);
     sync_permission('5debd306-2148-444a-b466-85fafc2ed7d5', '11111111-1111-1111-1111-111111111111', 'Insumos', 1, 1, 1, 1);
-    sync_permission('c1110001-1111-4444-a111-000000000001', '11111111-1111-1111-1111-111111111111', 'Chat', 1, 1, 1, 0);
-    sync_permission('c1110002-1111-4444-a111-000000000002', '11111111-1111-1111-1111-111111111111', 'Escalamientos', 1, 1, 1, 0);
 
     -- Veterinario
     sync_permission('0f5fbe54-b049-480d-8a54-1cc6e5bace30', '44444444-4444-4444-4444-444444444444', 'Clientes', 1, 0, 0, 0);
